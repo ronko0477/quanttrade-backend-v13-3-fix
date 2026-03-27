@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: quanttrade-backend-v13-3-fix
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true

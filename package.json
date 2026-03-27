@@ -1,0 +1,13 @@
+{
+  "name": "quanttradeprobot-backend-v13-3-fix-onefile",
+  "version": "13.3.1",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  }
+}
