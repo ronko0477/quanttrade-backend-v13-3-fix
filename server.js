@@ -478,3 +478,54 @@ app.get('/api/auto/status', (_req, res) => {
 
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => console.log(`V13.3 FIX Onefile läuft auf Port ${port}`));
+
+app.post('/api/reset', (req, res) => {
+  state.positions = [];
+  state.orders = [];
+  state.closedTrades = [];
+
+  state.pnl = 0;
+  state.daily = {
+    date: new Date().toISOString().slice(0, 10),
+    ordersCount: 0,
+    realizedPnl: 0,
+    lossStreak: 0
+  };
+
+  state.autotrade.enabled = false;
+  state.autotrade.ticks = 0;
+  state.autotrade.lastSignal = null;
+  state.autotrade.lastAction = null;
+
+  res.json({
+    ok: true,
+    message: "System vollständig zurückgesetzt"
+  });
+});
+
+app.post('/api/action', (req, res) => {
+  const { type } = req.body;
+
+  if (type === 'master_on') {
+    state.autotrade.enabled = true;
+    return res.json({ ok: true, message: "Master aktiviert" });
+  }
+
+  if (type === 'master_off') {
+    state.autotrade.enabled = false;
+    return res.json({ ok: true, message: "Master deaktiviert" });
+  }
+
+  if (type === 'win_trade') {
+    state.pnl += 5;
+    return res.json({ ok: true, message: "Gewinntrade hinzugefügt" });
+  }
+
+  if (type === 'loss_trade') {
+    state.pnl -= 5;
+    state.daily.lossStreak++;
+    return res.json({ ok: true, message: "Verlusttrade hinzugefügt" });
+  }
+
+  return res.json({ ok: false, message: "Unbekannte Aktion" });
+});
