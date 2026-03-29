@@ -5,109 +5,127 @@ app.use(express.json());
 
 let state = {
   pnl: 0,
-  guard: 'READY',
   ordersToday: 0,
-  lastOrderAt: 0,
+  maxOrdersPerSession: 10,
+  guardBase: 'READY',
   queue: [],
   processing: false,
+  lastOrderAt: 0,
   cooldownUntil: 0,
+  hardBlocked: false,
   log: []
 };
 
-function now() {
-  return Date.now();
-}
+function now(){ return Date.now(); }
 
-function computeGuard() {
-  if (state.pnl <= -15) return 'BLOCKED';
-  if (state.pnl <= -10) return 'WARN';
-  return 'READY';
-}
-
-function refreshGuard() {
-  if (now() < state.cooldownUntil) {
-    state.guard = 'COOLDOWN';
-    return state.guard;
-  }
-  state.guard = computeGuard();
-  return state.guard;
-}
-
-function addLog(type, msg) {
+function addLog(type, msg){
   state.log.unshift({
     ts: new Date().toISOString(),
     type,
     msg
   });
-  state.log = state.log.slice(0, 12);
+  state.log = state.log.slice(0, 20);
 }
 
-function statusPayload() {
-  refreshGuard();
+function computeBaseGuard(){
+  if (state.pnl <= -15) return 'BLOCKED';
+  if (state.pnl <= -10) return 'WARN';
+  return 'READY';
+}
+
+function currentGuard(){
+  // Hard block has highest priority
+  if (state.hardBlocked) return 'BLOCKED';
+  // Queue lock blocks new orders while processing or queued
+  if (state.processing || state.queue.length > 0) return 'LOCKED';
+  // Session cap
+  if (state.ordersToday >= state.maxOrdersPerSession) return 'SESSION_LIMIT';
+  // Cooldown
+  if (now() < state.cooldownUntil) return 'COOLDOWN';
+  // Base risk guard
+  state.guardBase = computeBaseGuard();
+  return state.guardBase;
+}
+
+function statusPayload(){
+  const guard = currentGuard();
   return {
     pnl: Number(state.pnl.toFixed(2)),
-    guard: state.guard,
+    guard,
+    guardBase: computeBaseGuard(),
     ordersToday: state.ordersToday,
+    maxOrdersPerSession: state.maxOrdersPerSession,
     queueLength: state.queue.length,
     processing: state.processing,
     cooldownLeft: Math.max(0, Math.ceil((state.cooldownUntil - now()) / 1000)),
+    hardBlocked: state.hardBlocked,
     log: state.log
   };
 }
 
-function processQueue() {
+function processQueue(){
   if (state.processing) return;
   if (!state.queue.length) return;
 
   state.processing = true;
   const item = state.queue.shift();
+  addLog('PROCESSING', `Order ${item.id} wird verarbeitet`);
 
   setTimeout(() => {
     state.ordersToday += 1;
     addLog('EXECUTED', `Order ${item.id} ausgeführt`);
     state.processing = false;
+
+    // If max session cap reached after execution, log it
+    if (state.ordersToday >= state.maxOrdersPerSession) {
+      addLog('SESSION LIMIT', `Max ${state.maxOrdersPerSession} Orders erreicht`);
+    }
+
     processQueue();
-  }, 900);
+  }, 1200);
 }
 
-app.get('/', (req, res) => {
-  res.send(`
+app.get('/', (req,res)=>{
+res.send(`
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>V14.8 SIMPLE</title>
+<title>V14.9 SIMPLE</title>
 <style>
-body{background:#08163a;color:#fff;font-family:Arial,sans-serif;text-align:center;padding:20px}
-.box{background:#182b58;border-radius:18px;padding:18px;margin:18px auto;max-width:820px}
-.big{font-size:56px;font-weight:800;margin:8px 0}
-.ready{color:#8fda69}.warn{color:#f2c55c}.blocked{color:#ff9488}.cooldown{color:#9ac7ff}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:820px;margin:0 auto}
-button{padding:16px;border:none;border-radius:16px;font-size:24px;font-weight:700;background:#6f7dff;color:#fff}
-button.red{background:#c7655c} button.gold{background:#b78b38} button.green{background:#5d9e64} button.alt{background:#5c67a9}
+body{background:#07153a;color:#fff;font-family:Arial,sans-serif;text-align:center;padding:20px}
+.box{background:#1b2d5b;border-radius:18px;padding:18px;margin:16px auto;max-width:860px}
+.big{font-size:54px;font-weight:800;margin:8px 0}
+.ready{color:#8fda69}.warn{color:#f2c55c}.blocked{color:#ff9488}.cooldown{color:#9ac7ff}.locked{color:#c9d4ff}.limit{color:#ffb86b}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:860px;margin:0 auto}
+button{padding:18px;border:none;border-radius:16px;font-size:22px;font-weight:700;background:#6f7dff;color:#fff}
+button.red{background:#c7655c} button.gold{background:#b78b38} button.green{background:#5d9e64} button.alt{background:#5c67a9} button.dark{background:#6f59a8}
 button:disabled{opacity:.45}
 .log{background:rgba(255,255,255,.07);padding:10px 12px;border-radius:12px;margin-top:8px;text-align:left}
 #fb{position:fixed;top:18px;left:50%;transform:translateX(-50%);padding:12px 18px;border-radius:12px;background:#4CAF50;display:none;font-weight:700;z-index:9999}
+.meta{font-size:20px;line-height:1.5}
 </style>
 </head>
 <body>
 <div id="fb">OK</div>
-<h1>V14.8 SIMPLE</h1>
+<h1>V14.9 SIMPLE</h1>
 
 <div class="box">
   <div id="guard" class="big ready">READY</div>
-  <div id="pnl" style="font-size:38px;font-weight:700">PnL: 0.00</div>
-  <div id="meta" style="font-size:22px;margin-top:8px">Orders: 0 · Queue: 0 · Cooldown: 0s</div>
+  <div id="pnl" style="font-size:40px;font-weight:700">PnL: 0.00</div>
+  <div id="meta" class="meta">Orders: 0/10 · Queue: 0 · Cooldown: 0s · HardBlock: AUS</div>
 </div>
 
 <div class="grid">
-  <button onclick="sendOrder()">SEND ORDER</button>
+  <button onclick="sendOrder()" id="btnSend">SEND ORDER</button>
   <button class="alt" onclick="refresh()">REFRESH</button>
   <button class="green" onclick="call('/api/win')">+WIN</button>
   <button class="red" onclick="call('/api/loss')">-LOSS</button>
   <button class="gold" onclick="call('/api/reset')">RESET</button>
   <button class="alt" onclick="call('/api/cooldown')">START COOLDOWN</button>
+  <button class="dark" onclick="call('/api/hardblock/on')">HARD BLOCK ON</button>
+  <button class="dark" onclick="call('/api/hardblock/off')">HARD BLOCK OFF</button>
 </div>
 
 <div class="box">
@@ -129,12 +147,26 @@ function toast(msg, ok=true){
   el.style.display = 'block';
   setTimeout(()=>el.style.display='none', 2200);
 }
+function guardClass(g){
+  if(g === 'READY') return 'ready';
+  if(g === 'WARN') return 'warn';
+  if(g === 'COOLDOWN') return 'cooldown';
+  if(g === 'LOCKED') return 'locked';
+  if(g === 'SESSION_LIMIT') return 'limit';
+  return 'blocked';
+}
 function paint(d){
   const guard = document.getElementById('guard');
   guard.innerText = d.guard;
-  guard.className = 'big ' + (d.guard === 'READY' ? 'ready' : d.guard === 'WARN' ? 'warn' : d.guard === 'COOLDOWN' ? 'cooldown' : 'blocked');
+  guard.className = 'big ' + guardClass(d.guard);
   document.getElementById('pnl').innerText = 'PnL: ' + Number(d.pnl).toFixed(2);
-  document.getElementById('meta').innerText = 'Orders: ' + d.ordersToday + ' · Queue: ' + d.queueLength + ' · Cooldown: ' + d.cooldownLeft + 's';
+  document.getElementById('meta').innerText =
+    'Orders: ' + d.ordersToday + '/' + d.maxOrdersPerSession +
+    ' · Queue: ' + d.queueLength +
+    ' · Cooldown: ' + d.cooldownLeft + 's' +
+    ' · HardBlock: ' + (d.hardBlocked ? 'AN' : 'AUS');
+  document.getElementById('btnSend').disabled =
+    ['BLOCKED','COOLDOWN','LOCKED','SESSION_LIMIT'].includes(d.guard);
   document.getElementById('log').innerHTML = (d.log && d.log.length)
     ? d.log.map(x => '<div class="log"><b>' + x.type + '</b> · ' + x.msg + '<br><span style="color:#c8d6ff">' + x.ts + '</span></div>').join('')
     : 'Noch kein Log';
@@ -170,38 +202,44 @@ async function sendOrder(){
   }
 }
 refresh();
-setInterval(refresh, 1500);
+setInterval(refresh, 1200);
 </script>
 </body>
 </html>
-  `);
+`);
 });
 
-app.get('/api/status', (req, res) => {
+app.get('/api/status', (req,res)=>{
   res.json(statusPayload());
 });
 
-app.post('/api/order', (req, res) => {
-  refreshGuard();
+app.post('/api/order', (req,res)=>{
+  const guard = currentGuard();
 
-  if (state.guard === 'BLOCKED') {
+  if (guard === 'BLOCKED') {
     addLog('BLOCKED', 'Order durch Guard blockiert');
-    return res.status(403).json({ message: 'BLOCKED: Guard aktiv' });
+    return res.status(403).json({message:'BLOCKED: Guard aktiv'});
   }
-
-  if (state.guard === 'COOLDOWN') {
+  if (guard === 'COOLDOWN') {
     addLog('COOLDOWN', 'Order wegen Cooldown blockiert');
-    return res.status(429).json({ message: 'COOLDOWN aktiv' });
+    return res.status(429).json({message:'COOLDOWN aktiv'});
   }
-
+  if (guard === 'LOCKED') {
+    addLog('LOCKED', 'Order wegen Queue/Processing blockiert');
+    return res.status(429).json({message:'LOCKED: Order läuft bereits'});
+  }
+  if (guard === 'SESSION_LIMIT') {
+    addLog('SESSION LIMIT', 'Order wegen Session-Limit blockiert');
+    return res.status(429).json({message:'SESSION LIMIT erreicht'});
+  }
   if (now() - state.lastOrderAt < 1000) {
     addLog('RATE LIMIT', 'Order zu schnell gesendet');
-    return res.status(429).json({ message: 'Zu schnell: max 1 Order pro Sekunde' });
+    return res.status(429).json({message:'Zu schnell: max 1 Order pro Sekunde'});
   }
 
   const id = now();
   state.lastOrderAt = now();
-  state.queue.push({ id });
+  state.queue.push({id});
   addLog('QUEUED', `Order ${id} in Queue gelegt`);
   processQueue();
 
@@ -211,40 +249,60 @@ app.post('/api/order', (req, res) => {
   });
 });
 
-app.post('/api/win', (req, res) => {
+app.post('/api/win', (req,res)=>{
   state.pnl += 4;
   addLog('WIN', 'PnL +4');
-  res.json(statusPayload());
-});
-
-app.post('/api/loss', (req, res) => {
-  state.pnl -= 5;
-  addLog('LOSS', 'PnL -5');
-  refreshGuard();
-  if (computeGuard() === 'BLOCKED') {
-    state.cooldownUntil = now() + 10000;
-    addLog('COOLDOWN', '10s Cooldown nach BLOCKED gestartet');
+  if (state.pnl > -15 && state.hardBlocked) {
+    addLog('INFO', 'Hard Block bleibt aktiv bis manuell OFF');
   }
   res.json(statusPayload());
 });
 
-app.post('/api/reset', (req, res) => {
-  state.pnl = 0;
-  state.guard = 'READY';
-  state.ordersToday = 0;
-  state.queue = [];
-  state.processing = false;
-  state.cooldownUntil = 0;
-  state.lastOrderAt = 0;
-  addLog('RESET', 'System zurückgesetzt');
+app.post('/api/loss', (req,res)=>{
+  state.pnl -= 5;
+  addLog('LOSS', 'PnL -5');
+
+  const base = computeBaseGuard();
+  if (base === 'BLOCKED') {
+    state.hardBlocked = true;
+    if (state.cooldownUntil < now() + 15000) {
+      state.cooldownUntil = now() + 15000;
+    }
+    addLog('HARD BLOCK', 'BLOCKED stabil gehalten bis Reset/HardBlock OFF');
+    addLog('COOLDOWN', '15s Cooldown nach BLOCKED gestartet');
+  }
   res.json(statusPayload());
 });
 
-app.post('/api/cooldown', (req, res) => {
+app.post('/api/reset', (req,res)=>{
+  state.pnl = 0;
+  state.ordersToday = 0;
+  state.queue = [];
+  state.processing = false;
+  state.lastOrderAt = 0;
+  state.cooldownUntil = 0;
+  state.hardBlocked = false;
+  addLog('RESET', 'System vollständig zurückgesetzt');
+  res.json(statusPayload());
+});
+
+app.post('/api/cooldown', (req,res)=>{
   state.cooldownUntil = now() + 15000;
   addLog('COOLDOWN', 'Manueller Cooldown 15s gestartet');
   res.json(statusPayload());
 });
 
+app.post('/api/hardblock/on', (req,res)=>{
+  state.hardBlocked = true;
+  addLog('HARD BLOCK', 'Hard Block manuell aktiviert');
+  res.json(statusPayload());
+});
+
+app.post('/api/hardblock/off', (req,res)=>{
+  state.hardBlocked = false;
+  addLog('HARD BLOCK', 'Hard Block manuell deaktiviert');
+  res.json(statusPayload());
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('V14.8 läuft auf Port ' + PORT));
+app.listen(PORT, ()=>console.log('V14.9 läuft auf Port ' + PORT));
