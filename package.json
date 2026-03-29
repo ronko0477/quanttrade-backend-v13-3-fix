@@ -1,12 +1,7 @@
 {
-  "name": "v14-7-server-side-guard",
+  "name": "v14-single",
   "version": "1.0.0",
-  "private": true,
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.19.2"
-  }
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^4.18.2" }
 }
