@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V15.5 BACKEND</title>
+  <style>
+    :root{
+      --bg:#08184f;
+      --card:#2c396f;
+      --panel:#33427d;
+      --btn:#7885ff;
+      --btn2:#6d76bc;
+      --green:#9be06f;
+      --red:#f19b93;
+      --yellow:#f0d36e;
+      --purple:#8d73c8;
+      --gold:#bf9a4f;
+      --text:#f4f7ff;
+      --muted:#d7def8;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      padding:18px;
+    }
+    .wrap{max-width:860px;margin:0 auto}
+    h1{
+      text-align:center;
+      margin:8px 0 20px;
+      font-size:42px;
+      font-weight:900;
+      letter-spacing:.5px;
+    }
+    .card{
+      background:var(--card);
+      border-radius:28px;
+      padding:22px;
+      margin-bottom:20px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+    }
+    .mini{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .pill{
+      background:rgba(255,255,255,.07);
+      border-radius:16px;
+      padding:12px 14px;
+      font-size:18px;
+      font-weight:700;
+      color:var(--muted);
+      text-align:center;
+    }
+    .status{
+      text-align:center;
+      font-size:72px;
+      font-weight:900;
+      line-height:1;
+      margin:10px 0 8px;
+    }
+    .sub{
+      text-align:center;
+      font-size:24px;
+      margin:4px 0;
+    }
+    .meta{
+      text-align:center;
+      font-size:18px;
+      color:var(--muted);
+      line-height:1.5;
+      margin-top:8px;
+    }
+    .msg{
+      text-align:center;
+      font-size:18px;
+      min-height:24px;
+      margin-top:14px;
+      color:var(--muted);
+    }
+    .config{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    input{
+      width:100%;
+      border:none;
+      outline:none;
+      border-radius:18px;
+      padding:18px;
+      font-size:18px;
+      background:#e7ebf5;
+      color:#222;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+    }
+    button{
+      border:none;
+      border-radius:20px;
+      padding:22px 14px;
+      font-size:22px;
+      font-weight:900;
+      color:#fff;
+      background:var(--btn);
+      cursor:pointer;
+      transition:.15s ease;
+    }
+    button:active{transform:scale(.98)}
+    button:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      transform:none;
+    }
+    .secondary{background:var(--btn2)}
+    .green{background:#79ad6f}
+    .red{background:#c87468}
+    .gold{background:var(--gold)}
+    .purple{background:var(--purple)}
+    .log{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      max-height:420px;
+      overflow:auto;
+    }
+    .item{
+      background:rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:14px 16px;
+      line-height:1.35;
+      font-size:17px;
+    }
+    .item b{font-size:19px}
+    .toast{
+      position:fixed;
+      left:50%;
+      top:14px;
+      transform:translateX(-50%);
+      padding:16px 22px;
+      border-radius:18px;
+      font-weight:900;
+      font-size:20px;
+      color:#fff;
+      background:#6cb65b;
+      box-shadow:0 10px 28px rgba(0,0,0,.25);
+      opacity:0;
+      pointer-events:none;
+      transition:.2s ease;
+      z-index:1000;
+      max-width:92vw;
+      text-align:center;
+    }
+    .toast.show{opacity:1}
+    .toast.error{background:#d36962}
+    .toast.warn{background:#c79a46}
+    .small-note{
+      font-size:15px;
+      color:var(--muted);
+      opacity:.9;
+      line-height:1.35;
+      margin-top:10px;
+    }
+    @media (max-width:700px){
+      h1{font-size:28px}
+      .card{padding:18px;border-radius:22px}
+      .pill{font-size:15px;padding:10px 12px}
+      .status{font-size:56px}
+      .sub{font-size:20px}
+      .meta,.msg{font-size:16px}
+      button{font-size:18px;padding:18px 10px}
+      input{font-size:16px;padding:16px}
+      .item{font-size:15px}
+      .item b{font-size:17px}
+    }
+  </style>
+</head>
+<body>
+<div class="toast" id="toast">OK</div>
+
+<div class="wrap">
+  <h1>V15.5 BACKEND</h1>
+
+  <div class="card">
+    <div class="config">
+      <input id="apiBaseInput" placeholder="https://dein-render-backend.onrender.com" />
+      <div class="grid">
+        <button id="saveBaseBtn">API BASE SPEICHERN</button>
+        <button id="statusBtn" class="secondary">STATUS LADEN</button>
+      </div>
+      <div class="small-note">
+        Falls deine Backend-Routen anders heißen, ändere unten im Script nur die Konstanten in <b>ENDPOINTS</b>.
+      </div>
+    </div>
+
+    <div class="mini">
+      <div class="pill" id="backendPill">Backend unbekannt</div>
+      <div class="pill" id="lastUpdatePill">Letztes Update: noch nie</div>
+    </div>
+
+    <div id="state" class="status" style="color:var(--green)">READY</div>
+    <div class="sub">PnL: <span id="pnl">0</span></div>
+    <div class="meta">
+      Orders: <span id="orders">0</span> |
+      Queue: <span id="queue">0</span> |
+      Processing: <span id="processing">NO</span> |
+      Retry: <span id="retry">0</span>
+    </div>
+    <div class="msg" id="msg">Backend noch nicht geladen</div>
+  </div>
+
+  <div class="grid" style="margin-bottom:20px">
+    <button id="sendBtn">SEND ORDER</button>
+    <button id="refreshBtn" class="secondary">REFRESH</button>
+    <button id="winBtn" class="green">+WIN</button>
+    <button id="lossBtn" class="red">-LOSS</button>
+    <button id="resetBtn" class="gold">RESET</button>
+    <button id="healthBtn" class="purple">HEALTH CHECK</button>
+  </div>
+
+  <div class="card">
+    <div class="sub" style="font-weight:900;margin-top:0">Log</div>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // Passe diese Routen nur an, falls dein Render-Backend andere Endpunkte nutzt.
+  const ENDPOINTS = {
+    health: "/health",
+    status: "/status",
+    send: "/send-order",
+    win: "/add-win",
+    loss: "/add-loss",
+    reset: "/reset"
+  };
+
+  const els = {
+    toast: document.getElementById("toast"),
+    apiBaseInput: document.getElementById("apiBaseInput"),
+    saveBaseBtn: document.getElementById("saveBaseBtn"),
+    statusBtn: document.getElementById("statusBtn"),
+    sendBtn: document.getElementById("sendBtn"),
+    refreshBtn: document.getElementById("refreshBtn"),
+    winBtn: document.getElementById("winBtn"),
+    lossBtn: document.getElementById("lossBtn"),
+    resetBtn: document.getElementById("resetBtn"),
+    healthBtn: document.getElementById("healthBtn"),
+    backendPill: document.getElementById("backendPill"),
+    lastUpdatePill: document.getElementById("lastUpdatePill"),
+    state: document.getElementById("state"),
+    pnl: document.getElementById("pnl"),
+    orders: document.getElementById("orders"),
+    queue: document.getElementById("queue"),
+    processing: document.getElementById("processing"),
+    retry: document.getElementById("retry"),
+    msg: document.getElementById("msg"),
+    log: document.getElementById("log")
+  };
+
+  const app = {
+    apiBase: localStorage.getItem("v155_api_base") || "",
+    retry: 0,
+    state: "READY",
+    pnl: 0,
+    orders: 0,
+    queue: 0,
+    processing: false,
+    lastMessage: "System bereit"
+  };
+
+  els.apiBaseInput.value = app.apiBase;
+
+  function toast(text, type="ok") {
+    els.toast.textContent = text;
+    els.toast.className = "toast show" + (type === "error" ? " error" : type === "warn" ? " warn" : "");
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => els.toast.className = "toast", 1800);
+  }
+
+  function addLog(type, text) {
+    const d = document.createElement("div");
+    d.className = "item";
+    d.innerHTML = `<b>${type}</b> · ${text}<br>${new Date().toISOString()}`;
+    els.log.prepend(d);
+  }
+
+  function normalizeBase(base) {
+    return (base || "").trim().replace(/\/+$/,"");
+  }
+
+  function endpoint(path) {
+    const base = normalizeBase(app.apiBase);
+    if (!base) throw new Error("API Base fehlt");
+    return base + path;
+  }
+
+  function setStateUI(name, msg) {
+    app.state = name;
+    app.lastMessage = msg || app.lastMessage;
+    const color =
+      name === "READY" ? "var(--green)" :
+      name === "PROCESSING" ? "#c6d0ff" :
+      name === "RETRYING" ? "var(--yellow)" :
+      name === "BLOCKED" ? "var(--red)" :
+      "var(--white)";
+    els.state.textContent = name;
+    els.state.style.color = color;
+    els.msg.textContent = app.lastMessage;
+  }
+
+  function render() {
+    els.pnl.textContent = app.pnl;
+    els.orders.textContent = app.orders;
+    els.queue.textContent = app.queue;
+    els.processing.textContent = app.processing ? "YES" : "NO";
+    els.retry.textContent = app.retry;
+    setStateUI(app.state, app.lastMessage);
+  }
+
+  function setLastUpdate() {
+    const now = new Date();
+    els.lastUpdatePill.textContent = "Letztes Update: " + now.toLocaleTimeString("de-DE");
+  }
+
+  function setBackendOnline(ok, txt) {
+    els.backendPill.textContent = txt || (ok ? "Backend online" : "Backend offline");
+    els.backendPill.style.color = ok ? "var(--green)" : "var(--red)";
+  }
+
+  function pick(obj, keys, fallback) {
+    for (const key of keys) {
+      if (obj && obj[key] !== undefined && obj[key] !== null) return obj[key];
+    }
+    return fallback;
+  }
+
+  function applyStatus(data) {
+    app.pnl = pick(data, ["pnl","totalPnl","dailyPnl"], app.pnl);
+    app.orders = pick(data, ["orders","ordersToday","totalOrders"], app.orders);
+    app.queue = pick(data, ["queue","queueCount","queued"], app.queue);
+    app.processing = !!pick(data, ["processing","isProcessing","busy"], app.processing);
+    app.retry = pick(data, ["retry","retryCount"], app.retry);
+
+    const statusName = String(pick(data, ["state","status","guardState"], app.state)).toUpperCase();
+    const message = pick(data, ["message","hint","reason","note"], "Status geladen");
+    app.state = statusName;
+    app.lastMessage = message;
+
+    render();
+    setLastUpdate();
+  }
+
+  async function requestJson(path, options = {}) {
+    const url = endpoint(path);
+    const res = await fetch(url, {
+      method: options.method || "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined
+    });
+
+    let data = null;
+    try {
+      data = await res.json();
+    } catch (_) {
+      data = {};
+    }
+
+    if (!res.ok) {
+      const msg = data?.error || data?.message || `${res.status} ${res.statusText}`;
+      throw new Error(msg);
+    }
+    return data || {};
+  }
+
+  async function withRetry(title, fn) {
+    app.retry = 0;
+    render();
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        if (attempt > 1) {
+          app.retry = attempt - 1;
+          app.state = "RETRYING";
+          app.lastMessage = `${title}: Retry ${attempt - 1}/2`;
+          render();
+          toast(`Retry ${attempt - 1}`, "warn");
+        }
+        const data = await fn();
+        app.retry = 0;
+        return data;
+      } catch (err) {
+        if (attempt === 3) throw err;
+      }
+    }
+  }
+
+  async function loadStatus() {
+    try {
+      const data = await withRetry("Status", () => requestJson(ENDPOINTS.status));
+      applyStatus(data);
+      setBackendOnline(true);
+      addLog("STATUS", "Backend-Status geladen");
+      toast("Status geladen");
+    } catch (err) {
+      setBackendOnline(false, "Backend Fehler");
+      app.state = "BLOCKED";
+      app.lastMessage = "Status konnte nicht geladen werden";
+      render();
+      addLog("ERROR", "Status Fehler: " + err.message);
+      toast("Status Fehler", "error");
+    }
+  }
+
+  async function healthCheck() {
+    try {
+      const data = await requestJson(ENDPOINTS.health);
+      setBackendOnline(true);
+      setLastUpdate();
+      addLog("HEALTH", data.message || "Health OK");
+      toast("Backend online");
+    } catch (err) {
+      setBackendOnline(false, "Backend offline");
+      addLog("HEALTH", "Health Fehler: " + err.message);
+      toast("Backend offline", "error");
+    }
+  }
+
+  async function act(title, path, body) {
+    try {
+      const data = await withRetry(title, () => requestJson(path, { method:"POST", body }));
+      if (data && typeof data === "object") applyStatus(data);
+      else setLastUpdate();
+      setBackendOnline(true);
+      addLog(title.toUpperCase(), data.message || "OK");
+      toast(data.message || "OK");
+    } catch (err) {
+      app.state = "BLOCKED";
+      app.lastMessage = title + " fehlgeschlagen";
+      render();
+      addLog("FAILED", `${title}: ${err.message}`);
+      toast(title + " Fehler", "error");
+    }
+  }
+
+  els.saveBaseBtn.addEventListener("click", () => {
+    app.apiBase = normalizeBase(els.apiBaseInput.value);
+    localStorage.setItem("v155_api_base", app.apiBase);
+    addLog("CONFIG", "API Base gespeichert: " + app.apiBase);
+    toast("API Base gespeichert");
+  });
+
+  els.statusBtn.addEventListener("click", loadStatus);
+  els.refreshBtn.addEventListener("click", loadStatus);
+  els.healthBtn.addEventListener("click", healthCheck);
+  els.sendBtn.addEventListener("click", () => act("Send Order", ENDPOINTS.send, {}));
+  els.winBtn.addEventListener("click", () => act("Add Win", ENDPOINTS.win, {}));
+  els.lossBtn.addEventListener("click", () => act("Add Loss", ENDPOINTS.loss, {}));
+  els.resetBtn.addEventListener("click", () => act("Reset", ENDPOINTS.reset, {}));
+
+  addLog("BOOT", "V15.5 Frontend geladen");
+  render();
+})();
+</script>
+</body>
+</html>
