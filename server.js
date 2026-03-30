@@ -134,7 +134,7 @@ async function refresh(){
   const d = await r.json();
 
   document.getElementById('guard').innerText = d.reasonLabel;
-  document.getElementById('pnl').innerText = d.pnl;
+  document.getElementById('pnl').innerText = 'PnL: ' + d.pnl;
   document.getElementById('meta').innerText =
     "Orders: " + d.ordersToday + "/" + d.maxOrdersPerSession;
 }
