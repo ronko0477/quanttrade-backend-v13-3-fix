@@ -84,6 +84,19 @@ function processQueue(){
   }, 1200);
 }
 
+app.get('/', (req,res)=>{
+  res.send(`<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>V15 SIMPLE</title>
+<style>
+  body{margin:0;background:#07153a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:24px 18px 80px}
+  h1{text-align:center;font-size:56px;margin:10px 0 24px;font-weight:800}
+  .box{background:#4e5aa0;border-radius:28px;padding:26px;margin-bottom
+  
 // ===== API =====
 
 app.get('/api/status', (req,res)=>{
