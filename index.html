@@ -1,306 +1,37 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
-<title>V15 API CLEAN</title>
+<meta charset="UTF-8">
+<title>v15.2</title>
 <style>
-  :root{
-    --bg:#071750;
-    --panel:#33407f;
-    --panel2:#47579a;
-    --text:#f4f6ff;
-    --muted:#d7dbef;
-    --green:#93d866;
-    --red:#f19b8f;
-    --yellow:#f0d46e;
-    --blue:#7f89f6;
-    --purple:#8f80d6;
-    --gold:#c9a456;
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-  body{min-height:100vh}
-  .wrap{max-width:900px;margin:0 auto;padding:28px 18px 48px}
-  h1{margin:10px 0 22px;text-align:center;font-size:clamp(28px,7vw,54px);font-weight:800;letter-spacing:.5px}
-  .api-box,.card,.log{background:rgba(58,72,135,.95);border-radius:28px;padding:20px;margin-bottom:18px}
-  .api-row{display:flex;gap:14px;flex-wrap:wrap}
-  input{
-    flex:1;min-width:220px;border:none;outline:none;border-radius:18px;
-    padding:16px 18px;font-size:20px;background:#e9ebf3;color:#222
-  }
-  .status-card{text-align:center;padding:28px 22px}
-  .guard{font-size:clamp(38px,11vw,92px);font-weight:900;line-height:1}
-  .reason{font-size:clamp(18px,4.8vw,34px);font-weight:800;margin-top:12px}
-  .pnl{font-size:clamp(30px,8vw,66px);font-weight:900;margin-top:18px}
-  .meta{margin-top:18px;font-size:clamp(18px,4vw,32px);line-height:1.35;color:#f2f4fb}
-  .hint{margin-top:10px;font-size:clamp(16px,3.7vw,28px);color:var(--muted)}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  button{
-    border:none;border-radius:24px;padding:28px 16px;font-size:clamp(22px,5vw,40px);
-    font-weight:800;color:#fff;cursor:pointer;transition:.15s transform,.15s opacity;
-    min-height:106px
-  }
-  button:active{transform:scale(.985)}
-  button:disabled{opacity:.45;cursor:not-allowed}
-  .btn-blue{background:#7884f2}
-  .btn-green{background:#89b274}
-  .btn-red{background:#c47c6f}
-  .btn-gold{background:#c3a156}
-  .btn-purple{background:#8f80d6}
-  .btn-gray{background:#8089c8}
-  .save-btn{background:#7884f2;min-height:72px;padding:16px 18px;font-size:18px;border-radius:18px}
-  .log h2{margin:0 0 18px;text-align:center;font-size:clamp(28px,6vw,50px)}
-  .item{background:rgba(82,96,160,.78);border-radius:18px;padding:14px 16px;margin-bottom:12px}
-  .tag{font-weight:900}
-  .ts{opacity:.9}
-  .toast{
-    position:fixed;left:50%;top:18px;transform:translateX(-50%);
-    background:#67b458;color:#fff;padding:18px 26px;border-radius:20px;
-    font-size:clamp(18px,4vw,30px);font-weight:800;z-index:9999;display:none;
-    box-shadow:0 8px 30px rgba(0,0,0,.22);text-align:center;max-width:min(92vw,620px)
-  }
-  .toast.err{background:#d77d70}
-  .toast.warn{background:#c9a456}
-  .small{font-size:15px;color:#d9ddf5;margin-top:10px;line-height:1.4}
-  @media (max-width:700px){
-    .wrap{padding:20px 14px 40px}
-    .grid{gap:14px}
-    button{min-height:94px;padding:22px 10px;border-radius:20px}
-    .api-row{gap:10px}
-  }
+body{font-family:Arial;background:#0b1a3a;color:white;text-align:center;padding:20px}
+.btn{display:block;margin:10px auto;padding:15px;border-radius:10px;background:#5b6cff;color:white;width:200px}
 </style>
 </head>
 <body>
-<div class="toast" id="toast"></div>
-
-<div class="wrap">
-  <h1>V15 API CLEAN</h1>
-
-  <div class="api-box">
-    <div class="api-row">
-      <input id="apiBase" type="text" />
-      <button class="save-btn" id="saveApiBtn">API BASE SPEICHERN</button>
-    </div>
-    <div class="small">
-      Erwartete Routen: GET /api/status sowie POST /api/send, /api/win, /api/loss, /api/reset
-    </div>
-  </div>
-
-  <div class="card status-card">
-    <div class="guard" id="guardText">READY</div>
-    <div class="reason" id="reasonText">SYSTEM READY</div>
-    <div class="pnl" id="pnlText">PnL: 0</div>
-    <div class="meta" id="metaText">Orders: 0/10 · Queue: 0 · Cooldown: 0s · HardBlock: AUS</div>
-    <div class="hint" id="hintText">System bereit</div>
-  </div>
-
-  <div class="grid">
-    <button class="btn-blue" id="sendBtn">SEND ORDER</button>
-    <button class="btn-gray" id="refreshBtn">REFRESH</button>
-    <button class="btn-green" id="winBtn">+WIN</button>
-    <button class="btn-red" id="lossBtn">-LOSS</button>
-    <button class="btn-gold" id="resetBtn">RESET</button>
-    <button class="btn-purple" id="statusBtn">STATUS LADEN</button>
-  </div>
-
-  <div class="log">
-    <h2>Log</h2>
-    <div id="logList"></div>
-  </div>
-</div>
-
+<h1>V15.2</h1>
+<div id="status">READY</div>
+<button class="btn" onclick="send()">SEND ORDER</button>
+<button class="btn" onclick="refresh()">REFRESH</button>
 <script>
-(function(){
-  const STORAGE_KEY = "v15_api_base";
-  const DEFAULT_BASE = "https://quanttrade-backend-v13-3-fix-1.onrender.com";
+const API="https://quanttrade-backend-v13-3-fix-1.onrender.com/api";
 
-  const el = {
-    apiBase: document.getElementById("apiBase"),
-    saveApiBtn: document.getElementById("saveApiBtn"),
-    guardText: document.getElementById("guardText"),
-    reasonText: document.getElementById("reasonText"),
-    pnlText: document.getElementById("pnlText"),
-    metaText: document.getElementById("metaText"),
-    hintText: document.getElementById("hintText"),
-    sendBtn: document.getElementById("sendBtn"),
-    refreshBtn: document.getElementById("refreshBtn"),
-    winBtn: document.getElementById("winBtn"),
-    lossBtn: document.getElementById("lossBtn"),
-    resetBtn: document.getElementById("resetBtn"),
-    statusBtn: document.getElementById("statusBtn"),
-    logList: document.getElementById("logList"),
-    toast: document.getElementById("toast")
-  };
+async function refresh(){
+ try{
+  const r=await fetch(API+"/status");
+  const d=await r.json();
+  document.getElementById("status").innerText=d.guard;
+ }catch(e){
+  document.getElementById("status").innerText="ERROR";
+ }
+}
 
-  let toastTimer = null;
-  let busy = false;
+async function send(){
+ await fetch(API+"/send",{method:"POST"});
+ refresh();
+}
 
-  function getBase(){
-    return (el.apiBase.value || DEFAULT_BASE).trim().replace(/\/+$/,'');
-  }
-
-  function endpoints(){
-    const base = getBase();
-    return {
-      status: base + "/api/status",
-      send: base + "/api/send",
-      win: base + "/api/win",
-      loss: base + "/api/loss",
-      reset: base + "/api/reset"
-    };
-  }
-
-  function showToast(msg, type){
-    el.toast.textContent = msg;
-    el.toast.className = "toast" + (type ? " " + type : "");
-    el.toast.style.display = "block";
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.toast.style.display = "none"; }, 2200);
-  }
-
-  function setBusy(state){
-    busy = state;
-    [el.sendBtn, el.winBtn, el.lossBtn, el.resetBtn, el.refreshBtn, el.statusBtn].forEach(b => b.disabled = state);
-  }
-
-  function toNum(v){
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-  }
-
-  function guardColor(guard){
-    const g = String(guard || "").toUpperCase();
-    if (g.includes("BLOCK")) return "var(--red)";
-    if (g.includes("WARN")) return "var(--yellow)";
-    if (g.includes("COOLDOWN")) return "#a9c9ff";
-    return "var(--green)";
-  }
-
-  function reasonLabel(data){
-    return data.reasonLabel || data.reason || "SYSTEM READY";
-  }
-
-  function mapLog(log){
-    if (!Array.isArray(log) || !log.length) {
-      return [{ label: "INFO", text: "Noch kein Log", time: "" }];
-    }
-    return log.slice().reverse().map(item => {
-      if (typeof item === "string") {
-        return { label: "LOG", text: item, time: "" };
-      }
-      return {
-        label: item.type || item.label || "LOG",
-        text: item.message || item.text || JSON.stringify(item),
-        time: item.time || item.ts || item.timestamp || ""
-      };
-    });
-  }
-
-  function renderLog(log){
-    const items = mapLog(log).slice(0, 20);
-    el.logList.innerHTML = items.map(x => `
-      <div class="item">
-        <div><span class="tag">${escapeHtml(x.label)}</span> · ${escapeHtml(x.text)}</div>
-        ${x.time ? `<div class="ts">${escapeHtml(x.time)}</div>` : ""}
-      </div>
-    `).join("");
-  }
-
-  function escapeHtml(s){
-    return String(s)
-      .replace(/&/g,"&amp;")
-      .replace(/</g,"&lt;")
-      .replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;")
-      .replace(/'/g,"&#039;");
-  }
-
-  function renderStatus(data){
-    const guard = String(data.guard || "READY").toUpperCase();
-    const pnl = toNum(data.pnl);
-    const orders = data.ordersToday ?? 0;
-    const maxOrders = data.maxOrdersPerSession ?? 10;
-    const queue = data.queueLength ?? 0;
-    const cooldown = data.cooldownLeft ?? 0;
-    const hardBlocked = !!data.hardBlocked;
-
-    el.guardText.textContent = guard;
-    el.guardText.style.color = guardColor(guard);
-    el.reasonText.textContent = String(reasonLabel(data)).replaceAll("_"," ");
-    el.pnlText.textContent = "PnL: " + pnl;
-    el.pnlText.style.color = pnl < 0 ? "var(--red)" : "var(--text)";
-    el.metaText.textContent = `Orders: ${orders}/${maxOrders} · Queue: ${queue} · Cooldown: ${cooldown}s · HardBlock: ${hardBlocked ? "AN" : "AUS"}`;
-    el.hintText.textContent =
-      guard.includes("BLOCK") ? "Trading gesperrt" :
-      guard.includes("WARN") ? "Vorsicht" :
-      guard.includes("COOLDOWN") ? "Cooldown aktiv" :
-      "System bereit";
-
-    renderLog(data.log);
-  }
-
-  async function loadStatus(silent=false){
-    try {
-      const res = await fetch(endpoints().status, { method:"GET", cache:"no-store" });
-      if (!res.ok) throw new Error("Status HTTP " + res.status);
-      const data = await res.json();
-      renderStatus(data);
-      if (!silent) showToast("Status geladen");
-    } catch (err) {
-      showToast("Status Fehler", "err");
-      console.error(err);
-    }
-  }
-
-  async function postAction(url, okText, failText){
-    if (busy) return;
-    setBusy(true);
-    try {
-      const res = await fetch(url, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" }
-      });
-      const raw = await res.text();
-      let data = null;
-      try { data = raw ? JSON.parse(raw) : null; } catch(e) {}
-      if (!res.ok) {
-        throw new Error((data && (data.message || data.error)) || ("HTTP " + res.status));
-      }
-      showToast(okText);
-      if (data && typeof data === "object") renderStatus(data);
-      await loadStatus(true);
-    } catch (err) {
-      showToast(failText, "err");
-      console.error(err);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function saveApiBase(){
-    localStorage.setItem(STORAGE_KEY, getBase());
-    showToast("API Base gespeichert");
-    loadStatus(true);
-  }
-
-  function init(){
-    el.apiBase.value = localStorage.getItem(STORAGE_KEY) || DEFAULT_BASE;
-
-    el.saveApiBtn.addEventListener("click", saveApiBase);
-    el.refreshBtn.addEventListener("click", () => loadStatus());
-    el.statusBtn.addEventListener("click", () => loadStatus());
-    el.sendBtn.addEventListener("click", () => postAction(endpoints().send, "Order gesendet", "Send Fehler"));
-    el.winBtn.addEventListener("click", () => postAction(endpoints().win, "Win gebucht", "Win Fehler"));
-    el.lossBtn.addEventListener("click", () => postAction(endpoints().loss, "Loss gebucht", "Loss Fehler"));
-    el.resetBtn.addEventListener("click", () => postAction(endpoints().reset, "Reset abgeschlossen", "Reset Fehler"));
-
-    loadStatus(true);
-    setInterval(() => loadStatus(true), 4000);
-  }
-
-  init();
-})();
+refresh();
 </script>
 </body>
 </html>
