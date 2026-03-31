@@ -191,7 +191,7 @@ async function loadStatus(){
   /* Chips */
   document.getElementById('chipStatus').innerText = data.guard;
   document.getElementById('chipOrders').innerText = data.ordersToday + "/10";
-  document.getElementById('chipCooldown').innerText = data.cooldown + "s";
+  document.getElementById('chipCooldown').innerText = data.cooldownLeft + "s";
   document.getElementById('chipHB').innerText = data.hardBlocked ? "HB ON" : "HB OFF";
 
   /* LOG */
