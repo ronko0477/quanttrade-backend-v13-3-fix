@@ -1,561 +1,259 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>V16.1 UI PRO</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>V16.2 UI PRO</title>
 
-  <style>
-    * { box-sizing: border-box; }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0b1530;
-      color: white;
-    }
+<style>
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#0b1530;
+color:white;
+}
 
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: #0b1530;
-      padding: 18px 14px 10px;
-      text-align: center;
-    }
+.header{
+position:sticky;
+top:0;
+padding:15px;
+text-align:center;
+background:#0b1530;
+}
 
-    .title {
-      font-size: 22px;
-      opacity: 0.9;
-      margin-bottom: 10px;
-    }
+.title{
+font-size:22px;
+margin-bottom:8px;
+opacity:0.9;
+}
 
-    .status-bar {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
+.status-bar{
+display:flex;
+gap:8px;
+justify-content:center;
+flex-wrap:wrap;
+}
 
-    .chip {
-      padding: 8px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      background: #1c2b55;
-      min-width: 68px;
-      text-align: center;
-      transition: 0.2s;
-    }
+.chip{
+padding:6px 10px;
+border-radius:10px;
+font-size:12px;
+background:#1c2b55;
+}
 
-    .chip.ready { background: #2ecc71; color: #fff; }
-    .chip.warn { background: #f1c40f; color: #1b1b1b; }
-    .chip.blocked { background: #e74c3c; color: #fff; }
+.ready{background:#2ecc71;}
+.warn{background:#f1c40f;color:#000;}
+.blocked{background:#e74c3c;}
 
-    .chip.cooldown {
-      animation: blink 1s infinite;
-    }
+.card{
+background:#6c75b8;
+margin:15px;
+padding:20px;
+border-radius:20px;
+text-align:center;
+}
 
-    @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0.35; }
-      100% { opacity: 1; }
-    }
+.status-main{
+font-size:48px;
+font-weight:bold;
+}
 
-    .wrap {
-      max-width: 760px;
-      margin: 0 auto;
-      padding-bottom: 30px;
-    }
+.status-sub{
+font-size:18px;
+margin-bottom:10px;
+}
 
-    .card {
-      background: #6670b0;
-      margin: 16px;
-      padding: 22px 16px;
-      border-radius: 24px;
-      text-align: center;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.18);
-    }
+.pnl{
+font-size:32px;
+margin:10px 0;
+}
 
-    .status-main {
-      font-size: 56px;
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: 10px;
-    }
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
 
-    .status-sub {
-      font-size: 20px;
-      font-weight: 700;
-      opacity: 0.95;
-      margin-bottom: 14px;
-    }
+.box{
+background:#7c84c3;
+padding:10px;
+border-radius:12px;
+}
 
-    .ready-text { color: #8fdf70; }
-    .warn-text { color: #f6d25c; }
-    .blocked-text { color: #f0a090; }
+.chart{
+padding:10px;
+}
 
-    .pnl {
-      font-size: 42px;
-      font-weight: 800;
-      margin: 8px 0 18px;
-    }
+canvas{
+width:100%;
+height:200px;
+}
 
-    .hint {
-      margin-top: 14px;
-      font-size: 16px;
-      opacity: 0.95;
-    }
+.buttons{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+padding:15px;
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 14px;
-    }
+button{
+padding:15px;
+border:none;
+border-radius:12px;
+font-weight:bold;
+color:white;
+cursor:pointer;
+}
 
-    .box {
-      background: #757ec0;
-      border-radius: 18px;
-      padding: 14px 10px;
-    }
+.btn1{background:#7f89e8;}
+.btn2{background:#98b97d;}
+.btn3{background:#c58d80;}
+.btn4{background:#bfa45d;}
 
-    .box-label {
-      font-size: 16px;
-      opacity: 0.9;
-      margin-bottom: 8px;
-    }
+.log{
+padding:15px;
+}
 
-    .box-value {
-      font-size: 22px;
-      font-weight: 800;
-    }
-
-    .chart-wrap {
-      margin: 8px 16px 20px;
-      background: transparent;
-      border-radius: 20px;
-    }
-
-    #chart {
-      width: 100%;
-      height: 220px;
-    }
-
-    .buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      padding: 0 16px;
-      margin-bottom: 18px;
-    }
-
-    button {
-      border: none;
-      border-radius: 18px;
-      padding: 18px 14px;
-      font-size: 18px;
-      font-weight: 800;
-      color: white;
-      background: #9098d8;
-      transition: 0.14s;
-    }
-
-    button:active {
-      transform: scale(0.97);
-    }
-
-    .btn-primary { background: #7f89e8; }
-    .btn-green { background: #98b97d; }
-    .btn-red { background: #c58d80; }
-    .btn-gold { background: #bfa45d; }
-    .btn-purple { background: #8471c8; }
-    .btn-alt { background: #949bd8; }
-
-    .log {
-      margin: 0 16px;
-    }
-
-    .log-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .log-title {
-      font-size: 24px;
-      font-weight: 800;
-    }
-
-    .clear-btn {
-      width: auto;
-      padding: 12px 18px;
-      font-size: 16px;
-      border-radius: 16px;
-      background: #9098d8;
-    }
-
-    .log-entry {
-      background: #6670b0;
-      border-radius: 18px;
-      padding: 14px;
-      margin-bottom: 10px;
-    }
-
-    .log-type {
-      font-size: 16px;
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    .log-msg {
-      font-size: 15px;
-      opacity: 0.95;
-      margin-bottom: 4px;
-    }
-
-    .log-time {
-      font-size: 12px;
-      opacity: 0.75;
-    }
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      top: 86px;
-      transform: translateX(-50%);
-      z-index: 50;
-      min-width: 180px;
-      max-width: 86vw;
-      padding: 14px 20px;
-      border-radius: 18px;
-      text-align: center;
-      font-size: 16px;
-      font-weight: 800;
-      color: white;
-      background: #2ecc71;
-      display: none;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.25);
-    }
-
-    .toast.error {
-      background: #d98f7d;
-    }
-
-    @media (max-width: 420px) {
-      .status-main { font-size: 46px; }
-      .pnl { font-size: 34px; }
-      button { font-size: 16px; }
-    }
-  </style>
+.log-entry{
+background:#6c75b8;
+margin-bottom:8px;
+padding:10px;
+border-radius:10px;
+}
+</style>
 </head>
+
 <body>
-  <div class="toast" id="toast"></div>
 
-  <div class="header">
-    <div class="title">V16.1 UI PRO</div>
-    <div class="status-bar">
-      <div class="chip" id="chipStatus">READY</div>
-      <div class="chip" id="chipOrders">0/10</div>
-      <div class="chip" id="chipCooldown">0s</div>
-      <div class="chip" id="chipHB">HB OFF</div>
-    </div>
-  </div>
+<div class="header">
+<div class="title">V16.2 UI PRO</div>
 
-  <div class="wrap">
-    <div class="card">
-      <div class="status-main ready-text" id="statusText">READY</div>
-      <div class="status-sub ready-text" id="statusSub">SYSTEM READY</div>
-      <div class="pnl" id="pnl">PnL: 0.00</div>
+<div class="status-bar">
+<div id="chipStatus" class="chip">READY</div>
+<div id="chipOrders" class="chip">0/10</div>
+<div id="chipCooldown" class="chip">0s</div>
+<div id="chipHB" class="chip">HB OFF</div>
+</div>
+</div>
 
-      <div class="grid">
-        <div class="box">
-          <div class="box-label">Orders</div>
-          <div class="box-value" id="ordersValue">0/10</div>
-        </div>
-        <div class="box">
-          <div class="box-label">Queue</div>
-          <div class="box-value" id="queueValue">0</div>
-        </div>
-        <div class="box">
-          <div class="box-label">Cooldown</div>
-          <div class="box-value" id="cooldownValue">0s</div>
-        </div>
-        <div class="box">
-          <div class="box-label">HardBlock</div>
-          <div class="box-value" id="hbValue">AUS</div>
-        </div>
-        <div class="box">
-          <div class="box-label">Wins</div>
-          <div class="box-value" id="winsValue">0</div>
-        </div>
-        <div class="box">
-          <div class="box-label">Losses</div>
-          <div class="box-value" id="lossesValue">0</div>
-        </div>
-        <div class="box">
-          <div class="box-label">Winrate</div>
-          <div class="box-value" id="winrateValue">0%</div>
-        </div>
-        <div class="box">
-          <div class="box-label">Streak</div>
-          <div class="box-value" id="streakValue">W0 / L0</div>
-        </div>
-      </div>
+<div class="card">
+<div id="statusText" class="status-main">READY</div>
+<div id="statusSub" class="status-sub">SYSTEM READY</div>
 
-      <div class="hint" id="hintText">System bereit.</div>
-    </div>
+<div id="pnl" class="pnl">PnL: 0.00</div>
 
-    <div class="chart-wrap">
-      <canvas id="chart"></canvas>
-    </div>
+<div class="grid">
+<div class="box">Orders<br><span id="orders">0/10</span></div>
+<div class="box">Queue<br><span id="queue">0</span></div>
+<div class="box">Cooldown<br><span id="cooldown">0s</span></div>
+<div class="box">HardBlock<br><span id="hb">AUS</span></div>
+<div class="box">Wins<br><span id="wins">0</span></div>
+<div class="box">Losses<br><span id="losses">0</span></div>
+<div class="box">Winrate<br><span id="winrate">0%</span></div>
+<div class="box">Streak<br><span id="streak">W0 / L0</span></div>
+</div>
 
-    <div class="buttons">
-      <button class="btn-primary" onclick="sendAction('/api/order','Order angenommen')">SEND</button>
-      <button class="btn-green" onclick="sendAction('/api/win','Win gebucht')">+WIN</button>
-      <button class="btn-red" onclick="sendAction('/api/loss','Loss gebucht')">-LOSS</button>
-      <button class="btn-gold" onclick="sendAction('/api/reset','Reset ausgeführt')">RESET</button>
+<div id="hint">System bereit.</div>
+</div>
 
-      <button class="btn-purple" onclick="sendAction('/api/cooldown','Cooldown gestartet')">COOLDOWN</button>
-      <button class="btn-purple" onclick="sendAction('/api/hardblock/on','HardBlock aktiviert')">HB ON</button>
-      <button class="btn-purple" onclick="sendAction('/api/hardblock/off','HardBlock deaktiviert')">HB OFF</button>
-      <button class="btn-alt" onclick="loadStatus(true)">REFRESH</button>
-    </div>
+<div class="chart">
+<canvas id="chart"></canvas>
+</div>
 
-    <div class="log">
-      <div class="log-header">
-        <div class="log-title">Log</div>
-        <button class="clear-btn" onclick="clearLog()">Clear</button>
-      </div>
-      <div id="log"></div>
-    </div>
-  </div>
+<div class="buttons">
+<button class="btn1" onclick="send('/api/order')">SEND</button>
+<button class="btn2" onclick="send('/api/win')">+WIN</button>
+<button class="btn3" onclick="send('/api/loss')">-LOSS</button>
+<button class="btn4" onclick="send('/api/reset')">RESET</button>
 
-  <script>
-    let chart;
-    let history = [];
-    let lastGuard = null;
+<button class="btn1" onclick="send('/api/cooldown')">COOLDOWN</button>
+<button class="btn2" onclick="send('/api/hardblock/on')">HB ON</button>
+<button class="btn3" onclick="send('/api/hardblock/off')">HB OFF</button>
+<button class="btn4" onclick="load()">REFRESH</button>
+</div>
 
-    function showToast(msg, isError = false) {
-      const t = document.getElementById('toast');
-      t.innerText = msg;
-      t.className = isError ? 'toast error' : 'toast';
-      t.style.display = 'block';
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => {
-        t.style.display = 'none';
-      }, 1600);
-    }
+<div class="log">
+<h3>Log</h3>
+<div id="log"></div>
+</div>
 
-    function beep() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.value = 440;
-        gain.gain.value = 0.05;
-        osc.start();
-        osc.stop(ctx.currentTime + 0.12);
-      } catch(e) {}
-    }
+<script>
+let chart;
+let history=[];
 
-    function getHint(data) {
-      if (data.reasonHint) return data.reasonHint;
-      if (data.reason === 'HARD_LOCK') return 'Trading bleibt gesperrt bis Reset.';
-      if (data.reason === 'QUEUE_LOCK') return 'Eine Order läuft oder wartet in der Queue.';
-      if (data.reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv. Bitte warten.';
-      if (data.reason === 'SESSION_LIMIT') return 'Tageslimit erreicht.';
-      if (data.reason === 'PNL_LIMIT') return 'PnL-Limit unterschritten.';
-      if (data.reason === 'WARN_LIMIT') return 'Warnbereich erreicht.';
-      return 'System bereit.';
-    }
+function initChart(){
+const ctx=document.getElementById('chart');
+chart=new Chart(ctx,{
+type:'line',
+data:{labels:[],datasets:[{data:[],borderWidth:3}]},
+options:{plugins:{legend:{display:false}}}
+});
+}
 
-    function getColorClass(guard) {
-      if (guard === 'READY') return 'ready-text';
-      if (guard === 'WARN') return 'warn-text';
-      return 'blocked-text';
-    }
+async function send(url){
+await fetch(url,{method:'POST'});
+load();
+}
 
-    function styleChipStatus(guard) {
-      const chip = document.getElementById('chipStatus');
-      chip.className = 'chip';
-      if (guard === 'READY') chip.classList.add('ready');
-      else if (guard === 'WARN') chip.classList.add('warn');
-      else chip.classList.add('blocked');
-    }
+function colorStatus(g){
+const el=document.getElementById('chipStatus');
+el.className='chip';
+if(g==='READY')el.classList.add('ready');
+else if(g==='WARN')el.classList.add('warn');
+else el.classList.add('blocked');
+}
 
-    function updateCooldownChip(seconds) {
-      const chip = document.getElementById('chipCooldown');
-      chip.className = 'chip';
-      if (seconds > 0) chip.classList.add('cooldown');
-    }
+async function load(){
+const r=await fetch('/api/status');
+const d=await r.json();
 
-    function safeNum(v, fallback = 0) {
-      return typeof v === 'number' && !Number.isNaN(v) ? v : fallback;
-    }
+document.getElementById('statusText').innerText=d.guard;
+document.getElementById('statusSub').innerText=d.reasonLabel||d.guard;
+document.getElementById('pnl').innerText='PnL: '+d.pnl.toFixed(2);
 
-    function initChart() {
-      const ctx = document.getElementById('chart').getContext('2d');
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: [],
-          datasets: [{
-            data: [],
-            tension: 0.35,
-            borderWidth: 4,
-            pointRadius: 4,
-            pointHoverRadius: 4,
-            pointBackgroundColor: '#73d98f',
-            pointBorderColor: '#73d98f',
-            segment: {
-              borderColor: (ctx) => {
-                const y0 = ctx.p0.parsed.y;
-                const y1 = ctx.p1.parsed.y;
-                return (y0 >= 0 && y1 >= 0) ? '#73d98f' : '#e09a8d';
-              }
-            }
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            x: {
-              display: false,
-              grid: { display: false }
-            },
-            y: {
-              ticks: { color: 'rgba(255,255,255,0.55)' },
-              grid: { color: 'rgba(255,255,255,0.05)' }
-            }
-          }
-        }
-      });
-    }
+document.getElementById('orders').innerText=d.ordersToday+'/'+d.maxOrdersPerSession;
+document.getElementById('queue').innerText=d.queueLength;
+document.getElementById('cooldown').innerText=d.cooldownLeft+'s';
+document.getElementById('hb').innerText=d.hardBlocked?'AN':'AUS';
 
-    async function sendAction(url, okText) {
-      try {
-        const res = await fetch(url, { method: 'POST' });
-        if (!res.ok) {
-          showToast('Aktion blockiert', true);
-        } else {
-          showToast(okText);
-        }
-      } catch (e) {
-        showToast('Netzwerkfehler', true);
-      }
-      await loadStatus(false);
-    }
+document.getElementById('wins').innerText=d.totalWins;
+document.getElementById('losses').innerText=d.totalLosses;
 
-    async function loadStatus(showRefreshToast = false) {
-      try {
-        const res = await fetch('/api/status');
-        const data = await res.json();
+let wr=(d.totalWins+d.totalLosses)>0?(d.totalWins/(d.totalWins+d.totalLosses)*100).toFixed(1):0;
+document.getElementById('winrate').innerText=wr+'%';
 
-        const pnl = safeNum(data.pnl, 0);
-        const totalWins = safeNum(data.totalWins, 0);
-        const totalLosses = safeNum(data.totalLosses, 0);
-        const queueLength = safeNum(data.queueLength, 0);
-        const ordersToday = safeNum(data.ordersToday, 0);
-        const maxOrders = safeNum(data.maxOrdersPerSession, 10);
-        const cooldownLeft = safeNum(data.cooldownLeft, 0);
-        const winStreak = safeNum(data.winStreak, 0);
-        const lossStreak = safeNum(data.lossStreak, 0);
-        const hardBlocked = !!data.hardBlocked;
-        const guard = data.guard || 'READY';
-        const reasonLabel = data.reasonLabel || guard;
+document.getElementById('streak').innerText='W'+d.winStreak+' / L'+d.lossStreak;
 
-        document.getElementById('statusText').innerText = guard;
-        document.getElementById('statusSub').innerText = reasonLabel;
-        document.getElementById('statusText').className = 'status-main ' + getColorClass(guard);
-        document.getElementById('statusSub').className = 'status-sub ' + getColorClass(guard);
+document.getElementById('chipStatus').innerText=d.guard;
+document.getElementById('chipOrders').innerText=d.ordersToday+'/'+d.maxOrdersPerSession;
+document.getElementById('chipCooldown').innerText=d.cooldownLeft+'s';
+document.getElementById('chipHB').innerText=d.hardBlocked?'HB ON':'HB OFF';
 
-        document.getElementById('pnl').innerText = 'PnL: ' + pnl.toFixed(2);
+colorStatus(d.guard);
 
-        document.getElementById('ordersValue').innerText = ordersToday + '/' + maxOrders;
-        document.getElementById('queueValue').innerText = queueLength;
-        document.getElementById('cooldownValue').innerText = cooldownLeft + 's';
-        document.getElementById('hbValue').innerText = hardBlocked ? 'AN' : 'AUS';
-        document.getElementById('winsValue').innerText = totalWins;
-        document.getElementById('lossesValue').innerText = totalLosses;
+history.push(d.pnl);
+if(history.length>60)history.shift();
 
-        const wr = (totalWins + totalLosses) > 0
-          ? ((totalWins / (totalWins + totalLosses)) * 100).toFixed(1)
-          : '0.0';
+chart.data.labels=history.map((_,i)=>i);
+chart.data.datasets[0].data=history;
+chart.update();
 
-        document.getElementById('winrateValue').innerText = wr + '%';
-        document.getElementById('streakValue').innerText = 'W' + winStreak + ' / L' + lossStreak;
-        document.getElementById('hintText').innerText = getHint(data);
+const logDiv=document.getElementById('log');
+logDiv.innerHTML='';
+d.log.forEach(l=>{
+const el=document.createElement('div');
+el.className='log-entry';
+el.innerText=l.type+' - '+l.msg;
+logDiv.appendChild(el);
+});
+}
 
-        document.getElementById('chipStatus').innerText = guard;
-        document.getElementById('chipOrders').innerText = ordersToday + '/' + maxOrders;
-        document.getElementById('chipCooldown').innerText = cooldownLeft + 's';
-        document.getElementById('chipHB').innerText = hardBlocked ? 'HB ON' : 'HB OFF';
+initChart();
+load();
+setInterval(load,2000);
+</script>
 
-        styleChipStatus(guard);
-        updateCooldownChip(cooldownLeft);
-
-        if (lastGuard !== 'BLOCKED' && guard === 'BLOCKED') {
-          beep();
-        }
-        lastGuard = guard;
-
-        history.push(pnl);
-        if (history.length > 60) history.shift();
-
-        chart.data.labels = history.map((_, i) => i + 1);
-        chart.data.datasets[0].data = history;
-        chart.update();
-
-        const log = Array.isArray(data.log) ? data.log : [];
-        const logDiv = document.getElementById('log');
-        logDiv.innerHTML = '';
-
-        log.forEach(item => {
-          const row = document.createElement('div');
-          row.className = 'log-entry';
-
-          const type = document.createElement('div');
-          type.className = 'log-type';
-          type.innerText = item.type || 'INFO';
-
-          const msg = document.createElement('div');
-          msg.className = 'log-msg';
-          msg.innerText = item.msg || '';
-
-          const ts = document.createElement('div');
-          ts.className = 'log-time';
-          ts.innerText = item.ts || '';
-
-          row.appendChild(type);
-          row.appendChild(msg);
-          row.appendChild(ts);
-          logDiv.appendChild(row);
-        });
-
-        if (showRefreshToast) showToast('Status aktualisiert');
-      } catch (e) {
-        showToast('Status Fehler', true);
-      }
-    }
-
-    function clearLog() {
-      document.getElementById('log').innerHTML = '';
-      showToast('Log lokal geleert');
-    }
-
-    initChart();
-    loadStatus(false);
-    setInterval(() => loadStatus(false), 2000);
-  </script>
 </body>
 </html>
