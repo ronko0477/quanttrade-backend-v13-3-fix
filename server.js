@@ -133,3 +133,101 @@ function processQueue() {
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+app.get('/api/status', (req, res) => {
+  res.json(statusPayload());
+});
+app.post('/api/order', (req, res) => {
+  const info = getGuardInfo();
+
+  if (info.guard !== 'READY') {
+    return res.status(429).json({
+      message: 'Order blockiert',
+      status: statusPayload()
+    });
+  }
+
+  if (now() - state.lastOrderAt < 1000) {
+    return res.status(429).json({
+      message: 'Zu schnell',
+      status: statusPayload()
+    });
+  }
+
+  const id = now();
+  state.lastOrderAt = now();
+  state.queue.push(id);
+
+  addLog('QUEUED', `Order ${id}`);
+  processQueue();
+
+  res.json({
+    message: 'Order angenommen',
+    status: statusPayload()
+  });
+});
+
+app.post('/api/win', (req, res) => {
+  state.pnl += 4;
+  state.winStreak += 1;
+  state.lossStreak = 0;
+  state.totalWins += 1;
+
+  addLog('WIN', 'PnL +4');
+  res.json(statusPayload());
+});
+
+app.post('/api/loss', (req, res) => {
+  state.pnl -= 5;
+  state.lossStreak += 1;
+  state.winStreak = 0;
+  state.totalLosses += 1;
+
+  addLog('LOSS', 'PnL -5');
+
+  if (computeBaseGuard() === 'BLOCKED') {
+    state.hardBlocked = true;
+    state.cooldownUntil = now() + 15000;
+    addLog('HARD_BLOCK', 'Auto aktiviert');
+  }
+
+  res.json(statusPayload());
+});
+
+app.post('/api/reset', (req, res) => {
+  state.pnl = 0;
+  state.ordersToday = 0;
+  state.queue = [];
+  state.processing = false;
+  state.lastOrderAt = 0;
+  state.cooldownUntil = 0;
+  state.hardBlocked = false;
+  state.currentOrderId = null;
+  state.winStreak = 0;
+  state.lossStreak = 0;
+
+  addLog('RESET', 'System reset');
+  res.json(statusPayload());
+});
+
+app.post('/api/cooldown', (req, res) => {
+  state.cooldownUntil = now() + 15000;
+  addLog('COOLDOWN', 'Manueller Cooldown 15s gestartet');
+  res.json(statusPayload());
+});
+
+app.post('/api/hardblock/on', (req, res) => {
+  state.hardBlocked = true;
+  addLog('HARD_BLOCK', 'Manuell aktiviert');
+  res.json(statusPayload());
+});
+
+app.post('/api/hardblock/off', (req, res) => {
+  state.hardBlocked = false;
+  addLog('HARD_BLOCK', 'Manuell deaktiviert');
+  res.json(statusPayload());
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log('V16 läuft auf Port ' + PORT);
+});
