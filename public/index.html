@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>V16.0 UI PRO</title>
 
+<!-- 📈 CHART -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 body {
   margin:0;
@@ -115,12 +118,12 @@ button:active {
   font-size:12px;
 }
 
-/* 🚀 STATUS COLORS */
+/* STATUS COLORS */
 .ready { background:#2ecc71 !important; }
 .warn { background:#f39c12 !important; }
 .blocked { background:#e74c3c !important; }
 
-/* ⚡ COOLDOWN BLINK */
+/* COOLDOWN BLINK */
 .cooldown {
   animation: blink 1s infinite;
 }
@@ -129,6 +132,11 @@ button:active {
   0% { opacity:1; }
   50% { opacity:0.3; }
   100% { opacity:1; }
+}
+
+/* CHART */
+#chart {
+  margin:15px;
 }
 </style>
 </head>
@@ -157,6 +165,9 @@ button:active {
     <div class="box">Queue: <span id="queue">0</span></div>
   </div>
 </div>
+
+<!-- 📈 CHART -->
+<canvas id="chart"></canvas>
 
 <div class="buttons">
   <button onclick="send('/api/order')">SEND</button>
@@ -188,7 +199,39 @@ const beep = () => {
   osc.stop(ctx.currentTime + 0.1);
 };
 
-// SEND ACTION
+// 📈 CHART
+let chart;
+let history = [];
+
+function initChart(){
+  const ctx = document.getElementById('chart').getContext('2d');
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'PnL',
+        data: [],
+        borderColor: '#2ecc71',
+        backgroundColor: 'rgba(46,204,113,0.2)',
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display:false }
+      },
+      scales: {
+        x: { display:false },
+        y: { beginAtZero:true }
+      }
+    }
+  });
+}
+
+// SEND
 async function send(url){
   await fetch(url, {method:'POST'});
   loadStatus();
@@ -199,7 +242,6 @@ async function loadStatus(){
   const res = await fetch('/api/status');
   const data = await res.json();
 
-  // TEXT
   document.getElementById('statusText').innerText = data.guard;
   document.getElementById('pnl').innerText = "PnL: " + data.pnl;
 
@@ -207,13 +249,11 @@ async function loadStatus(){
   document.getElementById('losses').innerText = data.totalLosses;
   document.getElementById('queue').innerText = data.queueLength;
 
-  // WINRATE
   const wr = data.totalWins + data.totalLosses > 0
     ? (data.totalWins / (data.totalWins + data.totalLosses) * 100).toFixed(1)
     : 0;
   document.getElementById('winrate').innerText = wr + "%";
 
-  // CHIPS
   document.getElementById('chipStatus').innerText = data.guard;
   document.getElementById('chipOrders').innerText =
     data.ordersToday + "/" + data.maxOrdersPerSession;
@@ -230,7 +270,7 @@ async function loadStatus(){
   if (data.guard === "WARN") statusEl.classList.add("warn");
   if (data.guard === "BLOCKED") statusEl.classList.add("blocked");
 
-  // ⚡ COOLDOWN BLINK
+  // ⚡ COOLDOWN
   const cd = document.getElementById('chipCooldown');
   cd.classList.remove("cooldown");
 
@@ -240,6 +280,14 @@ async function loadStatus(){
 
   // 🔊 SOUND
   if (data.guard === "BLOCKED") beep();
+
+  // 📈 CHART UPDATE
+  history.push(data.pnl);
+  if (history.length > 50) history.shift();
+
+  chart.data.labels = history.map((_, i) => i);
+  chart.data.datasets[0].data = history;
+  chart.update();
 
   // LOG
   const logDiv = document.getElementById('log');
@@ -258,7 +306,8 @@ function clearLog(){
   document.getElementById('log').innerHTML = "";
 }
 
-// AUTO REFRESH
+// INIT
+initChart();
 setInterval(loadStatus, 2000);
 loadStatus();
 
