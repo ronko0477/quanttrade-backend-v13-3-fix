@@ -3,256 +3,676 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>V16.2 UI PRO</title>
+<title>V16.3 UI PRO</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+:root{
+  --bg:#09122b;
+  --bg2:#0d1b45;
+  --card:#6f79bb;
+  --card2:#8088c8;
+  --chip:#1b2a5a;
+  --text:#ffffff;
+  --muted:#dfe5ff;
+  --green:#72db82;
+  --green2:#57c96a;
+  --yellow:#f0c95a;
+  --red:#e49b90;
+  --red2:#db7b6b;
+  --blue:#8ea1ff;
+  --gold:#c6aa5f;
+  --purple:#8e80da;
+  --shadow:0 12px 30px rgba(0,0,0,.20);
+}
+
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  padding:0;
+  background:linear-gradient(180deg,var(--bg),var(--bg2));
+  color:var(--text);
+  font-family:Arial,sans-serif;
+}
+
 body{
-margin:0;
-font-family:Arial,sans-serif;
-background:#0b1530;
-color:white;
+  min-height:100vh;
+}
+
+.wrap{
+  width:100%;
+  max-width:860px;
+  margin:0 auto;
+  padding:20px 14px 36px;
 }
 
 .header{
-position:sticky;
-top:0;
-padding:15px;
-text-align:center;
-background:#0b1530;
+  position:sticky;
+  top:0;
+  z-index:10;
+  padding:12px 0 14px;
+  backdrop-filter:blur(10px);
+  background:linear-gradient(180deg, rgba(9,18,43,.92), rgba(9,18,43,.72));
 }
 
-.title{
-font-size:22px;
-margin-bottom:8px;
-opacity:0.9;
+.version{
+  text-align:center;
+  font-size:24px;
+  letter-spacing:.5px;
+  opacity:.92;
+  margin-bottom:12px;
 }
 
 .status-bar{
-display:flex;
-gap:8px;
-justify-content:center;
-flex-wrap:wrap;
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
 }
 
 .chip{
-padding:6px 10px;
-border-radius:10px;
-font-size:12px;
-background:#1c2b55;
+  min-width:82px;
+  text-align:center;
+  padding:10px 14px;
+  border-radius:14px;
+  font-size:13px;
+  font-weight:700;
+  background:var(--chip);
+  color:#fff;
+  box-shadow:var(--shadow);
+  transition:.25s ease;
 }
 
-.ready{background:#2ecc71;}
-.warn{background:#f1c40f;color:#000;}
-.blocked{background:#e74c3c;}
+.chip.ready{background:linear-gradient(180deg,var(--green),var(--green2))}
+.chip.warn{background:linear-gradient(180deg,#ffd86d,#e4b93b); color:#1b1b1b}
+.chip.blocked{background:linear-gradient(180deg,#f1ab9f,#dd8372)}
+.chip.cooldown{background:linear-gradient(180deg,#9f9af2,#8178dd)}
+.chip.hb-on{background:linear-gradient(180deg,#b388ff,#8667d8)}
 
-.card{
-background:#6c75b8;
-margin:15px;
-padding:20px;
-border-radius:20px;
-text-align:center;
+.hero{
+  margin-top:18px;
+  background:linear-gradient(180deg, rgba(119,128,191,.96), rgba(108,117,181,.96));
+  border-radius:28px;
+  padding:22px 18px 18px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
 }
 
-.status-main{
-font-size:48px;
-font-weight:bold;
+.guard{
+  text-align:center;
+  font-size:74px;
+  line-height:.95;
+  font-weight:900;
+  letter-spacing:1px;
+  margin:8px 0 4px;
+  text-shadow:0 0 18px rgba(255,255,255,.08);
+  transition:.25s ease;
 }
 
-.status-sub{
-font-size:18px;
-margin-bottom:10px;
+.guard.ready{color:#a7ef80}
+.guard.warn{color:#ffd465}
+.guard.blocked{color:#f4b0a5}
+.guard.cooldown{color:#b9b4ff}
+.guard.locked{color:#e5e7ff}
+.guard.limit{color:#ffd465}
+
+.reason{
+  text-align:center;
+  font-size:28px;
+  font-weight:800;
+  margin:8px 0 6px;
+  opacity:.98;
 }
+
+.reason.ready{color:#a7ef80}
+.reason.warn{color:#ffd465}
+.reason.blocked{color:#f4b0a5}
+.reason.cooldown{color:#cfcaff}
+.reason.locked{color:#e7ebff}
+.reason.limit{color:#ffd465}
 
 .pnl{
-font-size:32px;
-margin:10px 0;
+  text-align:center;
+  font-size:54px;
+  font-weight:900;
+  margin:18px 0 18px;
+}
+
+.hint{
+  text-align:center;
+  font-size:18px;
+  color:#eef1ff;
+  opacity:.95;
+  margin-top:14px;
 }
 
 .grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
 }
 
 .box{
-background:#7c84c3;
-padding:10px;
-border-radius:12px;
+  background:rgba(133,141,201,.52);
+  border-radius:20px;
+  padding:16px 12px;
+  text-align:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
 }
 
-.chart{
-padding:10px;
+.label{
+  font-size:19px;
+  opacity:.96;
+  margin-bottom:10px;
+}
+
+.value{
+  font-size:28px;
+  font-weight:900;
+}
+
+.chart-wrap{
+  margin-top:18px;
+  background:rgba(6,14,38,.18);
+  border-radius:22px;
+  padding:10px 6px 2px;
+}
+
+.chart-box{
+  background:transparent;
+  border-radius:18px;
+  padding:4px 2px 0;
 }
 
 canvas{
-width:100%;
-height:200px;
+  width:100%;
+  height:280px;
 }
 
 .buttons{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-padding:15px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-top:18px;
 }
 
 button{
-padding:15px;
-border:none;
-border-radius:12px;
-font-weight:bold;
-color:white;
-cursor:pointer;
+  border:none;
+  border-radius:20px;
+  padding:22px 16px;
+  color:#fff;
+  font-size:20px;
+  font-weight:900;
+  cursor:pointer;
+  transition:transform .08s ease, opacity .2s ease, filter .2s ease;
+  box-shadow:var(--shadow);
 }
 
-.btn1{background:#7f89e8;}
-.btn2{background:#98b97d;}
-.btn3{background:#c58d80;}
-.btn4{background:#bfa45d;}
+button:active{transform:scale(.98)}
+button:disabled{opacity:.45; filter:grayscale(.15); cursor:not-allowed}
+
+.btn-send{background:#828cf0}
+.btn-win{background:#9cb97b}
+.btn-loss{background:#c79488}
+.btn-reset{background:#c0a55f}
+.btn-cooldown{background:#8d89eb}
+.btn-hbon{background:#917ddb}
+.btn-hboff{background:#a9837f}
+.btn-refresh{background:#b59c69}
+
+.log-wrap{
+  margin-top:20px;
+  background:transparent;
+}
+
+.log-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+.log-title{
+  font-size:28px;
+  font-weight:900;
+}
+
+.clear-btn{
+  width:auto;
+  padding:14px 18px;
+  border-radius:18px;
+  font-size:16px;
+  background:#97a1ea;
+}
 
 .log{
-padding:15px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
 }
 
-.log-entry{
-background:#6c75b8;
-margin-bottom:8px;
-padding:10px;
-border-radius:10px;
+.entry{
+  background:rgba(120,129,193,.92);
+  border-radius:18px;
+  padding:14px 16px;
+  box-shadow:var(--shadow);
+}
+
+.entry-type{
+  font-size:18px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+
+.entry-msg{
+  font-size:18px;
+  line-height:1.25;
+  opacity:.98;
+}
+
+.entry-time{
+  margin-top:8px;
+  font-size:13px;
+  opacity:.78;
+}
+
+.toast{
+  position:fixed;
+  left:50%;
+  top:84px;
+  transform:translateX(-50%) translateY(-8px);
+  min-width:220px;
+  max-width:82vw;
+  text-align:center;
+  padding:14px 18px;
+  border-radius:18px;
+  font-size:18px;
+  font-weight:900;
+  color:#fff;
+  background:#6f79bb;
+  box-shadow:var(--shadow);
+  opacity:0;
+  pointer-events:none;
+  z-index:999;
+  transition:.22s ease;
+}
+
+.toast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+
+.toast.ok{
+  background:linear-gradient(180deg,var(--green),var(--green2));
+}
+
+.toast.err{
+  background:linear-gradient(180deg,#e9a699,#d57f6e);
+}
+
+.pulse-ready{animation:pulseReady 1.6s infinite}
+.pulse-warn{animation:pulseWarn 1.2s infinite}
+.pulse-blocked{animation:pulseBlocked 1.2s infinite}
+
+@keyframes pulseReady{
+  0%{box-shadow:0 0 0 rgba(114,219,130,0)}
+  50%{box-shadow:0 0 28px rgba(114,219,130,.18)}
+  100%{box-shadow:0 0 0 rgba(114,219,130,0)}
+}
+
+@keyframes pulseWarn{
+  0%{box-shadow:0 0 0 rgba(240,201,90,0)}
+  50%{box-shadow:0 0 28px rgba(240,201,90,.22)}
+  100%{box-shadow:0 0 0 rgba(240,201,90,0)}
+}
+
+@keyframes pulseBlocked{
+  0%{box-shadow:0 0 0 rgba(228,155,144,0)}
+  50%{box-shadow:0 0 28px rgba(228,155,144,.25)}
+  100%{box-shadow:0 0 0 rgba(228,155,144,0)}
+}
+
+@media (max-width:640px){
+  .guard{font-size:62px}
+  .reason{font-size:22px}
+  .pnl{font-size:44px}
+  .value{font-size:24px}
+  button{font-size:18px;padding:20px 14px}
+  canvas{height:240px}
 }
 </style>
 </head>
-
 <body>
 
-<div class="header">
-<div class="title">V16.2 UI PRO</div>
+<div class="toast" id="toast">OK</div>
 
-<div class="status-bar">
-<div id="chipStatus" class="chip">READY</div>
-<div id="chipOrders" class="chip">0/10</div>
-<div id="chipCooldown" class="chip">0s</div>
-<div id="chipHB" class="chip">HB OFF</div>
-</div>
-</div>
+<div class="wrap">
+  <div class="header">
+    <div class="version">V16.3 UI PRO</div>
+    <div class="status-bar">
+      <div id="chipStatus" class="chip">READY</div>
+      <div id="chipOrders" class="chip">0/10</div>
+      <div id="chipCooldown" class="chip">0s</div>
+      <div id="chipHB" class="chip">HB OFF</div>
+    </div>
+  </div>
 
-<div class="card">
-<div id="statusText" class="status-main">READY</div>
-<div id="statusSub" class="status-sub">SYSTEM READY</div>
+  <div class="hero" id="hero">
+    <div id="guard" class="guard ready">READY</div>
+    <div id="reason" class="reason ready">SYSTEM READY</div>
+    <div id="pnl" class="pnl">PnL: 0.00</div>
 
-<div id="pnl" class="pnl">PnL: 0.00</div>
+    <div class="grid">
+      <div class="box">
+        <div class="label">Orders</div>
+        <div class="value" id="orders">0/10</div>
+      </div>
+      <div class="box">
+        <div class="label">Queue</div>
+        <div class="value" id="queue">0</div>
+      </div>
+      <div class="box">
+        <div class="label">Cooldown</div>
+        <div class="value" id="cooldown">0s</div>
+      </div>
+      <div class="box">
+        <div class="label">HardBlock</div>
+        <div class="value" id="hb">AUS</div>
+      </div>
+      <div class="box">
+        <div class="label">Wins</div>
+        <div class="value" id="wins">0</div>
+      </div>
+      <div class="box">
+        <div class="label">Losses</div>
+        <div class="value" id="losses">0</div>
+      </div>
+      <div class="box">
+        <div class="label">Winrate</div>
+        <div class="value" id="winrate">0%</div>
+      </div>
+      <div class="box">
+        <div class="label">Streak</div>
+        <div class="value" id="streak">W0 / L0</div>
+      </div>
+    </div>
 
-<div class="grid">
-<div class="box">Orders<br><span id="orders">0/10</span></div>
-<div class="box">Queue<br><span id="queue">0</span></div>
-<div class="box">Cooldown<br><span id="cooldown">0s</span></div>
-<div class="box">HardBlock<br><span id="hb">AUS</span></div>
-<div class="box">Wins<br><span id="wins">0</span></div>
-<div class="box">Losses<br><span id="losses">0</span></div>
-<div class="box">Winrate<br><span id="winrate">0%</span></div>
-<div class="box">Streak<br><span id="streak">W0 / L0</span></div>
-</div>
+    <div class="hint" id="hint">System bereit.</div>
+  </div>
 
-<div id="hint">System bereit.</div>
-</div>
+  <div class="chart-wrap">
+    <div class="chart-box">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
 
-<div class="chart">
-<canvas id="chart"></canvas>
-</div>
+  <div class="buttons">
+    <button class="btn-send" id="btnSend" onclick="sendAction('/api/order','Order gesendet')">SEND</button>
+    <button class="btn-win" onclick="sendAction('/api/win','Win gebucht')">+WIN</button>
+    <button class="btn-loss" onclick="sendAction('/api/loss','Loss gebucht')">-LOSS</button>
+    <button class="btn-reset" onclick="sendAction('/api/reset','Reset ausgeführt')">RESET</button>
 
-<div class="buttons">
-<button class="btn1" onclick="send('/api/order')">SEND</button>
-<button class="btn2" onclick="send('/api/win')">+WIN</button>
-<button class="btn3" onclick="send('/api/loss')">-LOSS</button>
-<button class="btn4" onclick="send('/api/reset')">RESET</button>
+    <button class="btn-cooldown" onclick="sendAction('/api/cooldown','Cooldown gestartet')">COOLDOWN</button>
+    <button class="btn-hbon" onclick="sendAction('/api/hardblock/on','HardBlock AN')">HB ON</button>
+    <button class="btn-hboff" onclick="sendAction('/api/hardblock/off','HardBlock AUS')">HB OFF</button>
+    <button class="btn-refresh" onclick="loadStatus(true)">REFRESH</button>
+  </div>
 
-<button class="btn1" onclick="send('/api/cooldown')">COOLDOWN</button>
-<button class="btn2" onclick="send('/api/hardblock/on')">HB ON</button>
-<button class="btn3" onclick="send('/api/hardblock/off')">HB OFF</button>
-<button class="btn4" onclick="load()">REFRESH</button>
-</div>
-
-<div class="log">
-<h3>Log</h3>
-<div id="log"></div>
+  <div class="log-wrap">
+    <div class="log-head">
+      <div class="log-title">Log</div>
+      <button class="clear-btn" onclick="clearChartOnly()">Chart Reset</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
 </div>
 
 <script>
 let chart;
-let history=[];
+let pnlHistory = [];
+let lastRenderedKey = '';
+const HISTORY_KEY = 'qt_v163_pnl_history';
+
+function showToast(msg, ok=true){
+  const t = document.getElementById('toast');
+  t.className = 'toast ' + (ok ? 'ok' : 'err') + ' show';
+  t.innerText = msg;
+  setTimeout(()=>{ t.className = 'toast'; }, 1800);
+}
+
+function getGuardClass(g){
+  if(g === 'READY') return 'ready';
+  if(g === 'WARN') return 'warn';
+  if(g === 'COOLDOWN') return 'cooldown';
+  if(g === 'LOCKED') return 'locked';
+  if(g === 'SESSION_LIMIT') return 'limit';
+  return 'blocked';
+}
+
+function explainHint(reason, fallback){
+  if(reason === 'SYSTEM_READY') return 'System bereit.';
+  if(reason === 'QUEUE_LOCK') return 'Eine Order läuft bereits oder wartet in der Queue.';
+  if(reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv. Bitte warten.';
+  if(reason === 'HARD_LOCK') return 'Trading bleibt gesperrt bis Reset oder HB OFF.';
+  if(reason === 'PNL_LIMIT') return 'PnL-Limit unterschritten.';
+  if(reason === 'WARN_LIMIT') return 'Warnbereich erreicht.';
+  if(reason === 'SESSION_LIMIT') return 'Tageslimit erreicht.';
+  return fallback || 'System bereit.';
+}
+
+function saveHistory(){
+  try{
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(pnlHistory.slice(-80)));
+  }catch(e){}
+}
+
+function loadHistory(){
+  try{
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed)) pnlHistory = parsed;
+    }
+  }catch(e){}
+}
+
+function clearChartOnly(){
+  pnlHistory = [];
+  saveHistory();
+  if(chart){
+    chart.data.labels = [];
+    chart.data.datasets[0].data = [];
+    chart.update();
+  }
+  showToast('Chart reset', true);
+}
+
+function makeGradient(ctx){
+  const g = ctx.createLinearGradient(0,0,0,280);
+  g.addColorStop(0,'rgba(114,219,130,1)');
+  g.addColorStop(1,'rgba(79,155,255,1)');
+  return g;
+}
 
 function initChart(){
-const ctx=document.getElementById('chart');
-chart=new Chart(ctx,{
-type:'line',
-data:{labels:[],datasets:[{data:[],borderWidth:3}]},
-options:{plugins:{legend:{display:false}}}
-});
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  chart = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:[],
+      datasets:[{
+        data:[],
+        borderColor:makeGradient(ctx),
+        borderWidth:5,
+        pointRadius:4,
+        pointHoverRadius:5,
+        pointBackgroundColor:'rgba(114,219,130,1)',
+        pointBorderColor:'rgba(114,219,130,.9)',
+        tension:.25,
+        fill:false
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      animation:{duration:350},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(14,25,63,.95)',
+          titleColor:'#fff',
+          bodyColor:'#fff',
+          displayColors:false
+        }
+      },
+      scales:{
+        x:{
+          ticks:{color:'rgba(255,255,255,.55)'},
+          grid:{color:'rgba(255,255,255,.04)'}
+        },
+        y:{
+          ticks:{color:'rgba(255,255,255,.55)'},
+          grid:{color:'rgba(255,255,255,.05)'}
+        }
+      }
+    }
+  });
+
+  if(pnlHistory.length){
+    chart.data.labels = pnlHistory.map((_,i)=>i);
+    chart.data.datasets[0].data = pnlHistory;
+    chart.update();
+  }
 }
 
-async function send(url){
-await fetch(url,{method:'POST'});
-load();
+function updateGuardVisual(guard, reasonLabel){
+  const guardEl = document.getElementById('guard');
+  const reasonEl = document.getElementById('reason');
+  const chipStatus = document.getElementById('chipStatus');
+  const cls = getGuardClass(guard);
+
+  guardEl.className = 'guard ' + cls;
+  reasonEl.className = 'reason ' + cls;
+  chipStatus.className = 'chip ' + cls;
+
+  guardEl.classList.remove('pulse-ready','pulse-warn','pulse-blocked');
+  if(cls === 'ready') guardEl.classList.add('pulse-ready');
+  if(cls === 'warn') guardEl.classList.add('pulse-warn');
+  if(cls === 'blocked') guardEl.classList.add('pulse-blocked');
+
+  guardEl.innerText = guard;
+  reasonEl.innerText = reasonLabel || guard;
+  chipStatus.innerText = guard;
 }
 
-function colorStatus(g){
-const el=document.getElementById('chipStatus');
-el.className='chip';
-if(g==='READY')el.classList.add('ready');
-else if(g==='WARN')el.classList.add('warn');
-else el.classList.add('blocked');
+function pushHistory(pnl){
+  const last = pnlHistory.length ? pnlHistory[pnlHistory.length - 1] : null;
+  if(last !== pnl){
+    pnlHistory.push(pnl);
+    if(pnlHistory.length > 80) pnlHistory.shift();
+    saveHistory();
+  }
+
+  chart.data.labels = pnlHistory.map((_,i)=>i);
+  chart.data.datasets[0].data = pnlHistory;
+  chart.update();
 }
 
-async function load(){
-const r=await fetch('/api/status');
-const d=await r.json();
+function renderLog(log){
+  const box = document.getElementById('log');
+  box.innerHTML = '';
 
-document.getElementById('statusText').innerText=d.guard;
-document.getElementById('statusSub').innerText=d.reasonLabel||d.guard;
-document.getElementById('pnl').innerText='PnL: '+d.pnl.toFixed(2);
+  if(!log || !log.length){
+    const empty = document.createElement('div');
+    empty.className = 'entry';
+    empty.innerHTML = '<div class="entry-msg">Noch kein Log.</div>';
+    box.appendChild(empty);
+    return;
+  }
 
-document.getElementById('orders').innerText=d.ordersToday+'/'+d.maxOrdersPerSession;
-document.getElementById('queue').innerText=d.queueLength;
-document.getElementById('cooldown').innerText=d.cooldownLeft+'s';
-document.getElementById('hb').innerText=d.hardBlocked?'AN':'AUS';
-
-document.getElementById('wins').innerText=d.totalWins;
-document.getElementById('losses').innerText=d.totalLosses;
-
-let wr=(d.totalWins+d.totalLosses)>0?(d.totalWins/(d.totalWins+d.totalLosses)*100).toFixed(1):0;
-document.getElementById('winrate').innerText=wr+'%';
-
-document.getElementById('streak').innerText='W'+d.winStreak+' / L'+d.lossStreak;
-
-document.getElementById('chipStatus').innerText=d.guard;
-document.getElementById('chipOrders').innerText=d.ordersToday+'/'+d.maxOrdersPerSession;
-document.getElementById('chipCooldown').innerText=d.cooldownLeft+'s';
-document.getElementById('chipHB').innerText=d.hardBlocked?'HB ON':'HB OFF';
-
-colorStatus(d.guard);
-
-history.push(d.pnl);
-if(history.length>60)history.shift();
-
-chart.data.labels=history.map((_,i)=>i);
-chart.data.datasets[0].data=history;
-chart.update();
-
-const logDiv=document.getElementById('log');
-logDiv.innerHTML='';
-d.log.forEach(l=>{
-const el=document.createElement('div');
-el.className='log-entry';
-el.innerText=l.type+' - '+l.msg;
-logDiv.appendChild(el);
-});
+  log.forEach(item=>{
+    const el = document.createElement('div');
+    el.className = 'entry';
+    el.innerHTML =
+      '<div class="entry-type">' + (item.type || '-') + '</div>' +
+      '<div class="entry-msg">' + (item.msg || '-') + '</div>' +
+      '<div class="entry-time">' + (item.ts || '') + '</div>';
+    box.appendChild(el);
+  });
 }
 
+async function loadStatus(silent=false){
+  try{
+    const res = await fetch('/api/status');
+    const d = await res.json();
+
+    updateGuardVisual(d.guard, d.reasonLabel);
+
+    document.getElementById('pnl').innerText = 'PnL: ' + Number(d.pnl || 0).toFixed(2);
+    document.getElementById('orders').innerText = d.ordersToday + '/' + d.maxOrdersPerSession;
+    document.getElementById('queue').innerText = d.queueLength;
+    document.getElementById('cooldown').innerText = d.cooldownLeft + 's';
+    document.getElementById('hb').innerText = d.hardBlocked ? 'AN' : 'AUS';
+    document.getElementById('wins').innerText = d.totalWins ?? 0;
+    document.getElementById('losses').innerText = d.totalLosses ?? 0;
+
+    const wr = ((d.totalWins + d.totalLosses) > 0)
+      ? ((d.totalWins / (d.totalWins + d.totalLosses)) * 100).toFixed(1)
+      : '0.0';
+
+    document.getElementById('winrate').innerText = wr + '%';
+    document.getElementById('streak').innerText = 'W' + (d.winStreak ?? 0) + ' / L' + (d.lossStreak ?? 0);
+
+    document.getElementById('chipOrders').innerText = d.ordersToday + '/' + d.maxOrdersPerSession;
+    document.getElementById('chipCooldown').innerText = d.cooldownLeft + 's';
+    document.getElementById('chipCooldown').className = 'chip ' + ((d.cooldownLeft ?? 0) > 0 ? 'cooldown' : '');
+    document.getElementById('chipHB').innerText = d.hardBlocked ? 'HB ON' : 'HB OFF';
+    document.getElementById('chipHB').className = 'chip ' + (d.hardBlocked ? 'hb-on' : '');
+
+    document.getElementById('hint').innerText = explainHint(d.reason, d.reasonLabel);
+
+    const btnSend = document.getElementById('btnSend');
+    btnSend.disabled = ['BLOCKED','COOLDOWN','LOCKED','SESSION_LIMIT'].includes(d.guard);
+
+    pushHistory(Number(d.pnl || 0));
+
+    const key = JSON.stringify(d.log || []);
+    if(key !== lastRenderedKey){
+      renderLog(d.log || []);
+      lastRenderedKey = key;
+    }
+
+    if(!silent) showToast('Status geladen', true);
+  }catch(e){
+    showToast('Status Fehler', false);
+  }
+}
+
+async function sendAction(url, successText){
+  try{
+    const res = await fetch(url,{method:'POST'});
+    let data = {};
+    try{ data = await res.json(); }catch(e){}
+
+    await loadStatus(true);
+
+    if(res.ok){
+      showToast(successText || 'OK', true);
+    }else{
+      showToast((data && data.message) ? data.message : 'Fehler', false);
+    }
+  }catch(e){
+    showToast('Verbindung fehlgeschlagen', false);
+  }
+}
+
+loadHistory();
 initChart();
-load();
-setInterval(load,2000);
+loadStatus(true);
+setInterval(()=>loadStatus(true), 2000);
 </script>
 
 </body>
