@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>V16.0 UI PRO</title>
 
 <style>
@@ -20,7 +20,6 @@ body {
   background:#0b1530;
   padding:15px;
   text-align:center;
-  z-index:10;
 }
 
 .title {
@@ -51,7 +50,6 @@ body {
   padding:20px;
   border-radius:20px;
   text-align:center;
-  transition:0.3s;
 }
 
 .big {
@@ -93,7 +91,6 @@ button {
   font-weight:bold;
   background:#8892d0;
   color:white;
-  cursor:pointer;
 }
 
 button:active {
@@ -108,7 +105,6 @@ button:active {
 .log-header {
   display:flex;
   justify-content:space-between;
-  align-items:center;
 }
 
 .log-entry {
@@ -117,6 +113,22 @@ button:active {
   padding:10px;
   border-radius:10px;
   font-size:12px;
+}
+
+/* 🚀 STATUS COLORS */
+.ready { background:#2ecc71 !important; }
+.warn { background:#f39c12 !important; }
+.blocked { background:#e74c3c !important; }
+
+/* ⚡ COOLDOWN BLINK */
+.cooldown {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { opacity:1; }
+  50% { opacity:0.3; }
+  100% { opacity:1; }
 }
 </style>
 </head>
@@ -151,7 +163,6 @@ button:active {
   <button onclick="send('/api/win')">+WIN</button>
   <button onclick="send('/api/loss')">-LOSS</button>
   <button onclick="send('/api/reset')">RESET</button>
-
   <button onclick="send('/api/cooldown')">COOLDOWN</button>
   <button onclick="send('/api/hardblock/on')">HB ON</button>
   <button onclick="send('/api/hardblock/off')">HB OFF</button>
@@ -167,15 +178,28 @@ button:active {
 </div>
 
 <script>
+
+// 🔊 SOUND
+const beep = () => {
+  const ctx = new AudioContext();
+  const osc = ctx.createOscillator();
+  osc.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.1);
+};
+
+// SEND ACTION
 async function send(url){
   await fetch(url, {method:'POST'});
   loadStatus();
 }
 
+// LOAD STATUS
 async function loadStatus(){
   const res = await fetch('/api/status');
   const data = await res.json();
 
+  // TEXT
   document.getElementById('statusText').innerText = data.guard;
   document.getElementById('pnl').innerText = "PnL: " + data.pnl;
 
@@ -183,20 +207,44 @@ async function loadStatus(){
   document.getElementById('losses').innerText = data.totalLosses;
   document.getElementById('queue').innerText = data.queueLength;
 
+  // WINRATE
   const wr = data.totalWins + data.totalLosses > 0
-    ? (data.totalWins/(data.totalWins+data.totalLosses)*100).toFixed(1)
+    ? (data.totalWins / (data.totalWins + data.totalLosses) * 100).toFixed(1)
     : 0;
   document.getElementById('winrate').innerText = wr + "%";
 
-  /* Chips */
+  // CHIPS
   document.getElementById('chipStatus').innerText = data.guard;
-  document.getElementById('chipOrders').innerText = data.ordersToday + "/10";
-  document.getElementById('chipCooldown').innerText = data.cooldownLeft + "s";
-  document.getElementById('chipHB').innerText = data.hardBlocked ? "HB ON" : "HB OFF";
+  document.getElementById('chipOrders').innerText =
+    data.ordersToday + "/" + data.maxOrdersPerSession;
+  document.getElementById('chipCooldown').innerText =
+    data.cooldownLeft + "s";
+  document.getElementById('chipHB').innerText =
+    data.hardBlocked ? "HB ON" : "HB OFF";
 
-  /* LOG */
+  // 🎨 COLOR
+  const statusEl = document.getElementById('statusText');
+  statusEl.className = "big";
+
+  if (data.guard === "READY") statusEl.classList.add("ready");
+  if (data.guard === "WARN") statusEl.classList.add("warn");
+  if (data.guard === "BLOCKED") statusEl.classList.add("blocked");
+
+  // ⚡ COOLDOWN BLINK
+  const cd = document.getElementById('chipCooldown');
+  cd.classList.remove("cooldown");
+
+  if (data.cooldownLeft > 0) {
+    cd.classList.add("cooldown");
+  }
+
+  // 🔊 SOUND
+  if (data.guard === "BLOCKED") beep();
+
+  // LOG
   const logDiv = document.getElementById('log');
   logDiv.innerHTML = "";
+
   data.log.forEach(l=>{
     const el = document.createElement('div');
     el.className = 'log-entry';
@@ -205,12 +253,15 @@ async function loadStatus(){
   });
 }
 
+// CLEAR LOG
 function clearLog(){
   document.getElementById('log').innerHTML = "";
 }
 
+// AUTO REFRESH
 setInterval(loadStatus, 2000);
 loadStatus();
+
 </script>
 
 </body>
