@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>V16.7 FULL</title>
+  <title>V16.8 CLEAN LOCK</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root{
@@ -134,6 +133,23 @@
     .hero.coolGlow{box-shadow:0 0 40px rgba(153,140,240,.20), var(--shadow)}
     .hero.lockGlow{box-shadow:0 0 40px rgba(220,163,149,.18), var(--shadow)}
 
+    .lockBanner{
+      display:none;
+      width:max-content;
+      max-width:100%;
+      margin:0 auto 14px;
+      padding:10px 18px;
+      border-radius:14px;
+      background:var(--locked);
+      color:white;
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:.3px;
+      box-shadow:0 8px 20px rgba(0,0,0,.14);
+      position:relative;
+      z-index:2;
+    }
+
     .guard{
       position:relative;
       text-align:center;
@@ -143,6 +159,7 @@
       letter-spacing:1px;
       margin:0 0 8px;
       transition:transform .16s ease;
+      z-index:2;
     }
 
     .guard.ready{color:var(--green2)}
@@ -167,6 +184,7 @@
       font-size:24px;
       font-weight:900;
       margin-bottom:14px;
+      z-index:2;
     }
 
     .sub.ready{color:var(--green2)}
@@ -182,6 +200,7 @@
       font-weight:900;
       margin:8px 0 18px;
       transition:transform .16s ease, filter .18s ease;
+      z-index:2;
     }
 
     .pnl.up{
@@ -202,22 +221,6 @@
       0%{box-shadow:0 0 0 rgba(0,0,0,0), var(--shadow)}
       50%{box-shadow:0 0 70px rgba(115,215,127,.48), var(--shadow)}
       100%{box-shadow:0 0 0 rgba(0,0,0,0), var(--shadow)}
-    }
-
-    .lockedOverlay{
-      position:absolute;
-      inset:0;
-      background:rgba(10,20,50,.25);
-      backdrop-filter:blur(3px);
-      border-radius:30px;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      font-size:22px;
-      font-weight:900;
-      letter-spacing:.3px;
-      z-index:3;
-      pointer-events:none;
     }
 
     .stats{
@@ -339,6 +342,7 @@
     .logButtons{
       display:flex;
       gap:10px;
+      flex-wrap:wrap;
     }
 
     .smallBtn{
@@ -404,7 +408,7 @@
       color:#fff;
       font-size:17px;
       font-weight:900;
-      box-shadow:var(--shadow);
+      box-shadow:0 24px 60px rgba(0,0,0,.24);
       display:none;
     }
 
@@ -430,7 +434,7 @@
 
   <div class="wrap">
     <div class="topbar">
-      <div class="title">V16.7 FULL</div>
+      <div class="title">V16.8 CLEAN LOCK</div>
       <div class="chips">
         <div id="chipStatus" class="chip ready">READY</div>
         <div id="chipOrders" class="chip">0/10</div>
@@ -440,7 +444,7 @@
     </div>
 
     <div id="hero" class="hero readyGlow">
-      <div id="lockOverlay" class="lockedOverlay">TRADING GESPERRT</div>
+      <div id="lockBanner" class="lockBanner">TRADING GESPERRT</div>
 
       <div id="guard" class="guard ready">READY</div>
       <div id="sub" class="sub ready">SYSTEM READY</div>
@@ -487,7 +491,7 @@
     <div class="chartCard">
       <div class="chartHead">
         <div class="chartTitle">PnL Chart</div>
-        <div class="chartSub">elite glass · sound · gradient line · nur bei echter Änderung</div>
+        <div class="chartSub">clean lock · sound · gradient line · nur bei echter Änderung</div>
       </div>
       <div class="chartWrap">
         <canvas id="chart"></canvas>
@@ -528,7 +532,7 @@
     let audioCtx = null;
     let audioUnlocked = false;
 
-    const STORAGE_KEY = 'qt_v167_full_history';
+    const STORAGE_KEY = 'qt_v168_clean_lock_history';
 
     function unlockAudio(){
       if(audioUnlocked) return;
@@ -676,14 +680,14 @@
       const banner = document.getElementById('guard');
       const sub = document.getElementById('sub');
       const chipStatus = document.getElementById('chipStatus');
-      const overlay = document.getElementById('lockOverlay');
+      const lockBanner = document.getElementById('lockBanner');
 
       hero.classList.remove('readyGlow','warnGlow','blockGlow','coolGlow','lockGlow');
       banner.className = 'guard ' + guardClass(guard);
       sub.className = 'sub ' + guardClass(guard);
       chipStatus.className = 'chip ' + guardClass(guard);
       banner.classList.remove('pulse');
-      overlay.style.display = 'none';
+      lockBanner.style.display = 'none';
 
       if(guard === 'READY'){
         if(pnl >= 0){
@@ -699,11 +703,11 @@
       }else if(guard === 'LOCKED'){
         hero.classList.add('lockGlow');
         banner.classList.add('pulse');
-        overlay.style.display = 'flex';
+        lockBanner.style.display = 'block';
       }else{
         hero.classList.add('blockGlow');
         banner.classList.add('pulse');
-        overlay.style.display = 'flex';
+        lockBanner.style.display = 'block';
       }
     }
 
