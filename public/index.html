@@ -1,836 +1,972 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>V16.6 ELITE</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-:root{
-  --bg:#08142f;
-  --bg2:#0d1d47;
-  --panel:#747dc2;
-  --panel2:#8991d4;
-  --box:rgba(143,151,212,.42);
-  --chip:#1b2b5f;
-  --text:#fff;
-  --muted:rgba(255,255,255,.82);
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V16.7 FULL</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg1:#07132d;
+      --bg2:#0d1c46;
+      --glass:rgba(19,32,74,.58);
+      --card1:rgba(127,136,204,.96);
+      --card2:rgba(111,121,188,.96);
+      --box:rgba(146,154,216,.34);
+      --text:#fff;
+      --muted:rgba(255,255,255,.82);
 
-  --green:#72d87f;
-  --green2:#a9e89f;
-  --yellow:#f1cb63;
-  --yellow2:#ffe18c;
-  --red:#e29d8f;
-  --red2:#f1b5aa;
-  --purple:#9184ea;
-  --blue:#818cf1;
-  --gold:#c1a55d;
+      --green:#73d77f;
+      --green2:#abe693;
+      --yellow:#f0c65f;
+      --yellow2:#ffe18a;
+      --red:#df9e91;
+      --red2:#f0b1a5;
+      --cool:#998cf0;
+      --cool2:#cec8ff;
+      --locked:#dca395;
 
-  --btnBlue:#838df1;
-  --btnGreen:#a7c37f;
-  --btnRed:#c99488;
-  --btnGold:#bfa45c;
-  --btnPurple:#9286e9;
+      --chip:#1b2b5f;
+      --btnBlue:#818bee;
+      --btnGreen:#a9c67f;
+      --btnRed:#c79689;
+      --btnGold:#bea35a;
+      --btnPurple:#8f84e4;
+      --btnOff:#ba8f84;
+      --btnOn:#9bb972;
 
-  --shadow:0 20px 48px rgba(0,0,0,.24);
-}
+      --shadow:0 24px 60px rgba(0,0,0,.24);
+    }
 
-*{
-  box-sizing:border-box;
-  -webkit-tap-highlight-color:transparent;
-}
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+    }
 
-html,body{
-  margin:0;
-  padding:0;
-  font-family:Arial,Helvetica,sans-serif;
-  color:var(--text);
-  background:
-    radial-gradient(circle at top, rgba(255,255,255,.06), transparent 22%),
-    linear-gradient(180deg,var(--bg),var(--bg2));
-}
+    html,body{
+      margin:0;
+      padding:0;
+      font-family:Arial,Helvetica,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,.06), transparent 24%),
+        linear-gradient(180deg,var(--bg1),var(--bg2));
+    }
 
-body{min-height:100vh}
+    body{
+      min-height:100vh;
+    }
 
-.wrap{
-  max-width:860px;
-  margin:0 auto;
-  padding:14px 14px 34px;
-}
+    .wrap{
+      max-width:860px;
+      margin:0 auto;
+      padding:14px 14px 34px;
+    }
 
-.topbar{
-  position:sticky;
-  top:0;
-  z-index:30;
-  padding:16px 0 12px;
-  background:linear-gradient(180deg, rgba(8,20,47,.97), rgba(8,20,47,.84));
-  backdrop-filter:blur(12px);
-}
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:50;
+      padding:16px 0 14px;
+      backdrop-filter:blur(14px);
+      background:linear-gradient(180deg, rgba(7,19,45,.97), rgba(7,19,45,.80));
+      border-bottom:1px solid rgba(255,255,255,.03);
+    }
 
-.title{
-  text-align:center;
-  font-size:24px;
-  font-weight:900;
-  letter-spacing:.5px;
-  margin-bottom:12px;
-  opacity:.96;
-}
+    .title{
+      text-align:center;
+      font-size:26px;
+      font-weight:900;
+      letter-spacing:.5px;
+      margin-bottom:12px;
+      opacity:.95;
+    }
 
-.chips{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:10px;
-}
+    .chips{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:10px;
+    }
 
-.chip{
-  min-width:86px;
-  text-align:center;
-  padding:10px 12px;
-  border-radius:14px;
-  background:var(--chip);
-  font-size:13px;
-  font-weight:900;
-  box-shadow:0 8px 18px rgba(0,0,0,.16);
-  transition:.2s ease;
-}
+    .chip{
+      min-width:88px;
+      text-align:center;
+      padding:11px 13px;
+      border-radius:16px;
+      background:rgba(28,44,96,.96);
+      font-size:13px;
+      font-weight:900;
+      box-shadow:0 8px 20px rgba(0,0,0,.14);
+      transition:all .18s ease;
+    }
 
-.chip.ready{background:var(--green)}
-.chip.warn{background:var(--yellow); color:#3a2f09}
-.chip.blocked{background:var(--red)}
-.chip.cooldown{background:var(--purple)}
-.chip.locked{background:#dca596}
-.chip.hbon{background:#8fa96d}
+    .chip.ready{background:var(--green)}
+    .chip.warn{background:var(--yellow); color:#3b2f08}
+    .chip.blocked{background:var(--red)}
+    .chip.cooldown{background:var(--cool)}
+    .chip.locked{background:var(--locked)}
+    .chip.hbon{background:#92af73}
 
-.hero{
-  margin-top:18px;
-  border-radius:30px;
-  padding:24px 16px 20px;
-  background:linear-gradient(180deg, rgba(126,136,201,.98), rgba(112,122,188,.98));
-  box-shadow:var(--shadow);
-  transition:box-shadow .25s ease, transform .18s ease;
-}
+    .hero{
+      position:relative;
+      margin-top:18px;
+      border-radius:30px;
+      padding:24px 16px 20px;
+      background:linear-gradient(180deg, var(--card1), var(--card2));
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      transition:box-shadow .22s ease, transform .15s ease;
+    }
 
-.hero.readyGlow{
-  box-shadow:0 0 40px rgba(114,216,127,.18), var(--shadow);
-}
-.hero.warnGlow{
-  box-shadow:0 0 40px rgba(241,203,99,.18), var(--shadow);
-}
-.hero.blockGlow{
-  box-shadow:0 0 40px rgba(226,157,143,.20), var(--shadow);
-}
-.hero.lockGlow{
-  box-shadow:0 0 42px rgba(220,165,150,.18), var(--shadow);
-}
+    .hero:before{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
+      pointer-events:none;
+    }
 
-.banner{
-  text-align:center;
-  font-size:72px;
-  line-height:.94;
-  font-weight:900;
-  letter-spacing:1px;
-  margin:0 0 8px;
-  transition:transform .16s ease;
-}
-.banner.ready{color:var(--green2)}
-.banner.warn{color:var(--yellow2)}
-.banner.blocked{color:var(--red2)}
-.banner.cooldown{color:#d3ccff}
-.banner.locked{color:#f6f7ff}
-.banner.pulse{
-  animation:pulseText 1.2s ease-in-out infinite;
-}
+    .hero.readyGlow{box-shadow:0 0 40px rgba(115,215,127,.18), var(--shadow)}
+    .hero.warnGlow{box-shadow:0 0 40px rgba(240,198,95,.18), var(--shadow)}
+    .hero.blockGlow{box-shadow:0 0 40px rgba(223,158,145,.19), var(--shadow)}
+    .hero.coolGlow{box-shadow:0 0 40px rgba(153,140,240,.20), var(--shadow)}
+    .hero.lockGlow{box-shadow:0 0 40px rgba(220,163,149,.18), var(--shadow)}
 
-@keyframes pulseText{
-  0%,100%{transform:scale(1)}
-  50%{transform:scale(1.02)}
-}
+    .guard{
+      position:relative;
+      text-align:center;
+      font-size:74px;
+      line-height:.94;
+      font-weight:900;
+      letter-spacing:1px;
+      margin:0 0 8px;
+      transition:transform .16s ease;
+    }
 
-.sub{
-  text-align:center;
-  font-size:24px;
-  font-weight:900;
-  margin-bottom:14px;
-}
-.sub.ready{color:var(--green2)}
-.sub.warn{color:var(--yellow2)}
-.sub.blocked{color:var(--red2)}
-.sub.cooldown{color:#d3ccff}
-.sub.locked{color:#f5f6ff}
+    .guard.ready{color:var(--green2)}
+    .guard.warn{color:var(--yellow2)}
+    .guard.blocked{color:var(--red2)}
+    .guard.cooldown{color:var(--cool2)}
+    .guard.locked{color:#f3f5ff}
 
-.pnl{
-  text-align:center;
-  font-size:58px;
-  font-weight:900;
-  margin:8px 0 18px;
-  transition:transform .16s ease;
-}
-.pnl.bumpUp{transform:scale(1.04)}
-.pnl.bumpDown{transform:scale(.97)}
+    .guard.pulse{
+      animation:pulseGuard 1.15s ease-in-out infinite;
+    }
 
-.stats{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
-}
+    @keyframes pulseGuard{
+      0%{transform:scale(1)}
+      50%{transform:scale(1.025)}
+      100%{transform:scale(1)}
+    }
 
-.box{
-  background:var(--box);
-  border-radius:20px;
-  padding:16px 12px;
-  text-align:center;
-}
+    .sub{
+      position:relative;
+      text-align:center;
+      font-size:24px;
+      font-weight:900;
+      margin-bottom:14px;
+    }
 
-.label{
-  font-size:18px;
-  color:var(--muted);
-  margin-bottom:8px;
-}
+    .sub.ready{color:var(--green2)}
+    .sub.warn{color:var(--yellow2)}
+    .sub.blocked{color:var(--red2)}
+    .sub.cooldown{color:var(--cool2)}
+    .sub.locked{color:#f3f5ff}
 
-.value{
-  font-size:24px;
-  font-weight:900;
-}
+    .pnl{
+      position:relative;
+      text-align:center;
+      font-size:58px;
+      font-weight:900;
+      margin:8px 0 18px;
+      transition:transform .16s ease, filter .18s ease;
+    }
 
-.hint{
-  text-align:center;
-  font-size:18px;
-  margin-top:18px;
-  color:rgba(255,255,255,.95);
-}
+    .pnl.up{
+      transform:scale(1.04);
+      filter:drop-shadow(0 0 14px rgba(115,215,127,.22));
+    }
 
-.chartCard{
-  margin-top:18px;
-  border-radius:24px;
-  padding:10px 6px 0;
-  background:rgba(7,16,44,.14);
-}
+    .pnl.down{
+      transform:scale(.98);
+      filter:drop-shadow(0 0 14px rgba(223,158,145,.22));
+    }
 
-.chartHead{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:0 8px 10px;
-}
+    .flashWin{
+      animation:flashWin .42s ease;
+    }
 
-.chartTitle{
-  font-size:20px;
-  font-weight:900;
-}
+    @keyframes flashWin{
+      0%{box-shadow:0 0 0 rgba(0,0,0,0), var(--shadow)}
+      50%{box-shadow:0 0 70px rgba(115,215,127,.48), var(--shadow)}
+      100%{box-shadow:0 0 0 rgba(0,0,0,0), var(--shadow)}
+    }
 
-.chartSub{
-  font-size:13px;
-  color:rgba(255,255,255,.7);
-}
+    .lockedOverlay{
+      position:absolute;
+      inset:0;
+      background:rgba(10,20,50,.25);
+      backdrop-filter:blur(3px);
+      border-radius:30px;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      font-size:22px;
+      font-weight:900;
+      letter-spacing:.3px;
+      z-index:3;
+      pointer-events:none;
+    }
 
-.chartWrap{
-  position:relative;
-  height:330px;
-}
+    .stats{
+      position:relative;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      z-index:2;
+    }
 
-.controls{
-  margin-top:18px;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
-}
+    .box{
+      background:var(--box);
+      border-radius:20px;
+      padding:16px 12px;
+      text-align:center;
+      backdrop-filter:blur(8px);
+    }
 
-button{
-  border:none;
-  border-radius:20px;
-  padding:19px 14px;
-  font-size:20px;
-  font-weight:900;
-  color:#fff;
-  box-shadow:0 12px 26px rgba(0,0,0,.16);
-  transition:transform .08s ease, opacity .18s ease, filter .18s ease;
-}
-button:active{transform:scale(.98)}
-button:disabled{opacity:.45; filter:saturate(.55)}
+    .label{
+      font-size:18px;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
 
-.btnSend{background:var(--btnBlue)}
-.btnWin{background:var(--btnGreen)}
-.btnLoss{background:var(--btnRed)}
-.btnReset{background:var(--btnGold)}
-.btnCooldown{background:var(--btnPurple)}
-.btnHbOn{background:#96b974}
-.btnHbOff{background:#bb8f85}
-.btnRefresh{background:#bda66a}
+    .value{
+      font-size:24px;
+      font-weight:900;
+    }
 
-.logWrap{
-  margin-top:20px;
-}
+    .hint{
+      position:relative;
+      text-align:center;
+      font-size:18px;
+      color:rgba(255,255,255,.96);
+      margin-top:18px;
+      z-index:2;
+    }
 
-.logHead{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:12px;
-}
+    .chartCard{
+      margin-top:18px;
+      border-radius:24px;
+      padding:12px 8px 0;
+      background:rgba(6,16,45,.14);
+      box-shadow:0 12px 30px rgba(0,0,0,.10);
+    }
 
-.logTitle{
-  font-size:28px;
-  font-weight:900;
-}
+    .chartHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:0 8px 10px;
+    }
 
-.logButtons{
-  display:flex;
-  gap:10px;
-}
+    .chartTitle{
+      font-size:20px;
+      font-weight:900;
+    }
 
-.smallBtn{
-  width:auto;
-  min-width:100px;
-  padding:13px 14px;
-  font-size:15px;
-  border-radius:16px;
-  background:#97a0e6;
-}
+    .chartSub{
+      font-size:13px;
+      color:rgba(255,255,255,.68);
+      text-align:right;
+    }
 
-.log{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
+    .chartWrap{
+      position:relative;
+      height:340px;
+    }
 
-.entry{
-  border-radius:18px;
-  padding:14px 15px 12px;
-  box-shadow:0 8px 18px rgba(0,0,0,.10);
-}
+    .controls{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+    }
 
-.entry.win{background:rgba(121,211,178,.34)}
-.entry.loss{background:rgba(226,157,143,.34)}
-.entry.exec{background:rgba(102,175,255,.30)}
-.entry.queue{background:rgba(255,255,255,.14)}
-.entry.block{background:rgba(241,203,99,.24)}
-.entry.default{background:rgba(119,128,191,.96)}
+    button{
+      border:none;
+      border-radius:20px;
+      padding:19px 14px;
+      font-size:20px;
+      font-weight:900;
+      color:#fff;
+      box-shadow:0 12px 26px rgba(0,0,0,.16);
+      transition:transform .08s ease, opacity .18s ease, filter .18s ease;
+      cursor:pointer;
+    }
 
-.entryType{
-  font-size:17px;
-  font-weight:900;
-  margin-bottom:5px;
-}
-.entryMsg{
-  font-size:17px;
-  line-height:1.3;
-}
-.entryTime{
-  margin-top:7px;
-  font-size:12px;
-  opacity:.76;
-}
+    button:active{transform:scale(.98)}
+    button:disabled{opacity:.45; filter:saturate(.55); cursor:not-allowed}
 
-.toast{
-  position:fixed;
-  top:88px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:999;
-  min-width:220px;
-  max-width:84vw;
-  text-align:center;
-  padding:14px 18px;
-  border-radius:18px;
-  background:#63cb73;
-  color:#fff;
-  font-size:17px;
-  font-weight:900;
-  box-shadow:var(--shadow);
-  display:none;
-}
-.toast.err{background:#d78776}
+    .btnSend{background:var(--btnBlue)}
+    .btnWin{background:var(--btnGreen)}
+    .btnLoss{background:var(--btnRed)}
+    .btnReset{background:var(--btnGold)}
+    .btnCooldown{background:var(--btnPurple)}
+    .btnHbOn{background:var(--btnOn)}
+    .btnHbOff{background:var(--btnOff)}
+    .btnRefresh{background:var(--btnGold)}
 
-.footerSpace{height:8px}
+    .logWrap{
+      margin-top:20px;
+    }
 
-@media (max-width:540px){
-  .title{font-size:23px}
-  .banner{font-size:56px}
-  .sub{font-size:21px}
-  .pnl{font-size:46px}
-  .value{font-size:22px}
-  button{font-size:18px;padding:18px 12px}
-  .chartWrap{height:290px}
-}
-</style>
+    .logHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .logTitle{
+      font-size:28px;
+      font-weight:900;
+    }
+
+    .logButtons{
+      display:flex;
+      gap:10px;
+    }
+
+    .smallBtn{
+      width:auto;
+      min-width:104px;
+      padding:13px 14px;
+      font-size:15px;
+      border-radius:16px;
+      background:#98a0e6;
+    }
+
+    .log{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .entry{
+      border-radius:18px;
+      padding:14px 15px 12px;
+      box-shadow:0 8px 18px rgba(0,0,0,.10);
+      backdrop-filter:blur(8px);
+    }
+
+    .entry.default{background:rgba(119,128,191,.96)}
+    .entry.win{background:linear-gradient(180deg, rgba(84,130,116,.98), rgba(71,108,99,.98))}
+    .entry.loss{background:linear-gradient(180deg, rgba(173,124,113,.98), rgba(149,106,98,.98))}
+    .entry.exec{background:linear-gradient(180deg, rgba(94,131,182,.98), rgba(81,114,160,.98))}
+    .entry.queue{background:linear-gradient(180deg, rgba(122,130,167,.98), rgba(107,113,146,.98))}
+    .entry.hb{background:linear-gradient(180deg, rgba(130,102,164,.98), rgba(112,88,141,.98))}
+    .entry.cd{background:linear-gradient(180deg, rgba(117,107,188,.98), rgba(100,91,159,.98))}
+    .entry.reset{background:linear-gradient(180deg, rgba(133,140,197,.98), rgba(114,121,173,.98))}
+
+    .entryType{
+      font-size:17px;
+      font-weight:900;
+      margin-bottom:5px;
+    }
+
+    .entryMsg{
+      font-size:17px;
+      line-height:1.3;
+    }
+
+    .entryTime{
+      margin-top:7px;
+      font-size:12px;
+      opacity:.75;
+    }
+
+    .toast{
+      position:fixed;
+      top:88px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:999;
+      min-width:220px;
+      max-width:84vw;
+      text-align:center;
+      padding:14px 18px;
+      border-radius:18px;
+      background:#63cb73;
+      color:#fff;
+      font-size:17px;
+      font-weight:900;
+      box-shadow:var(--shadow);
+      display:none;
+    }
+
+    .toast.err{background:#d78776}
+    .footerSpace{height:8px}
+
+    @media (max-width:560px){
+      .title{font-size:23px}
+      .guard{font-size:56px}
+      .sub{font-size:21px}
+      .pnl{font-size:46px}
+      .value{font-size:22px}
+      button{font-size:18px;padding:18px 12px}
+      .chartWrap{height:295px}
+      .chartHead{align-items:flex-start; flex-direction:column}
+      .chartSub{text-align:left}
+      .logHead{align-items:flex-start; flex-direction:column}
+    }
+  </style>
 </head>
 <body>
-<div id="toast" class="toast">OK</div>
+  <div id="toast" class="toast">OK</div>
 
-<div class="wrap">
-  <div class="topbar">
-    <div class="title">V16.6 ELITE</div>
-    <div class="chips">
-      <div id="chipStatus" class="chip ready">READY</div>
-      <div id="chipOrders" class="chip">0/10</div>
-      <div id="chipCooldown" class="chip">0s</div>
-      <div id="chipHB" class="chip">HB OFF</div>
-    </div>
-  </div>
-
-  <div id="hero" class="hero readyGlow">
-    <div id="guard" class="banner ready">READY</div>
-    <div id="sub" class="sub ready">SYSTEM READY</div>
-    <div id="pnl" class="pnl">PnL: 0.00</div>
-
-    <div class="stats">
-      <div class="box">
-        <div class="label">Orders</div>
-        <div id="orders" class="value">0/10</div>
-      </div>
-      <div class="box">
-        <div class="label">Queue</div>
-        <div id="queue" class="value">0</div>
-      </div>
-
-      <div class="box">
-        <div class="label">Cooldown</div>
-        <div id="cooldown" class="value">0s</div>
-      </div>
-      <div class="box">
-        <div class="label">HardBlock</div>
-        <div id="hb" class="value">AUS</div>
-      </div>
-
-      <div class="box">
-        <div class="label">Wins</div>
-        <div id="wins" class="value">0</div>
-      </div>
-      <div class="box">
-        <div class="label">Losses</div>
-        <div id="losses" class="value">0</div>
-      </div>
-
-      <div class="box">
-        <div class="label">Winrate</div>
-        <div id="winrate" class="value">0.0%</div>
-      </div>
-      <div class="box">
-        <div class="label">Streak</div>
-        <div id="streak" class="value">W0 / L0</div>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">V16.7 FULL</div>
+      <div class="chips">
+        <div id="chipStatus" class="chip ready">READY</div>
+        <div id="chipOrders" class="chip">0/10</div>
+        <div id="chipCooldown" class="chip">0s</div>
+        <div id="chipHB" class="chip">HB OFF</div>
       </div>
     </div>
 
-    <div id="hint" class="hint">System bereit.</div>
-  </div>
+    <div id="hero" class="hero readyGlow">
+      <div id="lockOverlay" class="lockedOverlay">TRADING GESPERRT</div>
 
-  <div class="chartCard">
-    <div class="chartHead">
-      <div class="chartTitle">PnL Chart</div>
-      <div class="chartSub">manuell · mit Sound · nur bei echter Änderung</div>
+      <div id="guard" class="guard ready">READY</div>
+      <div id="sub" class="sub ready">SYSTEM READY</div>
+      <div id="pnl" class="pnl">PnL: 0.00</div>
+
+      <div class="stats">
+        <div class="box">
+          <div class="label">Orders</div>
+          <div id="orders" class="value">0/10</div>
+        </div>
+        <div class="box">
+          <div class="label">Queue</div>
+          <div id="queue" class="value">0</div>
+        </div>
+        <div class="box">
+          <div class="label">Cooldown</div>
+          <div id="cooldown" class="value">0s</div>
+        </div>
+        <div class="box">
+          <div class="label">HardBlock</div>
+          <div id="hb" class="value">AUS</div>
+        </div>
+        <div class="box">
+          <div class="label">Wins</div>
+          <div id="wins" class="value">0</div>
+        </div>
+        <div class="box">
+          <div class="label">Losses</div>
+          <div id="losses" class="value">0</div>
+        </div>
+        <div class="box">
+          <div class="label">Winrate</div>
+          <div id="winrate" class="value">0.0%</div>
+        </div>
+        <div class="box">
+          <div class="label">Streak</div>
+          <div id="streak" class="value">W0 / L0</div>
+        </div>
+      </div>
+
+      <div id="hint" class="hint">System bereit.</div>
     </div>
-    <div class="chartWrap">
-      <canvas id="chart"></canvas>
-    </div>
-  </div>
 
-  <div class="controls">
-    <button id="btnSend" class="btnSend" onclick="act('/api/order','Order angenommen')">SEND</button>
-    <button class="btnWin" onclick="act('/api/win','Win gebucht')">+WIN</button>
-    <button class="btnLoss" onclick="act('/api/loss','Loss gebucht')">-LOSS</button>
-    <button class="btnReset" onclick="act('/api/reset','Reset ausgeführt')">RESET</button>
-
-    <button class="btnCooldown" onclick="act('/api/cooldown','Cooldown gestartet')">COOLDOWN</button>
-    <button class="btnHbOn" onclick="act('/api/hardblock/on','HardBlock aktiviert')">HB ON</button>
-    <button class="btnHbOff" onclick="act('/api/hardblock/off','HardBlock deaktiviert')">HB OFF</button>
-    <button class="btnRefresh" onclick="loadStatus(true)">REFRESH</button>
-  </div>
-
-  <div class="logWrap">
-    <div class="logHead">
-      <div class="logTitle">Log</div>
-      <div class="logButtons">
-        <button class="smallBtn" onclick="clearChart()">Chart Reset</button>
-        <button class="smallBtn" onclick="clearLogLocal()">Log Clear</button>
+    <div class="chartCard">
+      <div class="chartHead">
+        <div class="chartTitle">PnL Chart</div>
+        <div class="chartSub">elite glass · sound · gradient line · nur bei echter Änderung</div>
+      </div>
+      <div class="chartWrap">
+        <canvas id="chart"></canvas>
       </div>
     </div>
-    <div id="log" class="log"></div>
+
+    <div class="controls">
+      <button id="btnSend" class="btnSend" onclick="act('/api/order','Order angenommen')">SEND</button>
+      <button class="btnWin" onclick="act('/api/win','Win gebucht')">+WIN</button>
+      <button class="btnLoss" onclick="act('/api/loss','Loss gebucht')">-LOSS</button>
+      <button class="btnReset" onclick="act('/api/reset','Reset ausgeführt')">RESET</button>
+
+      <button class="btnCooldown" onclick="act('/api/cooldown','Cooldown gestartet')">COOLDOWN</button>
+      <button class="btnHbOn" onclick="act('/api/hardblock/on','HardBlock aktiviert')">HB ON</button>
+      <button class="btnHbOff" onclick="act('/api/hardblock/off','HardBlock deaktiviert')">HB OFF</button>
+      <button class="btnRefresh" onclick="loadStatus(true)">REFRESH</button>
+    </div>
+
+    <div class="logWrap">
+      <div class="logHead">
+        <div class="logTitle">Log</div>
+        <div class="logButtons">
+          <button class="smallBtn" onclick="clearChart()">Chart Reset</button>
+          <button class="smallBtn" onclick="clearLogLocal()">Log Clear</button>
+        </div>
+      </div>
+      <div id="log" class="log"></div>
+    </div>
+
+    <div class="footerSpace"></div>
   </div>
 
-  <div class="footerSpace"></div>
-</div>
+  <script>
+    let chart;
+    let pnlHistory = [];
+    let lastPnl = null;
+    let lastGuard = null;
+    let audioCtx = null;
+    let audioUnlocked = false;
 
-<script>
-let chart;
-let pnlHistory = [];
-let lastPnl = null;
-let lastGuard = null;
-let audioCtx = null;
+    const STORAGE_KEY = 'qt_v167_full_history';
 
-const STORAGE_KEY = 'qt_v166_elite_history';
-
-function ensureAudio(){
-  if(!audioCtx){
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if(Ctx) audioCtx = new Ctx();
-  }
-  if(audioCtx && audioCtx.state === 'suspended'){
-    audioCtx.resume().catch(()=>{});
-  }
-}
-
-function beep(freq=700, duration=0.12, type='sine', volume=0.03){
-  try{
-    ensureAudio();
-    if(!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-
-    osc.type = type;
-    osc.frequency.value = freq;
-    gain.gain.value = volume;
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.start();
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-    osc.stop(audioCtx.currentTime + duration);
-  }catch(e){}
-}
-
-function soundWin(){
-  beep(880,0.07,'sine',0.04);
-  setTimeout(()=>beep(1180,0.10,'sine',0.035),70);
-}
-
-function soundLoss(){
-  beep(320,0.12,'triangle',0.045);
-  setTimeout(()=>beep(220,0.16,'triangle',0.04),90);
-}
-
-function soundLock(){
-  beep(500,0.08,'square',0.035);
-  setTimeout(()=>beep(420,0.10,'square',0.03),80);
-}
-
-function soundReady(){
-  beep(760,0.08,'sine',0.03);
-}
-
-function showToast(msg, isErr=false){
-  const t = document.getElementById('toast');
-  t.innerText = msg;
-  t.className = isErr ? 'toast err' : 'toast';
-  t.style.display = 'block';
-  clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(()=>{ t.style.display='none'; }, 1700);
-}
-
-function saveHistory(){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pnlHistory.slice(-80)));
-  }catch(e){}
-}
-
-function loadHistory(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      const arr = JSON.parse(raw);
-      if(Array.isArray(arr)) pnlHistory = arr;
-    }
-  }catch(e){}
-}
-
-function clearChart(){
-  pnlHistory = [];
-  saveHistory();
-  if(chart){
-    chart.data.labels = [];
-    chart.data.datasets[0].data = [];
-    chart.update();
-  }
-  showToast('Chart reset');
-}
-
-function clearLogLocal(){
-  document.getElementById('log').innerHTML = '';
-  showToast('Log lokal geleert');
-}
-
-function safeNum(v, fallback=0){
-  return (typeof v === 'number' && !Number.isNaN(v)) ? v : fallback;
-}
-
-function guardClass(g){
-  if(g === 'READY') return 'ready';
-  if(g === 'WARN') return 'warn';
-  if(g === 'COOLDOWN') return 'cooldown';
-  if(g === 'LOCKED') return 'locked';
-  if(g === 'SESSION_LIMIT') return 'warn';
-  return 'blocked';
-}
-
-function hintText(reason){
-  if(reason === 'SYSTEM_READY') return 'System bereit.';
-  if(reason === 'QUEUE_LOCK') return 'Eine Order läuft bereits oder wartet in der Queue.';
-  if(reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv. Bitte warten.';
-  if(reason === 'HARD_LOCK') return 'Trading bleibt gesperrt bis Reset oder HB OFF.';
-  if(reason === 'PNL_LIMIT') return 'PnL-Limit unterschritten.';
-  if(reason === 'WARN_LIMIT') return 'Warnbereich erreicht.';
-  if(reason === 'SESSION_LIMIT') return 'Tageslimit erreicht.';
-  return 'System bereit.';
-}
-
-function updateStyles(guard, pnl){
-  const hero = document.getElementById('hero');
-  const banner = document.getElementById('guard');
-  const sub = document.getElementById('sub');
-  const chipStatus = document.getElementById('chipStatus');
-
-  hero.classList.remove('readyGlow','warnGlow','blockGlow','lockGlow');
-  banner.className = 'banner ' + guardClass(guard);
-  sub.className = 'sub ' + guardClass(guard);
-  chipStatus.className = 'chip ' + guardClass(guard);
-
-  if(guard === 'READY'){
-    hero.classList.add(pnl >= 0 ? 'readyGlow' : 'blockGlow');
-  }else if(guard === 'WARN' || guard === 'SESSION_LIMIT'){
-    hero.classList.add('warnGlow');
-  }else if(guard === 'LOCKED'){
-    hero.classList.add('lockGlow');
-    banner.classList.add('pulse');
-  }else{
-    hero.classList.add('blockGlow');
-    banner.classList.add('pulse');
-  }
-
-  if(guard !== 'LOCKED' && guard !== 'BLOCKED'){
-    banner.classList.remove('pulse');
-  }
-}
-
-function animatePnlChange(newPnl){
-  const pnlEl = document.getElementById('pnl');
-  pnlEl.classList.remove('bumpUp','bumpDown');
-  void pnlEl.offsetWidth;
-  if(lastPnl === null) return;
-  if(newPnl > lastPnl){
-    pnlEl.classList.add('bumpUp');
-    setTimeout(()=>pnlEl.classList.remove('bumpUp'),180);
-  }else if(newPnl < lastPnl){
-    pnlEl.classList.add('bumpDown');
-    setTimeout(()=>pnlEl.classList.remove('bumpDown'),180);
-  }
-}
-
-function makeGradient(ctx, area){
-  const gradient = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-  gradient.addColorStop(0, 'rgba(121,211,178,1)');
-  gradient.addColorStop(.5, 'rgba(103,175,255,.92)');
-  gradient.addColorStop(1, 'rgba(226,157,143,.95)');
-  return gradient;
-}
-
-function initChart(){
-  const ctx = document.getElementById('chart').getContext('2d');
-
-  chart = new Chart(ctx,{
-    type:'line',
-    data:{
-      labels:[],
-      datasets:[{
-        data:[],
-        borderWidth:5,
-        tension:.34,
-        fill:false,
-        pointRadius:5,
-        pointHoverRadius:6,
-        pointBorderWidth:2,
-        borderColor:'#6fb7ff',
-        pointBackgroundColor:(context)=>{
-          const i = context.dataIndex;
-          const v = context.dataset.data[i] ?? 0;
-          return v >= 0 ? '#91df8a' : '#e4a193';
-        },
-        pointBorderColor:(context)=>{
-          const i = context.dataIndex;
-          const v = context.dataset.data[i] ?? 0;
-          return v >= 0 ? '#91df8a' : '#e4a193';
+    function unlockAudio(){
+      if(audioUnlocked) return;
+      audioUnlocked = true;
+      try{
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if(AudioContextClass){
+          audioCtx = new AudioContextClass();
+          if(audioCtx.state === 'suspended'){
+            audioCtx.resume().catch(()=>{});
+          }
         }
-      }]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      animation:{duration:260,easing:'easeOutCubic'},
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{
-          ticks:{color:'rgba(255,255,255,.42)'},
-          grid:{color:'rgba(255,255,255,.04)'}
+      }catch(e){}
+    }
+
+    document.addEventListener('touchstart', unlockAudio, { once:true });
+    document.addEventListener('click', unlockAudio, { once:true });
+
+    function ensureAudio(){
+      if(!audioUnlocked) return false;
+      try{
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if(!audioCtx && AudioContextClass){
+          audioCtx = new AudioContextClass();
+        }
+        if(audioCtx && audioCtx.state === 'suspended'){
+          audioCtx.resume().catch(()=>{});
+        }
+        return !!audioCtx;
+      }catch(e){
+        return false;
+      }
+    }
+
+    function beep(freq=660, duration=0.15, type='sine', volume=0.08){
+      if(!ensureAudio()) return;
+      try{
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      }catch(e){}
+    }
+
+    function soundWin(){
+      beep(880,0.08,'sine',0.05);
+      setTimeout(()=>beep(1180,0.11,'sine',0.045),75);
+    }
+
+    function soundLoss(){
+      beep(330,0.11,'sawtooth',0.05);
+      setTimeout(()=>beep(240,0.16,'triangle',0.045),95);
+    }
+
+    function soundLock(){
+      beep(280,0.11,'square',0.05);
+      setTimeout(()=>beep(280,0.11,'square',0.04),130);
+    }
+
+    function soundReady(){
+      beep(620,0.06,'triangle',0.035);
+    }
+
+    function soundRefresh(){
+      beep(700,0.05,'triangle',0.025);
+    }
+
+    function showToast(msg, isErr=false){
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.className = isErr ? 'toast err' : 'toast';
+      t.style.display = 'block';
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(()=>{ t.style.display = 'none'; }, 1700);
+    }
+
+    function saveHistory(){
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(pnlHistory.slice(-80)));
+      }catch(e){}
+    }
+
+    function loadHistory(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw){
+          const arr = JSON.parse(raw);
+          if(Array.isArray(arr)) pnlHistory = arr;
+        }
+      }catch(e){}
+    }
+
+    function clearChart(){
+      pnlHistory = [];
+      saveHistory();
+      if(chart){
+        chart.data.labels = [];
+        chart.data.datasets[0].data = [];
+        chart.update();
+      }
+      showToast('Chart reset');
+    }
+
+    function clearLogLocal(){
+      document.getElementById('log').innerHTML = '';
+      showToast('Log lokal geleert');
+    }
+
+    function safeNum(v, fallback=0){
+      return (typeof v === 'number' && !Number.isNaN(v)) ? v : fallback;
+    }
+
+    function guardClass(g){
+      if(g === 'READY') return 'ready';
+      if(g === 'WARN') return 'warn';
+      if(g === 'COOLDOWN') return 'cooldown';
+      if(g === 'LOCKED') return 'locked';
+      if(g === 'SESSION_LIMIT') return 'warn';
+      return 'blocked';
+    }
+
+    function hintText(reason){
+      if(reason === 'SYSTEM_READY') return 'System bereit.';
+      if(reason === 'QUEUE_LOCK') return 'Eine Order läuft bereits oder wartet in der Queue.';
+      if(reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv. Bitte warten.';
+      if(reason === 'HARD_LOCK') return 'Trading bleibt gesperrt bis Reset oder HB OFF.';
+      if(reason === 'PNL_LIMIT') return 'PnL-Limit unterschritten.';
+      if(reason === 'WARN_LIMIT') return 'Warnbereich erreicht.';
+      if(reason === 'SESSION_LIMIT') return 'Tageslimit erreicht.';
+      return 'System bereit.';
+    }
+
+    function updateStyles(guard, pnl){
+      const hero = document.getElementById('hero');
+      const banner = document.getElementById('guard');
+      const sub = document.getElementById('sub');
+      const chipStatus = document.getElementById('chipStatus');
+      const overlay = document.getElementById('lockOverlay');
+
+      hero.classList.remove('readyGlow','warnGlow','blockGlow','coolGlow','lockGlow');
+      banner.className = 'guard ' + guardClass(guard);
+      sub.className = 'sub ' + guardClass(guard);
+      chipStatus.className = 'chip ' + guardClass(guard);
+      banner.classList.remove('pulse');
+      overlay.style.display = 'none';
+
+      if(guard === 'READY'){
+        if(pnl >= 0){
+          hero.classList.add('readyGlow');
+        }else{
+          hero.classList.add('blockGlow');
+        }
+      }else if(guard === 'WARN' || guard === 'SESSION_LIMIT'){
+        hero.classList.add('warnGlow');
+      }else if(guard === 'COOLDOWN'){
+        hero.classList.add('coolGlow');
+        banner.classList.add('pulse');
+      }else if(guard === 'LOCKED'){
+        hero.classList.add('lockGlow');
+        banner.classList.add('pulse');
+        overlay.style.display = 'flex';
+      }else{
+        hero.classList.add('blockGlow');
+        banner.classList.add('pulse');
+        overlay.style.display = 'flex';
+      }
+    }
+
+    function animatePnlChange(newPnl){
+      const pnlEl = document.getElementById('pnl');
+      pnlEl.classList.remove('up','down');
+      void pnlEl.offsetWidth;
+      if(lastPnl === null) return;
+      if(newPnl > lastPnl){
+        pnlEl.classList.add('up');
+        setTimeout(()=>pnlEl.classList.remove('up'),180);
+      }else if(newPnl < lastPnl){
+        pnlEl.classList.add('down');
+        setTimeout(()=>pnlEl.classList.remove('down'),180);
+      }
+    }
+
+    function flashWin(){
+      const hero = document.getElementById('hero');
+      hero.classList.remove('flashWin');
+      void hero.offsetWidth;
+      hero.classList.add('flashWin');
+      setTimeout(()=>hero.classList.remove('flashWin'),420);
+    }
+
+    function makeLineGradient(ctx, area){
+      const g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+      g.addColorStop(0, '#8de38f');
+      g.addColorStop(0.48, '#6db9ff');
+      g.addColorStop(1, '#e4a193');
+      return g;
+    }
+
+    function initChart(){
+      const ctx = document.getElementById('chart').getContext('2d');
+
+      chart = new Chart(ctx,{
+        type:'line',
+        data:{
+          labels:[],
+          datasets:[{
+            data:[],
+            borderWidth:5,
+            tension:.34,
+            fill:false,
+            pointRadius:5,
+            pointHoverRadius:6,
+            pointBorderWidth:2,
+            borderColor:'#75c6ff',
+            pointBackgroundColor:(context)=>{
+              const i = context.dataIndex;
+              const v = context.dataset.data[i] ?? 0;
+              return v >= 0 ? '#9bdd8c' : '#e4a193';
+            },
+            pointBorderColor:(context)=>{
+              const i = context.dataIndex;
+              const v = context.dataset.data[i] ?? 0;
+              return v >= 0 ? '#9bdd8c' : '#e4a193';
+            }
+          }]
         },
-        y:{
-          ticks:{color:'rgba(255,255,255,.42)'},
-          grid:{color:'rgba(255,255,255,.05)'}
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          animation:{
+            duration:280,
+            easing:'easeOutCubic'
+          },
+          plugins:{
+            legend:{display:false}
+          },
+          scales:{
+            x:{
+              ticks:{color:'rgba(255,255,255,.42)'},
+              grid:{color:'rgba(255,255,255,.04)'}
+            },
+            y:{
+              ticks:{color:'rgba(255,255,255,.42)'},
+              grid:{color:'rgba(255,255,255,.05)'}
+            }
+          }
+        },
+        plugins:[{
+          id:'gradientGlow',
+          beforeDatasetsDraw(c){
+            const {ctx} = c;
+            ctx.save();
+            ctx.shadowColor = 'rgba(98,181,255,.35)';
+            ctx.shadowBlur = 18;
+          },
+          afterDatasetsDraw(c){
+            c.ctx.restore();
+          },
+          beforeDatasetDraw(c,args){
+            const area = c.chartArea;
+            if(!area) return;
+            args.meta.dataset.options.borderColor = makeLineGradient(c.ctx, area);
+          }
+        }]
+      });
+
+      if(pnlHistory.length){
+        chart.data.labels = pnlHistory.map((_,i)=>i);
+        chart.data.datasets[0].data = pnlHistory;
+        chart.update();
+      }
+    }
+
+    function logClass(type=''){
+      const t = type.toUpperCase();
+      if(t === 'WIN') return 'win';
+      if(t === 'LOSS') return 'loss';
+      if(t === 'EXECUTED' || t === 'PROCESSING') return 'exec';
+      if(t === 'QUEUED') return 'queue';
+      if(t.includes('HARD')) return 'hb';
+      if(t.includes('COOLDOWN')) return 'cd';
+      if(t === 'RESET') return 'reset';
+      return 'default';
+    }
+
+    function renderLog(logList){
+      const log = document.getElementById('log');
+      log.innerHTML = '';
+
+      if(!Array.isArray(logList) || !logList.length){
+        const row = document.createElement('div');
+        row.className = 'entry default';
+        row.innerHTML = '<div class="entryMsg">Noch kein Log.</div>';
+        log.appendChild(row);
+        return;
+      }
+
+      logList.forEach(item=>{
+        const row = document.createElement('div');
+        row.className = 'entry ' + logClass(item.type || '');
+        row.innerHTML =
+          '<div class="entryType">' + (item.type || 'INFO') + '</div>' +
+          '<div class="entryMsg">' + (item.msg || '') + '</div>' +
+          '<div class="entryTime">' + (item.ts || '') + '</div>';
+        log.appendChild(row);
+      });
+    }
+
+    function playStateSound(newGuard, newPnl){
+      if(lastGuard === null && lastPnl === null) return;
+
+      if(lastPnl !== null){
+        if(newPnl > lastPnl){
+          soundWin();
+          flashWin();
+        }else if(newPnl < lastPnl){
+          soundLoss();
         }
       }
-    },
-    plugins:[{
-      id:'dynamicGradient',
-      beforeDatasetsDraw(chartInstance){
-        const {ctx, chartArea} = chartInstance;
-        if(!chartArea) return;
-        chartInstance.data.datasets[0].borderColor = makeGradient(ctx, chartArea);
+
+      if(lastGuard !== newGuard){
+        if(newGuard === 'LOCKED' || newGuard === 'BLOCKED' || newGuard === 'COOLDOWN'){
+          soundLock();
+        }
+        if(newGuard === 'READY' && lastGuard !== 'READY'){
+          soundReady();
+        }
       }
-    }]
-  });
-
-  if(pnlHistory.length){
-    chart.data.labels = pnlHistory.map((_,i)=>i);
-    chart.data.datasets[0].data = pnlHistory;
-    chart.update();
-  }
-}
-
-function logClass(type=''){
-  const t = type.toUpperCase();
-  if(t.includes('WIN')) return 'win';
-  if(t.includes('LOSS')) return 'loss';
-  if(t.includes('EXECUTED') || t.includes('PROCESSING')) return 'exec';
-  if(t.includes('QUEUED')) return 'queue';
-  if(t.includes('BLOCK') || t.includes('COOLDOWN') || t.includes('SESSION')) return 'block';
-  return 'default';
-}
-
-function renderLog(logList){
-  const log = document.getElementById('log');
-  log.innerHTML = '';
-
-  if(!Array.isArray(logList) || !logList.length){
-    const row = document.createElement('div');
-    row.className = 'entry default';
-    row.innerHTML = '<div class="entryMsg">Noch kein Log.</div>';
-    log.appendChild(row);
-    return;
-  }
-
-  logList.forEach(item=>{
-    const row = document.createElement('div');
-    row.className = 'entry ' + logClass(item.type || '');
-    row.innerHTML =
-      '<div class="entryType">' + (item.type || 'INFO') + '</div>' +
-      '<div class="entryMsg">' + (item.msg || '') + '</div>' +
-      '<div class="entryTime">' + (item.ts || '') + '</div>';
-    log.appendChild(row);
-  });
-}
-
-function playStateSound(newGuard, newPnl){
-  if(lastGuard === null && lastPnl === null) return;
-
-  if(lastPnl !== null){
-    if(newPnl > lastPnl) soundWin();
-    else if(newPnl < lastPnl) soundLoss();
-  }
-
-  if(lastGuard !== newGuard){
-    if(newGuard === 'LOCKED' || newGuard === 'BLOCKED') soundLock();
-    if(newGuard === 'READY' && lastGuard !== 'READY') soundReady();
-  }
-}
-
-function renderStatus(d){
-  const pnl = safeNum(d.pnl, 0);
-  const ordersToday = safeNum(d.ordersToday, 0);
-  const maxOrders = safeNum(d.maxOrdersPerSession, 10);
-  const queueLength = safeNum(d.queueLength, 0);
-  const cooldownLeft = safeNum(d.cooldownLeft, 0);
-  const hardBlocked = !!d.hardBlocked;
-  const wins = safeNum(d.totalWins, 0);
-  const losses = safeNum(d.totalLosses, 0);
-  const winStreak = safeNum(d.winStreak, 0);
-  const lossStreak = safeNum(d.lossStreak, 0);
-  const winrate = (wins + losses) > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '0.0';
-  const guard = d.guard || 'READY';
-  const reasonLabel = d.reasonLabel || guard;
-
-  playStateSound(guard, pnl);
-  updateStyles(guard, pnl);
-
-  document.getElementById('guard').innerText = guard;
-  document.getElementById('sub').innerText = reasonLabel;
-  document.getElementById('pnl').innerText = 'PnL: ' + pnl.toFixed(2);
-
-  document.getElementById('orders').innerText = ordersToday + '/' + maxOrders;
-  document.getElementById('queue').innerText = queueLength;
-  document.getElementById('cooldown').innerText = cooldownLeft + 's';
-  document.getElementById('hb').innerText = hardBlocked ? 'AN' : 'AUS';
-  document.getElementById('wins').innerText = wins;
-  document.getElementById('losses').innerText = losses;
-  document.getElementById('winrate').innerText = winrate + '%';
-  document.getElementById('streak').innerText = 'W' + winStreak + ' / L' + lossStreak;
-  document.getElementById('hint').innerText = hintText(d.reason);
-
-  document.getElementById('chipStatus').innerText = guard;
-  document.getElementById('chipOrders').innerText = ordersToday + '/' + maxOrders;
-  document.getElementById('chipCooldown').innerText = cooldownLeft + 's';
-  document.getElementById('chipHB').innerText = hardBlocked ? 'HB ON' : 'HB OFF';
-
-  const cdChip = document.getElementById('chipCooldown');
-  cdChip.className = cooldownLeft > 0 ? 'chip cooldown' : 'chip';
-
-  const hbChip = document.getElementById('chipHB');
-  hbChip.className = hardBlocked ? 'chip hbon' : 'chip';
-
-  const sendDisabled = ['BLOCKED','COOLDOWN','LOCKED','SESSION_LIMIT'].includes(guard);
-  document.getElementById('btnSend').disabled = sendDisabled;
-
-  animatePnlChange(pnl);
-
-  if(pnlHistory.length === 0 || pnlHistory[pnlHistory.length - 1] !== pnl){
-    pnlHistory.push(pnl);
-    if(pnlHistory.length > 80) pnlHistory.shift();
-    saveHistory();
-    chart.data.labels = pnlHistory.map((_,i)=>i);
-    chart.data.datasets[0].data = pnlHistory;
-    chart.update();
-  }
-
-  renderLog(d.log || []);
-
-  lastPnl = pnl;
-  lastGuard = guard;
-}
-
-async function loadStatus(withToast=false){
-  try{
-    const res = await fetch('/api/status');
-    const d = await res.json();
-    renderStatus(d);
-    if(withToast) showToast('Status geladen');
-  }catch(e){
-    showToast('Status Fehler', true);
-  }
-}
-
-async function act(url, okText){
-  try{
-    ensureAudio();
-    const res = await fetch(url, { method:'POST' });
-    let data = {};
-    try{ data = await res.json(); }catch(e){}
-
-    await loadStatus(false);
-
-    if(res.ok){
-      showToast(okText || 'OK');
-    }else{
-      showToast((data && data.message) ? data.message : 'Fehler', true);
     }
-  }catch(e){
-    showToast('Netzwerkfehler', true);
-  }
-}
 
-document.body.addEventListener('touchstart', ensureAudio, { once:true });
-document.body.addEventListener('click', ensureAudio, { once:true });
+    function renderStatus(d){
+      const pnl = safeNum(d.pnl, 0);
+      const ordersToday = safeNum(d.ordersToday, 0);
+      const maxOrders = safeNum(d.maxOrdersPerSession, 10);
+      const queueLength = safeNum(d.queueLength, 0);
+      const cooldownLeft = safeNum(d.cooldownLeft, 0);
+      const hardBlocked = !!d.hardBlocked;
+      const wins = safeNum(d.totalWins, 0);
+      const losses = safeNum(d.totalLosses, 0);
+      const winStreak = safeNum(d.winStreak, 0);
+      const lossStreak = safeNum(d.lossStreak, 0);
+      const winrate = (wins + losses) > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '0.0';
+      const guard = d.guard || 'READY';
+      const reasonLabel = d.reasonLabel || guard;
 
-loadHistory();
-initChart();
-loadStatus(false);
-</script>
+      playStateSound(guard, pnl);
+      updateStyles(guard, pnl);
+
+      document.getElementById('guard').innerText = guard;
+      document.getElementById('sub').innerText = reasonLabel;
+      document.getElementById('pnl').innerText = 'PnL: ' + pnl.toFixed(2);
+
+      document.getElementById('orders').innerText = ordersToday + '/' + maxOrders;
+      document.getElementById('queue').innerText = queueLength;
+      document.getElementById('cooldown').innerText = cooldownLeft + 's';
+      document.getElementById('hb').innerText = hardBlocked ? 'AN' : 'AUS';
+      document.getElementById('wins').innerText = wins;
+      document.getElementById('losses').innerText = losses;
+      document.getElementById('winrate').innerText = winrate + '%';
+      document.getElementById('streak').innerText = 'W' + winStreak + ' / L' + lossStreak;
+      document.getElementById('hint').innerText = hintText(d.reason);
+
+      document.getElementById('chipStatus').innerText = guard;
+      document.getElementById('chipOrders').innerText = ordersToday + '/' + maxOrders;
+      document.getElementById('chipCooldown').innerText = cooldownLeft + 's';
+      document.getElementById('chipHB').innerText = hardBlocked ? 'HB ON' : 'HB OFF';
+
+      const cdChip = document.getElementById('chipCooldown');
+      cdChip.className = cooldownLeft > 0 ? 'chip cooldown' : 'chip';
+
+      const hbChip = document.getElementById('chipHB');
+      hbChip.className = hardBlocked ? 'chip hbon' : 'chip';
+
+      const sendDisabled = ['BLOCKED','COOLDOWN','LOCKED','SESSION_LIMIT'].includes(guard);
+      document.getElementById('btnSend').disabled = sendDisabled;
+
+      animatePnlChange(pnl);
+
+      if(pnlHistory.length === 0 || pnlHistory[pnlHistory.length - 1] !== pnl){
+        pnlHistory.push(pnl);
+        if(pnlHistory.length > 80) pnlHistory.shift();
+        saveHistory();
+        chart.data.labels = pnlHistory.map((_,i)=>i);
+        chart.data.datasets[0].data = pnlHistory;
+        chart.update();
+      }
+
+      renderLog(d.log || []);
+
+      lastPnl = pnl;
+      lastGuard = guard;
+    }
+
+    async function loadStatus(withToast=false){
+      try{
+        const res = await fetch('/api/status');
+        const d = await res.json();
+        renderStatus(d);
+        if(withToast){
+          soundRefresh();
+          showToast('Status geladen');
+        }
+      }catch(e){
+        showToast('Status Fehler', true);
+      }
+    }
+
+    async function act(url, okText){
+      unlockAudio();
+      try{
+        const res = await fetch(url, { method:'POST' });
+        let data = {};
+        try{ data = await res.json(); }catch(e){}
+        await loadStatus(false);
+
+        if(res.ok){
+          showToast(okText || 'OK');
+        }else{
+          showToast((data && data.message) ? data.message : 'Fehler', true);
+        }
+      }catch(e){
+        showToast('Netzwerkfehler', true);
+      }
+    }
+
+    loadHistory();
+    initChart();
+    loadStatus(false);
+  </script>
 </body>
 </html>
