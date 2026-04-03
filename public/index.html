@@ -3,129 +3,171 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>V17 PRO</title>
+<title>V17.5 ULTRA</title>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+:root{
+  --bg1:#06122a;
+  --bg2:#0b1a3d;
+
+  --green:#6fe27d;
+  --red:#e59a8c;
+  --yellow:#ffd76a;
+  --blue:#7aa7ff;
+  --purple:#a58bff;
+
+  --card:rgba(120,130,200,.95);
+  --box:rgba(150,160,220,.35);
+
+  --shadow:0 18px 44px rgba(0,0,0,.25);
+}
+
 body{
   margin:0;
   font-family:Arial;
-  background:#07132d;
+  background:linear-gradient(180deg,var(--bg1),var(--bg2));
   color:#fff;
 }
 
 .wrap{
-  max-width:800px;
+  max-width:860px;
   margin:auto;
   padding:12px;
 }
 
+/* HEADER */
 .title{
   text-align:center;
-  font-weight:900;
   font-size:22px;
-}
-
-.hero{
-  background:#1b2b5f;
-  padding:16px;
-  border-radius:20px;
-  text-align:center;
-  margin-top:12px;
-}
-
-.guard{
-  font-size:48px;
   font-weight:900;
+  margin-bottom:10px;
 }
 
+/* HERO */
+.hero{
+  background:linear-gradient(180deg,var(--card),rgba(100,110,180,.95));
+  border-radius:24px;
+  padding:18px;
+  box-shadow:var(--shadow);
+  transition:.2s;
+}
+
+/* GUARD */
+.guard{
+  font-size:52px;
+  font-weight:900;
+  text-align:center;
+}
+
+.guard.ready{color:var(--green)}
+.guard.blocked{color:var(--red)}
+.guard.cooldown{color:var(--purple)}
+.guard.warn{color:var(--yellow)}
+
+.guard.pulse{
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.05)}
+  100%{transform:scale(1)}
+}
+
+/* PNL */
 .pnl{
-  font-size:36px;
-  margin:10px 0;
+  text-align:center;
+  font-size:40px;
+  font-weight:900;
+  margin-top:10px;
+  transition:.2s;
 }
 
+/* STATS */
 .stats{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:8px;
+  gap:10px;
+  margin-top:12px;
 }
 
 .box{
-  background:#243a7a;
-  padding:10px;
-  border-radius:12px;
+  background:var(--box);
+  padding:12px;
+  border-radius:16px;
+  text-align:center;
 }
 
+/* CHART */
+.chartWrap{
+  height:300px;
+  margin-top:16px;
+}
+
+/* BUTTONS */
 .controls{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:8px;
+  gap:10px;
   margin-top:12px;
 }
 
 button{
   padding:14px;
   border:none;
-  border-radius:12px;
+  border-radius:14px;
   font-weight:900;
-  cursor:pointer;
+  color:#fff;
 }
 
-.chartWrap{
-  height:260px;
-  margin-top:12px;
-}
+.btnSend{background:#7f8cff}
+.btnWin{background:#8bdc8b}
+.btnLoss{background:#d88c80}
+.btnReset{background:#d6b75e}
 
+/* LOG */
 .log{
-  margin-top:12px;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
+  margin-top:14px;
 }
 
 .entry{
-  background:#2a3d80;
-  padding:8px;
-  border-radius:10px;
-  font-size:13px;
+  padding:10px;
+  border-radius:12px;
+  margin-bottom:6px;
+  background:rgba(120,130,190,.9);
 }
-
-.liveOn{background:#4caf50}
-.liveOff{background:#b96d5f}
 </style>
 </head>
 
 <body>
+
 <div class="wrap">
 
-<div class="title">V17 PRO</div>
+<div class="title">V17.5 ULTRA 🚀</div>
 
-<div class="hero">
-  <div id="guard" class="guard">READY</div>
-  <div id="pnl" class="pnl">0.00</div>
+<div id="hero" class="hero">
 
-  <div class="stats">
-    <div class="box">Orders: <span id="orders">0</span></div>
-    <div class="box">Cooldown: <span id="cd">0</span></div>
-    <div class="box">Wins: <span id="wins">0</span></div>
-    <div class="box">Loss: <span id="loss">0</span></div>
-    <div class="box">Session: <span id="session">0s</span></div>
-    <div class="box">Target: <span id="target">0</span></div>
-  </div>
+<div id="guard" class="guard ready">READY</div>
+<div id="pnl" class="pnl">0.00</div>
+
+<div class="stats">
+<div class="box">Orders: <span id="orders">0</span></div>
+<div class="box">Cooldown: <span id="cd">0</span></div>
+</div>
+
 </div>
 
 <div class="chartWrap">
-  <canvas id="chart"></canvas>
+<canvas id="chart"></canvas>
 </div>
 
 <div class="controls">
-  <button onclick="act('/api/order')">SEND</button>
-  <button onclick="act('/api/win')">WIN</button>
-  <button onclick="act('/api/loss')">LOSS</button>
-  <button onclick="act('/api/reset')">RESET</button>
-
-  <button onclick="toggleLive()" id="liveBtn" class="liveOn">LIVE ON</button>
-  <button onclick="act('/api/cooldown')">COOLDOWN</button>
+<button class="btnSend" onclick="act('/api/order')">SEND</button>
+<button class="btnWin" onclick="act('/api/win')">WIN</button>
+<button class="btnLoss" onclick="act('/api/loss')">LOSS</button>
+<button class="btnReset" onclick="act('/api/reset')">RESET</button>
 </div>
 
 <div id="log" class="log"></div>
@@ -134,73 +176,96 @@ button{
 
 <script>
 let chart;
-let history=[];
-let live=true;
-let sessionStart=Date.now();
+let pnlHistory=[];
+let lastPnl=0;
 
 function initChart(){
-  const ctx=document.getElementById('chart').getContext('2d');
-  chart=new Chart(ctx,{
+  chart=new Chart(document.getElementById('chart'),{
     type:'line',
-    data:{labels:[],datasets:[{data:[],borderColor:'#4fc3f7'}]},
-    options:{responsive:true,maintainAspectRatio:false}
+    data:{
+      labels:[],
+      datasets:[{
+        data:[],
+        borderWidth:4,
+        tension:.3
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{x:{display:false}}
+    }
   });
 }
 
-function updateChart(v){
-  history.push(v);
-  if(history.length>50) history.shift();
-  chart.data.labels=history.map((_,i)=>i);
-  chart.data.datasets[0].data=history;
+function updateChart(pnl){
+  pnlHistory.push(pnl);
+  if(pnlHistory.length>50) pnlHistory.shift();
+  chart.data.labels=pnlHistory.map((_,i)=>i);
+  chart.data.datasets[0].data=pnlHistory;
   chart.update();
 }
 
-function log(msg){
-  const el=document.createElement('div');
-  el.className='entry';
-  el.innerText=new Date().toLocaleTimeString()+" - "+msg;
-  document.getElementById('log').prepend(el);
+/* PNL COLOR AUTO */
+function pnlColor(v){
+  if(v>0) return 'linear-gradient(90deg,#6fe27d,#a6ffb3)';
+  if(v<0) return 'linear-gradient(90deg,#e59a8c,#ffb2a7)';
+  return '#fff';
 }
 
+/* ANIMATION */
+function impact(type){
+  const hero=document.getElementById('hero');
+  hero.style.transform='scale(1.03)';
+  setTimeout(()=>hero.style.transform='scale(1)',120);
+}
+
+/* LOAD STATUS */
 async function load(){
-  try{
-    const r=await fetch('/api/status');
-    const d=await r.json();
+  const r=await fetch('/api/status');
+  const d=await r.json();
 
-    document.getElementById('guard').innerText=d.guard;
-    document.getElementById('pnl').innerText=d.pnl.toFixed(2);
-    document.getElementById('orders').innerText=d.ordersToday;
-    document.getElementById('cd').innerText=d.cooldownLeft;
-    document.getElementById('wins').innerText=d.totalWins;
-    document.getElementById('loss').innerText=d.totalLosses;
+  document.getElementById('guard').innerText=d.guard;
+  document.getElementById('orders').innerText=d.ordersToday;
+  document.getElementById('cd').innerText=d.cooldownLeft;
 
-    document.getElementById('target').innerText=d.pnlTarget||0;
+  const pnl=d.pnl;
+  const pnlEl=document.getElementById('pnl');
 
-    updateChart(d.pnl);
+  pnlEl.innerText=pnl.toFixed(2);
+  pnlEl.style.background=pnlColor(pnl);
+  pnlEl.style.webkitBackgroundClip='text';
+  pnlEl.style.color='transparent';
 
-  }catch(e){}
+  if(pnl>lastPnl) impact('win');
+  if(pnl<lastPnl) impact('loss');
+
+  lastPnl=pnl;
+
+  updateChart(pnl);
+
+  renderLog(d.log||[]);
 }
 
+/* ACTION */
 async function act(url){
   await fetch(url,{method:'POST'});
-  log(url);
   load();
 }
 
-function toggleLive(){
-  live=!live;
-  const btn=document.getElementById('liveBtn');
-  btn.innerText=live?'LIVE ON':'LIVE OFF';
-  btn.className=live?'liveOn':'liveOff';
+/* LOG */
+function renderLog(log){
+  const el=document.getElementById('log');
+  el.innerHTML='';
+  log.forEach(l=>{
+    const d=document.createElement('div');
+    d.className='entry';
+    d.innerText=l.msg;
+    el.appendChild(d);
+  });
 }
 
-setInterval(()=>{
-  if(live) load();
-  document.getElementById('session').innerText=
-    Math.floor((Date.now()-sessionStart)/1000)+'s';
-},1000);
-
 initChart();
+setInterval(load,2000);
 load();
 </script>
 
