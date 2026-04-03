@@ -1,273 +1,1216 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>V17.5 ULTRA</title>
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>V18.2 FULL PRO</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 :root{
-  --bg1:#06122a;
-  --bg2:#0b1a3d;
+  --bg1:#020814;
+  --bg2:#071328;
+  --bg3:#0c1c39;
 
-  --green:#6fe27d;
-  --red:#e59a8c;
-  --yellow:#ffd76a;
+  --green:#79f2a3;
+  --red:#ff8f8f;
+  --yellow:#ffd86b;
   --blue:#7aa7ff;
-  --purple:#a58bff;
+  --purple:#ae8cff;
+  --cyan:#7cf7ff;
+  --orange:#ffb46a;
+  --text:#eef4ff;
+  --muted:#b9c7ea;
 
-  --card:rgba(120,130,200,.95);
-  --box:rgba(150,160,220,.35);
+  --card:rgba(16,25,54,.92);
+  --card2:rgba(30,43,86,.92);
+  --glass:rgba(255,255,255,.05);
+  --line:rgba(255,255,255,.07);
 
-  --shadow:0 18px 44px rgba(0,0,0,.25);
+  --shadow:0 18px 50px rgba(0,0,0,.35);
+  --glowBlue:0 0 24px rgba(124,247,255,.28);
+  --glowRed:0 0 24px rgba(255,120,120,.25);
 }
+
+*{box-sizing:border-box}
 
 body{
   margin:0;
-  font-family:Arial;
-  background:linear-gradient(180deg,var(--bg1),var(--bg2));
-  color:#fff;
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(124,247,255,.08), transparent 22%),
+    radial-gradient(circle at top right, rgba(174,140,255,.08), transparent 24%),
+    linear-gradient(180deg,var(--bg1),var(--bg2),var(--bg3));
 }
 
 .wrap{
-  max-width:860px;
+  max-width:1240px;
   margin:auto;
-  padding:12px;
+  padding:14px;
 }
 
-/* HEADER */
 .title{
   text-align:center;
-  font-size:22px;
+  font-size:28px;
   font-weight:900;
-  margin-bottom:10px;
+  margin:6px 0 14px;
+  letter-spacing:.7px;
+  text-shadow:0 0 14px rgba(124,247,255,.15);
 }
 
-/* HERO */
 .hero{
-  background:linear-gradient(180deg,var(--card),rgba(100,110,180,.95));
-  border-radius:24px;
+  position:relative;
+  overflow:hidden;
+  border-radius:28px;
   padding:18px;
+  background:linear-gradient(180deg,var(--card),var(--card2));
+  border:1px solid rgba(255,255,255,.06);
   box-shadow:var(--shadow);
-  transition:.2s;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
-/* GUARD */
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:-35%;
+  background:
+    radial-gradient(circle, rgba(124,247,255,.06) 0, transparent 17%),
+    radial-gradient(circle, rgba(174,140,255,.06) 0, transparent 21%);
+  animation:spinBg 18s linear infinite;
+  pointer-events:none;
+}
+
+@keyframes spinBg{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+
+.heroInner{position:relative;z-index:2}
+
+.topGrid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:14px;
+}
+
+.guardCard,.scoreCard{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:22px;
+  padding:16px;
+  backdrop-filter:blur(8px);
+}
+
 .guard{
-  font-size:52px;
+  font-size:58px;
+  line-height:1;
   font-weight:900;
   text-align:center;
+  text-shadow:0 0 18px rgba(255,255,255,.08);
 }
 
 .guard.ready{color:var(--green)}
 .guard.blocked{color:var(--red)}
 .guard.cooldown{color:var(--purple)}
 .guard.warn{color:var(--yellow)}
+.guard.sniper{color:var(--cyan)}
+.guard.god{color:#fff}
 
-.guard.pulse{
-  animation:pulse 1s infinite;
-}
-
+.pulse{animation:pulse 1.1s infinite}
 @keyframes pulse{
   0%{transform:scale(1)}
-  50%{transform:scale(1.05)}
+  50%{transform:scale(1.04)}
   100%{transform:scale(1)}
 }
 
-/* PNL */
+.sub{
+  text-align:center;
+  margin-top:8px;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.4px;
+}
+
 .pnl{
   text-align:center;
-  font-size:40px;
+  font-size:48px;
   font-weight:900;
-  margin-top:10px;
-  transition:.2s;
-}
-
-/* STATS */
-.stats{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
+  line-height:1;
+  min-height:54px;
   margin-top:12px;
 }
-
-.box{
-  background:var(--box);
-  padding:12px;
-  border-radius:16px;
-  text-align:center;
+.pnl small{
+  display:block;
+  margin-top:6px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--muted);
+  letter-spacing:.4px;
 }
 
-/* CHART */
-.chartWrap{
-  height:300px;
-  margin-top:16px;
-}
-
-/* BUTTONS */
-.controls{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
+.directionRow{
   margin-top:12px;
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
 }
 
-button{
-  padding:14px;
-  border:none;
-  border-radius:14px;
+.pill{
+  padding:9px 12px;
+  border-radius:999px;
+  font-size:12px;
   font-weight:900;
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.05);
+  color:var(--muted);
+}
+
+.pill.buy{
+  background:linear-gradient(90deg,#5ed88c,#7cf7ff);
+  color:#041420;
+  box-shadow:var(--glowBlue);
+}
+.pill.sell{
+  background:linear-gradient(90deg,#ff8f8f,#ffb46a);
+  color:#2a0909;
+  box-shadow:var(--glowRed);
+}
+.pill.flat{
+  background:linear-gradient(90deg,#67779f,#8a9bc4);
   color:#fff;
 }
 
-.btnSend{background:#7f8cff}
-.btnWin{background:#8bdc8b}
-.btnLoss{background:#d88c80}
-.btnReset{background:#d6b75e}
+.scoreHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
 
-/* LOG */
-.log{
+.scoreTitle{
+  font-size:18px;
+  font-weight:900;
+}
+
+.scoreValue{
+  font-size:34px;
+  font-weight:900;
+  color:var(--cyan);
+  text-shadow:0 0 18px rgba(124,247,255,.22);
+}
+
+.barWrap{
+  height:14px;
+  border-radius:999px;
+  overflow:hidden;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.05);
+}
+
+.bar{
+  height:100%;
+  width:0%;
+  border-radius:999px;
+  background:linear-gradient(90deg,var(--red),var(--yellow),var(--green),var(--cyan));
+  transition:width .25s ease;
+  box-shadow:var(--glowBlue);
+}
+
+.factorGrid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
+  margin-top:12px;
+}
+
+.factor{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.05);
+  border-radius:14px;
+  padding:10px;
+}
+
+.factorTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+}
+
+.factorName{
+  font-size:12px;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.factorVal{
+  font-size:15px;
+  font-weight:900;
+}
+
+.ok{color:var(--green)}
+.mid{color:var(--yellow)}
+.bad{color:var(--red)}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  gap:10px;
   margin-top:14px;
 }
 
-.entry{
-  padding:10px;
-  border-radius:12px;
+.box{
+  padding:12px;
+  border-radius:18px;
+  text-align:center;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.05);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.boxLabel{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:700;
   margin-bottom:6px;
-  background:rgba(120,130,190,.9);
+  letter-spacing:.4px;
+}
+
+.boxValue{
+  font-size:22px;
+  font-weight:900;
+}
+
+.mainGrid{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:14px;
+  margin-top:14px;
+}
+
+.card{
+  background:linear-gradient(180deg,var(--card),rgba(22,33,68,.96));
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:24px;
+  padding:14px;
+  box-shadow:var(--shadow);
+}
+
+.cardTitle{
+  font-size:16px;
+  font-weight:900;
+  margin-bottom:10px;
+}
+
+.chartWrap{
+  height:340px;
+}
+
+.sideGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.kpi{
+  padding:12px;
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.05);
+}
+
+.kpiName{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+}
+
+.kpiValue{
+  margin-top:6px;
+  font-size:24px;
+  font-weight:900;
+}
+
+.kpiSub{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:11px;
+}
+
+.tradePanel{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:10px;
+}
+
+.tradeBox{
+  padding:12px;
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.05);
+  text-align:center;
+}
+
+.tradeName{
+  font-size:12px;
+  font-weight:700;
+  color:var(--muted);
+}
+
+.tradeValue{
+  margin-top:6px;
+  font-size:24px;
+  font-weight:900;
+}
+
+.badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.badge{
+  padding:8px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.05);
+  color:var(--muted);
+}
+
+.badge.on{
+  color:#03111d;
+  background:linear-gradient(90deg,var(--green),var(--cyan));
+  box-shadow:var(--glowBlue);
+}
+
+.badge.warn{
+  color:#2f2400;
+  background:linear-gradient(90deg,var(--yellow),#ffe89d);
+}
+
+.badge.off{
+  color:#fff;
+  background:linear-gradient(90deg,#4d5876,#68769d);
+}
+
+.controls{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  gap:10px;
+  margin-top:14px;
+}
+
+button{
+  padding:15px 12px;
+  border:none;
+  border-radius:16px;
+  font-weight:900;
+  color:#fff;
+  cursor:pointer;
+  transition:transform .15s ease, opacity .15s ease, box-shadow .15s ease;
+  box-shadow:0 12px 24px rgba(0,0,0,.18);
+}
+
+button:hover{transform:translateY(-1px)}
+button:active{transform:scale(.985)}
+button:disabled{opacity:.45;cursor:not-allowed}
+
+.btnSend{background:linear-gradient(90deg,#6f7cff,#7cf7ff)}
+.btnWin{background:linear-gradient(90deg,#59d98b,#7bf0ad)}
+.btnLoss{background:linear-gradient(90deg,#df7f74,#ff9c9c)}
+.btnReset{background:linear-gradient(90deg,#bca04d,#ffd86b)}
+.btnMode{background:linear-gradient(90deg,#8e79ff,#71a7ff)}
+.btnSync{background:linear-gradient(90deg,#2d5eff,#6f7cff)}
+.btnBuy{background:linear-gradient(90deg,#3fcf7f,#64f0b0)}
+.btnSell{background:linear-gradient(90deg,#ff7f7f,#ffac6d)}
+
+.bottomGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-top:14px;
+}
+
+.log{
+  max-height:390px;
+  overflow:auto;
+  padding-right:4px;
+}
+
+.log::-webkit-scrollbar{width:8px}
+.log::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:999px}
+
+.entry{
+  padding:12px;
+  border-radius:14px;
+  margin-bottom:8px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.05);
+}
+
+.entryHead{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:6px;
+}
+
+.entryType{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.4px;
+}
+
+.entryTime{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.entryMsg{
+  font-size:13px;
+  line-height:1.35;
+}
+
+.alertOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.22);
+  display:none;
+  align-items:flex-start;
+  justify-content:center;
+  padding-top:24px;
+  z-index:50;
+  pointer-events:none;
+}
+
+.alertBox{
+  min-width:280px;
+  max-width:90vw;
+  padding:14px 16px;
+  border-radius:18px;
+  font-size:15px;
+  font-weight:900;
+  box-shadow:0 18px 46px rgba(0,0,0,.28);
+  animation:dropIn .25s ease;
+  border:1px solid rgba(255,255,255,.06);
+}
+
+.alertBox.win{
+  background:linear-gradient(90deg,#59d98b,#7cf7ff);
+  color:#041420;
+}
+.alertBox.loss{
+  background:linear-gradient(90deg,#ff8f8f,#ffb46a);
+  color:#2c0909;
+}
+.alertBox.info{
+  background:linear-gradient(90deg,#7aa7ff,#ae8cff);
+  color:#fff;
+}
+
+@keyframes dropIn{
+  from{opacity:0;transform:translateY(-18px) scale(.95)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+.footerNote{
+  margin:14px 0 4px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+}
+
+@media (max-width:1080px){
+  .topGrid,.mainGrid,.bottomGrid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .controls{grid-template-columns:repeat(4,1fr)}
+}
+
+@media (max-width:700px){
+  .title{font-size:22px}
+  .guard{font-size:42px}
+  .pnl{font-size:36px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .controls{grid-template-columns:repeat(2,1fr)}
+  .factorGrid,.sideGrid,.tradePanel{grid-template-columns:1fr}
 }
 </style>
 </head>
-
 <body>
 
 <div class="wrap">
+  <div class="title">V18.2 FULL PRO ⚡</div>
 
-<div class="title">V17.5 ULTRA 🚀</div>
+  <div id="hero" class="hero">
+    <div class="heroInner">
 
-<div id="hero" class="hero">
+      <div class="topGrid">
+        <div class="guardCard">
+          <div id="guard" class="guard ready pulse">READY</div>
+          <div id="guardSub" class="sub">System armed • waiting for sniper-grade setup</div>
 
-<div id="guard" class="guard ready">READY</div>
-<div id="pnl" class="pnl">0.00</div>
+          <div id="pnl" class="pnl">0.00<small>Net PnL</small></div>
 
-<div class="stats">
-<div class="box">Orders: <span id="orders">0</span></div>
-<div class="box">Cooldown: <span id="cd">0</span></div>
+          <div class="directionRow">
+            <div id="directionBadge" class="pill flat">NO SIGNAL</div>
+            <div id="sessionClock" class="pill">SESSION --:--:--</div>
+            <div id="newsBadge" class="pill">NEWS SAFE</div>
+          </div>
+        </div>
+
+        <div class="scoreCard">
+          <div class="scoreHead">
+            <div class="scoreTitle">FULL PRO SCORE</div>
+            <div id="scoreValue" class="scoreValue">0</div>
+          </div>
+          <div class="barWrap"><div id="scoreBar" class="bar"></div></div>
+
+          <div class="factorGrid">
+            <div class="factor"><div class="factorTop"><div class="factorName">Trend</div><div id="fTrend" class="factorVal bad">0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Volume</div><div id="fVolume" class="factorVal bad">0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Structure</div><div id="fStructure" class="factorVal bad">0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Volatility</div><div id="fVolatility" class="factorVal bad">0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Liquidity</div><div id="fLiquidity" class="factorVal bad">0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Session</div><div id="fSession" class="factorVal bad">0</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="box"><div class="boxLabel">ORDERS TODAY</div><div id="orders" class="boxValue">0</div></div>
+        <div class="box"><div class="boxLabel">COOLDOWN</div><div id="cd" class="boxValue">0</div></div>
+        <div class="box"><div class="boxLabel">WIN RATE</div><div id="wr" class="boxValue">0%</div></div>
+        <div class="box"><div class="boxLabel">MAX DD</div><div id="dd" class="boxValue">0%</div></div>
+        <div class="box"><div class="boxLabel">RISK MODE</div><div id="riskMode" class="boxValue">SAFE</div></div>
+        <div class="box"><div class="boxLabel">STREAK</div><div id="streak" class="boxValue">0</div></div>
+        <div class="box"><div class="boxLabel">WINS</div><div id="wins" class="boxValue">0</div></div>
+        <div class="box"><div class="boxLabel">LOSSES</div><div id="losses" class="boxValue">0</div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="mainGrid">
+    <div class="card">
+      <div class="cardTitle">PnL Momentum</div>
+      <div class="chartWrap"><canvas id="chart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="cardTitle">Execution Core</div>
+
+      <div class="sideGrid">
+        <div class="kpi">
+          <div class="kpiName">Daily Target</div>
+          <div id="dayTarget" class="kpiValue">0.00</div>
+          <div class="kpiSub">session goal</div>
+        </div>
+        <div class="kpi">
+          <div class="kpiName">Open Bias</div>
+          <div id="bias" class="kpiValue">NEUTRAL</div>
+          <div class="kpiSub">HTF direction</div>
+        </div>
+        <div class="kpi">
+          <div class="kpiName">Kill Switch</div>
+          <div id="kill" class="kpiValue">OFF</div>
+          <div class="kpiSub">equity protection</div>
+        </div>
+        <div class="kpi">
+          <div class="kpiName">Mode</div>
+          <div id="mode" class="kpiValue">FULL PRO</div>
+          <div class="kpiSub">execution profile</div>
+        </div>
+      </div>
+
+      <div class="tradePanel">
+        <div class="tradeBox">
+          <div class="tradeName">TP1</div>
+          <div id="tp1" class="tradeValue">0.00</div>
+        </div>
+        <div class="tradeBox">
+          <div class="tradeName">TP2</div>
+          <div id="tp2" class="tradeValue">0.00</div>
+        </div>
+        <div class="tradeBox">
+          <div class="tradeName">SL</div>
+          <div id="sl" class="tradeValue">0.00</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="badges" id="badges">
+        <div class="badge off">Trend Sync</div>
+        <div class="badge off">Volume Spike</div>
+        <div class="badge off">BOS</div>
+        <div class="badge off">Liquidity Grab</div>
+        <div class="badge off">Session Active</div>
+        <div class="badge off">News Safe</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btnSend" onclick="act('/api/order')">SEND</button>
+    <button class="btnBuy" onclick="forceSide('BUY')">BUY</button>
+    <button class="btnSell" onclick="forceSide('SELL')">SELL</button>
+    <button class="btnWin" onclick="act('/api/win')">WIN</button>
+    <button class="btnLoss" onclick="act('/api/loss')">LOSS</button>
+    <button class="btnReset" onclick="act('/api/reset')">RESET</button>
+    <button class="btnMode" onclick="toggleMode()">MODE</button>
+    <button class="btnSync" onclick="load()">SYNC</button>
+  </div>
+
+  <div class="bottomGrid">
+    <div class="card">
+      <div class="cardTitle">System Log</div>
+      <div id="log" class="log"></div>
+    </div>
+
+    <div class="card">
+      <div class="cardTitle">Ultra Rules</div>
+      <div class="badges">
+        <div id="ruleScore" class="badge off">Score ≥ 80</div>
+        <div id="ruleCooldown" class="badge off">Cooldown Clear</div>
+        <div id="ruleRisk" class="badge off">Risk OK</div>
+        <div id="ruleDd" class="badge off">DD Safe</div>
+        <div id="ruleSession" class="badge off">Session OK</div>
+        <div id="ruleNews" class="badge off">No News Block</div>
+        <div id="ruleBias" class="badge off">Bias Match</div>
+        <div id="ruleDirection" class="badge off">Direction Set</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footerNote">Ready for /api/status, /api/order, /api/win, /api/loss, /api/reset, optional /api/mode, /api/side</div>
 </div>
 
-</div>
-
-<div class="chartWrap">
-<canvas id="chart"></canvas>
-</div>
-
-<div class="controls">
-<button class="btnSend" onclick="act('/api/order')">SEND</button>
-<button class="btnWin" onclick="act('/api/win')">WIN</button>
-<button class="btnLoss" onclick="act('/api/loss')">LOSS</button>
-<button class="btnReset" onclick="act('/api/reset')">RESET</button>
-</div>
-
-<div id="log" class="log"></div>
-
+<div id="alertOverlay" class="alertOverlay">
+  <div id="alertBox" class="alertBox info">SYNC</div>
 </div>
 
 <script>
 let chart;
-let pnlHistory=[];
-let lastPnl=0;
+let pnlHistory = [];
+let lastPnl = 0;
+let localMode = 'FULL PRO';
+let localSide = 'NONE';
+let audioEnabled = true;
 
+/* ---------- CHART ---------- */
 function initChart(){
-  chart=new Chart(document.getElementById('chart'),{
+  chart = new Chart(document.getElementById('chart'),{
     type:'line',
     data:{
       labels:[],
       datasets:[{
         data:[],
-        borderWidth:4,
-        tension:.3
+        borderWidth:3,
+        tension:.28,
+        pointRadius:0,
+        fill:true,
+        backgroundColor:(ctx)=>{
+          const c = ctx.chart.ctx;
+          const g = c.createLinearGradient(0,0,0,280);
+          g.addColorStop(0,'rgba(124,247,255,.28)');
+          g.addColorStop(.45,'rgba(122,167,255,.18)');
+          g.addColorStop(1,'rgba(122,167,255,.03)');
+          return g;
+        },
+        borderColor:'#7cf7ff'
       }]
     },
     options:{
+      responsive:true,
+      maintainAspectRatio:false,
       plugins:{legend:{display:false}},
-      scales:{x:{display:false}}
+      scales:{
+        x:{display:false,grid:{display:false}},
+        y:{
+          grid:{color:'rgba(255,255,255,.06)'},
+          ticks:{color:'rgba(255,255,255,.62)'}
+        }
+      }
     }
   });
 }
 
 function updateChart(pnl){
-  pnlHistory.push(pnl);
-  if(pnlHistory.length>50) pnlHistory.shift();
-  chart.data.labels=pnlHistory.map((_,i)=>i);
-  chart.data.datasets[0].data=pnlHistory;
+  pnlHistory.push(Number(pnl || 0));
+  if(pnlHistory.length > 90) pnlHistory.shift();
+  chart.data.labels = pnlHistory.map((_,i)=>i+1);
+  chart.data.datasets[0].data = pnlHistory;
   chart.update();
 }
 
-/* PNL COLOR AUTO */
-function pnlColor(v){
-  if(v>0) return 'linear-gradient(90deg,#6fe27d,#a6ffb3)';
-  if(v<0) return 'linear-gradient(90deg,#e59a8c,#ffb2a7)';
-  return '#fff';
+/* ---------- HELPERS ---------- */
+function safeNum(v, fallback=0){
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
 }
 
-/* ANIMATION */
-function impact(type){
-  const hero=document.getElementById('hero');
-  hero.style.transform='scale(1.03)';
-  setTimeout(()=>hero.style.transform='scale(1)',120);
+function setText(id,val){
+  const el = document.getElementById(id);
+  if(el) el.textContent = val;
 }
 
-/* LOAD STATUS */
-async function load(){
-  const r=await fetch('/api/status');
-  const d=await r.json();
-
-  document.getElementById('guard').innerText=d.guard;
-  document.getElementById('orders').innerText=d.ordersToday;
-  document.getElementById('cd').innerText=d.cooldownLeft;
-
-  const pnl=d.pnl;
-  const pnlEl=document.getElementById('pnl');
-
-  pnlEl.innerText=pnl.toFixed(2);
-  pnlEl.style.background=pnlColor(pnl);
-  pnlEl.style.webkitBackgroundClip='text';
-  pnlEl.style.color='transparent';
-
-  if(pnl>lastPnl) impact('win');
-  if(pnl<lastPnl) impact('loss');
-
-  lastPnl=pnl;
-
-  updateChart(pnl);
-
-  renderLog(d.log||[]);
+function clsByValue(v){
+  if(v >= 80) return 'ok';
+  if(v >= 50) return 'mid';
+  return 'bad';
 }
 
-/* ACTION */
-async function act(url){
-  await fetch(url,{method:'POST'});
-  load();
+function badgeClass(active, warn=false){
+  if(warn) return 'badge warn';
+  return active ? 'badge on' : 'badge off';
 }
 
-/* LOG */
+function escapeHtml(str){
+  return str
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;");
+}
+
+function pnlGradient(v){
+  if(v > 0) return 'linear-gradient(90deg,#79f2a3,#7cf7ff)';
+  if(v < 0) return 'linear-gradient(90deg,#ff8f8f,#ffb46a)';
+  return 'linear-gradient(90deg,#dce7ff,#ffffff)';
+}
+
+/* ---------- SOUND ---------- */
+function beep(type='info'){
+  if(!audioEnabled) return;
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if(type === 'win'){
+      osc.frequency.value = 760;
+      gain.gain.value = 0.03;
+      osc.type = 'sine';
+    }else if(type === 'loss'){
+      osc.frequency.value = 220;
+      gain.gain.value = 0.035;
+      osc.type = 'square';
+    }else{
+      osc.frequency.value = 480;
+      gain.gain.value = 0.025;
+      osc.type = 'triangle';
+    }
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.12);
+  }catch(e){}
+}
+
+/* ---------- ALERT ---------- */
+let alertTimer = null;
+function showAlert(msg, type='info'){
+  const overlay = document.getElementById('alertOverlay');
+  const box = document.getElementById('alertBox');
+  box.className = `alertBox ${type}`;
+  box.textContent = msg;
+  overlay.style.display = 'flex';
+  clearTimeout(alertTimer);
+  alertTimer = setTimeout(()=>overlay.style.display='none', 1200);
+}
+
+/* ---------- CLOCK ---------- */
+function updateSessionClock(){
+  const now = new Date();
+  const time = now.toLocaleTimeString('de-DE');
+  let session = 'ASIA';
+  const h = now.getHours();
+
+  if(h >= 8 && h < 13) session = 'LONDON';
+  else if(h >= 13 && h < 22) session = 'NEW YORK';
+
+  setText('sessionClock', `${session} ${time}`);
+}
+
+/* ---------- NORMALIZE ---------- */
+function normalizeStatus(d){
+  const s = {
+    pnl: safeNum(d.pnl),
+    ordersToday: safeNum(d.ordersToday),
+    cooldownLeft: safeNum(d.cooldownLeft),
+    wins: safeNum(d.wins),
+    losses: safeNum(d.losses),
+    streak: safeNum(d.streak),
+    maxDrawdown: safeNum(d.maxDrawdown),
+    dailyTarget: safeNum(d.dailyTarget, 150),
+    riskMode: d.riskMode || 'SAFE',
+    bias: (d.bias || 'NEUTRAL').toUpperCase(),
+    killSwitch: !!d.killSwitch,
+    guard: d.guard || 'READY',
+    mode: d.mode || localMode,
+    side: (d.side || localSide || 'NONE').toUpperCase(),
+    tp1: safeNum(d.tp1),
+    tp2: safeNum(d.tp2),
+    sl: safeNum(d.sl),
+    log: Array.isArray(d.log) ? d.log : [],
+    factors:{
+      trend: safeNum(d?.factors?.trend, safeNum(d.trendScore)),
+      volume: safeNum(d?.factors?.volume, safeNum(d.volumeScore)),
+      structure: safeNum(d?.factors?.structure, safeNum(d.structureScore)),
+      volatility: safeNum(d?.factors?.volatility, safeNum(d.volatilityScore)),
+      liquidity: safeNum(d?.factors?.liquidity, safeNum(d.liquidityScore)),
+      session: safeNum(d?.factors?.session, safeNum(d.sessionScore))
+    },
+    flags:{
+      trendSync: !!(d?.flags?.trendSync ?? false),
+      volumeSpike: !!(d?.flags?.volumeSpike ?? false),
+      bos: !!(d?.flags?.bos ?? false),
+      liquidityGrab: !!(d?.flags?.liquidityGrab ?? false),
+      sessionActive: !!(d?.flags?.sessionActive ?? false),
+      newsSafe: d?.flags?.newsSafe !== false,
+      biasMatch: !!(d?.flags?.biasMatch ?? false)
+    }
+  };
+
+  let score =
+    s.factors.trend * 0.22 +
+    s.factors.volume * 0.15 +
+    s.factors.structure * 0.20 +
+    s.factors.volatility * 0.12 +
+    s.factors.liquidity * 0.18 +
+    s.factors.session * 0.13;
+
+  if(s.cooldownLeft > 0) score -= 18;
+  if(s.killSwitch) score -= 50;
+  if(s.maxDrawdown >= 5) score -= 20;
+  if(!s.flags.newsSafe) score -= 20;
+  if(s.flags.biasMatch) score += 6;
+  if(s.side === 'BUY' || s.side === 'SELL') score += 4;
+
+  s.score = Math.max(0, Math.min(100, Math.round(score)));
+  return s;
+}
+
+/* ---------- RENDER ---------- */
+function renderGuard(s){
+  const guard = document.getElementById('guard');
+  const sub = document.getElementById('guardSub');
+
+  let state = 'READY';
+  let cls = 'guard ready';
+  let subtitle = 'System armed • waiting for sniper-grade setup';
+
+  if(s.killSwitch){
+    state = 'KILL SWITCH';
+    cls = 'guard blocked';
+    subtitle = 'Protection active • trading blocked';
+  }else if(s.cooldownLeft > 0){
+    state = 'COOLDOWN';
+    cls = 'guard cooldown';
+    subtitle = `Cooling down • ${s.cooldownLeft}s left`;
+  }else if(s.score >= 92){
+    state = 'GOD MODE';
+    cls = 'guard god pulse';
+    subtitle = 'Maximum alignment • ultra execution state';
+  }else if(s.score >= 85){
+    state = 'SNIPER';
+    cls = 'guard sniper pulse';
+    subtitle = 'High-quality setup • entry window open';
+  }else if(s.score >= 70){
+    state = 'READY';
+    cls = 'guard ready pulse';
+    subtitle = 'Conditions aligned • waiting for trigger';
+  }else if(s.score >= 50){
+    state = 'WARN';
+    cls = 'guard warn';
+    subtitle = 'Partial confirmation • filters not fully aligned';
+  }else{
+    state = 'BLOCKED';
+    cls = 'guard blocked';
+    subtitle = 'Low-quality setup • no entry';
+  }
+
+  guard.className = cls;
+  guard.textContent = state;
+  sub.textContent = subtitle;
+}
+
+function renderPnl(pnl){
+  const pnlEl = document.getElementById('pnl');
+  pnlEl.innerHTML = `${pnl.toFixed(2)}<small>Net PnL</small>`;
+  pnlEl.style.background = pnlGradient(pnl);
+  pnlEl.style.webkitBackgroundClip = 'text';
+  pnlEl.style.backgroundClip = 'text';
+  pnlEl.style.color = 'transparent';
+
+  const hero = document.getElementById('hero');
+  if(pnl > lastPnl){
+    hero.style.transform = 'scale(1.012)';
+    hero.style.boxShadow = '0 18px 55px rgba(80,180,255,.24)';
+  }else if(pnl < lastPnl){
+    hero.style.transform = 'scale(.994)';
+    hero.style.boxShadow = '0 18px 55px rgba(180,80,80,.18)';
+  }
+  setTimeout(()=>{
+    hero.style.transform = 'scale(1)';
+    hero.style.boxShadow = '';
+  },160);
+
+  lastPnl = pnl;
+}
+
+function renderScore(s){
+  setText('scoreValue', s.score);
+  document.getElementById('scoreBar').style.width = `${s.score}%`;
+
+  const ids = [
+    ['fTrend', s.factors.trend],
+    ['fVolume', s.factors.volume],
+    ['fStructure', s.factors.structure],
+    ['fVolatility', s.factors.volatility],
+    ['fLiquidity', s.factors.liquidity],
+    ['fSession', s.factors.session]
+  ];
+
+  ids.forEach(([id,v])=>{
+    const el = document.getElementById(id);
+    el.textContent = v.toFixed(0);
+    el.className = `factorVal ${clsByValue(v)}`;
+  });
+
+  document.getElementById('badges').innerHTML = `
+    <div class="${badgeClass(s.flags.trendSync)}">Trend Sync</div>
+    <div class="${badgeClass(s.flags.volumeSpike)}">Volume Spike</div>
+    <div class="${badgeClass(s.flags.bos)}">BOS</div>
+    <div class="${badgeClass(s.flags.liquidityGrab)}">Liquidity Grab</div>
+    <div class="${badgeClass(s.flags.sessionActive)}">Session Active</div>
+    <div class="${badgeClass(s.flags.newsSafe, !s.flags.newsSafe)}">${s.flags.newsSafe ? 'News Safe' : 'News Risk'}</div>
+  `;
+
+  document.getElementById('ruleScore').className = s.score >= 80 ? 'badge on' : 'badge off';
+  document.getElementById('ruleCooldown').className = s.cooldownLeft === 0 ? 'badge on' : 'badge off';
+  document.getElementById('ruleRisk').className = s.riskMode !== 'OFF' ? 'badge on' : 'badge off';
+  document.getElementById('ruleDd').className = s.maxDrawdown < 5 ? 'badge on' : 'badge warn';
+  document.getElementById('ruleSession').className = s.flags.sessionActive ? 'badge on' : 'badge off';
+  document.getElementById('ruleNews').className = s.flags.newsSafe ? 'badge on' : 'badge warn';
+  document.getElementById('ruleBias').className = s.flags.biasMatch ? 'badge on' : 'badge off';
+  document.getElementById('ruleDirection').className = (s.side === 'BUY' || s.side === 'SELL') ? 'badge on' : 'badge off';
+}
+
+function renderStats(s){
+  const total = s.wins + s.losses;
+  const wr = total > 0 ? (s.wins / total) * 100 : 0;
+
+  setText('orders', s.ordersToday);
+  setText('cd', s.cooldownLeft);
+  setText('wr', `${wr.toFixed(0)}%`);
+  setText('dd', `${s.maxDrawdown.toFixed(1)}%`);
+  setText('riskMode', s.riskMode);
+  setText('streak', s.streak);
+  setText('wins', s.wins);
+  setText('losses', s.losses);
+  setText('dayTarget', s.dailyTarget.toFixed(2));
+  setText('bias', s.bias);
+  setText('kill', s.killSwitch ? 'ON' : 'OFF');
+  setText('mode', s.mode.toUpperCase());
+  setText('tp1', s.tp1.toFixed(2));
+  setText('tp2', s.tp2.toFixed(2));
+  setText('sl', s.sl.toFixed(2));
+
+  const dir = document.getElementById('directionBadge');
+  if(s.side === 'BUY'){
+    dir.className = 'pill buy';
+    dir.textContent = 'BUY SIGNAL';
+  }else if(s.side === 'SELL'){
+    dir.className = 'pill sell';
+    dir.textContent = 'SELL SIGNAL';
+  }else{
+    dir.className = 'pill flat';
+    dir.textContent = 'NO SIGNAL';
+  }
+
+  const news = document.getElementById('newsBadge');
+  if(s.flags.newsSafe){
+    news.className = 'pill';
+    news.textContent = 'NEWS SAFE';
+  }else{
+    news.className = 'pill sell';
+    news.textContent = 'NEWS BLOCK';
+  }
+}
+
 function renderLog(log){
-  const el=document.getElementById('log');
-  el.innerHTML='';
-  log.forEach(l=>{
-    const d=document.createElement('div');
-    d.className='entry';
-    d.innerText=l.msg;
-    el.appendChild(d);
+  const el = document.getElementById('log');
+  if(!log.length){
+    el.innerHTML = `
+      <div class="entry">
+        <div class="entryHead">
+          <div class="entryType ok">SYSTEM</div>
+          <div class="entryTime">${new Date().toLocaleTimeString('de-DE')}</div>
+        </div>
+        <div class="entryMsg">No log entries yet.</div>
+      </div>
+    `;
+    return;
+  }
+
+  el.innerHTML = '';
+  [...log].reverse().slice(0,35).forEach(item=>{
+    const type = (item.type || 'INFO').toUpperCase();
+    const msg = item.msg || item.message || JSON.stringify(item);
+    const time = item.time || new Date().toLocaleTimeString('de-DE');
+    let cls = 'mid';
+
+    if(type.includes('WIN') || type.includes('READY') || type.includes('BUY') || type.includes('SNIPER')) cls = 'ok';
+    if(type.includes('LOSS') || type.includes('ERROR') || type.includes('BLOCK') || type.includes('SELL')) cls = 'bad';
+
+    const div = document.createElement('div');
+    div.className = 'entry';
+    div.innerHTML = `
+      <div class="entryHead">
+        <div class="entryType ${cls}">${type}</div>
+        <div class="entryTime">${time}</div>
+      </div>
+      <div class="entryMsg">${escapeHtml(String(msg))}</div>
+    `;
+    el.appendChild(div);
   });
 }
 
-initChart();
-setInterval(load,2000);
-load();
-</script>
+/* ---------- API ---------- */
+async function load(){
+  try{
+    updateSessionClock();
+    const r = await fetch('/api/status', { cache:'no-store' });
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    const s = normalizeStatus(data);
 
+    renderGuard(s);
+    renderPnl(s.pnl);
+    renderScore(s);
+    renderStats(s);
+    renderLog(s.log);
+    updateChart(s.pnl);
+  }catch(err){
+    renderFallback(err);
+  }
+}
+
+async function act(url){
+  try{
+    lockButtons(true);
+    await fetch(url, { method:'POST' });
+    await load();
+    lockButtons(false);
+  }catch(err){
+    renderFallback(err);
+    lockButtons(false);
+  }
+}
+
+function lockButtons(state){
+  [...document.querySelectorAll('button')].forEach(b=>b.disabled = state);
+}
+
+async function toggleMode(){
+  localMode = localMode === 'FULL PRO' ? 'GOD PRO' : 'FULL PRO';
+  try{
+    await fetch('/api/mode',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ mode: localMode })
+    });
+  }catch(e){}
+  showAlert(`MODE ${localMode}`, 'info');
+  beep('info');
+  load();
+}
+
+async function forceSide(side){
+  localSide = side;
+  try{
+    await fetch('/api/side',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ side })
+    });
+  }catch(e){}
+  showAlert(`${side} ARMED`, side === 'BUY' ? 'win' : 'loss');
+  beep(side === 'BUY' ? 'win' : 'loss');
+  load();
+}
+
+/* ---------- FALLBACK ---------- */
+function renderFallback(err){
+  updateSessionClock();
+  const s = normalizeStatus({
+    pnl:lastPnl || 0,
+    ordersToday:0,
+    cooldownLeft:0,
+    wins:0,
+    losses:0,
+    streak:0,
+    maxDrawdown:0,
+    dailyTarget:150,
+    riskMode:'SAFE',
+    bias:'NEUTRAL',
+    killSwitch:false,
+    guard:'READY',
+    mode:localMode,
+    side:localSide,
+    tp1:25,
+    tp2:60,
+    sl:18,
+    factors:{
+      trend:78,
+      volume:64,
+      structure:71,
+      volatility:58,
+      liquidity:76,
+      session:68
+    },
+    flags:{
+      trendSync:true,
+      volumeSpike:false,
+      bos:true,
+      liquidityGrab:true,
+      sessionActive:true,
+      newsSafe:true,
+      biasMatch:localSide === 'NONE' ? false : true
+    },
+    log:[
+      {type:'SYSTEM', msg:'API not reachable. Showing fallback UI state.', time:new Date().toLocaleTimeString('de-DE')},
+      {type:'ERROR', msg:String(err), time:new Date().toLocaleTimeString('de-DE')}
+    ]
+  });
+
+  renderGuard(s);
+  renderPnl(s.pnl);
+  renderScore(s);
+  renderStats(s);
+  renderLog(s.log);
+}
+
+/* ---------- EVENTS ---------- */
+document.addEventListener('click', ()=>{
+  audioEnabled = true;
+},{ once:true });
+
+/* ---------- BOOT ---------- */
+initChart();
+updateSessionClock();
+setInterval(updateSessionClock, 1000);
+load();
+setInterval(load, 2000);
+</script>
 </body>
 </html>
