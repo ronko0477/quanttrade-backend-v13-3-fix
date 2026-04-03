@@ -1,977 +1,208 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>V16.9 FULL PRO</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    :root{
-      --bg1:#07132d;
-      --bg2:#0d1c46;
-      --card1:rgba(127,136,204,.96);
-      --card2:rgba(111,121,188,.96);
-      --box:rgba(146,154,216,.34);
-      --text:#fff;
-      --muted:rgba(255,255,255,.82);
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V17 PRO</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-      --green:#73d77f;
-      --green2:#abe693;
-      --yellow:#f0c65f;
-      --yellow2:#ffe18a;
-      --red:#df9e91;
-      --red2:#f0b1a5;
-      --cool:#998cf0;
-      --cool2:#cec8ff;
-      --locked:#dca395;
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#07132d;
+  color:#fff;
+}
 
-      --chip:#1b2b5f;
-      --btnBlue:#818bee;
-      --btnGreen:#a9c67f;
-      --btnRed:#c79689;
-      --btnGold:#bea35a;
-      --btnPurple:#8f84e4;
-      --btnOff:#ba8f84;
-      --btnOn:#9bb972;
+.wrap{
+  max-width:800px;
+  margin:auto;
+  padding:12px;
+}
 
-      --shadow:0 18px 44px rgba(0,0,0,.22);
-    }
+.title{
+  text-align:center;
+  font-weight:900;
+  font-size:22px;
+}
 
-    *{
-      box-sizing:border-box;
-      -webkit-tap-highlight-color:transparent;
-    }
+.hero{
+  background:#1b2b5f;
+  padding:16px;
+  border-radius:20px;
+  text-align:center;
+  margin-top:12px;
+}
 
-    html,body{
-      margin:0;
-      padding:0;
-      font-family:Arial,Helvetica,sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(circle at top, rgba(255,255,255,.05), transparent 24%),
-        linear-gradient(180deg,var(--bg1),var(--bg2));
-    }
+.guard{
+  font-size:48px;
+  font-weight:900;
+}
 
-    body{
-      min-height:100vh;
-    }
+.pnl{
+  font-size:36px;
+  margin:10px 0;
+}
 
-    .wrap{
-      max-width:860px;
-      margin:0 auto;
-      padding:10px 12px 26px;
-    }
+.stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
 
-    .topbar{
-      position:sticky;
-      top:0;
-      z-index:50;
-      padding:12px 0 10px;
-      backdrop-filter:blur(14px);
-      background:linear-gradient(180deg, rgba(7,19,45,.97), rgba(7,19,45,.80));
-      border-bottom:1px solid rgba(255,255,255,.03);
-    }
+.box{
+  background:#243a7a;
+  padding:10px;
+  border-radius:12px;
+}
 
-    .title{
-      text-align:center;
-      font-size:22px;
-      font-weight:900;
-      letter-spacing:.4px;
-      margin-bottom:10px;
-      opacity:.96;
-    }
+.controls{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
 
-    .chips{
-      display:flex;
-      flex-wrap:wrap;
-      justify-content:center;
-      gap:8px;
-    }
+button{
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  font-weight:900;
+  cursor:pointer;
+}
 
-    .chip{
-      min-width:78px;
-      text-align:center;
-      padding:9px 11px;
-      border-radius:14px;
-      background:rgba(28,44,96,.96);
-      font-size:12px;
-      font-weight:900;
-      box-shadow:0 8px 18px rgba(0,0,0,.12);
-      transition:all .18s ease;
-    }
+.chartWrap{
+  height:260px;
+  margin-top:12px;
+}
 
-    .chip.ready{background:var(--green)}
-    .chip.warn{background:var(--yellow); color:#3b2f08}
-    .chip.blocked{background:var(--red)}
-    .chip.cooldown{background:var(--cool)}
-    .chip.locked{background:var(--locked)}
-    .chip.hbon{background:#92af73}
+.log{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
 
-    .hero{
-      position:relative;
-      margin-top:12px;
-      border-radius:24px;
-      padding:16px 14px 14px;
-      background:linear-gradient(180deg, var(--card1), var(--card2));
-      box-shadow:var(--shadow);
-      overflow:hidden;
-      transition:box-shadow .22s ease, transform .15s ease;
-    }
+.entry{
+  background:#2a3d80;
+  padding:8px;
+  border-radius:10px;
+  font-size:13px;
+}
 
-    .hero:before{
-      content:'';
-      position:absolute;
-      inset:0;
-      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0));
-      pointer-events:none;
-    }
-
-    .hero.readyGlow{box-shadow:0 0 32px rgba(115,215,127,.16), var(--shadow)}
-    .hero.warnGlow{box-shadow:0 0 32px rgba(240,198,95,.16), var(--shadow)}
-    .hero.blockGlow{box-shadow:0 0 32px rgba(223,158,145,.17), var(--shadow)}
-    .hero.coolGlow{box-shadow:0 0 32px rgba(153,140,240,.18), var(--shadow)}
-    .hero.lockGlow{box-shadow:0 0 32px rgba(220,163,149,.16), var(--shadow)}
-
-    .lockBanner{
-      display:none;
-      width:max-content;
-      max-width:100%;
-      margin:0 auto 10px;
-      padding:8px 14px;
-      border-radius:14px;
-      background:linear-gradient(180deg, rgba(220,163,149,.98), rgba(198,137,123,.98));
-      color:#fff;
-      font-size:14px;
-      font-weight:900;
-      letter-spacing:.2px;
-      box-shadow:0 8px 20px rgba(0,0,0,.16);
-      position:relative;
-      z-index:2;
-    }
-
-    .guard{
-      position:relative;
-      text-align:center;
-      font-size:54px;
-      line-height:.94;
-      font-weight:900;
-      letter-spacing:1px;
-      margin:0 0 4px;
-      transition:transform .16s ease;
-      z-index:2;
-    }
-
-    .guard.ready{color:var(--green2)}
-    .guard.warn{color:var(--yellow2)}
-    .guard.blocked{color:var(--red2)}
-    .guard.cooldown{color:var(--cool2)}
-    .guard.locked{color:#f3f5ff}
-
-    .guard.pulse{
-      animation:pulseGuard 1.15s ease-in-out infinite;
-    }
-
-    @keyframes pulseGuard{
-      0%{transform:scale(1)}
-      50%{transform:scale(1.02)}
-      100%{transform:scale(1)}
-    }
-
-    .sub{
-      position:relative;
-      text-align:center;
-      font-size:17px;
-      font-weight:900;
-      margin-bottom:8px;
-      z-index:2;
-    }
-
-    .sub.ready{color:var(--green2)}
-    .sub.warn{color:var(--yellow2)}
-    .sub.blocked{color:var(--red2)}
-    .sub.cooldown{color:var(--cool2)}
-    .sub.locked{color:#f3f5ff}
-
-    .pnl{
-      position:relative;
-      text-align:center;
-      font-size:40px;
-      font-weight:900;
-      margin:2px 0 12px;
-      transition:transform .16s ease, filter .18s ease;
-      z-index:2;
-    }
-
-    .pnl.up{
-      transform:scale(1.04);
-      filter:drop-shadow(0 0 14px rgba(115,215,127,.22));
-    }
-
-    .pnl.down{
-      transform:scale(.98);
-      filter:drop-shadow(0 0 14px rgba(223,158,145,.22));
-    }
-
-    .flashWin{
-      animation:flashWin .42s ease;
-    }
-
-    @keyframes flashWin{
-      0%{box-shadow:0 0 0 rgba(0,0,0,0), var(--shadow)}
-      50%{box-shadow:0 0 56px rgba(115,215,127,.42), var(--shadow)}
-      100%{box-shadow:0 0 0 rgba(0,0,0,0), var(--shadow)}
-    }
-
-    .stats{
-      position:relative;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      z-index:2;
-    }
-
-    .box{
-      background:var(--box);
-      border-radius:16px;
-      padding:12px 10px;
-      text-align:center;
-      backdrop-filter:blur(8px);
-    }
-
-    .label{
-      font-size:14px;
-      color:var(--muted);
-      margin-bottom:6px;
-    }
-
-    .value{
-      font-size:20px;
-      font-weight:900;
-    }
-
-    .hint{
-      position:relative;
-      text-align:center;
-      font-size:15px;
-      color:rgba(255,255,255,.96);
-      margin-top:12px;
-      z-index:2;
-    }
-
-    .chartCard{
-      margin-top:12px;
-      border-radius:20px;
-      padding:10px 6px 0;
-      background:rgba(6,16,45,.14);
-      box-shadow:0 10px 24px rgba(0,0,0,.10);
-    }
-
-    .chartHead{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      padding:0 6px 8px;
-    }
-
-    .chartTitle{
-      font-size:17px;
-      font-weight:900;
-    }
-
-    .chartSub{
-      font-size:11px;
-      color:rgba(255,255,255,.68);
-      text-align:right;
-    }
-
-    .chartWrap{
-      position:relative;
-      height:320px;
-    }
-
-    .controls{
-      margin-top:12px;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-
-    button{
-      border:none;
-      border-radius:16px;
-      padding:15px 10px;
-      font-size:17px;
-      font-weight:900;
-      color:#fff;
-      box-shadow:0 10px 22px rgba(0,0,0,.16);
-      transition:transform .08s ease, opacity .18s ease, filter .18s ease;
-      cursor:pointer;
-    }
-
-    button:active{transform:scale(.98)}
-    button:disabled{opacity:.45; filter:saturate(.55); cursor:not-allowed}
-
-    .btnSend{background:var(--btnBlue)}
-    .btnWin{background:var(--btnGreen)}
-    .btnLoss{background:var(--btnRed)}
-    .btnReset{background:var(--btnGold)}
-    .btnCooldown{background:var(--btnPurple)}
-    .btnHbOn{background:var(--btnOn)}
-    .btnHbOff{background:var(--btnOff)}
-    .btnRefresh{background:var(--btnGold)}
-
-    .logWrap{
-      margin-top:14px;
-    }
-
-    .logHead{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      margin-bottom:10px;
-    }
-
-    .logTitle{
-      font-size:22px;
-      font-weight:900;
-    }
-
-    .logButtons{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-
-    .smallBtn{
-      width:auto;
-      min-width:92px;
-      padding:11px 12px;
-      font-size:13px;
-      border-radius:14px;
-      background:#98a0e6;
-    }
-
-    .log{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-
-    .entry{
-      border-radius:14px;
-      padding:11px 12px 10px;
-      box-shadow:0 8px 18px rgba(0,0,0,.10);
-      backdrop-filter:blur(8px);
-    }
-
-    .entry.default{background:rgba(119,128,191,.96)}
-    .entry.win{background:linear-gradient(180deg, rgba(84,130,116,.98), rgba(71,108,99,.98))}
-    .entry.loss{background:linear-gradient(180deg, rgba(173,124,113,.98), rgba(149,106,98,.98))}
-    .entry.exec{background:linear-gradient(180deg, rgba(94,131,182,.98), rgba(81,114,160,.98))}
-    .entry.queue{background:linear-gradient(180deg, rgba(122,130,167,.98), rgba(107,113,146,.98))}
-    .entry.hb{background:linear-gradient(180deg, rgba(130,102,164,.98), rgba(112,88,141,.98))}
-    .entry.cd{background:linear-gradient(180deg, rgba(117,107,188,.98), rgba(100,91,159,.98))}
-    .entry.reset{background:linear-gradient(180deg, rgba(133,140,197,.98), rgba(114,121,173,.98))}
-
-    .entryType{
-      font-size:14px;
-      font-weight:900;
-      margin-bottom:4px;
-    }
-
-    .entryMsg{
-      font-size:14px;
-      line-height:1.3;
-    }
-
-    .entryTime{
-      margin-top:6px;
-      font-size:11px;
-      opacity:.75;
-    }
-
-    .toast{
-      position:fixed;
-      top:68px;
-      left:50%;
-      transform:translateX(-50%);
-      z-index:999;
-      min-width:200px;
-      max-width:84vw;
-      text-align:center;
-      padding:12px 16px;
-      border-radius:16px;
-      background:#63cb73;
-      color:#fff;
-      font-size:15px;
-      font-weight:900;
-      box-shadow:var(--shadow);
-      display:none;
-    }
-
-    .toast.err{background:#d78776}
-    .footerSpace{height:4px}
-
-    @media (max-width:560px){
-      .title{font-size:19px}
-      .guard{font-size:46px}
-      .sub{font-size:16px}
-      .pnl{font-size:36px}
-      .value{font-size:18px}
-      .label{font-size:13px}
-      button{font-size:16px;padding:14px 10px}
-      .chartWrap{height:270px}
-      .chartHead{align-items:flex-start; flex-direction:column}
-      .chartSub{text-align:left}
-      .logHead{align-items:flex-start; flex-direction:column}
-      .chip{min-width:70px; padding:8px 9px}
-    }
-  </style>
+.liveOn{background:#4caf50}
+.liveOff{background:#b96d5f}
+</style>
 </head>
+
 <body>
-  <div id="toast" class="toast">OK</div>
+<div class="wrap">
 
-  <div class="wrap">
-    <div class="topbar">
-      <div class="title">V16.9 FULL PRO</div>
-      <div class="chips">
-        <div id="chipStatus" class="chip ready">READY</div>
-        <div id="chipOrders" class="chip">0/10</div>
-        <div id="chipCooldown" class="chip">0s</div>
-        <div id="chipHB" class="chip">HB OFF</div>
-      </div>
-    </div>
+<div class="title">V17 PRO</div>
 
-    <div id="hero" class="hero readyGlow">
-      <div id="lockBanner" class="lockBanner">TRADING GESPERRT</div>
+<div class="hero">
+  <div id="guard" class="guard">READY</div>
+  <div id="pnl" class="pnl">0.00</div>
 
-      <div id="guard" class="guard ready">READY</div>
-      <div id="sub" class="sub ready">SYSTEM READY</div>
-      <div id="pnl" class="pnl">PnL: 0.00</div>
-
-      <div class="stats">
-        <div class="box">
-          <div class="label">Orders</div>
-          <div id="orders" class="value">0/10</div>
-        </div>
-        <div class="box">
-          <div class="label">Queue</div>
-          <div id="queue" class="value">0</div>
-        </div>
-        <div class="box">
-          <div class="label">Cooldown</div>
-          <div id="cooldown" class="value">0s</div>
-        </div>
-        <div class="box">
-          <div class="label">HardBlock</div>
-          <div id="hb" class="value">AUS</div>
-        </div>
-        <div class="box">
-          <div class="label">Wins</div>
-          <div id="wins" class="value">0</div>
-        </div>
-        <div class="box">
-          <div class="label">Losses</div>
-          <div id="losses" class="value">0</div>
-        </div>
-        <div class="box">
-          <div class="label">Winrate</div>
-          <div id="winrate" class="value">0.0%</div>
-        </div>
-        <div class="box">
-          <div class="label">Streak</div>
-          <div id="streak" class="value">W0 / L0</div>
-        </div>
-      </div>
-
-      <div id="hint" class="hint">System bereit.</div>
-    </div>
-
-    <div class="chartCard">
-      <div class="chartHead">
-        <div class="chartTitle">PnL Chart</div>
-        <div class="chartSub">full pro · compact layout · clean lock · sound</div>
-      </div>
-      <div class="chartWrap">
-        <canvas id="chart"></canvas>
-      </div>
-    </div>
-
-    <div class="controls">
-      <button id="btnSend" class="btnSend" onclick="act('/api/order','Order angenommen')">SEND</button>
-      <button class="btnWin" onclick="act('/api/win','Win gebucht')">+WIN</button>
-      <button class="btnLoss" onclick="act('/api/loss','Loss gebucht')">-LOSS</button>
-      <button class="btnReset" onclick="act('/api/reset','Reset ausgeführt')">RESET</button>
-
-      <button class="btnCooldown" onclick="act('/api/cooldown','Cooldown gestartet')">COOLDOWN</button>
-      <button class="btnHbOn" onclick="act('/api/hardblock/on','HardBlock aktiviert')">HB ON</button>
-      <button class="btnHbOff" onclick="act('/api/hardblock/off','HardBlock deaktiviert')">HB OFF</button>
-      <button class="btnRefresh" onclick="loadStatus(true)">REFRESH</button>
-    </div>
-
-    <div class="logWrap">
-      <div class="logHead">
-        <div class="logTitle">Log</div>
-        <div class="logButtons">
-          <button class="smallBtn" onclick="clearChart()">Chart Reset</button>
-          <button class="smallBtn" onclick="clearLogLocal()">Log Clear</button>
-        </div>
-      </div>
-      <div id="log" class="log"></div>
-    </div>
-
-    <div class="footerSpace"></div>
+  <div class="stats">
+    <div class="box">Orders: <span id="orders">0</span></div>
+    <div class="box">Cooldown: <span id="cd">0</span></div>
+    <div class="box">Wins: <span id="wins">0</span></div>
+    <div class="box">Loss: <span id="loss">0</span></div>
+    <div class="box">Session: <span id="session">0s</span></div>
+    <div class="box">Target: <span id="target">0</span></div>
   </div>
+</div>
 
-  <script>
-    let chart;
-    let pnlHistory = [];
-    let lastPnl = null;
-    let lastGuard = null;
-    let audioCtx = null;
-    let audioUnlocked = false;
+<div class="chartWrap">
+  <canvas id="chart"></canvas>
+</div>
 
-    const STORAGE_KEY = 'qt_v169_full_pro_history';
+<div class="controls">
+  <button onclick="act('/api/order')">SEND</button>
+  <button onclick="act('/api/win')">WIN</button>
+  <button onclick="act('/api/loss')">LOSS</button>
+  <button onclick="act('/api/reset')">RESET</button>
 
-    function unlockAudio(){
-      if(audioUnlocked) return;
-      audioUnlocked = true;
-      try{
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if(AudioContextClass){
-          audioCtx = new AudioContextClass();
-          if(audioCtx.state === 'suspended'){
-            audioCtx.resume().catch(()=>{});
-          }
-        }
-      }catch(e){}
-    }
+  <button onclick="toggleLive()" id="liveBtn" class="liveOn">LIVE ON</button>
+  <button onclick="act('/api/cooldown')">COOLDOWN</button>
+</div>
 
-    document.addEventListener('touchstart', unlockAudio, { once:true });
-    document.addEventListener('click', unlockAudio, { once:true });
+<div id="log" class="log"></div>
 
-    function ensureAudio(){
-      if(!audioUnlocked) return false;
-      try{
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if(!audioCtx && AudioContextClass){
-          audioCtx = new AudioContextClass();
-        }
-        if(audioCtx && audioCtx.state === 'suspended'){
-          audioCtx.resume().catch(()=>{});
-        }
-        return !!audioCtx;
-      }catch(e){
-        return false;
-      }
-    }
+</div>
 
-    function beep(freq=660, duration=0.15, type='sine', volume=0.08){
-      if(!ensureAudio()) return;
-      try{
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+<script>
+let chart;
+let history=[];
+let live=true;
+let sessionStart=Date.now();
 
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+function initChart(){
+  const ctx=document.getElementById('chart').getContext('2d');
+  chart=new Chart(ctx,{
+    type:'line',
+    data:{labels:[],datasets:[{data:[],borderColor:'#4fc3f7'}]},
+    options:{responsive:true,maintainAspectRatio:false}
+  });
+}
 
-        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+function updateChart(v){
+  history.push(v);
+  if(history.length>50) history.shift();
+  chart.data.labels=history.map((_,i)=>i);
+  chart.data.datasets[0].data=history;
+  chart.update();
+}
 
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+function log(msg){
+  const el=document.createElement('div');
+  el.className='entry';
+  el.innerText=new Date().toLocaleTimeString()+" - "+msg;
+  document.getElementById('log').prepend(el);
+}
 
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
-      }catch(e){}
-    }
+async function load(){
+  try{
+    const r=await fetch('/api/status');
+    const d=await r.json();
 
-    function soundWin(){
-      beep(880,0.08,'sine',0.05);
-      setTimeout(()=>beep(1180,0.11,'sine',0.045),75);
-    }
+    document.getElementById('guard').innerText=d.guard;
+    document.getElementById('pnl').innerText=d.pnl.toFixed(2);
+    document.getElementById('orders').innerText=d.ordersToday;
+    document.getElementById('cd').innerText=d.cooldownLeft;
+    document.getElementById('wins').innerText=d.totalWins;
+    document.getElementById('loss').innerText=d.totalLosses;
 
-    function soundLoss(){
-      beep(330,0.11,'sawtooth',0.05);
-      setTimeout(()=>beep(240,0.16,'triangle',0.045),95);
-    }
+    document.getElementById('target').innerText=d.pnlTarget||0;
 
-    function soundLock(){
-      beep(280,0.11,'square',0.05);
-      setTimeout(()=>beep(280,0.11,'square',0.04),130);
-    }
+    updateChart(d.pnl);
 
-    function soundReady(){
-      beep(620,0.06,'triangle',0.035);
-    }
+  }catch(e){}
+}
 
-    function soundRefresh(){
-      beep(700,0.05,'triangle',0.025);
-    }
+async function act(url){
+  await fetch(url,{method:'POST'});
+  log(url);
+  load();
+}
 
-    function showToast(msg, isErr=false){
-      const t = document.getElementById('toast');
-      t.innerText = msg;
-      t.className = isErr ? 'toast err' : 'toast';
-      t.style.display = 'block';
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(()=>{ t.style.display = 'none'; }, 1700);
-    }
+function toggleLive(){
+  live=!live;
+  const btn=document.getElementById('liveBtn');
+  btn.innerText=live?'LIVE ON':'LIVE OFF';
+  btn.className=live?'liveOn':'liveOff';
+}
 
-    function saveHistory(){
-      try{
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(pnlHistory.slice(-80)));
-      }catch(e){}
-    }
+setInterval(()=>{
+  if(live) load();
+  document.getElementById('session').innerText=
+    Math.floor((Date.now()-sessionStart)/1000)+'s';
+},1000);
 
-    function loadHistory(){
-      try{
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if(raw){
-          const arr = JSON.parse(raw);
-          if(Array.isArray(arr)) pnlHistory = arr;
-        }
-      }catch(e){}
-    }
+initChart();
+load();
+</script>
 
-    function clearChart(){
-      pnlHistory = [];
-      saveHistory();
-      if(chart){
-        chart.data.labels = [];
-        chart.data.datasets[0].data = [];
-        chart.update();
-      }
-      showToast('Chart reset');
-    }
-
-    function clearLogLocal(){
-      document.getElementById('log').innerHTML = '';
-      showToast('Log lokal geleert');
-    }
-
-    function safeNum(v, fallback=0){
-      return (typeof v === 'number' && !Number.isNaN(v)) ? v : fallback;
-    }
-
-    function guardClass(g){
-      if(g === 'READY') return 'ready';
-      if(g === 'WARN') return 'warn';
-      if(g === 'COOLDOWN') return 'cooldown';
-      if(g === 'LOCKED') return 'locked';
-      if(g === 'SESSION_LIMIT') return 'warn';
-      return 'blocked';
-    }
-
-    function hintText(reason){
-      if(reason === 'SYSTEM_READY') return 'System bereit.';
-      if(reason === 'QUEUE_LOCK') return 'Eine Order läuft bereits oder wartet in der Queue.';
-      if(reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv. Bitte warten.';
-      if(reason === 'HARD_LOCK') return 'Trading bleibt gesperrt bis Reset oder HB OFF.';
-      if(reason === 'PNL_LIMIT') return 'PnL-Limit unterschritten.';
-      if(reason === 'WARN_LIMIT') return 'Warnbereich erreicht.';
-      if(reason === 'SESSION_LIMIT') return 'Tageslimit erreicht.';
-      return 'System bereit.';
-    }
-
-    function updateStyles(guard, pnl){
-      const hero = document.getElementById('hero');
-      const banner = document.getElementById('guard');
-      const sub = document.getElementById('sub');
-      const chipStatus = document.getElementById('chipStatus');
-      const lockBanner = document.getElementById('lockBanner');
-
-      hero.classList.remove('readyGlow','warnGlow','blockGlow','coolGlow','lockGlow');
-      banner.className = 'guard ' + guardClass(guard);
-      sub.className = 'sub ' + guardClass(guard);
-      chipStatus.className = 'chip ' + guardClass(guard);
-      banner.classList.remove('pulse');
-      lockBanner.style.display = 'none';
-
-      if(guard === 'READY'){
-        if(pnl >= 0){
-          hero.classList.add('readyGlow');
-        }else{
-          hero.classList.add('blockGlow');
-        }
-      }else if(guard === 'WARN' || guard === 'SESSION_LIMIT'){
-        hero.classList.add('warnGlow');
-      }else if(guard === 'COOLDOWN'){
-        hero.classList.add('coolGlow');
-        banner.classList.add('pulse');
-      }else if(guard === 'LOCKED'){
-        hero.classList.add('lockGlow');
-        banner.classList.add('pulse');
-        lockBanner.style.display = 'block';
-      }else{
-        hero.classList.add('blockGlow');
-        banner.classList.add('pulse');
-        lockBanner.style.display = 'block';
-      }
-    }
-
-    function animatePnlChange(newPnl){
-      const pnlEl = document.getElementById('pnl');
-      pnlEl.classList.remove('up','down');
-      void pnlEl.offsetWidth;
-      if(lastPnl === null) return;
-      if(newPnl > lastPnl){
-        pnlEl.classList.add('up');
-        setTimeout(()=>pnlEl.classList.remove('up'),180);
-      }else if(newPnl < lastPnl){
-        pnlEl.classList.add('down');
-        setTimeout(()=>pnlEl.classList.remove('down'),180);
-      }
-    }
-
-    function flashWin(){
-      const hero = document.getElementById('hero');
-      hero.classList.remove('flashWin');
-      void hero.offsetWidth;
-      hero.classList.add('flashWin');
-      setTimeout(()=>hero.classList.remove('flashWin'),420);
-    }
-
-    function makeLineGradient(ctx, area){
-      const g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-      g.addColorStop(0, '#8de38f');
-      g.addColorStop(0.48, '#6db9ff');
-      g.addColorStop(1, '#e4a193');
-      return g;
-    }
-
-    function initChart(){
-      const ctx = document.getElementById('chart').getContext('2d');
-
-      chart = new Chart(ctx,{
-        type:'line',
-        data:{
-          labels:[],
-          datasets:[{
-            data:[],
-            borderWidth:5,
-            tension:.34,
-            fill:false,
-            pointRadius:4,
-            pointHoverRadius:5,
-            pointBorderWidth:2,
-            borderColor:'#75c6ff',
-            pointBackgroundColor:(context)=>{
-              const i = context.dataIndex;
-              const v = context.dataset.data[i] ?? 0;
-              return v >= 0 ? '#9bdd8c' : '#e4a193';
-            },
-            pointBorderColor:(context)=>{
-              const i = context.dataIndex;
-              const v = context.dataset.data[i] ?? 0;
-              return v >= 0 ? '#9bdd8c' : '#e4a193';
-            }
-          }]
-        },
-        options:{
-          responsive:true,
-          maintainAspectRatio:false,
-          animation:{
-            duration:260,
-            easing:'easeOutCubic'
-          },
-          plugins:{
-            legend:{display:false}
-          },
-          scales:{
-            x:{
-              ticks:{color:'rgba(255,255,255,.42)'},
-              grid:{color:'rgba(255,255,255,.04)'}
-            },
-            y:{
-              ticks:{color:'rgba(255,255,255,.42)'},
-              grid:{color:'rgba(255,255,255,.05)'}
-            }
-          }
-        },
-        plugins:[{
-          id:'gradientGlow',
-          beforeDatasetsDraw(c){
-            const {ctx} = c;
-            ctx.save();
-            ctx.shadowColor = 'rgba(98,181,255,.32)';
-            ctx.shadowBlur = 15;
-          },
-          afterDatasetsDraw(c){
-            c.ctx.restore();
-          },
-          beforeDatasetDraw(c,args){
-            const area = c.chartArea;
-            if(!area) return;
-            args.meta.dataset.options.borderColor = makeLineGradient(c.ctx, area);
-          }
-        }]
-      });
-
-      if(pnlHistory.length){
-        chart.data.labels = pnlHistory.map((_,i)=>i);
-        chart.data.datasets[0].data = pnlHistory;
-        chart.update();
-      }
-    }
-
-    function logClass(type=''){
-      const t = type.toUpperCase();
-      if(t === 'WIN') return 'win';
-      if(t === 'LOSS') return 'loss';
-      if(t === 'EXECUTED' || t === 'PROCESSING') return 'exec';
-      if(t === 'QUEUED') return 'queue';
-      if(t.includes('HARD')) return 'hb';
-      if(t.includes('COOLDOWN')) return 'cd';
-      if(t === 'RESET') return 'reset';
-      return 'default';
-    }
-
-    function renderLog(logList){
-      const log = document.getElementById('log');
-      log.innerHTML = '';
-
-      if(!Array.isArray(logList) || !logList.length){
-        const row = document.createElement('div');
-        row.className = 'entry default';
-        row.innerHTML = '<div class="entryMsg">Noch kein Log.</div>';
-        log.appendChild(row);
-        return;
-      }
-
-      logList.forEach(item=>{
-        const row = document.createElement('div');
-        row.className = 'entry ' + logClass(item.type || '');
-        row.innerHTML =
-          '<div class="entryType">' + (item.type || 'INFO') + '</div>' +
-          '<div class="entryMsg">' + (item.msg || '') + '</div>' +
-          '<div class="entryTime">' + (item.ts || '') + '</div>';
-        log.appendChild(row);
-      });
-    }
-
-    function playStateSound(newGuard, newPnl){
-      if(lastGuard === null && lastPnl === null) return;
-
-      if(lastPnl !== null){
-        if(newPnl > lastPnl){
-          soundWin();
-          flashWin();
-        }else if(newPnl < lastPnl){
-          soundLoss();
-        }
-      }
-
-      if(lastGuard !== newGuard){
-        if(newGuard === 'LOCKED' || newGuard === 'BLOCKED' || newGuard === 'COOLDOWN'){
-          soundLock();
-        }
-        if(newGuard === 'READY' && lastGuard !== 'READY'){
-          soundReady();
-        }
-      }
-    }
-
-    function renderStatus(d){
-      const pnl = safeNum(d.pnl, 0);
-      const ordersToday = safeNum(d.ordersToday, 0);
-      const maxOrders = safeNum(d.maxOrdersPerSession, 10);
-      const queueLength = safeNum(d.queueLength, 0);
-      const cooldownLeft = safeNum(d.cooldownLeft, 0);
-      const hardBlocked = !!d.hardBlocked;
-      const wins = safeNum(d.totalWins, 0);
-      const losses = safeNum(d.totalLosses, 0);
-      const winStreak = safeNum(d.winStreak, 0);
-      const lossStreak = safeNum(d.lossStreak, 0);
-      const winrate = (wins + losses) > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '0.0';
-      const guard = d.guard || 'READY';
-      const reasonLabel = d.reasonLabel || guard;
-
-      playStateSound(guard, pnl);
-      updateStyles(guard, pnl);
-
-      document.getElementById('guard').innerText = guard;
-      document.getElementById('sub').innerText = reasonLabel;
-      document.getElementById('pnl').innerText = 'PnL: ' + pnl.toFixed(2);
-
-      document.getElementById('orders').innerText = ordersToday + '/' + maxOrders;
-      document.getElementById('queue').innerText = queueLength;
-      document.getElementById('cooldown').innerText = cooldownLeft + 's';
-      document.getElementById('hb').innerText = hardBlocked ? 'AN' : 'AUS';
-      document.getElementById('wins').innerText = wins;
-      document.getElementById('losses').innerText = losses;
-      document.getElementById('winrate').innerText = winrate + '%';
-      document.getElementById('streak').innerText = 'W' + winStreak + ' / L' + lossStreak;
-      document.getElementById('hint').innerText = hintText(d.reason);
-
-      document.getElementById('chipStatus').innerText = guard;
-      document.getElementById('chipOrders').innerText = ordersToday + '/' + maxOrders;
-      document.getElementById('chipCooldown').innerText = cooldownLeft + 's';
-      document.getElementById('chipHB').innerText = hardBlocked ? 'HB ON' : 'HB OFF';
-
-      const cdChip = document.getElementById('chipCooldown');
-      cdChip.className = cooldownLeft > 0 ? 'chip cooldown' : 'chip';
-
-      const hbChip = document.getElementById('chipHB');
-      hbChip.className = hardBlocked ? 'chip hbon' : 'chip';
-
-      const sendDisabled = ['BLOCKED','COOLDOWN','LOCKED','SESSION_LIMIT'].includes(guard);
-      document.getElementById('btnSend').disabled = sendDisabled;
-
-      animatePnlChange(pnl);
-
-      if(pnlHistory.length === 0 || pnlHistory[pnlHistory.length - 1] !== pnl){
-        pnlHistory.push(pnl);
-        if(pnlHistory.length > 80) pnlHistory.shift();
-        saveHistory();
-        chart.data.labels = pnlHistory.map((_,i)=>i);
-        chart.data.datasets[0].data = pnlHistory;
-        chart.update();
-      }
-
-      renderLog(d.log || []);
-
-      lastPnl = pnl;
-      lastGuard = guard;
-    }
-
-    async function loadStatus(withToast=false){
-      try{
-        const res = await fetch('/api/status');
-        const d = await res.json();
-        renderStatus(d);
-        if(withToast){
-          soundRefresh();
-          showToast('Status geladen');
-        }
-      }catch(e){
-        showToast('Status Fehler', true);
-      }
-    }
-
-    async function act(url, okText){
-      unlockAudio();
-      try{
-        const res = await fetch(url, { method:'POST' });
-        let data = {};
-        try{ data = await res.json(); }catch(e){}
-        await loadStatus(false);
-
-        if(res.ok){
-          showToast(okText || 'OK');
-        }else{
-          showToast((data && data.message) ? data.message : 'Fehler', true);
-        }
-      }catch(e){
-        showToast('Netzwerkfehler', true);
-      }
-    }
-
-    loadHistory();
-    initChart();
-    loadStatus(false);
-  </script>
 </body>
 </html>
