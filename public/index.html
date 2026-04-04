@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>V18.3 ELITE</title>
+<title>V18.4 OMEGA</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -34,6 +34,8 @@
 
 *{box-sizing:border-box}
 
+html{scroll-behavior:smooth}
+
 body{
   margin:0;
   font-family:Arial,Helvetica,sans-serif;
@@ -45,9 +47,10 @@ body{
 }
 
 .wrap{
-  max-width:1320px;
+  max-width:1380px;
   margin:auto;
   padding:14px;
+  padding-bottom:170px;
 }
 
 .title{
@@ -181,6 +184,10 @@ body{
 .pill.flat{
   background:linear-gradient(90deg,#67779f,#8a9bc4);
   color:#fff;
+}
+.pill.warn{
+  background:linear-gradient(90deg,#ffd86b,#ffefad);
+  color:#352300;
 }
 
 .scoreHead{
@@ -407,7 +414,7 @@ body{
   margin-top:14px;
 }
 
-button, .ghostBtn, .fileLabel{
+button,.ghostBtn,.fileLabel{
   padding:15px 12px;
   border:none;
   border-radius:16px;
@@ -433,6 +440,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .btnSync{background:linear-gradient(90deg,#2d5eff,#6f7cff)}
 .btnExport{background:linear-gradient(90deg,#4d5876,#8a9bc4)}
 .btnStorage{background:linear-gradient(90deg,#5c6cff,#a58bff)}
+.btnSettings{background:linear-gradient(90deg,#5260ff,#8f79ff)}
 
 .fileInput{display:none}
 .fileLabel{
@@ -456,9 +464,17 @@ button:disabled{opacity:.45;cursor:not-allowed}
 }
 
 .log::-webkit-scrollbar,
-.tableWrap::-webkit-scrollbar{width:8px;height:8px}
+.tableWrap::-webkit-scrollbar,
+.settingsBody::-webkit-scrollbar{
+  width:8px;
+  height:8px
+}
 .log::-webkit-scrollbar-thumb,
-.tableWrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:999px}
+.tableWrap::-webkit-scrollbar-thumb,
+.settingsBody::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.15);
+  border-radius:999px
+}
 
 .entry{
   padding:12px;
@@ -542,19 +558,51 @@ tr:hover td{
 .tNeg{color:var(--red);font-weight:900}
 .tNeu{color:var(--muted);font-weight:900}
 
-.floating{
-  position:fixed;
-  right:14px;
-  bottom:14px;
-  z-index:60;
-  display:flex;
-  flex-direction:column;
+.weekGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
   gap:10px;
 }
 
+.weekBox{
+  padding:12px;
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.05);
+}
+
+.weekName{
+  font-size:12px;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.weekValue{
+  margin-top:6px;
+  font-size:24px;
+  font-weight:900;
+}
+
+.weekSub{
+  margin-top:4px;
+  font-size:11px;
+  color:var(--muted);
+}
+
+.floating{
+  position:fixed;
+  right:14px;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 14px);
+  z-index:40;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  width:190px;
+}
+
 .fab{
-  min-width:148px;
-  padding:12px 14px;
+  width:100%;
+  padding:13px 14px;
   border-radius:18px;
   font-size:13px;
   font-weight:900;
@@ -607,6 +655,121 @@ tr:hover td{
   to{opacity:1;transform:translateY(0) scale(1)}
 }
 
+.settingsBackdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.42);
+  backdrop-filter:blur(4px);
+  opacity:0;
+  pointer-events:none;
+  transition:.2s;
+  z-index:90;
+}
+
+.settingsBackdrop.open{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.settingsPanel{
+  position:fixed;
+  top:0;
+  right:0;
+  width:420px;
+  max-width:100%;
+  height:100%;
+  background:linear-gradient(180deg,#0b1736,#101f47);
+  border-left:1px solid rgba(255,255,255,.08);
+  box-shadow:-20px 0 45px rgba(0,0,0,.35);
+  transform:translateX(100%);
+  transition:.25s ease;
+  z-index:91;
+  display:flex;
+  flex-direction:column;
+}
+
+.settingsPanel.open{
+  transform:translateX(0);
+}
+
+.settingsHead{
+  padding:18px 16px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.settingsTitle{
+  font-size:20px;
+  font-weight:900;
+}
+
+.settingsBody{
+  padding:14px;
+  overflow:auto;
+}
+
+.settingsGroup{
+  margin-bottom:16px;
+  padding:14px;
+  border-radius:18px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+}
+
+.settingsGroupTitle{
+  font-size:14px;
+  font-weight:900;
+  margin-bottom:12px;
+}
+
+.formRow{
+  display:grid;
+  grid-template-columns:1fr 90px;
+  gap:10px;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+.formRow label{
+  font-size:13px;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.formRow input,
+.formRow select{
+  width:100%;
+  border:none;
+  outline:none;
+  border-radius:12px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  font-weight:900;
+}
+
+.segment{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+
+.segment button{
+  padding:12px 10px;
+  border-radius:14px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:none;
+}
+
+.segment button.active{
+  background:linear-gradient(90deg,#7cf7ff,#79f2a3);
+  color:#041420;
+}
+
 .footerNote{
   margin:14px 0 4px;
   text-align:center;
@@ -614,10 +777,11 @@ tr:hover td{
   font-size:12px;
 }
 
-@media (max-width:1120px){
+@media (max-width:1180px){
   .topGrid,.mainGrid,.bottomGrid,.analyticsGrid{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(4,1fr)}
-  .controls{grid-template-columns:repeat(5,1fr)}
+  .controls{grid-template-columns:repeat(6,1fr)}
+  .weekGrid{grid-template-columns:repeat(2,1fr)}
 }
 
 @media (max-width:760px){
@@ -626,16 +790,29 @@ tr:hover td{
   .pnl{font-size:36px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .controls{grid-template-columns:repeat(2,1fr)}
-  .factorGrid,.sideGrid,.tradePanel,.analyticsGrid{grid-template-columns:1fr}
-  .floating{right:10px;left:10px;bottom:10px}
-  .fab{min-width:unset;width:100%}
+  .factorGrid,.sideGrid,.tradePanel,.analyticsGrid,.weekGrid{grid-template-columns:1fr}
+  .floating{
+    left:12px;
+    right:12px;
+    width:auto;
+    bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
+  }
+  .fab{
+    min-height:54px;
+  }
+  .wrap{
+    padding-bottom:245px;
+  }
+  .settingsPanel{
+    width:100%;
+  }
 }
 </style>
 </head>
 <body>
 
 <div class="wrap">
-  <div class="title">V18.3 ELITE ⚡</div>
+  <div class="title">V18.4 OMEGA ⚡</div>
 
   <div id="hero" class="hero">
     <div class="heroInner">
@@ -643,7 +820,7 @@ tr:hover td{
       <div class="topGrid">
         <div class="guardCard">
           <div id="guard" class="guard ready pulse">READY</div>
-          <div id="guardSub" class="sub">System armed • waiting for elite-grade setup</div>
+          <div id="guardSub" class="sub">System armed • waiting for omega-grade setup</div>
 
           <div id="pnl" class="pnl">0.00<small>Net PnL</small></div>
 
@@ -651,12 +828,13 @@ tr:hover td{
             <div id="directionBadge" class="pill flat">NO SIGNAL</div>
             <div id="sessionClock" class="pill">SESSION --:--:--</div>
             <div id="newsBadge" class="pill">NEWS SAFE</div>
+            <div id="riskBadge" class="pill">RISK SAFE</div>
           </div>
         </div>
 
         <div class="scoreCard">
           <div class="scoreHead">
-            <div class="scoreTitle">ELITE SCORE</div>
+            <div class="scoreTitle">OMEGA SCORE</div>
             <div id="scoreValue" class="scoreValue">0</div>
           </div>
           <div class="barWrap"><div id="scoreBar" class="bar"></div></div>
@@ -702,18 +880,18 @@ tr:hover td{
           <div class="kpiSub">session goal</div>
         </div>
         <div class="kpi">
+          <div class="kpiName">Weekly Target</div>
+          <div id="weekTarget" class="kpiValue">0.00</div>
+          <div class="kpiSub">weekly goal</div>
+        </div>
+        <div class="kpi">
           <div class="kpiName">Open Bias</div>
           <div id="bias" class="kpiValue">NEUTRAL</div>
           <div class="kpiSub">HTF direction</div>
         </div>
         <div class="kpi">
-          <div class="kpiName">Kill Switch</div>
-          <div id="kill" class="kpiValue">OFF</div>
-          <div class="kpiSub">equity protection</div>
-        </div>
-        <div class="kpi">
           <div class="kpiName">Mode</div>
-          <div id="mode" class="kpiValue">ELITE</div>
+          <div id="mode" class="kpiValue">OMEGA</div>
           <div class="kpiSub">execution profile</div>
         </div>
       </div>
@@ -753,9 +931,11 @@ tr:hover td{
     <button class="btnReset" onclick="hardReset()">RESET</button>
     <button class="btnMode" onclick="toggleMode()">MODE</button>
     <button class="btnSync" onclick="load()">SYNC</button>
-    <button class="btnExport" onclick="exportJson()">EXPORT</button>
+    <button class="btnExport" onclick="exportJson()">JSON</button>
+    <button class="btnExport" onclick="exportCsv()">CSV</button>
     <label class="fileLabel" for="importFile">IMPORT</label>
     <input id="importFile" class="fileInput" type="file" accept=".json" onchange="importJson(event)" />
+    <button class="btnSettings" onclick="toggleSettings()">SETTINGS</button>
   </div>
 
   <div class="bottomGrid">
@@ -765,9 +945,9 @@ tr:hover td{
     </div>
 
     <div class="card">
-      <div class="cardTitle">Ultra Rules</div>
+      <div class="cardTitle">Omega Rules</div>
       <div class="badges">
-        <div id="ruleScore" class="badge off">Score ≥ 80</div>
+        <div id="ruleScore" class="badge off">Score ≥ Min</div>
         <div id="ruleCooldown" class="badge off">Cooldown Clear</div>
         <div id="ruleRisk" class="badge off">Risk OK</div>
         <div id="ruleDd" class="badge off">DD Safe</div>
@@ -786,31 +966,58 @@ tr:hover td{
     </div>
 
     <div class="card">
-      <div class="cardTitle">Trade History</div>
-      <div class="tableWrap">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Zeit</th>
-              <th>Side</th>
-              <th>Result</th>
-              <th>PnL</th>
-              <th>Score</th>
-              <th>TP1</th>
-              <th>TP2</th>
-              <th>SL</th>
-            </tr>
-          </thead>
-          <tbody id="historyTable">
-            <tr><td colspan="9" class="tNeu">Keine Trades vorhanden</td></tr>
-          </tbody>
-        </table>
+      <div class="cardTitle">Day / Week Stats</div>
+      <div class="weekGrid">
+        <div class="weekBox">
+          <div class="weekName">Today PnL</div>
+          <div id="todayPnl" class="weekValue">0.00</div>
+          <div class="weekSub">current day result</div>
+        </div>
+        <div class="weekBox">
+          <div class="weekName">Today Trades</div>
+          <div id="todayTrades" class="weekValue">0</div>
+          <div class="weekSub">day executions</div>
+        </div>
+        <div class="weekBox">
+          <div class="weekName">Week PnL</div>
+          <div id="weekPnl" class="weekValue">0.00</div>
+          <div class="weekSub">current week result</div>
+        </div>
+        <div class="weekBox">
+          <div class="weekName">Week Trades</div>
+          <div id="weekTrades" class="weekValue">0</div>
+          <div class="weekSub">week executions</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="footerNote">V18.3 ELITE • localStorage • Export/Import JSON • Trade-History • Donut Analytics • Floating Panel</div>
+  <div class="card" style="margin-top:14px;">
+    <div class="cardTitle">Trade History</div>
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Zeit</th>
+            <th>Side</th>
+            <th>Result</th>
+            <th>PnL</th>
+            <th>Score</th>
+            <th>Risk</th>
+            <th>TP1</th>
+            <th>TP2</th>
+            <th>SL</th>
+          </tr>
+        </thead>
+        <tbody id="historyTable">
+          <tr><td colspan="10" class="tNeu">Keine Trades vorhanden</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footerNote">V18.4 OMEGA • mobile floating fix • settings panel • risk profiles • JSON/CSV export • daily/weekly stats</div>
 </div>
 
 <div class="floating">
@@ -823,17 +1030,106 @@ tr:hover td{
   <div id="alertBox" class="alertBox info">SYNC</div>
 </div>
 
+<div id="settingsBackdrop" class="settingsBackdrop" onclick="closeSettings()"></div>
+<div id="settingsPanel" class="settingsPanel">
+  <div class="settingsHead">
+    <div class="settingsTitle">OMEGA Settings</div>
+    <button class="btnReset" style="box-shadow:none;padding:10px 12px;" onclick="closeSettings()">X</button>
+  </div>
+
+  <div class="settingsBody">
+    <div class="settingsGroup">
+      <div class="settingsGroupTitle">Risk Profile</div>
+      <div class="segment">
+        <button id="riskSafeBtn" onclick="setRiskProfile('SAFE')">SAFE</button>
+        <button id="riskBalancedBtn" onclick="setRiskProfile('BALANCED')">BALANCED</button>
+        <button id="riskAggroBtn" onclick="setRiskProfile('AGGRESSIVE')">AGGRESSIVE</button>
+      </div>
+    </div>
+
+    <div class="settingsGroup">
+      <div class="settingsGroupTitle">Execution Filter</div>
+      <div class="formRow">
+        <label for="minScoreInput">Min Score</label>
+        <input id="minScoreInput" type="number" min="0" max="100" step="1" />
+      </div>
+      <div class="formRow">
+        <label for="maxDdInput">Max DD %</label>
+        <input id="maxDdInput" type="number" min="0" max="100" step="0.1" />
+      </div>
+      <div class="formRow">
+        <label for="newsBlockSelect">News Block</label>
+        <select id="newsBlockSelect">
+          <option value="true">ON</option>
+          <option value="false">OFF</option>
+        </select>
+      </div>
+      <div class="formRow">
+        <label for="sessionOnlySelect">Session Only</label>
+        <select id="sessionOnlySelect">
+          <option value="true">ON</option>
+          <option value="false">OFF</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="settingsGroup">
+      <div class="settingsGroupTitle">Targets</div>
+      <div class="formRow">
+        <label for="dailyTargetInput">Daily Target</label>
+        <input id="dailyTargetInput" type="number" step="0.01" />
+      </div>
+      <div class="formRow">
+        <label for="weeklyTargetInput">Weekly Target</label>
+        <input id="weeklyTargetInput" type="number" step="0.01" />
+      </div>
+      <div class="formRow">
+        <label for="tp1Input">TP1</label>
+        <input id="tp1Input" type="number" step="0.01" />
+      </div>
+      <div class="formRow">
+        <label for="tp2Input">TP2</label>
+        <input id="tp2Input" type="number" step="0.01" />
+      </div>
+      <div class="formRow">
+        <label for="slInput">SL</label>
+        <input id="slInput" type="number" step="0.01" />
+      </div>
+    </div>
+
+    <div class="settingsGroup">
+      <div class="settingsGroupTitle">System</div>
+      <div class="formRow">
+        <label for="audioSelect">Sound</label>
+        <select id="audioSelect">
+          <option value="true">ON</option>
+          <option value="false">OFF</option>
+        </select>
+      </div>
+      <div class="formRow">
+        <label for="autosaveSelect">AutoSave</label>
+        <select id="autosaveSelect">
+          <option value="true">ON</option>
+          <option value="false">OFF</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btnSettings" style="width:100%;" onclick="applySettings()">APPLY SETTINGS</button>
+  </div>
+</div>
+
 <script>
 let chart;
 let donutChart;
 let pnlHistory = [];
 let lastPnl = 0;
-let localMode = 'ELITE';
+let localMode = 'OMEGA';
 let localSide = 'NONE';
 let audioEnabled = true;
 
-const STORAGE_KEY = 'v18_3_elite_state';
-const HISTORY_LIMIT = 250;
+const STORAGE_KEY = 'v18_4_omega_state';
+const HISTORY_LIMIT = 300;
 
 let state = {
   pnl: 0,
@@ -844,15 +1140,20 @@ let state = {
   streak: 0,
   maxDrawdown: 0,
   dailyTarget: 150,
+  weeklyTarget: 750,
   riskMode: 'SAFE',
   bias: 'NEUTRAL',
   killSwitch: false,
   guard: 'READY',
-  mode: 'ELITE',
+  mode: 'OMEGA',
   side: 'NONE',
   tp1: 25,
   tp2: 60,
   sl: 18,
+  minScore: 80,
+  maxDdLimit: 5,
+  blockNews: true,
+  sessionOnly: true,
   trendScore: 78,
   volumeScore: 64,
   structureScore: 72,
@@ -918,7 +1219,6 @@ function initCharts(){
       datasets:[{
         data:[0,0],
         backgroundColor:['#79f2a3','#ff8f8f'],
-        borderColor:['rgba(0,0,0,.0)','rgba(0,0,0,.0)'],
         borderWidth:0
       }]
     },
@@ -995,7 +1295,7 @@ function nowDateTime(){
 
 function addLog(type,msg){
   state.log.push({ type, msg, time: nowTime() });
-  if(state.log.length > 100) state.log.shift();
+  if(state.log.length > 120) state.log.shift();
 }
 
 function saveState(){
@@ -1015,11 +1315,13 @@ function loadLocalState(){
       log: Array.isArray(parsed.log) ? parsed.log : [],
       tradeHistory: Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : []
     };
+    audioEnabled = parsed.audioEnabled !== false;
   }catch(e){}
 }
 
 function toggleStorage(){
   state.autoSave = !state.autoSave;
+  audioEnabled = true;
   setText('storageBtnText', state.autoSave ? 'AutoSave ON' : 'AutoSave OFF');
   if(state.autoSave) saveState();
   showAlert(state.autoSave ? 'AUTOSAVE ON' : 'AUTOSAVE OFF', 'info');
@@ -1079,6 +1381,95 @@ function updateSessionClock(){
   setText('sessionClock', `${session} ${time}`);
 }
 
+/* ---------- SETTINGS PANEL ---------- */
+function toggleSettings(){
+  const panel = document.getElementById('settingsPanel');
+  const backdrop = document.getElementById('settingsBackdrop');
+  const open = panel.classList.contains('open');
+
+  if(open){
+    closeSettings();
+    return;
+  }
+
+  syncSettingsForm();
+  panel.classList.add('open');
+  backdrop.classList.add('open');
+}
+
+function closeSettings(){
+  document.getElementById('settingsPanel').classList.remove('open');
+  document.getElementById('settingsBackdrop').classList.remove('open');
+}
+
+function syncSettingsForm(){
+  document.getElementById('minScoreInput').value = state.minScore;
+  document.getElementById('maxDdInput').value = state.maxDdLimit;
+  document.getElementById('newsBlockSelect').value = String(state.blockNews);
+  document.getElementById('sessionOnlySelect').value = String(state.sessionOnly);
+  document.getElementById('dailyTargetInput').value = state.dailyTarget;
+  document.getElementById('weeklyTargetInput').value = state.weeklyTarget;
+  document.getElementById('tp1Input').value = state.tp1;
+  document.getElementById('tp2Input').value = state.tp2;
+  document.getElementById('slInput').value = state.sl;
+  document.getElementById('audioSelect').value = String(audioEnabled);
+  document.getElementById('autosaveSelect').value = String(state.autoSave);
+  highlightRiskButtons();
+}
+
+function highlightRiskButtons(){
+  document.getElementById('riskSafeBtn').classList.toggle('active', state.riskMode === 'SAFE');
+  document.getElementById('riskBalancedBtn').classList.toggle('active', state.riskMode === 'BALANCED');
+  document.getElementById('riskAggroBtn').classList.toggle('active', state.riskMode === 'AGGRESSIVE');
+}
+
+function setRiskProfile(mode){
+  state.riskMode = mode;
+
+  if(mode === 'SAFE'){
+    state.tp1 = 20;
+    state.tp2 = 45;
+    state.sl = 14;
+    state.minScore = 82;
+    state.maxDdLimit = 4;
+  }else if(mode === 'BALANCED'){
+    state.tp1 = 25;
+    state.tp2 = 60;
+    state.sl = 18;
+    state.minScore = 80;
+    state.maxDdLimit = 5;
+  }else{
+    state.tp1 = 35;
+    state.tp2 = 85;
+    state.sl = 24;
+    state.minScore = 75;
+    state.maxDdLimit = 7;
+  }
+
+  syncSettingsForm();
+  showAlert(`RISK ${mode}`, 'info');
+}
+
+function applySettings(){
+  state.minScore = safeNum(document.getElementById('minScoreInput').value, state.minScore);
+  state.maxDdLimit = safeNum(document.getElementById('maxDdInput').value, state.maxDdLimit);
+  state.blockNews = document.getElementById('newsBlockSelect').value === 'true';
+  state.sessionOnly = document.getElementById('sessionOnlySelect').value === 'true';
+  state.dailyTarget = safeNum(document.getElementById('dailyTargetInput').value, state.dailyTarget);
+  state.weeklyTarget = safeNum(document.getElementById('weeklyTargetInput').value, state.weeklyTarget);
+  state.tp1 = safeNum(document.getElementById('tp1Input').value, state.tp1);
+  state.tp2 = safeNum(document.getElementById('tp2Input').value, state.tp2);
+  state.sl = safeNum(document.getElementById('slInput').value, state.sl);
+  audioEnabled = document.getElementById('audioSelect').value === 'true';
+  state.autoSave = document.getElementById('autosaveSelect').value === 'true';
+
+  addLog('SETTINGS', 'Omega settings applied');
+  setText('storageBtnText', state.autoSave ? 'AutoSave ON' : 'AutoSave OFF');
+  closeSettings();
+  renderAll();
+  showAlert('SETTINGS APPLIED', 'info');
+}
+
 /* ---------- SCORE ---------- */
 function calcScore(s){
   let score =
@@ -1091,12 +1482,58 @@ function calcScore(s){
 
   if(s.cooldownLeft > 0) score -= 18;
   if(s.killSwitch) score -= 50;
-  if(s.maxDrawdown >= 5) score -= 20;
-  if(!s.flags.newsSafe) score -= 20;
+  if(s.maxDrawdown >= s.maxDdLimit) score -= 20;
+  if(s.blockNews && !s.flags.newsSafe) score -= 20;
   if(s.flags.biasMatch) score += 6;
   if(s.side === 'BUY' || s.side === 'SELL') score += 4;
+  if(s.sessionOnly && !s.flags.sessionActive) score -= 16;
 
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+/* ---------- STATS ---------- */
+function isToday(dateStr){
+  const d = new Date(dateStr);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() &&
+         d.getMonth() === now.getMonth() &&
+         d.getDate() === now.getDate();
+}
+
+function isThisWeek(dateStr){
+  const d = new Date(dateStr);
+  const now = new Date();
+
+  const start = new Date(now);
+  const day = start.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  start.setDate(start.getDate() - diff);
+  start.setHours(0,0,0,0);
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+
+  return d >= start && d < end;
+}
+
+function calcTodayPnl(){
+  return state.tradeHistory
+    .filter(t => isToday(t.time))
+    .reduce((sum,t)=>sum + safeNum(t.pnl),0);
+}
+
+function calcWeekPnl(){
+  return state.tradeHistory
+    .filter(t => isThisWeek(t.time))
+    .reduce((sum,t)=>sum + safeNum(t.pnl),0);
+}
+
+function calcTodayTrades(){
+  return state.tradeHistory.filter(t => isToday(t.time)).length;
+}
+
+function calcWeekTrades(){
+  return state.tradeHistory.filter(t => isThisWeek(t.time)).length;
 }
 
 /* ---------- RENDER ---------- */
@@ -1106,7 +1543,7 @@ function renderGuard(score){
 
   let stateText = 'READY';
   let cls = 'guard ready';
-  let subtitle = 'System armed • waiting for elite-grade setup';
+  let subtitle = 'System armed • waiting for omega-grade setup';
 
   if(state.killSwitch){
     stateText = 'KILL SWITCH';
@@ -1116,15 +1553,15 @@ function renderGuard(score){
     stateText = 'COOLDOWN';
     cls = 'guard cooldown';
     subtitle = `Cooling down • ${state.cooldownLeft}s left`;
-  }else if(score >= 92){
-    stateText = 'GOD MODE';
+  }else if(score >= 94){
+    stateText = 'OMEGA';
     cls = 'guard god pulse';
-    subtitle = 'Maximum alignment • elite execution state';
-  }else if(score >= 85){
+    subtitle = 'Maximum alignment • omega execution state';
+  }else if(score >= 86){
     stateText = 'SNIPER';
     cls = 'guard sniper pulse';
     subtitle = 'High-quality setup • entry window open';
-  }else if(score >= 70){
+  }else if(score >= state.minScore){
     stateText = 'READY';
     cls = 'guard ready pulse';
     subtitle = 'Conditions aligned • waiting for trigger';
@@ -1191,16 +1628,16 @@ function renderScore(score){
     <div class="${badgeClass(state.flags.volumeSpike)}">Volume Spike</div>
     <div class="${badgeClass(state.flags.bos)}">BOS</div>
     <div class="${badgeClass(state.flags.liquidityGrab)}">Liquidity Grab</div>
-    <div class="${badgeClass(state.flags.sessionActive)}">Session Active</div>
-    <div class="${badgeClass(state.flags.newsSafe, !state.flags.newsSafe)}">${state.flags.newsSafe ? 'News Safe' : 'News Risk'}</div>
+    <div class="${badgeClass(state.flags.sessionActive, state.sessionOnly && !state.flags.sessionActive)}">Session Active</div>
+    <div class="${badgeClass(state.flags.newsSafe, state.blockNews && !state.flags.newsSafe)}">${state.flags.newsSafe ? 'News Safe' : 'News Risk'}</div>
   `;
 
-  document.getElementById('ruleScore').className = score >= 80 ? 'badge on' : 'badge off';
+  document.getElementById('ruleScore').className = score >= state.minScore ? 'badge on' : 'badge off';
   document.getElementById('ruleCooldown').className = state.cooldownLeft === 0 ? 'badge on' : 'badge off';
   document.getElementById('ruleRisk').className = state.riskMode !== 'OFF' ? 'badge on' : 'badge off';
-  document.getElementById('ruleDd').className = state.maxDrawdown < 5 ? 'badge on' : 'badge warn';
-  document.getElementById('ruleSession').className = state.flags.sessionActive ? 'badge on' : 'badge off';
-  document.getElementById('ruleNews').className = state.flags.newsSafe ? 'badge on' : 'badge warn';
+  document.getElementById('ruleDd').className = state.maxDrawdown < state.maxDdLimit ? 'badge on' : 'badge warn';
+  document.getElementById('ruleSession').className = (!state.sessionOnly || state.flags.sessionActive) ? 'badge on' : 'badge warn';
+  document.getElementById('ruleNews').className = (!state.blockNews || state.flags.newsSafe) ? 'badge on' : 'badge warn';
   document.getElementById('ruleBias').className = state.flags.biasMatch ? 'badge on' : 'badge off';
   document.getElementById('ruleDirection').className = (state.side === 'BUY' || state.side === 'SELL') ? 'badge on' : 'badge off';
 }
@@ -1218,13 +1655,18 @@ function renderStats(){
   setText('wins', state.wins);
   setText('losses', state.losses);
   setText('dayTarget', state.dailyTarget.toFixed(2));
+  setText('weekTarget', state.weeklyTarget.toFixed(2));
   setText('bias', state.bias);
-  setText('kill', state.killSwitch ? 'ON' : 'OFF');
   setText('mode', state.mode.toUpperCase());
   setText('tp1', state.tp1.toFixed(2));
   setText('tp2', state.tp2.toFixed(2));
   setText('sl', state.sl.toFixed(2));
   setText('storageBtnText', state.autoSave ? 'AutoSave ON' : 'AutoSave OFF');
+
+  setText('todayPnl', calcTodayPnl().toFixed(2));
+  setText('todayTrades', calcTodayTrades());
+  setText('weekPnl', calcWeekPnl().toFixed(2));
+  setText('weekTrades', calcWeekTrades());
 
   const dir = document.getElementById('directionBadge');
   if(state.side === 'BUY'){
@@ -1239,13 +1681,23 @@ function renderStats(){
   }
 
   const news = document.getElementById('newsBadge');
-  if(state.flags.newsSafe){
+  if(state.flags.newsSafe || !state.blockNews){
     news.className = 'pill';
-    news.textContent = 'NEWS SAFE';
+    news.textContent = state.blockNews ? 'NEWS SAFE' : 'NEWS IGNORE';
   }else{
     news.className = 'pill sell';
     news.textContent = 'NEWS BLOCK';
   }
+
+  const risk = document.getElementById('riskBadge');
+  if(state.riskMode === 'SAFE'){
+    risk.className = 'pill';
+  }else if(state.riskMode === 'BALANCED'){
+    risk.className = 'pill warn';
+  }else{
+    risk.className = 'pill sell';
+  }
+  risk.textContent = `RISK ${state.riskMode}`;
 }
 
 function renderLog(){
@@ -1289,7 +1741,7 @@ function renderLog(){
 function renderHistory(){
   const tbody = document.getElementById('historyTable');
   if(!state.tradeHistory.length){
-    tbody.innerHTML = `<tr><td colspan="9" class="tNeu">Keine Trades vorhanden</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="tNeu">Keine Trades vorhanden</td></tr>`;
     return;
   }
 
@@ -1304,6 +1756,7 @@ function renderHistory(){
       <td>${escapeHtml(t.result || '-')}</td>
       <td class="${pnlClass}">${safeNum(t.pnl).toFixed(2)}</td>
       <td>${safeNum(t.score).toFixed(0)}</td>
+      <td>${escapeHtml(t.riskMode || state.riskMode)}</td>
       <td>${safeNum(t.tp1).toFixed(2)}</td>
       <td>${safeNum(t.tp2).toFixed(2)}</td>
       <td>${safeNum(t.sl).toFixed(2)}</td>
@@ -1321,6 +1774,7 @@ function renderAll(){
   renderLog();
   renderHistory();
   refreshDonut();
+  highlightRiskButtons();
   saveState();
 }
 
@@ -1340,6 +1794,7 @@ async function load(){
     state.streak = safeNum(data.streak, state.streak);
     state.maxDrawdown = safeNum(data.maxDrawdown, state.maxDrawdown);
     state.dailyTarget = safeNum(data.dailyTarget, state.dailyTarget);
+    state.weeklyTarget = safeNum(data.weeklyTarget, state.weeklyTarget);
     state.riskMode = data.riskMode || state.riskMode;
     state.bias = (data.bias || state.bias).toUpperCase();
     state.killSwitch = !!data.killSwitch;
@@ -1396,7 +1851,7 @@ function lockButtons(stateLocked){
 
 /* ---------- MODE / SIDE ---------- */
 async function toggleMode(){
-  localMode = localMode === 'ELITE' ? 'GOD ELITE' : 'ELITE';
+  localMode = localMode === 'OMEGA' ? 'GOD OMEGA' : 'OMEGA';
   state.mode = localMode;
   try{
     await fetch('/api/mode',{
@@ -1472,12 +1927,18 @@ function manualResult(result){
   const ddPct = state.peakPnl > 0 ? (ddAbs / state.peakPnl) * 100 : 0;
   state.maxDrawdown = Math.max(state.maxDrawdown, ddPct);
 
+  if(state.maxDrawdown >= state.maxDdLimit){
+    state.killSwitch = true;
+    addLog('BLOCK', `Kill Switch active. DD limit ${state.maxDdLimit}% reached`);
+  }
+
   state.tradeHistory.push({
-    time: nowDateTime(),
+    time: new Date().toISOString(),
     side,
     result,
     pnl: signedPnl,
     score,
+    riskMode: state.riskMode,
     tp1: state.tp1,
     tp2: state.tp2,
     sl: state.sl
@@ -1502,6 +1963,7 @@ function hardReset(){
   state.maxDrawdown = 0;
   state.peakPnl = 0;
   state.side = 'NONE';
+  state.killSwitch = false;
   state.tradeHistory = [];
   state.log = [];
   pnlHistory = [];
@@ -1516,16 +1978,47 @@ function hardReset(){
 
 /* ---------- EXPORT / IMPORT ---------- */
 function exportJson(){
-  const data = JSON.stringify(state, null, 2);
+  const data = JSON.stringify({...state, audioEnabled}, null, 2);
   const blob = new Blob([data], { type:'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v18_3_elite_state.json';
+  a.download = 'v18_4_omega_state.json';
   a.click();
   URL.revokeObjectURL(url);
-  addLog('EXPORT', 'State exported');
-  showAlert('EXPORT READY', 'info');
+  addLog('EXPORT', 'JSON export ready');
+  showAlert('JSON READY', 'info');
+}
+
+function exportCsv(){
+  const rows = [
+    ['time','side','result','pnl','score','riskMode','tp1','tp2','sl']
+  ];
+
+  state.tradeHistory.forEach(t=>{
+    rows.push([
+      t.time || '',
+      t.side || '',
+      t.result || '',
+      safeNum(t.pnl).toFixed(2),
+      safeNum(t.score).toFixed(0),
+      t.riskMode || '',
+      safeNum(t.tp1).toFixed(2),
+      safeNum(t.tp2).toFixed(2),
+      safeNum(t.sl).toFixed(2)
+    ]);
+  });
+
+  const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'v18_4_omega_history.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  addLog('EXPORT', 'CSV export ready');
+  showAlert('CSV READY', 'info');
 }
 
 function importJson(event){
@@ -1544,10 +2037,10 @@ function importJson(event){
         tradeHistory: Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : []
       };
 
-      pnlHistory = state.tradeHistory.map(t=>{
-        let running = 0;
-        return running += safeNum(t.pnl);
-      });
+      audioEnabled = parsed.audioEnabled !== false;
+
+      let running = 0;
+      pnlHistory = state.tradeHistory.map(t => running += safeNum(t.pnl));
 
       if(!pnlHistory.length) pnlHistory = [state.pnl];
 
@@ -1577,6 +2070,7 @@ initCharts();
 updateSessionClock();
 setInterval(updateSessionClock, 1000);
 renderAll();
+
 if(state.tradeHistory.length){
   let running = 0;
   pnlHistory = state.tradeHistory.map(t => running += safeNum(t.pnl));
@@ -1584,6 +2078,7 @@ if(state.tradeHistory.length){
   chart.data.datasets[0].data = pnlHistory;
   chart.update();
 }
+
 load();
 setInterval(load, 2500);
 </script>
