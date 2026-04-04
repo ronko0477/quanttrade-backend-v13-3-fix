@@ -2,8 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>V18.4 OMEGA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>V18.5 OMEGA X FULL FIXED</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -25,15 +25,17 @@
   --card:rgba(16,25,54,.92);
   --card2:rgba(30,43,86,.92);
   --glass:rgba(255,255,255,.05);
-  --line:rgba(255,255,255,.08);
 
   --shadow:0 18px 50px rgba(0,0,0,.35);
   --glowBlue:0 0 24px rgba(124,247,255,.28);
   --glowRed:0 0 24px rgba(255,120,120,.25);
+
+  --dockClosed:78px;
+  --dockOpen:258px;
+  --safeBottom:max(env(safe-area-inset-bottom), 0px);
 }
 
 *{box-sizing:border-box}
-
 html{scroll-behavior:smooth}
 
 body{
@@ -46,11 +48,15 @@ body{
     linear-gradient(180deg,var(--bg1),var(--bg2),var(--bg3));
 }
 
+body.dock-open{ --activeDockHeight:var(--dockOpen); }
+body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
+
 .wrap{
   max-width:1380px;
   margin:auto;
   padding:14px;
-  padding-bottom:170px;
+  padding-bottom:calc(var(--activeDockHeight) + var(--safeBottom) + 28px);
+  transition:padding-bottom .22s ease;
 }
 
 .title{
@@ -70,7 +76,7 @@ body{
   background:linear-gradient(180deg,var(--card),var(--card2));
   border:1px solid rgba(255,255,255,.06);
   box-shadow:var(--shadow);
-  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  transition:transform .18s ease, box-shadow .18s ease;
 }
 
 .hero::before{
@@ -313,9 +319,7 @@ body{
   margin-bottom:10px;
 }
 
-.chartWrap{
-  height:340px;
-}
+.chartWrap{height:340px}
 
 .sideGrid{
   display:grid;
@@ -409,25 +413,25 @@ body{
 
 .controls{
   display:grid;
-  grid-template-columns:repeat(10,1fr);
+  grid-template-columns:repeat(12,1fr);
   gap:10px;
   margin-top:14px;
 }
 
-button,.ghostBtn,.fileLabel{
+button,.fileLabel{
   padding:15px 12px;
   border:none;
   border-radius:16px;
   font-weight:900;
   color:#fff;
   cursor:pointer;
-  transition:transform .15s ease, opacity .15s ease, box-shadow .15s ease;
+  transition:transform .15s ease, opacity .15s ease;
   box-shadow:0 12px 24px rgba(0,0,0,.18);
   text-align:center;
 }
 
-button:hover,.ghostBtn:hover,.fileLabel:hover{transform:translateY(-1px)}
-button:active,.ghostBtn:active,.fileLabel:active{transform:scale(.985)}
+button:hover,.fileLabel:hover{transform:translateY(-1px)}
+button:active,.fileLabel:active{transform:scale(.985)}
 button:disabled{opacity:.45;cursor:not-allowed}
 
 .btnSend{background:linear-gradient(90deg,#6f7cff,#7cf7ff)}
@@ -439,7 +443,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .btnMode{background:linear-gradient(90deg,#8e79ff,#71a7ff)}
 .btnSync{background:linear-gradient(90deg,#2d5eff,#6f7cff)}
 .btnExport{background:linear-gradient(90deg,#4d5876,#8a9bc4)}
-.btnStorage{background:linear-gradient(90deg,#5c6cff,#a58bff)}
 .btnSettings{background:linear-gradient(90deg,#5260ff,#8f79ff)}
 
 .fileInput{display:none}
@@ -467,13 +470,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .tableWrap::-webkit-scrollbar,
 .settingsBody::-webkit-scrollbar{
   width:8px;
-  height:8px
+  height:8px;
 }
 .log::-webkit-scrollbar-thumb,
 .tableWrap::-webkit-scrollbar-thumb,
 .settingsBody::-webkit-scrollbar-thumb{
   background:rgba(255,255,255,.15);
-  border-radius:999px
+  border-radius:999px;
 }
 
 .entry{
@@ -515,9 +518,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   margin-top:14px;
 }
 
-.donutWrap{
-  height:280px;
-}
+.donutWrap{height:280px}
 
 .tableWrap{
   overflow:auto;
@@ -529,7 +530,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 table{
   width:100%;
   border-collapse:collapse;
-  min-width:720px;
+  min-width:860px;
   background:rgba(255,255,255,.03);
 }
 
@@ -550,9 +551,7 @@ th{
   z-index:1;
 }
 
-tr:hover td{
-  background:rgba(255,255,255,.03);
-}
+tr:hover td{background:rgba(255,255,255,.03)}
 
 .tPos{color:var(--green);font-weight:900}
 .tNeg{color:var(--red);font-weight:900}
@@ -589,29 +588,107 @@ tr:hover td{
   color:var(--muted);
 }
 
-.floating{
-  position:fixed;
-  right:14px;
-  bottom:calc(env(safe-area-inset-bottom,0px) + 14px);
-  z-index:40;
-  display:flex;
-  flex-direction:column;
+.filterBar{
+  display:grid;
+  grid-template-columns:1fr 140px 140px;
   gap:10px;
-  width:190px;
+  margin-bottom:12px;
 }
 
-.fab{
+.filterBar input,.filterBar select,
+.formRow input,.formRow select{
   width:100%;
-  padding:13px 14px;
-  border-radius:18px;
-  font-size:13px;
-  font-weight:900;
-  border:1px solid rgba(255,255,255,.08);
-  background:linear-gradient(90deg,rgba(18,31,64,.95),rgba(40,56,109,.95));
+  border:none;
+  outline:none;
+  border-radius:14px;
+  padding:12px;
+  background:rgba(255,255,255,.07);
   color:#fff;
-  box-shadow:var(--shadow);
-  backdrop-filter:blur(8px);
+  font-weight:700;
 }
+
+.dock{
+  position:fixed;
+  left:12px;
+  right:12px;
+  bottom:calc(var(--safeBottom) + 8px);
+  z-index:60;
+  pointer-events:none;
+}
+
+.dockPanel{
+  pointer-events:auto;
+  background:linear-gradient(180deg,rgba(8,20,50,.95),rgba(22,37,79,.95));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;
+  box-shadow:0 18px 50px rgba(0,0,0,.35);
+  overflow:hidden;
+  backdrop-filter:blur(10px);
+}
+
+.dockHandle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:14px 16px;
+  cursor:pointer;
+  user-select:none;
+}
+
+.dockLeft{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:900;
+}
+
+.dockGrip{
+  width:42px;
+  height:5px;
+  border-radius:999px;
+  background:rgba(255,255,255,.25);
+}
+
+.dockMeta{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+}
+
+.dockChevron{
+  transition:transform .2s ease;
+  font-size:18px;
+  font-weight:900;
+}
+
+body.dock-open .dockChevron{transform:rotate(180deg)}
+
+.dockBody{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .24s ease;
+}
+
+body.dock-open .dockBody{max-height:360px}
+
+.dockButtons{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+  padding:0 14px 14px;
+}
+
+.dockBtn{
+  min-height:52px;
+  border-radius:16px;
+  font-weight:900;
+  box-shadow:none;
+}
+
+.dockBuy{background:linear-gradient(90deg,#3fcf7f,#64f0b0)}
+.dockSell{background:linear-gradient(90deg,#ff7f7f,#ffac6d)}
+.dockSave{background:linear-gradient(90deg,#5c6cff,#a58bff)}
 
 .alertOverlay{
   position:fixed;
@@ -621,7 +698,7 @@ tr:hover td{
   align-items:flex-start;
   justify-content:center;
   padding-top:24px;
-  z-index:70;
+  z-index:80;
   pointer-events:none;
 }
 
@@ -675,7 +752,7 @@ tr:hover td{
   position:fixed;
   top:0;
   right:0;
-  width:420px;
+  width:430px;
   max-width:100%;
   height:100%;
   background:linear-gradient(180deg,#0b1736,#101f47);
@@ -688,9 +765,7 @@ tr:hover td{
   flex-direction:column;
 }
 
-.settingsPanel.open{
-  transform:translateX(0);
-}
+.settingsPanel.open{transform:translateX(0)}
 
 .settingsHead{
   padding:18px 16px;
@@ -727,7 +802,7 @@ tr:hover td{
 
 .formRow{
   display:grid;
-  grid-template-columns:1fr 90px;
+  grid-template-columns:1fr 100px;
   gap:10px;
   align-items:center;
   margin-bottom:10px;
@@ -737,18 +812,6 @@ tr:hover td{
   font-size:13px;
   color:var(--muted);
   font-weight:700;
-}
-
-.formRow input,
-.formRow select{
-  width:100%;
-  border:none;
-  outline:none;
-  border-radius:12px;
-  padding:10px 12px;
-  background:rgba(255,255,255,.08);
-  color:#fff;
-  font-weight:900;
 }
 
 .segment{
@@ -791,37 +854,22 @@ tr:hover td{
   .stats{grid-template-columns:repeat(2,1fr)}
   .controls{grid-template-columns:repeat(2,1fr)}
   .factorGrid,.sideGrid,.tradePanel,.analyticsGrid,.weekGrid{grid-template-columns:1fr}
-  .floating{
-    left:12px;
-    right:12px;
-    width:auto;
-    bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
-  }
-  .fab{
-    min-height:54px;
-  }
-  .wrap{
-    padding-bottom:245px;
-  }
-  .settingsPanel{
-    width:100%;
-  }
+  .filterBar{grid-template-columns:1fr}
+  .settingsPanel{width:100%}
+  .dockButtons{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
-
 <div class="wrap">
-  <div class="title">V18.4 OMEGA ⚡</div>
+  <div class="title">V18.5 OMEGA X FULL FIXED ⚡</div>
 
   <div id="hero" class="hero">
     <div class="heroInner">
-
       <div class="topGrid">
         <div class="guardCard">
           <div id="guard" class="guard ready pulse">READY</div>
-          <div id="guardSub" class="sub">System armed • waiting for omega-grade setup</div>
-
+          <div id="guardSub" class="sub">System armed • waiting for omega-x setup</div>
           <div id="pnl" class="pnl">0.00<small>Net PnL</small></div>
 
           <div class="directionRow">
@@ -834,7 +882,7 @@ tr:hover td{
 
         <div class="scoreCard">
           <div class="scoreHead">
-            <div class="scoreTitle">OMEGA SCORE</div>
+            <div class="scoreTitle">OMEGA X SCORE</div>
             <div id="scoreValue" class="scoreValue">0</div>
           </div>
           <div class="barWrap"><div id="scoreBar" class="bar"></div></div>
@@ -860,7 +908,6 @@ tr:hover td{
         <div class="box"><div class="boxLabel">WINS</div><div id="wins" class="boxValue">0</div></div>
         <div class="box"><div class="boxLabel">LOSSES</div><div id="losses" class="boxValue">0</div></div>
       </div>
-
     </div>
   </div>
 
@@ -872,7 +919,6 @@ tr:hover td{
 
     <div class="card">
       <div class="cardTitle">Execution Core</div>
-
       <div class="sideGrid">
         <div class="kpi">
           <div class="kpiName">Daily Target</div>
@@ -891,7 +937,7 @@ tr:hover td{
         </div>
         <div class="kpi">
           <div class="kpiName">Mode</div>
-          <div id="mode" class="kpiValue">OMEGA</div>
+          <div id="mode" class="kpiValue">OMEGA X</div>
           <div class="kpiSub">execution profile</div>
         </div>
       </div>
@@ -994,6 +1040,21 @@ tr:hover td{
 
   <div class="card" style="margin-top:14px;">
     <div class="cardTitle">Trade History</div>
+
+    <div class="filterBar">
+      <input id="historySearch" type="text" placeholder="Filter: BUY, SELL, WIN, LOSS..." oninput="renderHistory()" />
+      <select id="historySideFilter" onchange="renderHistory()">
+        <option value="ALL">All Sides</option>
+        <option value="BUY">BUY</option>
+        <option value="SELL">SELL</option>
+      </select>
+      <select id="historyResultFilter" onchange="renderHistory()">
+        <option value="ALL">All Results</option>
+        <option value="WIN">WIN</option>
+        <option value="LOSS">LOSS</option>
+      </select>
+    </div>
+
     <div class="tableWrap">
       <table>
         <thead>
@@ -1017,13 +1078,30 @@ tr:hover td{
     </div>
   </div>
 
-  <div class="footerNote">V18.4 OMEGA • mobile floating fix • settings panel • risk profiles • JSON/CSV export • daily/weekly stats</div>
+  <div class="footerNote">V18.5 OMEGA X FULL FIXED • full build • safe dock • filters • weights • stats • import/export</div>
 </div>
 
-<div class="floating">
-  <button class="fab" onclick="quickAction('BUY')">Quick BUY</button>
-  <button class="fab" onclick="quickAction('SELL')">Quick SELL</button>
-  <button class="fab" onclick="toggleStorage()"><span id="storageBtnText">AutoSave ON</span></button>
+<div class="dock">
+  <div class="dockPanel">
+    <div class="dockHandle" onclick="toggleDock()">
+      <div class="dockLeft">
+        <div class="dockGrip"></div>
+        <div>
+          <div style="font-weight:900;">Quick Dock</div>
+          <div class="dockMeta" id="dockMetaText">tap to open</div>
+        </div>
+      </div>
+      <div class="dockChevron">⌃</div>
+    </div>
+
+    <div class="dockBody">
+      <div class="dockButtons">
+        <button class="dockBtn dockBuy" onclick="quickAction('BUY')">Quick BUY</button>
+        <button class="dockBtn dockSell" onclick="quickAction('SELL')">Quick SELL</button>
+        <button class="dockBtn dockSave" onclick="toggleStorage()"><span id="storageBtnText">AutoSave ON</span></button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="alertOverlay" class="alertOverlay">
@@ -1033,7 +1111,7 @@ tr:hover td{
 <div id="settingsBackdrop" class="settingsBackdrop" onclick="closeSettings()"></div>
 <div id="settingsPanel" class="settingsPanel">
   <div class="settingsHead">
-    <div class="settingsTitle">OMEGA Settings</div>
+    <div class="settingsTitle">OMEGA X Settings</div>
     <button class="btnReset" style="box-shadow:none;padding:10px 12px;" onclick="closeSettings()">X</button>
   </div>
 
@@ -1098,6 +1176,34 @@ tr:hover td{
     </div>
 
     <div class="settingsGroup">
+      <div class="settingsGroupTitle">Score Weights</div>
+      <div class="formRow">
+        <label for="wTrendInput">Trend</label>
+        <input id="wTrendInput" type="number" step="0.01" />
+      </div>
+      <div class="formRow">
+        <label for="wVolumeInput">Volume</label>
+        <input id="wVolumeInput" type="number" step="0.01" />
+      </div>
+      <div class="formRow">
+        <label for="wStructureInput">Structure</label>
+        <input id="wStructureInput" type="number" step="0.01" />
+      </div>
+      <div class="formRow">
+        <label for="wVolatilityInput">Volatility</label>
+        <input id="wVolatilityInput" type="number" step="0.01" />
+      </div>
+      <div class="formRow">
+        <label for="wLiquidityInput">Liquidity</label>
+        <input id="wLiquidityInput" type="number" step="0.01" />
+      </div>
+      <div class="formRow">
+        <label for="wSessionInput">Session</label>
+        <input id="wSessionInput" type="number" step="0.01" />
+      </div>
+    </div>
+
+    <div class="settingsGroup">
       <div class="settingsGroupTitle">System</div>
       <div class="formRow">
         <label for="audioSelect">Sound</label>
@@ -1113,6 +1219,13 @@ tr:hover td{
           <option value="false">OFF</option>
         </select>
       </div>
+      <div class="formRow">
+        <label for="dockDefaultSelect">Dock Default</label>
+        <select id="dockDefaultSelect">
+          <option value="closed">Closed</option>
+          <option value="open">Open</option>
+        </select>
+      </div>
     </div>
 
     <button class="btnSettings" style="width:100%;" onclick="applySettings()">APPLY SETTINGS</button>
@@ -1122,14 +1235,15 @@ tr:hover td{
 <script>
 let chart;
 let donutChart;
-let pnlHistory = [];
+let pnlSeries = [];
 let lastPnl = 0;
-let localMode = 'OMEGA';
+let localMode = 'OMEGA X';
 let localSide = 'NONE';
 let audioEnabled = true;
+let loadingNow = false;
 
-const STORAGE_KEY = 'v18_4_omega_state';
-const HISTORY_LIMIT = 300;
+const STORAGE_KEY = 'v18_5_omega_x_full_fixed_state';
+const HISTORY_LIMIT = 350;
 
 let state = {
   pnl: 0,
@@ -1145,7 +1259,7 @@ let state = {
   bias: 'NEUTRAL',
   killSwitch: false,
   guard: 'READY',
-  mode: 'OMEGA',
+  mode: 'OMEGA X',
   side: 'NONE',
   tp1: 25,
   tp2: 60,
@@ -1154,12 +1268,21 @@ let state = {
   maxDdLimit: 5,
   blockNews: true,
   sessionOnly: true,
+  dockDefault: 'closed',
   trendScore: 78,
   volumeScore: 64,
   structureScore: 72,
   volatilityScore: 58,
   liquidityScore: 76,
   sessionScore: 68,
+  weights:{
+    trend:0.22,
+    volume:0.15,
+    structure:0.20,
+    volatility:0.12,
+    liquidity:0.18,
+    session:0.13
+  },
   flags: {
     trendSync: true,
     volumeSpike: false,
@@ -1175,7 +1298,6 @@ let state = {
   peakPnl: 0
 };
 
-/* ---------- CHARTS ---------- */
 function initCharts(){
   chart = new Chart(document.getElementById('chart'),{
     type:'line',
@@ -1199,15 +1321,13 @@ function initCharts(){
       }]
     },
     options:{
+      animation:false,
       responsive:true,
       maintainAspectRatio:false,
       plugins:{legend:{display:false}},
       scales:{
         x:{display:false,grid:{display:false}},
-        y:{
-          grid:{color:'rgba(255,255,255,.06)'},
-          ticks:{color:'rgba(255,255,255,.62)'}
-        }
+        y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(255,255,255,.62)'}}
       }
     }
   });
@@ -1223,32 +1343,43 @@ function initCharts(){
       }]
     },
     options:{
+      animation:false,
       responsive:true,
       maintainAspectRatio:false,
-      plugins:{
-        legend:{
-          labels:{color:'rgba(255,255,255,.75)'}
-        }
-      },
+      plugins:{legend:{labels:{color:'rgba(255,255,255,.75)'}}},
       cutout:'68%'
     }
   });
 }
 
-function updateChart(pnl){
-  pnlHistory.push(Number(pnl || 0));
-  if(pnlHistory.length > 90) pnlHistory.shift();
-  chart.data.labels = pnlHistory.map((_,i)=>i+1);
-  chart.data.datasets[0].data = pnlHistory;
-  chart.update();
+function setChartFromSeries(series){
+  const clean = series.slice(-120);
+  chart.data.labels = clean.map((_,i)=>i+1);
+  chart.data.datasets[0].data = clean;
+  chart.update('none');
+}
+
+function rebuildPnlSeriesFromHistory(){
+  let running = 0;
+  pnlSeries = state.tradeHistory.map(t => {
+    running += safeNum(t.pnl);
+    return Number(running.toFixed(2));
+  });
+  if(!pnlSeries.length && state.pnl !== 0) pnlSeries = [state.pnl];
+  setChartFromSeries(pnlSeries);
+}
+
+function pushPnlPoint(value){
+  pnlSeries.push(Number(value.toFixed(2)));
+  if(pnlSeries.length > 120) pnlSeries.shift();
+  setChartFromSeries(pnlSeries);
 }
 
 function refreshDonut(){
   donutChart.data.datasets[0].data = [state.wins, state.losses];
-  donutChart.update();
+  donutChart.update('none');
 }
 
-/* ---------- HELPERS ---------- */
 function safeNum(v, fallback=0){
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
@@ -1289,8 +1420,14 @@ function nowTime(){
   return new Date().toLocaleTimeString('de-DE');
 }
 
-function nowDateTime(){
-  return new Date().toLocaleString('de-DE');
+function nowIso(){
+  return new Date().toISOString();
+}
+
+function formatTimeDisplay(iso){
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso || '-');
+  return d.toLocaleString('de-DE');
 }
 
 function addLog(type,msg){
@@ -1300,7 +1437,7 @@ function addLog(type,msg){
 
 function saveState(){
   if(!state.autoSave) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({...state, audioEnabled}));
 }
 
 function loadLocalState(){
@@ -1311,23 +1448,37 @@ function loadLocalState(){
     state = {
       ...state,
       ...parsed,
-      flags: { ...state.flags, ...(parsed.flags || {}) },
-      log: Array.isArray(parsed.log) ? parsed.log : [],
-      tradeHistory: Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : []
+      weights:{...state.weights, ...(parsed.weights || {})},
+      flags:{...state.flags, ...(parsed.flags || {})},
+      log:Array.isArray(parsed.log) ? parsed.log : [],
+      tradeHistory:Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : []
     };
     audioEnabled = parsed.audioEnabled !== false;
   }catch(e){}
 }
 
+function applyDockDefault(){
+  document.body.classList.toggle('dock-open', state.dockDefault === 'open');
+  setDockMeta();
+}
+
+function toggleDock(){
+  document.body.classList.toggle('dock-open');
+  setDockMeta();
+}
+
+function setDockMeta(){
+  const open = document.body.classList.contains('dock-open');
+  setText('dockMetaText', open ? 'tap to close' : 'tap to open');
+}
+
 function toggleStorage(){
   state.autoSave = !state.autoSave;
-  audioEnabled = true;
   setText('storageBtnText', state.autoSave ? 'AutoSave ON' : 'AutoSave OFF');
   if(state.autoSave) saveState();
   showAlert(state.autoSave ? 'AUTOSAVE ON' : 'AUTOSAVE OFF', 'info');
 }
 
-/* ---------- SOUND ---------- */
 function beep(type='info'){
   if(!audioEnabled) return;
   try{
@@ -1336,27 +1487,18 @@ function beep(type='info'){
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-
     if(type === 'win'){
-      osc.frequency.value = 760;
-      gain.gain.value = 0.03;
-      osc.type = 'sine';
+      osc.frequency.value = 760; gain.gain.value = 0.03; osc.type = 'sine';
     }else if(type === 'loss'){
-      osc.frequency.value = 220;
-      gain.gain.value = 0.035;
-      osc.type = 'square';
+      osc.frequency.value = 220; gain.gain.value = 0.035; osc.type = 'square';
     }else{
-      osc.frequency.value = 480;
-      gain.gain.value = 0.025;
-      osc.type = 'triangle';
+      osc.frequency.value = 480; gain.gain.value = 0.025; osc.type = 'triangle';
     }
-
     osc.start();
     osc.stop(ctx.currentTime + 0.12);
   }catch(e){}
 }
 
-/* ---------- ALERT ---------- */
 let alertTimer = null;
 function showAlert(msg, type='info'){
   const overlay = document.getElementById('alertOverlay');
@@ -1368,30 +1510,21 @@ function showAlert(msg, type='info'){
   alertTimer = setTimeout(()=>overlay.style.display='none', 1200);
 }
 
-/* ---------- CLOCK ---------- */
 function updateSessionClock(){
   const now = new Date();
   const time = now.toLocaleTimeString('de-DE');
   let session = 'ASIA';
   const h = now.getHours();
-
   if(h >= 8 && h < 13) session = 'LONDON';
   else if(h >= 13 && h < 22) session = 'NEW YORK';
-
   setText('sessionClock', `${session} ${time}`);
 }
 
-/* ---------- SETTINGS PANEL ---------- */
 function toggleSettings(){
   const panel = document.getElementById('settingsPanel');
   const backdrop = document.getElementById('settingsBackdrop');
   const open = panel.classList.contains('open');
-
-  if(open){
-    closeSettings();
-    return;
-  }
-
+  if(open){ closeSettings(); return; }
   syncSettingsForm();
   panel.classList.add('open');
   backdrop.classList.add('open');
@@ -1414,6 +1547,13 @@ function syncSettingsForm(){
   document.getElementById('slInput').value = state.sl;
   document.getElementById('audioSelect').value = String(audioEnabled);
   document.getElementById('autosaveSelect').value = String(state.autoSave);
+  document.getElementById('dockDefaultSelect').value = state.dockDefault;
+  document.getElementById('wTrendInput').value = state.weights.trend;
+  document.getElementById('wVolumeInput').value = state.weights.volume;
+  document.getElementById('wStructureInput').value = state.weights.structure;
+  document.getElementById('wVolatilityInput').value = state.weights.volatility;
+  document.getElementById('wLiquidityInput').value = state.weights.liquidity;
+  document.getElementById('wSessionInput').value = state.weights.session;
   highlightRiskButtons();
 }
 
@@ -1425,27 +1565,13 @@ function highlightRiskButtons(){
 
 function setRiskProfile(mode){
   state.riskMode = mode;
-
   if(mode === 'SAFE'){
-    state.tp1 = 20;
-    state.tp2 = 45;
-    state.sl = 14;
-    state.minScore = 82;
-    state.maxDdLimit = 4;
+    state.tp1 = 20; state.tp2 = 45; state.sl = 14; state.minScore = 82; state.maxDdLimit = 4;
   }else if(mode === 'BALANCED'){
-    state.tp1 = 25;
-    state.tp2 = 60;
-    state.sl = 18;
-    state.minScore = 80;
-    state.maxDdLimit = 5;
+    state.tp1 = 25; state.tp2 = 60; state.sl = 18; state.minScore = 80; state.maxDdLimit = 5;
   }else{
-    state.tp1 = 35;
-    state.tp2 = 85;
-    state.sl = 24;
-    state.minScore = 75;
-    state.maxDdLimit = 7;
+    state.tp1 = 35; state.tp2 = 85; state.sl = 24; state.minScore = 75; state.maxDdLimit = 7;
   }
-
   syncSettingsForm();
   showAlert(`RISK ${mode}`, 'info');
 }
@@ -1462,23 +1588,30 @@ function applySettings(){
   state.sl = safeNum(document.getElementById('slInput').value, state.sl);
   audioEnabled = document.getElementById('audioSelect').value === 'true';
   state.autoSave = document.getElementById('autosaveSelect').value === 'true';
+  state.dockDefault = document.getElementById('dockDefaultSelect').value;
 
-  addLog('SETTINGS', 'Omega settings applied');
-  setText('storageBtnText', state.autoSave ? 'AutoSave ON' : 'AutoSave OFF');
+  state.weights.trend = safeNum(document.getElementById('wTrendInput').value, state.weights.trend);
+  state.weights.volume = safeNum(document.getElementById('wVolumeInput').value, state.weights.volume);
+  state.weights.structure = safeNum(document.getElementById('wStructureInput').value, state.weights.structure);
+  state.weights.volatility = safeNum(document.getElementById('wVolatilityInput').value, state.weights.volatility);
+  state.weights.liquidity = safeNum(document.getElementById('wLiquidityInput').value, state.weights.liquidity);
+  state.weights.session = safeNum(document.getElementById('wSessionInput').value, state.weights.session);
+
+  applyDockDefault();
+  addLog('SETTINGS', 'Omega X settings applied');
   closeSettings();
   renderAll();
   showAlert('SETTINGS APPLIED', 'info');
 }
 
-/* ---------- SCORE ---------- */
 function calcScore(s){
   let score =
-    safeNum(s.trendScore) * 0.22 +
-    safeNum(s.volumeScore) * 0.15 +
-    safeNum(s.structureScore) * 0.20 +
-    safeNum(s.volatilityScore) * 0.12 +
-    safeNum(s.liquidityScore) * 0.18 +
-    safeNum(s.sessionScore) * 0.13;
+    safeNum(s.trendScore) * safeNum(s.weights.trend, .22) +
+    safeNum(s.volumeScore) * safeNum(s.weights.volume, .15) +
+    safeNum(s.structureScore) * safeNum(s.weights.structure, .20) +
+    safeNum(s.volatilityScore) * safeNum(s.weights.volatility, .12) +
+    safeNum(s.liquidityScore) * safeNum(s.weights.liquidity, .18) +
+    safeNum(s.sessionScore) * safeNum(s.weights.session, .13);
 
   if(s.cooldownLeft > 0) score -= 18;
   if(s.killSwitch) score -= 50;
@@ -1491,7 +1624,6 @@ function calcScore(s){
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-/* ---------- STATS ---------- */
 function isToday(dateStr){
   const d = new Date(dateStr);
   const now = new Date();
@@ -1503,76 +1635,43 @@ function isToday(dateStr){
 function isThisWeek(dateStr){
   const d = new Date(dateStr);
   const now = new Date();
-
   const start = new Date(now);
   const day = start.getDay();
   const diff = day === 0 ? 6 : day - 1;
   start.setDate(start.getDate() - diff);
   start.setHours(0,0,0,0);
-
   const end = new Date(start);
   end.setDate(end.getDate() + 7);
-
   return d >= start && d < end;
 }
 
-function calcTodayPnl(){
-  return state.tradeHistory
-    .filter(t => isToday(t.time))
-    .reduce((sum,t)=>sum + safeNum(t.pnl),0);
-}
+function calcTodayPnl(){ return state.tradeHistory.filter(t => isToday(t.time)).reduce((sum,t)=>sum + safeNum(t.pnl),0); }
+function calcWeekPnl(){ return state.tradeHistory.filter(t => isThisWeek(t.time)).reduce((sum,t)=>sum + safeNum(t.pnl),0); }
+function calcTodayTrades(){ return state.tradeHistory.filter(t => isToday(t.time)).length; }
+function calcWeekTrades(){ return state.tradeHistory.filter(t => isThisWeek(t.time)).length; }
 
-function calcWeekPnl(){
-  return state.tradeHistory
-    .filter(t => isThisWeek(t.time))
-    .reduce((sum,t)=>sum + safeNum(t.pnl),0);
-}
-
-function calcTodayTrades(){
-  return state.tradeHistory.filter(t => isToday(t.time)).length;
-}
-
-function calcWeekTrades(){
-  return state.tradeHistory.filter(t => isThisWeek(t.time)).length;
-}
-
-/* ---------- RENDER ---------- */
 function renderGuard(score){
   const guard = document.getElementById('guard');
   const sub = document.getElementById('guardSub');
 
   let stateText = 'READY';
   let cls = 'guard ready';
-  let subtitle = 'System armed • waiting for omega-grade setup';
+  let subtitle = 'System armed • waiting for omega-x setup';
 
   if(state.killSwitch){
-    stateText = 'KILL SWITCH';
-    cls = 'guard blocked';
-    subtitle = 'Protection active • trading blocked';
+    stateText = 'KILL SWITCH'; cls = 'guard blocked'; subtitle = 'Protection active • trading blocked';
   }else if(state.cooldownLeft > 0){
-    stateText = 'COOLDOWN';
-    cls = 'guard cooldown';
-    subtitle = `Cooling down • ${state.cooldownLeft}s left`;
+    stateText = 'COOLDOWN'; cls = 'guard cooldown'; subtitle = `Cooling down • ${state.cooldownLeft}s left`;
   }else if(score >= 94){
-    stateText = 'OMEGA';
-    cls = 'guard god pulse';
-    subtitle = 'Maximum alignment • omega execution state';
+    stateText = 'OMEGA'; cls = 'guard god pulse'; subtitle = 'Maximum alignment • omega-x execution state';
   }else if(score >= 86){
-    stateText = 'SNIPER';
-    cls = 'guard sniper pulse';
-    subtitle = 'High-quality setup • entry window open';
+    stateText = 'SNIPER'; cls = 'guard sniper pulse'; subtitle = 'High-quality setup • entry window open';
   }else if(score >= state.minScore){
-    stateText = 'READY';
-    cls = 'guard ready pulse';
-    subtitle = 'Conditions aligned • waiting for trigger';
+    stateText = 'READY'; cls = 'guard ready pulse'; subtitle = 'Conditions aligned • waiting for trigger';
   }else if(score >= 50){
-    stateText = 'WARN';
-    cls = 'guard warn';
-    subtitle = 'Partial confirmation • filters not fully aligned';
+    stateText = 'WARN'; cls = 'guard warn'; subtitle = 'Partial confirmation • filters not fully aligned';
   }else{
-    stateText = 'BLOCKED';
-    cls = 'guard blocked';
-    subtitle = 'Low-quality setup • no entry';
+    stateText = 'BLOCKED'; cls = 'guard blocked'; subtitle = 'Low-quality setup • no entry';
   }
 
   guard.className = cls;
@@ -1670,14 +1769,11 @@ function renderStats(){
 
   const dir = document.getElementById('directionBadge');
   if(state.side === 'BUY'){
-    dir.className = 'pill buy';
-    dir.textContent = 'BUY SIGNAL';
+    dir.className = 'pill buy'; dir.textContent = 'BUY SIGNAL';
   }else if(state.side === 'SELL'){
-    dir.className = 'pill sell';
-    dir.textContent = 'SELL SIGNAL';
+    dir.className = 'pill sell'; dir.textContent = 'SELL SIGNAL';
   }else{
-    dir.className = 'pill flat';
-    dir.textContent = 'NO SIGNAL';
+    dir.className = 'pill flat'; dir.textContent = 'NO SIGNAL';
   }
 
   const news = document.getElementById('newsBadge');
@@ -1703,15 +1799,7 @@ function renderStats(){
 function renderLog(){
   const el = document.getElementById('log');
   if(!state.log.length){
-    el.innerHTML = `
-      <div class="entry">
-        <div class="entryHead">
-          <div class="entryType ok">SYSTEM</div>
-          <div class="entryTime">${nowTime()}</div>
-        </div>
-        <div class="entryMsg">No log entries yet.</div>
-      </div>
-    `;
+    el.innerHTML = `<div class="entry"><div class="entryHead"><div class="entryType ok">SYSTEM</div><div class="entryTime">${nowTime()}</div></div><div class="entryMsg">No log entries yet.</div></div>`;
     return;
   }
 
@@ -1721,45 +1809,51 @@ function renderLog(){
     const msg = item.msg || item.message || JSON.stringify(item);
     const time = item.time || nowTime();
     let cls = 'mid';
-
     if(type.includes('WIN') || type.includes('READY') || type.includes('BUY') || type.includes('SNIPER')) cls = 'ok';
     if(type.includes('LOSS') || type.includes('ERROR') || type.includes('BLOCK') || type.includes('SELL')) cls = 'bad';
-
     const div = document.createElement('div');
     div.className = 'entry';
-    div.innerHTML = `
-      <div class="entryHead">
-        <div class="entryType ${cls}">${type}</div>
-        <div class="entryTime">${time}</div>
-      </div>
-      <div class="entryMsg">${escapeHtml(String(msg))}</div>
-    `;
+    div.innerHTML = `<div class="entryHead"><div class="entryType ${cls}">${type}</div><div class="entryTime">${time}</div></div><div class="entryMsg">${escapeHtml(String(msg))}</div>`;
     el.appendChild(div);
   });
 }
 
 function renderHistory(){
   const tbody = document.getElementById('historyTable');
-  if(!state.tradeHistory.length){
-    tbody.innerHTML = `<tr><td colspan="10" class="tNeu">Keine Trades vorhanden</td></tr>`;
+  const q = (document.getElementById('historySearch').value || '').trim().toLowerCase();
+  const sideFilter = document.getElementById('historySideFilter').value;
+  const resultFilter = document.getElementById('historyResultFilter').value;
+
+  const filtered = state.tradeHistory
+    .map((trade, originalIndex)=>({trade, originalIndex}))
+    .reverse()
+    .filter(({trade})=>{
+      const matchesSearch = !q || JSON.stringify(trade).toLowerCase().includes(q);
+      const matchesSide = sideFilter === 'ALL' || (trade.side || '') === sideFilter;
+      const matchesResult = resultFilter === 'ALL' || (trade.result || '') === resultFilter;
+      return matchesSearch && matchesSide && matchesResult;
+    });
+
+  if(!filtered.length){
+    tbody.innerHTML = `<tr><td colspan="10" class="tNeu">Keine passenden Trades</td></tr>`;
     return;
   }
 
   tbody.innerHTML = '';
-  [...state.tradeHistory].reverse().forEach((t, idx)=>{
+  filtered.forEach(({trade, originalIndex})=>{
     const tr = document.createElement('tr');
-    const pnlClass = t.pnl > 0 ? 'tPos' : t.pnl < 0 ? 'tNeg' : 'tNeu';
+    const pnlClass = trade.pnl > 0 ? 'tPos' : trade.pnl < 0 ? 'tNeg' : 'tNeu';
     tr.innerHTML = `
-      <td>${state.tradeHistory.length - idx}</td>
-      <td>${escapeHtml(t.time || '-')}</td>
-      <td>${escapeHtml(t.side || 'NONE')}</td>
-      <td>${escapeHtml(t.result || '-')}</td>
-      <td class="${pnlClass}">${safeNum(t.pnl).toFixed(2)}</td>
-      <td>${safeNum(t.score).toFixed(0)}</td>
-      <td>${escapeHtml(t.riskMode || state.riskMode)}</td>
-      <td>${safeNum(t.tp1).toFixed(2)}</td>
-      <td>${safeNum(t.tp2).toFixed(2)}</td>
-      <td>${safeNum(t.sl).toFixed(2)}</td>
+      <td>${originalIndex + 1}</td>
+      <td>${escapeHtml(formatTimeDisplay(trade.time))}</td>
+      <td>${escapeHtml(trade.side || 'NONE')}</td>
+      <td>${escapeHtml(trade.result || '-')}</td>
+      <td class="${pnlClass}">${safeNum(trade.pnl).toFixed(2)}</td>
+      <td>${safeNum(trade.score).toFixed(0)}</td>
+      <td>${escapeHtml(trade.riskMode || state.riskMode)}</td>
+      <td>${safeNum(trade.tp1).toFixed(2)}</td>
+      <td>${safeNum(trade.tp2).toFixed(2)}</td>
+      <td>${safeNum(trade.sl).toFixed(2)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -1775,18 +1869,22 @@ function renderAll(){
   renderHistory();
   refreshDonut();
   highlightRiskButtons();
+  setDockMeta();
   saveState();
 }
 
-/* ---------- API + LOCAL ---------- */
 async function load(){
+  if (loadingNow) return;
+  loadingNow = true;
   try{
     updateSessionClock();
     const r = await fetch('/api/status', { cache:'no-store' });
     if(!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
 
-    state.pnl = safeNum(data.pnl, state.pnl);
+    const incomingPnl = safeNum(data.pnl, state.pnl);
+
+    state.pnl = incomingPnl;
     state.ordersToday = safeNum(data.ordersToday, state.ordersToday);
     state.cooldownLeft = safeNum(data.cooldownLeft, state.cooldownLeft);
     state.wins = safeNum(data.wins, state.wins);
@@ -1811,24 +1909,26 @@ async function load(){
     state.volatilityScore = safeNum(data?.factors?.volatility, safeNum(data.volatilityScore, state.volatilityScore));
     state.liquidityScore = safeNum(data?.factors?.liquidity, safeNum(data.liquidityScore, state.liquidityScore));
     state.sessionScore = safeNum(data?.factors?.session, safeNum(data.sessionScore, state.sessionScore));
-
-    state.flags = {
-      ...state.flags,
-      ...(data.flags || {})
-    };
+    state.flags = { ...state.flags, ...(data.flags || {}) };
 
     if(Array.isArray(data.log)) state.log = data.log;
+
+    if(state.tradeHistory.length === 0){
+      pnlSeries = incomingPnl !== 0 ? [incomingPnl] : [];
+      setChartFromSeries(pnlSeries);
+    }
 
     if(state.pnl > state.peakPnl) state.peakPnl = state.pnl;
     const ddAbs = Math.max(0, state.peakPnl - state.pnl);
     const ddPct = state.peakPnl > 0 ? (ddAbs / state.peakPnl) * 100 : 0;
     state.maxDrawdown = Math.max(state.maxDrawdown, ddPct);
 
-    updateChart(state.pnl);
     renderAll();
   }catch(err){
     addLog('ERROR', `API not reachable. Local state active. ${String(err)}`);
     renderAll();
+  }finally{
+    loadingNow = false;
   }
 }
 
@@ -1837,10 +1937,10 @@ async function act(url){
     lockButtons(true);
     await fetch(url, { method:'POST' });
     await load();
-    lockButtons(false);
   }catch(err){
     addLog('ERROR', String(err));
     renderAll();
+  }finally{
     lockButtons(false);
   }
 }
@@ -1849,9 +1949,8 @@ function lockButtons(stateLocked){
   [...document.querySelectorAll('button')].forEach(b=>b.disabled = stateLocked);
 }
 
-/* ---------- MODE / SIDE ---------- */
 async function toggleMode(){
-  localMode = localMode === 'OMEGA' ? 'GOD OMEGA' : 'OMEGA';
+  localMode = localMode === 'OMEGA X' ? 'GOD OMEGA X' : 'OMEGA X';
   state.mode = localMode;
   try{
     await fetch('/api/mode',{
@@ -1888,7 +1987,6 @@ function quickAction(side){
   act('/api/order');
 }
 
-/* ---------- TRADE HISTORY ---------- */
 function randomRange(min,max){
   return Math.random() * (max - min) + min;
 }
@@ -1900,12 +1998,14 @@ function manualResult(result){
     ? randomRange(Math.max(8, state.tp1 * 0.6), Math.max(14, state.tp2 * 0.95))
     : -randomRange(Math.max(5, state.sl * 0.65), Math.max(8, state.sl * 1.1));
 
-  state.pnl += signedPnl;
+  state.pnl = Number((state.pnl + signedPnl).toFixed(2));
   state.ordersToday += 1;
   state.cooldownLeft = 8;
   setTimeout(()=>{
-    if(state.cooldownLeft > 0) state.cooldownLeft = 0;
-    renderAll();
+    if(state.cooldownLeft > 0){
+      state.cooldownLeft = 0;
+      renderAll();
+    }
   }, 8000);
 
   if(result === 'WIN'){
@@ -1933,10 +2033,10 @@ function manualResult(result){
   }
 
   state.tradeHistory.push({
-    time: new Date().toISOString(),
+    time: nowIso(),
     side,
     result,
-    pnl: signedPnl,
+    pnl: Number(signedPnl.toFixed(2)),
     score,
     riskMode: state.riskMode,
     tp1: state.tp1,
@@ -1948,11 +2048,10 @@ function manualResult(result){
     state.tradeHistory = state.tradeHistory.slice(-HISTORY_LIMIT);
   }
 
-  updateChart(state.pnl);
+  pushPnlPoint(state.pnl);
   renderAll();
 }
 
-/* ---------- RESET / STORAGE ---------- */
 function hardReset(){
   state.pnl = 0;
   state.ordersToday = 0;
@@ -1966,24 +2065,21 @@ function hardReset(){
   state.killSwitch = false;
   state.tradeHistory = [];
   state.log = [];
-  pnlHistory = [];
-  chart.data.labels = [];
-  chart.data.datasets[0].data = [];
-  chart.update();
+  pnlSeries = [];
+  setChartFromSeries([]);
   addLog('RESET', 'System reset complete');
   showAlert('RESET DONE', 'info');
   renderAll();
   localStorage.removeItem(STORAGE_KEY);
 }
 
-/* ---------- EXPORT / IMPORT ---------- */
 function exportJson(){
   const data = JSON.stringify({...state, audioEnabled}, null, 2);
   const blob = new Blob([data], { type:'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v18_4_omega_state.json';
+  a.download = 'v18_5_omega_x_full_fixed_state.json';
   a.click();
   URL.revokeObjectURL(url);
   addLog('EXPORT', 'JSON export ready');
@@ -1991,15 +2087,10 @@ function exportJson(){
 }
 
 function exportCsv(){
-  const rows = [
-    ['time','side','result','pnl','score','riskMode','tp1','tp2','sl']
-  ];
-
+  const rows = [['time','side','result','pnl','score','riskMode','tp1','tp2','sl']];
   state.tradeHistory.forEach(t=>{
     rows.push([
-      t.time || '',
-      t.side || '',
-      t.result || '',
+      t.time || '', t.side || '', t.result || '',
       safeNum(t.pnl).toFixed(2),
       safeNum(t.score).toFixed(0),
       t.riskMode || '',
@@ -2014,7 +2105,7 @@ function exportCsv(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v18_4_omega_history.csv';
+  a.download = 'v18_5_omega_x_full_fixed_history.csv';
   a.click();
   URL.revokeObjectURL(url);
   addLog('EXPORT', 'CSV export ready');
@@ -2032,22 +2123,15 @@ function importJson(event){
       state = {
         ...state,
         ...parsed,
-        flags: { ...state.flags, ...(parsed.flags || {}) },
-        log: Array.isArray(parsed.log) ? parsed.log : [],
-        tradeHistory: Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : []
+        weights:{...state.weights, ...(parsed.weights || {})},
+        flags:{...state.flags, ...(parsed.flags || {})},
+        log:Array.isArray(parsed.log) ? parsed.log : [],
+        tradeHistory:Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : []
       };
 
       audioEnabled = parsed.audioEnabled !== false;
-
-      let running = 0;
-      pnlHistory = state.tradeHistory.map(t => running += safeNum(t.pnl));
-
-      if(!pnlHistory.length) pnlHistory = [state.pnl];
-
-      chart.data.labels = pnlHistory.map((_,i)=>i+1);
-      chart.data.datasets[0].data = pnlHistory;
-      chart.update();
-
+      rebuildPnlSeriesFromHistory();
+      applyDockDefault();
       addLog('IMPORT', 'State imported');
       showAlert('IMPORT OK', 'info');
       renderAll();
@@ -2060,25 +2144,15 @@ function importJson(event){
   reader.readAsText(file);
 }
 
-/* ---------- INIT ---------- */
-document.addEventListener('click', ()=>{
-  audioEnabled = true;
-},{ once:true });
+document.addEventListener('click', ()=>{ audioEnabled = true; },{ once:true });
 
 loadLocalState();
 initCharts();
+applyDockDefault();
 updateSessionClock();
 setInterval(updateSessionClock, 1000);
+rebuildPnlSeriesFromHistory();
 renderAll();
-
-if(state.tradeHistory.length){
-  let running = 0;
-  pnlHistory = state.tradeHistory.map(t => running += safeNum(t.pnl));
-  chart.data.labels = pnlHistory.map((_,i)=>i+1);
-  chart.data.datasets[0].data = pnlHistory;
-  chart.update();
-}
-
 load();
 setInterval(load, 2500);
 </script>
