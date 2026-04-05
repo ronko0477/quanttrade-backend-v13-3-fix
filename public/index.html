@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>V18.5 OMEGA X FULL FIXED</title>
+<title>V18.6 OMEGA X PRO</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -22,8 +22,8 @@
   --text:#eef4ff;
   --muted:#b9c7ea;
 
-  --card:rgba(16,25,54,.92);
-  --card2:rgba(30,43,86,.92);
+  --card:rgba(16,25,54,.94);
+  --card2:rgba(30,43,86,.94);
   --glass:rgba(255,255,255,.05);
 
   --shadow:0 18px 50px rgba(0,0,0,.35);
@@ -76,7 +76,11 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   background:linear-gradient(180deg,var(--card),var(--card2));
   border:1px solid rgba(255,255,255,.06);
   box-shadow:var(--shadow);
-  transition:transform .18s ease, box-shadow .18s ease;
+  transition:transform .18s ease, box-shadow .18s ease, max-height .25s ease, padding .25s ease;
+}
+
+.hero.collapsed{
+  padding:12px 16px;
 }
 
 .hero::before{
@@ -96,6 +100,47 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
 }
 
 .heroInner{position:relative;z-index:2}
+
+.heroTopBar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.heroMiniLeft{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.miniBadge{
+  padding:8px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.06);
+  font-size:12px;
+  font-weight:900;
+  color:var(--muted);
+}
+
+.miniBadge.good{
+  background:linear-gradient(90deg,#79f2a3,#7cf7ff);
+  color:#03111d;
+}
+
+.heroToggle{
+  padding:10px 12px;
+  border:none;
+  border-radius:14px;
+  font-weight:900;
+  color:#fff;
+  background:linear-gradient(90deg,#4d5876,#7a89b4);
+  cursor:pointer;
+  box-shadow:none;
+}
 
 .topGrid{
   display:grid;
@@ -298,11 +343,90 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   font-weight:900;
 }
 
+.controls{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  gap:10px;
+  margin-top:14px;
+}
+
+button,.fileLabel{
+  padding:15px 12px;
+  border:none;
+  border-radius:16px;
+  font-weight:900;
+  color:#fff;
+  cursor:pointer;
+  transition:transform .15s ease, opacity .15s ease;
+  box-shadow:0 12px 24px rgba(0,0,0,.18);
+  text-align:center;
+}
+
+button:hover,.fileLabel:hover{transform:translateY(-1px)}
+button:active,.fileLabel:active{transform:scale(.985)}
+button:disabled{opacity:.45;cursor:not-allowed}
+
+.btnSend{background:linear-gradient(90deg,#6f7cff,#7cf7ff)}
+.btnBuy{background:linear-gradient(90deg,#3fcf7f,#64f0b0)}
+.btnSell{background:linear-gradient(90deg,#ff7f7f,#ffac6d)}
+.btnWin{background:linear-gradient(90deg,#59d98b,#7bf0ad)}
+.btnLoss{background:linear-gradient(90deg,#df7f74,#ff9c9c)}
+.btnReset{background:linear-gradient(90deg,#bca04d,#ffd86b)}
+.btnMode{background:linear-gradient(90deg,#8e79ff,#71a7ff)}
+.btnSync{background:linear-gradient(90deg,#2d5eff,#6f7cff)}
+.btnExport{background:linear-gradient(90deg,#4d5876,#8a9bc4)}
+.btnSettings{background:linear-gradient(90deg,#5260ff,#8f79ff)}
+
+.fileInput{display:none}
+.fileLabel{
+  background:linear-gradient(90deg,#4d5876,#8a9bc4);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.presets{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:14px;
+}
+
+.presetBtn{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:none;
+}
+
+.presetBtn.active{
+  background:linear-gradient(90deg,#7cf7ff,#79f2a3);
+  color:#041420;
+}
+
+.tabs{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:14px;
+}
+
+.tabBtn{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:none;
+}
+
+.tabBtn.active{
+  background:linear-gradient(90deg,#7aa7ff,#ae8cff);
+}
+
+.tabPane{display:none;margin-top:14px}
+.tabPane.active{display:block}
+
 .mainGrid{
   display:grid;
   grid-template-columns:1.1fr .9fr;
   gap:14px;
-  margin-top:14px;
 }
 
 .card{
@@ -411,57 +535,8 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   background:linear-gradient(90deg,#4d5876,#68769d);
 }
 
-.controls{
-  display:grid;
-  grid-template-columns:repeat(12,1fr);
-  gap:10px;
-  margin-top:14px;
-}
-
-button,.fileLabel{
-  padding:15px 12px;
-  border:none;
-  border-radius:16px;
-  font-weight:900;
-  color:#fff;
-  cursor:pointer;
-  transition:transform .15s ease, opacity .15s ease;
-  box-shadow:0 12px 24px rgba(0,0,0,.18);
-  text-align:center;
-}
-
-button:hover,.fileLabel:hover{transform:translateY(-1px)}
-button:active,.fileLabel:active{transform:scale(.985)}
-button:disabled{opacity:.45;cursor:not-allowed}
-
-.btnSend{background:linear-gradient(90deg,#6f7cff,#7cf7ff)}
-.btnBuy{background:linear-gradient(90deg,#3fcf7f,#64f0b0)}
-.btnSell{background:linear-gradient(90deg,#ff7f7f,#ffac6d)}
-.btnWin{background:linear-gradient(90deg,#59d98b,#7bf0ad)}
-.btnLoss{background:linear-gradient(90deg,#df7f74,#ff9c9c)}
-.btnReset{background:linear-gradient(90deg,#bca04d,#ffd86b)}
-.btnMode{background:linear-gradient(90deg,#8e79ff,#71a7ff)}
-.btnSync{background:linear-gradient(90deg,#2d5eff,#6f7cff)}
-.btnExport{background:linear-gradient(90deg,#4d5876,#8a9bc4)}
-.btnSettings{background:linear-gradient(90deg,#5260ff,#8f79ff)}
-
-.fileInput{display:none}
-.fileLabel{
-  background:linear-gradient(90deg,#4d5876,#8a9bc4);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.bottomGrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
-  margin-top:14px;
-}
-
 .log{
-  max-height:360px;
+  max-height:420px;
   overflow:auto;
   padding-right:4px;
 }
@@ -515,14 +590,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:14px;
-  margin-top:14px;
 }
 
 .donutWrap{height:280px}
 
 .tableWrap{
   overflow:auto;
-  max-height:420px;
+  max-height:480px;
   border-radius:18px;
   border:1px solid rgba(255,255,255,.06);
 }
@@ -841,7 +915,7 @@ body.dock-open .dockBody{max-height:360px}
 }
 
 @media (max-width:1180px){
-  .topGrid,.mainGrid,.bottomGrid,.analyticsGrid{grid-template-columns:1fr}
+  .topGrid,.mainGrid,.analyticsGrid{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(4,1fr)}
   .controls{grid-template-columns:repeat(6,1fr)}
   .weekGrid{grid-template-columns:repeat(2,1fr)}
@@ -849,27 +923,40 @@ body.dock-open .dockBody{max-height:360px}
 
 @media (max-width:760px){
   .title{font-size:22px}
-  .guard{font-size:42px}
-  .pnl{font-size:36px}
+  .guard{font-size:40px}
+  .pnl{font-size:34px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .controls{grid-template-columns:repeat(2,1fr)}
-  .factorGrid,.sideGrid,.tradePanel,.analyticsGrid,.weekGrid{grid-template-columns:1fr}
+  .presets{grid-template-columns:1fr}
+  .tabs{grid-template-columns:repeat(2,1fr)}
+  .factorGrid,.sideGrid,.tradePanel,.analyticsGrid,.weekGrid,.mainGrid{grid-template-columns:1fr}
   .filterBar{grid-template-columns:1fr}
   .settingsPanel{width:100%}
   .dockButtons{grid-template-columns:1fr}
+  .hero.collapsed .topGrid,
+  .hero.collapsed .stats{display:none}
 }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="title">V18.5 OMEGA X FULL FIXED ⚡</div>
+  <div class="title">V18.6 OMEGA X PRO ⚡</div>
 
   <div id="hero" class="hero">
     <div class="heroInner">
+      <div class="heroTopBar">
+        <div class="heroMiniLeft">
+          <div class="miniBadge" id="miniMode">MODE OMEGA X PRO</div>
+          <div class="miniBadge good" id="miniPreset">PRESET BALANCED</div>
+          <div class="miniBadge" id="miniScore">SCORE 0</div>
+        </div>
+        <button class="heroToggle" onclick="toggleHero()">HERO</button>
+      </div>
+
       <div class="topGrid">
         <div class="guardCard">
           <div id="guard" class="guard ready pulse">READY</div>
-          <div id="guardSub" class="sub">System armed • waiting for omega-x setup</div>
+          <div id="guardSub" class="sub">System armed • waiting for omega-x-pro setup</div>
           <div id="pnl" class="pnl">0.00<small>Net PnL</small></div>
 
           <div class="directionRow">
@@ -882,7 +969,7 @@ body.dock-open .dockBody{max-height:360px}
 
         <div class="scoreCard">
           <div class="scoreHead">
-            <div class="scoreTitle">OMEGA X SCORE</div>
+            <div class="scoreTitle">OMEGA X PRO SCORE</div>
             <div id="scoreValue" class="scoreValue">0</div>
           </div>
           <div class="barWrap"><div id="scoreBar" class="bar"></div></div>
@@ -911,61 +998,10 @@ body.dock-open .dockBody{max-height:360px}
     </div>
   </div>
 
-  <div class="mainGrid">
-    <div class="card">
-      <div class="cardTitle">PnL Momentum</div>
-      <div class="chartWrap"><canvas id="chart"></canvas></div>
-    </div>
-
-    <div class="card">
-      <div class="cardTitle">Execution Core</div>
-      <div class="sideGrid">
-        <div class="kpi">
-          <div class="kpiName">Daily Target</div>
-          <div id="dayTarget" class="kpiValue">0.00</div>
-          <div class="kpiSub">session goal</div>
-        </div>
-        <div class="kpi">
-          <div class="kpiName">Weekly Target</div>
-          <div id="weekTarget" class="kpiValue">0.00</div>
-          <div class="kpiSub">weekly goal</div>
-        </div>
-        <div class="kpi">
-          <div class="kpiName">Open Bias</div>
-          <div id="bias" class="kpiValue">NEUTRAL</div>
-          <div class="kpiSub">HTF direction</div>
-        </div>
-        <div class="kpi">
-          <div class="kpiName">Mode</div>
-          <div id="mode" class="kpiValue">OMEGA X</div>
-          <div class="kpiSub">execution profile</div>
-        </div>
-      </div>
-
-      <div class="tradePanel">
-        <div class="tradeBox">
-          <div class="tradeName">TP1</div>
-          <div id="tp1" class="tradeValue">0.00</div>
-        </div>
-        <div class="tradeBox">
-          <div class="tradeName">TP2</div>
-          <div id="tp2" class="tradeValue">0.00</div>
-        </div>
-        <div class="tradeBox">
-          <div class="tradeName">SL</div>
-          <div id="sl" class="tradeValue">0.00</div>
-        </div>
-      </div>
-
-      <div style="margin-top:12px" class="badges" id="badges">
-        <div class="badge off">Trend Sync</div>
-        <div class="badge off">Volume Spike</div>
-        <div class="badge off">BOS</div>
-        <div class="badge off">Liquidity Grab</div>
-        <div class="badge off">Session Active</div>
-        <div class="badge off">News Safe</div>
-      </div>
-    </div>
+  <div class="presets">
+    <button id="presetSafe" class="presetBtn" onclick="applyPreset('SAFE')">SAFE PRESET</button>
+    <button id="presetScalper" class="presetBtn" onclick="applyPreset('SCALPER')">SCALPER PRESET</button>
+    <button id="presetSniper" class="presetBtn" onclick="applyPreset('SNIPER')">SNIPER PRESET</button>
   </div>
 
   <div class="controls">
@@ -984,101 +1020,168 @@ body.dock-open .dockBody{max-height:360px}
     <button class="btnSettings" onclick="toggleSettings()">SETTINGS</button>
   </div>
 
-  <div class="bottomGrid">
+  <div class="tabs">
+    <button id="tabBtn-overview" class="tabBtn active" onclick="switchTab('overview')">OVERVIEW</button>
+    <button id="tabBtn-log" class="tabBtn" onclick="switchTab('log')">LOG</button>
+    <button id="tabBtn-history" class="tabBtn" onclick="switchTab('history')">HISTORY</button>
+    <button id="tabBtn-stats" class="tabBtn" onclick="switchTab('stats')">STATS</button>
+  </div>
+
+  <div id="tab-overview" class="tabPane active">
+    <div class="mainGrid">
+      <div class="card">
+        <div class="cardTitle">PnL Momentum</div>
+        <div class="chartWrap"><canvas id="chart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="cardTitle">Execution Core</div>
+        <div class="sideGrid">
+          <div class="kpi">
+            <div class="kpiName">Daily Target</div>
+            <div id="dayTarget" class="kpiValue">0.00</div>
+            <div class="kpiSub">session goal</div>
+          </div>
+          <div class="kpi">
+            <div class="kpiName">Weekly Target</div>
+            <div id="weekTarget" class="kpiValue">0.00</div>
+            <div class="kpiSub">weekly goal</div>
+          </div>
+          <div class="kpi">
+            <div class="kpiName">Open Bias</div>
+            <div id="bias" class="kpiValue">NEUTRAL</div>
+            <div class="kpiSub">HTF direction</div>
+          </div>
+          <div class="kpi">
+            <div class="kpiName">Mode</div>
+            <div id="mode" class="kpiValue">OMEGA X PRO</div>
+            <div class="kpiSub">execution profile</div>
+          </div>
+        </div>
+
+        <div class="tradePanel">
+          <div class="tradeBox">
+            <div class="tradeName">TP1</div>
+            <div id="tp1" class="tradeValue">0.00</div>
+          </div>
+          <div class="tradeBox">
+            <div class="tradeName">TP2</div>
+            <div id="tp2" class="tradeValue">0.00</div>
+          </div>
+          <div class="tradeBox">
+            <div class="tradeName">SL</div>
+            <div id="sl" class="tradeValue">0.00</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="badges" id="badges">
+          <div class="badge off">Trend Sync</div>
+          <div class="badge off">Volume Spike</div>
+          <div class="badge off">BOS</div>
+          <div class="badge off">Liquidity Grab</div>
+          <div class="badge off">Session Active</div>
+          <div class="badge off">News Safe</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-log" class="tabPane">
     <div class="card">
       <div class="cardTitle">System Log</div>
       <div id="log" class="log"></div>
     </div>
+  </div>
 
+  <div id="tab-history" class="tabPane">
     <div class="card">
-      <div class="cardTitle">Omega Rules</div>
-      <div class="badges">
-        <div id="ruleScore" class="badge off">Score ≥ Min</div>
-        <div id="ruleCooldown" class="badge off">Cooldown Clear</div>
-        <div id="ruleRisk" class="badge off">Risk OK</div>
-        <div id="ruleDd" class="badge off">DD Safe</div>
-        <div id="ruleSession" class="badge off">Session OK</div>
-        <div id="ruleNews" class="badge off">No News Block</div>
-        <div id="ruleBias" class="badge off">Bias Match</div>
-        <div id="ruleDirection" class="badge off">Direction Set</div>
+      <div class="cardTitle">Trade History</div>
+
+      <div class="filterBar">
+        <input id="historySearch" type="text" placeholder="Filter: BUY, SELL, WIN, LOSS..." oninput="renderHistory()" />
+        <select id="historySideFilter" onchange="renderHistory()">
+          <option value="ALL">All Sides</option>
+          <option value="BUY">BUY</option>
+          <option value="SELL">SELL</option>
+        </select>
+        <select id="historyResultFilter" onchange="renderHistory()">
+          <option value="ALL">All Results</option>
+          <option value="WIN">WIN</option>
+          <option value="LOSS">LOSS</option>
+        </select>
+      </div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Zeit</th>
+              <th>Side</th>
+              <th>Result</th>
+              <th>PnL</th>
+              <th>Score</th>
+              <th>Risk</th>
+              <th>TP1</th>
+              <th>TP2</th>
+              <th>SL</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable">
+            <tr><td colspan="10" class="tNeu">Keine Trades vorhanden</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <div class="analyticsGrid">
-    <div class="card">
-      <div class="cardTitle">Win / Loss Ratio</div>
-      <div class="donutWrap"><canvas id="donutChart"></canvas></div>
-    </div>
+  <div id="tab-stats" class="tabPane">
+    <div class="analyticsGrid">
+      <div class="card">
+        <div class="cardTitle">Win / Loss Ratio</div>
+        <div class="donutWrap"><canvas id="donutChart"></canvas></div>
+      </div>
 
-    <div class="card">
-      <div class="cardTitle">Day / Week Stats</div>
-      <div class="weekGrid">
-        <div class="weekBox">
-          <div class="weekName">Today PnL</div>
-          <div id="todayPnl" class="weekValue">0.00</div>
-          <div class="weekSub">current day result</div>
+      <div class="card">
+        <div class="cardTitle">Day / Week Stats</div>
+        <div class="weekGrid">
+          <div class="weekBox">
+            <div class="weekName">Today PnL</div>
+            <div id="todayPnl" class="weekValue">0.00</div>
+            <div class="weekSub">current day result</div>
+          </div>
+          <div class="weekBox">
+            <div class="weekName">Today Trades</div>
+            <div id="todayTrades" class="weekValue">0</div>
+            <div class="weekSub">day executions</div>
+          </div>
+          <div class="weekBox">
+            <div class="weekName">Week PnL</div>
+            <div id="weekPnl" class="weekValue">0.00</div>
+            <div class="weekSub">current week result</div>
+          </div>
+          <div class="weekBox">
+            <div class="weekName">Week Trades</div>
+            <div id="weekTrades" class="weekValue">0</div>
+            <div class="weekSub">week executions</div>
+          </div>
         </div>
-        <div class="weekBox">
-          <div class="weekName">Today Trades</div>
-          <div id="todayTrades" class="weekValue">0</div>
-          <div class="weekSub">day executions</div>
-        </div>
-        <div class="weekBox">
-          <div class="weekName">Week PnL</div>
-          <div id="weekPnl" class="weekValue">0.00</div>
-          <div class="weekSub">current week result</div>
-        </div>
-        <div class="weekBox">
-          <div class="weekName">Week Trades</div>
-          <div id="weekTrades" class="weekValue">0</div>
-          <div class="weekSub">week executions</div>
+
+        <div style="margin-top:14px" class="badges">
+          <div id="ruleScore" class="badge off">Score ≥ Min</div>
+          <div id="ruleCooldown" class="badge off">Cooldown Clear</div>
+          <div id="ruleRisk" class="badge off">Risk OK</div>
+          <div id="ruleDd" class="badge off">DD Safe</div>
+          <div id="ruleSession" class="badge off">Session OK</div>
+          <div id="ruleNews" class="badge off">No News Block</div>
+          <div id="ruleBias" class="badge off">Bias Match</div>
+          <div id="ruleDirection" class="badge off">Direction Set</div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="card" style="margin-top:14px;">
-    <div class="cardTitle">Trade History</div>
-
-    <div class="filterBar">
-      <input id="historySearch" type="text" placeholder="Filter: BUY, SELL, WIN, LOSS..." oninput="renderHistory()" />
-      <select id="historySideFilter" onchange="renderHistory()">
-        <option value="ALL">All Sides</option>
-        <option value="BUY">BUY</option>
-        <option value="SELL">SELL</option>
-      </select>
-      <select id="historyResultFilter" onchange="renderHistory()">
-        <option value="ALL">All Results</option>
-        <option value="WIN">WIN</option>
-        <option value="LOSS">LOSS</option>
-      </select>
-    </div>
-
-    <div class="tableWrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Zeit</th>
-            <th>Side</th>
-            <th>Result</th>
-            <th>PnL</th>
-            <th>Score</th>
-            <th>Risk</th>
-            <th>TP1</th>
-            <th>TP2</th>
-            <th>SL</th>
-          </tr>
-        </thead>
-        <tbody id="historyTable">
-          <tr><td colspan="10" class="tNeu">Keine Trades vorhanden</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="footerNote">V18.5 OMEGA X FULL FIXED • full build • safe dock • filters • weights • stats • import/export</div>
+  <div class="footerNote">V18.6 OMEGA X PRO • tabs • compact mobile • hero collapse • presets • full dock</div>
 </div>
 
 <div class="dock">
@@ -1111,7 +1214,7 @@ body.dock-open .dockBody{max-height:360px}
 <div id="settingsBackdrop" class="settingsBackdrop" onclick="closeSettings()"></div>
 <div id="settingsPanel" class="settingsPanel">
   <div class="settingsHead">
-    <div class="settingsTitle">OMEGA X Settings</div>
+    <div class="settingsTitle">OMEGA X PRO Settings</div>
     <button class="btnReset" style="box-shadow:none;padding:10px 12px;" onclick="closeSettings()">X</button>
   </div>
 
@@ -1237,13 +1340,13 @@ let chart;
 let donutChart;
 let pnlSeries = [];
 let lastPnl = 0;
-let localMode = 'OMEGA X';
+let localMode = 'OMEGA X PRO';
 let localSide = 'NONE';
 let audioEnabled = true;
 let loadingNow = false;
 
-const STORAGE_KEY = 'v18_5_omega_x_full_fixed_state';
-const HISTORY_LIMIT = 350;
+const STORAGE_KEY = 'v18_6_omega_x_pro_state';
+const HISTORY_LIMIT = 400;
 
 let state = {
   pnl: 0,
@@ -1255,11 +1358,11 @@ let state = {
   maxDrawdown: 0,
   dailyTarget: 150,
   weeklyTarget: 750,
-  riskMode: 'SAFE',
+  riskMode: 'BALANCED',
   bias: 'NEUTRAL',
   killSwitch: false,
   guard: 'READY',
-  mode: 'OMEGA X',
+  mode: 'OMEGA X PRO',
   side: 'NONE',
   tp1: 25,
   tp2: 60,
@@ -1269,6 +1372,9 @@ let state = {
   blockNews: true,
   sessionOnly: true,
   dockDefault: 'closed',
+  heroCollapsed: false,
+  activeTab: 'overview',
+  preset: 'BALANCED',
   trendScore: 78,
   volumeScore: 64,
   structureScore: 72,
@@ -1283,19 +1389,19 @@ let state = {
     liquidity:0.18,
     session:0.13
   },
-  flags: {
-    trendSync: true,
-    volumeSpike: false,
-    bos: true,
-    liquidityGrab: true,
-    sessionActive: true,
-    newsSafe: true,
-    biasMatch: false
+  flags:{
+    trendSync:true,
+    volumeSpike:false,
+    bos:true,
+    liquidityGrab:true,
+    sessionActive:true,
+    newsSafe:true,
+    biasMatch:false
   },
-  log: [],
-  tradeHistory: [],
-  autoSave: true,
-  peakPnl: 0
+  log:[],
+  tradeHistory:[],
+  autoSave:true,
+  peakPnl:0
 };
 
 function initCharts(){
@@ -1402,7 +1508,7 @@ function badgeClass(active, warn=false){
 }
 
 function escapeHtml(str){
-  return str
+  return String(str)
     .replaceAll('&','&amp;')
     .replaceAll('<','&lt;')
     .replaceAll('>','&gt;')
@@ -1432,7 +1538,7 @@ function formatTimeDisplay(iso){
 
 function addLog(type,msg){
   state.log.push({ type, msg, time: nowTime() });
-  if(state.log.length > 120) state.log.shift();
+  if(state.log.length > 140) state.log.shift();
 }
 
 function saveState(){
@@ -1470,6 +1576,55 @@ function toggleDock(){
 function setDockMeta(){
   const open = document.body.classList.contains('dock-open');
   setText('dockMetaText', open ? 'tap to close' : 'tap to open');
+}
+
+function toggleHero(){
+  state.heroCollapsed = !state.heroCollapsed;
+  renderHeroState();
+  saveState();
+}
+
+function renderHeroState(){
+  const hero = document.getElementById('hero');
+  hero.classList.toggle('collapsed', !!state.heroCollapsed);
+}
+
+function switchTab(tab){
+  state.activeTab = tab;
+  document.querySelectorAll('.tabPane').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tabBtn').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById(`tabBtn-${tab}`).classList.add('active');
+  saveState();
+}
+
+function renderPresetButtons(){
+  document.getElementById('presetSafe').classList.toggle('active', state.preset === 'SAFE');
+  document.getElementById('presetScalper').classList.toggle('active', state.preset === 'SCALPER');
+  document.getElementById('presetSniper').classList.toggle('active', state.preset === 'SNIPER');
+  setText('miniPreset', `PRESET ${state.preset}`);
+}
+
+function applyPreset(name){
+  state.preset = name;
+
+  if(name === 'SAFE'){
+    state.riskMode = 'SAFE';
+    state.tp1 = 18; state.tp2 = 40; state.sl = 12; state.minScore = 84; state.maxDdLimit = 4;
+    state.weights = {trend:0.24, volume:0.12, structure:0.22, volatility:0.10, liquidity:0.16, session:0.16};
+  }else if(name === 'SCALPER'){
+    state.riskMode = 'BALANCED';
+    state.tp1 = 14; state.tp2 = 28; state.sl = 10; state.minScore = 76; state.maxDdLimit = 5.5;
+    state.weights = {trend:0.16, volume:0.22, structure:0.20, volatility:0.18, liquidity:0.14, session:0.10};
+  }else if(name === 'SNIPER'){
+    state.riskMode = 'AGGRESSIVE';
+    state.tp1 = 35; state.tp2 = 90; state.sl = 22; state.minScore = 88; state.maxDdLimit = 7;
+    state.weights = {trend:0.25, volume:0.14, structure:0.24, volatility:0.08, liquidity:0.19, session:0.10};
+  }
+
+  renderPresetButtons();
+  renderAll();
+  showAlert(`PRESET ${name}`, 'info');
 }
 
 function toggleStorage(){
@@ -1598,7 +1753,7 @@ function applySettings(){
   state.weights.session = safeNum(document.getElementById('wSessionInput').value, state.weights.session);
 
   applyDockDefault();
-  addLog('SETTINGS', 'Omega X settings applied');
+  addLog('SETTINGS', 'Omega X PRO settings applied');
   closeSettings();
   renderAll();
   showAlert('SETTINGS APPLIED', 'info');
@@ -1656,14 +1811,14 @@ function renderGuard(score){
 
   let stateText = 'READY';
   let cls = 'guard ready';
-  let subtitle = 'System armed • waiting for omega-x setup';
+  let subtitle = 'System armed • waiting for omega-x-pro setup';
 
   if(state.killSwitch){
     stateText = 'KILL SWITCH'; cls = 'guard blocked'; subtitle = 'Protection active • trading blocked';
   }else if(state.cooldownLeft > 0){
     stateText = 'COOLDOWN'; cls = 'guard cooldown'; subtitle = `Cooling down • ${state.cooldownLeft}s left`;
   }else if(score >= 94){
-    stateText = 'OMEGA'; cls = 'guard god pulse'; subtitle = 'Maximum alignment • omega-x execution state';
+    stateText = 'OMEGA'; cls = 'guard god pulse'; subtitle = 'Maximum alignment • omega-x-pro execution state';
   }else if(score >= 86){
     stateText = 'SNIPER'; cls = 'guard sniper pulse'; subtitle = 'High-quality setup • entry window open';
   }else if(score >= state.minScore){
@@ -1705,6 +1860,7 @@ function renderPnl(){
 
 function renderScore(score){
   setText('scoreValue', score);
+  setText('miniScore', `SCORE ${score}`);
   document.getElementById('scoreBar').style.width = `${score}%`;
 
   const ids = [
@@ -1757,6 +1913,7 @@ function renderStats(){
   setText('weekTarget', state.weeklyTarget.toFixed(2));
   setText('bias', state.bias);
   setText('mode', state.mode.toUpperCase());
+  setText('miniMode', `MODE ${state.mode.toUpperCase()}`);
   setText('tp1', state.tp1.toFixed(2));
   setText('tp2', state.tp2.toFixed(2));
   setText('sl', state.sl.toFixed(2));
@@ -1778,11 +1935,9 @@ function renderStats(){
 
   const news = document.getElementById('newsBadge');
   if(state.flags.newsSafe || !state.blockNews){
-    news.className = 'pill';
-    news.textContent = state.blockNews ? 'NEWS SAFE' : 'NEWS IGNORE';
+    news.className = 'pill'; news.textContent = state.blockNews ? 'NEWS SAFE' : 'NEWS IGNORE';
   }else{
-    news.className = 'pill sell';
-    news.textContent = 'NEWS BLOCK';
+    news.className = 'pill sell'; news.textContent = 'NEWS BLOCK';
   }
 
   const risk = document.getElementById('riskBadge');
@@ -1804,7 +1959,7 @@ function renderLog(){
   }
 
   el.innerHTML = '';
-  [...state.log].reverse().slice(0,35).forEach(item=>{
+  [...state.log].reverse().slice(0,50).forEach(item=>{
     const type = (item.type || 'INFO').toUpperCase();
     const msg = item.msg || item.message || JSON.stringify(item);
     const time = item.time || nowTime();
@@ -1828,7 +1983,8 @@ function renderHistory(){
     .map((trade, originalIndex)=>({trade, originalIndex}))
     .reverse()
     .filter(({trade})=>{
-      const matchesSearch = !q || JSON.stringify(trade).toLowerCase().includes(q);
+      const hay = JSON.stringify(trade).toLowerCase();
+      const matchesSearch = !q || hay.includes(q);
       const matchesSide = sideFilter === 'ALL' || (trade.side || '') === sideFilter;
       const matchesResult = resultFilter === 'ALL' || (trade.result || '') === resultFilter;
       return matchesSearch && matchesSide && matchesResult;
@@ -1861,6 +2017,8 @@ function renderHistory(){
 
 function renderAll(){
   const score = calcScore(state);
+  renderHeroState();
+  renderPresetButtons();
   renderGuard(score);
   renderPnl();
   renderScore(score);
@@ -1870,6 +2028,7 @@ function renderAll(){
   refreshDonut();
   highlightRiskButtons();
   setDockMeta();
+  switchTab(state.activeTab || 'overview');
   saveState();
 }
 
@@ -1950,7 +2109,7 @@ function lockButtons(stateLocked){
 }
 
 async function toggleMode(){
-  localMode = localMode === 'OMEGA X' ? 'GOD OMEGA X' : 'OMEGA X';
+  localMode = localMode === 'OMEGA X PRO' ? 'GOD OMEGA X PRO' : 'OMEGA X PRO';
   state.mode = localMode;
   try{
     await fetch('/api/mode',{
@@ -2001,6 +2160,7 @@ function manualResult(result){
   state.pnl = Number((state.pnl + signedPnl).toFixed(2));
   state.ordersToday += 1;
   state.cooldownLeft = 8;
+
   setTimeout(()=>{
     if(state.cooldownLeft > 0){
       state.cooldownLeft = 0;
@@ -2041,7 +2201,8 @@ function manualResult(result){
     riskMode: state.riskMode,
     tp1: state.tp1,
     tp2: state.tp2,
-    sl: state.sl
+    sl: state.sl,
+    preset: state.preset
   });
 
   if(state.tradeHistory.length > HISTORY_LIMIT){
@@ -2079,7 +2240,7 @@ function exportJson(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v18_5_omega_x_full_fixed_state.json';
+  a.download = 'v18_6_omega_x_pro_state.json';
   a.click();
   URL.revokeObjectURL(url);
   addLog('EXPORT', 'JSON export ready');
@@ -2087,13 +2248,16 @@ function exportJson(){
 }
 
 function exportCsv(){
-  const rows = [['time','side','result','pnl','score','riskMode','tp1','tp2','sl']];
+  const rows = [['time','side','result','pnl','score','riskMode','preset','tp1','tp2','sl']];
   state.tradeHistory.forEach(t=>{
     rows.push([
-      t.time || '', t.side || '', t.result || '',
+      t.time || '',
+      t.side || '',
+      t.result || '',
       safeNum(t.pnl).toFixed(2),
       safeNum(t.score).toFixed(0),
       t.riskMode || '',
+      t.preset || '',
       safeNum(t.tp1).toFixed(2),
       safeNum(t.tp2).toFixed(2),
       safeNum(t.sl).toFixed(2)
@@ -2105,7 +2269,7 @@ function exportCsv(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v18_5_omega_x_full_fixed_history.csv';
+  a.download = 'v18_6_omega_x_pro_history.csv';
   a.click();
   URL.revokeObjectURL(url);
   addLog('EXPORT', 'CSV export ready');
@@ -2132,6 +2296,7 @@ function importJson(event){
       audioEnabled = parsed.audioEnabled !== false;
       rebuildPnlSeriesFromHistory();
       applyDockDefault();
+      renderHeroState();
       addLog('IMPORT', 'State imported');
       showAlert('IMPORT OK', 'info');
       renderAll();
@@ -2149,6 +2314,7 @@ document.addEventListener('click', ()=>{ audioEnabled = true; },{ once:true });
 loadLocalState();
 initCharts();
 applyDockDefault();
+renderHeroState();
 updateSessionClock();
 setInterval(updateSessionClock, 1000);
 rebuildPnlSeriesFromHistory();
