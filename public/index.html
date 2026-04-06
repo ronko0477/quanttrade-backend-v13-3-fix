@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>V18.8 GOD MODE</title>
+<title>V18.8.1 GOD MODE MOBILE POLISH</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -30,8 +30,8 @@
   --glowBlue:0 0 24px rgba(124,247,255,.28);
   --glowRed:0 0 24px rgba(255,120,120,.25);
 
-  --dockClosed:80px;
-  --dockOpen:270px;
+  --dockClosed:64px;
+  --dockOpen:210px;
   --safeBottom:max(env(safe-area-inset-bottom), 0px);
 }
 
@@ -55,7 +55,7 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   max-width:1380px;
   margin:auto;
   padding:14px;
-  padding-bottom:calc(var(--activeDockHeight) + var(--safeBottom) + 28px);
+  padding-bottom:calc(var(--activeDockHeight) + var(--safeBottom) + 90px);
   transition:padding-bottom .22s ease;
 }
 
@@ -108,18 +108,23 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
 .heroMiniLeft{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:8px;
   flex-wrap:wrap;
+  min-width:0;
 }
 
 .miniBadge{
-  padding:8px 12px;
+  padding:7px 10px;
   border-radius:999px;
   background:rgba(255,255,255,.06);
   border:1px solid rgba(255,255,255,.06);
-  font-size:12px;
+  font-size:11px;
   font-weight:900;
   color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:170px;
 }
 
 .miniBadge.good{
@@ -146,6 +151,7 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   background:linear-gradient(90deg,#4d5876,#7a89b4);
   cursor:pointer;
   box-shadow:none;
+  flex-shrink:0;
 }
 
 .topGrid{
@@ -439,6 +445,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   border-radius:24px;
   padding:14px;
   box-shadow:var(--shadow);
+  scroll-margin-top:16px;
 }
 
 .cardTitle{
@@ -687,9 +694,9 @@ tr:hover td{background:rgba(255,255,255,.03)}
 
 .dock{
   position:fixed;
-  left:12px;
-  right:12px;
-  bottom:calc(var(--safeBottom) + 8px);
+  left:10px;
+  right:10px;
+  bottom:calc(var(--safeBottom) + 6px);
   z-index:60;
   pointer-events:none;
 }
@@ -698,7 +705,7 @@ tr:hover td{background:rgba(255,255,255,.03)}
   pointer-events:auto;
   background:linear-gradient(180deg,rgba(8,20,50,.95),rgba(22,37,79,.95));
   border:1px solid rgba(255,255,255,.08);
-  border-radius:24px;
+  border-radius:22px;
   box-shadow:0 18px 50px rgba(0,0,0,.35);
   overflow:hidden;
   backdrop-filter:blur(10px);
@@ -709,9 +716,10 @@ tr:hover td{background:rgba(255,255,255,.03)}
   align-items:center;
   justify-content:space-between;
   gap:10px;
-  padding:14px 16px;
+  padding:12px 14px;
   cursor:pointer;
   user-select:none;
+  min-height:58px;
 }
 
 .dockLeft{
@@ -722,10 +730,11 @@ tr:hover td{background:rgba(255,255,255,.03)}
 }
 
 .dockGrip{
-  width:42px;
+  width:40px;
   height:5px;
   border-radius:999px;
   background:rgba(255,255,255,.25);
+  flex-shrink:0;
 }
 
 .dockMeta{
@@ -736,7 +745,7 @@ tr:hover td{background:rgba(255,255,255,.03)}
 
 .dockChevron{
   transition:transform .2s ease;
-  font-size:18px;
+  font-size:16px;
   font-weight:900;
 }
 body.dock-open .dockChevron{transform:rotate(180deg)}
@@ -746,18 +755,18 @@ body.dock-open .dockChevron{transform:rotate(180deg)}
   overflow:hidden;
   transition:max-height .24s ease;
 }
-body.dock-open .dockBody{max-height:360px}
+body.dock-open .dockBody{max-height:300px}
 
 .dockButtons{
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
   gap:10px;
-  padding:0 14px 14px;
+  padding:0 12px 12px;
 }
 
 .dockBtn{
-  min-height:52px;
-  border-radius:16px;
+  min-height:48px;
+  border-radius:14px;
   font-weight:900;
   box-shadow:none;
 }
@@ -924,25 +933,74 @@ body.dock-open .dockBody{max-height:360px}
 }
 
 @media (max-width:760px){
+  .wrap{
+    padding:12px;
+    padding-bottom:calc(var(--activeDockHeight) + var(--safeBottom) + 110px);
+  }
+
   .title{font-size:22px}
   .guard{font-size:40px}
   .pnl{font-size:34px}
+
   .stats{grid-template-columns:repeat(2,1fr)}
-  .controls{grid-template-columns:repeat(2,1fr)}
-  .presets{grid-template-columns:repeat(2,1fr)}
-  .tabs{grid-template-columns:repeat(2,1fr)}
-  .factorGrid,.sideGrid,.tradePanel,.analyticsGrid,.weekGrid,.mainGrid{grid-template-columns:1fr}
+  .controls{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  button,.fileLabel{
+    padding:13px 10px;
+    font-size:14px;
+    border-radius:15px;
+  }
+
+  .presets{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  .tabs{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  .miniBadge{
+    max-width:145px;
+    font-size:10.5px;
+    padding:7px 9px;
+  }
+
+  .heroTopBar{
+    align-items:flex-start;
+  }
+
+  .heroToggle{
+    padding:10px 11px;
+    min-width:78px;
+  }
+
+  .factorGrid,.sideGrid,.tradePanel,.analyticsGrid,.weekGrid,.mainGrid{
+    grid-template-columns:1fr;
+  }
+
   .filterBar{grid-template-columns:1fr}
   .settingsPanel{width:100%}
   .dockButtons{grid-template-columns:1fr}
+  .dockHandle{min-height:56px}
+  .dockBody{padding-bottom:2px}
+
+  body.dock-open .dockBody{max-height:250px}
+
   .hero.collapsed .topGrid,
-  .hero.collapsed .stats{display:none}
+  .hero.collapsed .stats{
+    display:none;
+  }
 }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="title">V18.8 GOD MODE ⚡</div>
+  <div class="title">V18.8.1 GOD MODE ⚡</div>
 
   <div id="hero" class="hero">
     <div class="heroInner">
@@ -1196,7 +1254,7 @@ body.dock-open .dockBody{max-height:360px}
     </div>
   </div>
 
-  <div class="footerNote">V18.8 GOD MODE • auto engine • adaptive size • dd stop • presets • full dock</div>
+  <div class="footerNote">V18.8.1 MOBILE POLISH • tighter dock • safer spacing • slimmer mobile controls • same god engine</div>
 </div>
 
 <div class="dock">
@@ -1381,8 +1439,9 @@ let lastPnl = 0;
 let localMode = 'GOD MODE';
 let loadingNow = false;
 let autoTimer = null;
+let audioEnabled = true;
 
-const STORAGE_KEY = 'v18_8_god_mode_state';
+const STORAGE_KEY = 'v18_8_1_god_mode_mobile_polish_state';
 const HISTORY_LIMIT = 450;
 
 let state = {
@@ -1588,7 +1647,7 @@ function addLog(type,msg){
 
 function saveState(){
   if(!state.autoSave) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({...state}));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({...state, audioEnabled}));
 }
 
 function loadLocalState(){
@@ -1604,6 +1663,7 @@ function loadLocalState(){
       log:Array.isArray(parsed.log) ? parsed.log : [],
       tradeHistory:Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : []
     };
+    audioEnabled = parsed.audioEnabled !== false;
   }catch(e){}
 }
 
@@ -2394,12 +2454,12 @@ function hardReset(){
 }
 
 function exportJson(){
-  const data = JSON.stringify({...state}, null, 2);
+  const data = JSON.stringify({...state, audioEnabled}, null, 2);
   const blob = new Blob([data], { type:'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v18_8_god_mode_state.json';
+  a.download = 'v18_8_1_god_mode_mobile_polish_state.json';
   a.click();
   URL.revokeObjectURL(url);
   addLog('EXPORT', 'JSON export ready');
@@ -2429,7 +2489,7 @@ function exportCsv(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v18_8_god_mode_history.csv';
+  a.download = 'v18_8_1_god_mode_mobile_polish_history.csv';
   a.click();
   URL.revokeObjectURL(url);
   addLog('EXPORT', 'CSV export ready');
@@ -2452,6 +2512,7 @@ function importJson(event){
         log:Array.isArray(parsed.log) ? parsed.log : [],
         tradeHistory:Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : []
       };
+      audioEnabled = parsed.audioEnabled !== false;
 
       rebuildPnlSeriesFromHistory();
       applyDockDefault();
