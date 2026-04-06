@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>V18.6 OMEGA X PRO</title>
+<title>V18.8 GOD MODE</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -30,8 +30,8 @@
   --glowBlue:0 0 24px rgba(124,247,255,.28);
   --glowRed:0 0 24px rgba(255,120,120,.25);
 
-  --dockClosed:78px;
-  --dockOpen:258px;
+  --dockClosed:80px;
+  --dockOpen:270px;
   --safeBottom:max(env(safe-area-inset-bottom), 0px);
 }
 
@@ -78,10 +78,7 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   box-shadow:var(--shadow);
   transition:transform .18s ease, box-shadow .18s ease, max-height .25s ease, padding .25s ease;
 }
-
-.hero.collapsed{
-  padding:12px 16px;
-}
+.hero.collapsed{padding:12px 16px}
 
 .hero::before{
   content:"";
@@ -93,7 +90,6 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   animation:spinBg 18s linear infinite;
   pointer-events:none;
 }
-
 @keyframes spinBg{
   from{transform:rotate(0deg)}
   to{transform:rotate(360deg)}
@@ -129,6 +125,16 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
 .miniBadge.good{
   background:linear-gradient(90deg,#79f2a3,#7cf7ff);
   color:#03111d;
+}
+
+.miniBadge.warn{
+  background:linear-gradient(90deg,#ffd86b,#ffeaa8);
+  color:#342400;
+}
+
+.miniBadge.bad{
+  background:linear-gradient(90deg,#ff8f8f,#ffb46a);
+  color:#2a0909;
 }
 
 .heroToggle{
@@ -316,7 +322,7 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
 
 .stats{
   display:grid;
-  grid-template-columns:repeat(8,1fr);
+  grid-template-columns:repeat(10,1fr);
   gap:10px;
   margin-top:14px;
 }
@@ -387,7 +393,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 .presets{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(4,1fr);
   gap:10px;
   margin-top:14px;
 }
@@ -397,7 +403,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
   border:1px solid rgba(255,255,255,.06);
   box-shadow:none;
 }
-
 .presetBtn.active{
   background:linear-gradient(90deg,#7cf7ff,#79f2a3);
   color:#041420;
@@ -415,7 +420,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
   border:1px solid rgba(255,255,255,.06);
   box-shadow:none;
 }
-
 .tabBtn.active{
   background:linear-gradient(90deg,#7aa7ff,#ae8cff);
 }
@@ -478,7 +482,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 .tradePanel{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(4,1fr);
   gap:10px;
   margin-top:10px;
 }
@@ -604,7 +608,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 table{
   width:100%;
   border-collapse:collapse;
-  min-width:860px;
+  min-width:980px;
   background:rgba(255,255,255,.03);
 }
 
@@ -735,7 +739,6 @@ tr:hover td{background:rgba(255,255,255,.03)}
   font-size:18px;
   font-weight:900;
 }
-
 body.dock-open .dockChevron{transform:rotate(180deg)}
 
 .dockBody{
@@ -743,7 +746,6 @@ body.dock-open .dockChevron{transform:rotate(180deg)}
   overflow:hidden;
   transition:max-height .24s ease;
 }
-
 body.dock-open .dockBody{max-height:360px}
 
 .dockButtons{
@@ -916,7 +918,7 @@ body.dock-open .dockBody{max-height:360px}
 
 @media (max-width:1180px){
   .topGrid,.mainGrid,.analyticsGrid{grid-template-columns:1fr}
-  .stats{grid-template-columns:repeat(4,1fr)}
+  .stats{grid-template-columns:repeat(5,1fr)}
   .controls{grid-template-columns:repeat(6,1fr)}
   .weekGrid{grid-template-columns:repeat(2,1fr)}
 }
@@ -927,7 +929,7 @@ body.dock-open .dockBody{max-height:360px}
   .pnl{font-size:34px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .controls{grid-template-columns:repeat(2,1fr)}
-  .presets{grid-template-columns:1fr}
+  .presets{grid-template-columns:repeat(2,1fr)}
   .tabs{grid-template-columns:repeat(2,1fr)}
   .factorGrid,.sideGrid,.tradePanel,.analyticsGrid,.weekGrid,.mainGrid{grid-template-columns:1fr}
   .filterBar{grid-template-columns:1fr}
@@ -940,15 +942,16 @@ body.dock-open .dockBody{max-height:360px}
 </head>
 <body>
 <div class="wrap">
-  <div class="title">V18.6 OMEGA X PRO ⚡</div>
+  <div class="title">V18.8 GOD MODE ⚡</div>
 
   <div id="hero" class="hero">
     <div class="heroInner">
       <div class="heroTopBar">
         <div class="heroMiniLeft">
-          <div class="miniBadge" id="miniMode">MODE OMEGA X PRO</div>
+          <div class="miniBadge" id="miniMode">MODE GOD MODE</div>
           <div class="miniBadge good" id="miniPreset">PRESET BALANCED</div>
           <div class="miniBadge" id="miniScore">SCORE 0</div>
+          <div class="miniBadge" id="miniEngine">ENGINE OFF</div>
         </div>
         <button class="heroToggle" onclick="toggleHero()">HERO</button>
       </div>
@@ -956,7 +959,7 @@ body.dock-open .dockBody{max-height:360px}
       <div class="topGrid">
         <div class="guardCard">
           <div id="guard" class="guard ready pulse">READY</div>
-          <div id="guardSub" class="sub">System armed • waiting for omega-x-pro setup</div>
+          <div id="guardSub" class="sub">System armed • waiting for god-mode setup</div>
           <div id="pnl" class="pnl">0.00<small>Net PnL</small></div>
 
           <div class="directionRow">
@@ -964,12 +967,13 @@ body.dock-open .dockBody{max-height:360px}
             <div id="sessionClock" class="pill">SESSION --:--:--</div>
             <div id="newsBadge" class="pill">NEWS SAFE</div>
             <div id="riskBadge" class="pill">RISK SAFE</div>
+            <div id="engineBadge" class="pill">AUTO OFF</div>
           </div>
         </div>
 
         <div class="scoreCard">
           <div class="scoreHead">
-            <div class="scoreTitle">OMEGA X PRO SCORE</div>
+            <div class="scoreTitle">GOD SCORE</div>
             <div id="scoreValue" class="scoreValue">0</div>
           </div>
           <div class="barWrap"><div id="scoreBar" class="bar"></div></div>
@@ -994,14 +998,17 @@ body.dock-open .dockBody{max-height:360px}
         <div class="box"><div class="boxLabel">STREAK</div><div id="streak" class="boxValue">0</div></div>
         <div class="box"><div class="boxLabel">WINS</div><div id="wins" class="boxValue">0</div></div>
         <div class="box"><div class="boxLabel">LOSSES</div><div id="losses" class="boxValue">0</div></div>
+        <div class="box"><div class="boxLabel">SIZE</div><div id="posSize" class="boxValue">1.00</div></div>
+        <div class="box"><div class="boxLabel">AUTO TRADES</div><div id="autoTrades" class="boxValue">0</div></div>
       </div>
     </div>
   </div>
 
   <div class="presets">
-    <button id="presetSafe" class="presetBtn" onclick="applyPreset('SAFE')">SAFE PRESET</button>
-    <button id="presetScalper" class="presetBtn" onclick="applyPreset('SCALPER')">SCALPER PRESET</button>
-    <button id="presetSniper" class="presetBtn" onclick="applyPreset('SNIPER')">SNIPER PRESET</button>
+    <button id="presetSafe" class="presetBtn" onclick="applyPreset('SAFE')">SAFE</button>
+    <button id="presetBalanced" class="presetBtn" onclick="applyPreset('BALANCED')">BALANCED</button>
+    <button id="presetScalper" class="presetBtn" onclick="applyPreset('SCALPER')">SCALPER</button>
+    <button id="presetSniper" class="presetBtn" onclick="applyPreset('SNIPER')">SNIPER</button>
   </div>
 
   <div class="controls">
@@ -1012,12 +1019,12 @@ body.dock-open .dockBody{max-height:360px}
     <button class="btnLoss" onclick="manualResult('LOSS')">LOSS</button>
     <button class="btnReset" onclick="hardReset()">RESET</button>
     <button class="btnMode" onclick="toggleMode()">MODE</button>
+    <button class="btnMode" onclick="toggleAutoEngine()">AUTO</button>
     <button class="btnSync" onclick="load()">SYNC</button>
     <button class="btnExport" onclick="exportJson()">JSON</button>
     <button class="btnExport" onclick="exportCsv()">CSV</button>
     <label class="fileLabel" for="importFile">IMPORT</label>
     <input id="importFile" class="fileInput" type="file" accept=".json" onchange="importJson(event)" />
-    <button class="btnSettings" onclick="toggleSettings()">SETTINGS</button>
   </div>
 
   <div class="tabs">
@@ -1054,7 +1061,7 @@ body.dock-open .dockBody{max-height:360px}
           </div>
           <div class="kpi">
             <div class="kpiName">Mode</div>
-            <div id="mode" class="kpiValue">OMEGA X PRO</div>
+            <div id="mode" class="kpiValue">GOD MODE</div>
             <div class="kpiSub">execution profile</div>
           </div>
         </div>
@@ -1071,6 +1078,10 @@ body.dock-open .dockBody{max-height:360px}
           <div class="tradeBox">
             <div class="tradeName">SL</div>
             <div id="sl" class="tradeValue">0.00</div>
+          </div>
+          <div class="tradeBox">
+            <div class="tradeName">SIZE</div>
+            <div id="sizeBox" class="tradeValue">1.00</div>
           </div>
         </div>
 
@@ -1108,6 +1119,8 @@ body.dock-open .dockBody{max-height:360px}
           <option value="ALL">All Results</option>
           <option value="WIN">WIN</option>
           <option value="LOSS">LOSS</option>
+          <option value="AUTO WIN">AUTO WIN</option>
+          <option value="AUTO LOSS">AUTO LOSS</option>
         </select>
       </div>
 
@@ -1122,13 +1135,15 @@ body.dock-open .dockBody{max-height:360px}
               <th>PnL</th>
               <th>Score</th>
               <th>Risk</th>
+              <th>Preset</th>
+              <th>Size</th>
               <th>TP1</th>
               <th>TP2</th>
               <th>SL</th>
             </tr>
           </thead>
           <tbody id="historyTable">
-            <tr><td colspan="10" class="tNeu">Keine Trades vorhanden</td></tr>
+            <tr><td colspan="12" class="tNeu">Keine Trades vorhanden</td></tr>
           </tbody>
         </table>
       </div>
@@ -1181,7 +1196,7 @@ body.dock-open .dockBody{max-height:360px}
     </div>
   </div>
 
-  <div class="footerNote">V18.6 OMEGA X PRO • tabs • compact mobile • hero collapse • presets • full dock</div>
+  <div class="footerNote">V18.8 GOD MODE • auto engine • adaptive size • dd stop • presets • full dock</div>
 </div>
 
 <div class="dock">
@@ -1201,7 +1216,7 @@ body.dock-open .dockBody{max-height:360px}
       <div class="dockButtons">
         <button class="dockBtn dockBuy" onclick="quickAction('BUY')">Quick BUY</button>
         <button class="dockBtn dockSell" onclick="quickAction('SELL')">Quick SELL</button>
-        <button class="dockBtn dockSave" onclick="toggleStorage()"><span id="storageBtnText">AutoSave ON</span></button>
+        <button class="dockBtn dockSave" onclick="toggleAutoEngine()"><span id="storageBtnText">AUTO OFF</span></button>
       </div>
     </div>
   </div>
@@ -1214,7 +1229,7 @@ body.dock-open .dockBody{max-height:360px}
 <div id="settingsBackdrop" class="settingsBackdrop" onclick="closeSettings()"></div>
 <div id="settingsPanel" class="settingsPanel">
   <div class="settingsHead">
-    <div class="settingsTitle">OMEGA X PRO Settings</div>
+    <div class="settingsTitle">GOD MODE Settings</div>
     <button class="btnReset" style="box-shadow:none;padding:10px 12px;" onclick="closeSettings()">X</button>
   </div>
 
@@ -1225,6 +1240,29 @@ body.dock-open .dockBody{max-height:360px}
         <button id="riskSafeBtn" onclick="setRiskProfile('SAFE')">SAFE</button>
         <button id="riskBalancedBtn" onclick="setRiskProfile('BALANCED')">BALANCED</button>
         <button id="riskAggroBtn" onclick="setRiskProfile('AGGRESSIVE')">AGGRESSIVE</button>
+      </div>
+    </div>
+
+    <div class="settingsGroup">
+      <div class="settingsGroupTitle">Auto Engine</div>
+      <div class="formRow">
+        <label for="autoEnabledSelect">Auto Enabled</label>
+        <select id="autoEnabledSelect">
+          <option value="true">ON</option>
+          <option value="false">OFF</option>
+        </select>
+      </div>
+      <div class="formRow">
+        <label for="autoTriggerInput">Auto Score</label>
+        <input id="autoTriggerInput" type="number" min="0" max="100" step="1" />
+      </div>
+      <div class="formRow">
+        <label for="autoCooldownInput">Auto Cooldown s</label>
+        <input id="autoCooldownInput" type="number" min="0" max="60" step="1" />
+      </div>
+      <div class="formRow">
+        <label for="riskStopInput">DD Stop %</label>
+        <input id="riskStopInput" type="number" min="0" max="100" step="0.1" />
       </div>
     </div>
 
@@ -1340,13 +1378,12 @@ let chart;
 let donutChart;
 let pnlSeries = [];
 let lastPnl = 0;
-let localMode = 'OMEGA X PRO';
-let localSide = 'NONE';
-let audioEnabled = true;
+let localMode = 'GOD MODE';
 let loadingNow = false;
+let autoTimer = null;
 
-const STORAGE_KEY = 'v18_6_omega_x_pro_state';
-const HISTORY_LIMIT = 400;
+const STORAGE_KEY = 'v18_8_god_mode_state';
+const HISTORY_LIMIT = 450;
 
 let state = {
   pnl: 0,
@@ -1362,7 +1399,7 @@ let state = {
   bias: 'NEUTRAL',
   killSwitch: false,
   guard: 'READY',
-  mode: 'OMEGA X PRO',
+  mode: 'GOD MODE',
   side: 'NONE',
   tp1: 25,
   tp2: 60,
@@ -1375,6 +1412,14 @@ let state = {
   heroCollapsed: false,
   activeTab: 'overview',
   preset: 'BALANCED',
+  autoEnabled: false,
+  autoTriggerScore: 86,
+  autoCooldownSec: 12,
+  autoTrades: 0,
+  autoRiskStopPct: 6,
+  lastAutoAt: 0,
+  posSize: 1.00,
+  baseSize: 1.00,
   trendScore: 78,
   volumeScore: 64,
   structureScore: 72,
@@ -1538,12 +1583,12 @@ function formatTimeDisplay(iso){
 
 function addLog(type,msg){
   state.log.push({ type, msg, time: nowTime() });
-  if(state.log.length > 140) state.log.shift();
+  if(state.log.length > 160) state.log.shift();
 }
 
 function saveState(){
   if(!state.autoSave) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({...state, audioEnabled}));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({...state}));
 }
 
 function loadLocalState(){
@@ -1559,7 +1604,6 @@ function loadLocalState(){
       log:Array.isArray(parsed.log) ? parsed.log : [],
       tradeHistory:Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : []
     };
-    audioEnabled = parsed.audioEnabled !== false;
   }catch(e){}
 }
 
@@ -1600,6 +1644,7 @@ function switchTab(tab){
 
 function renderPresetButtons(){
   document.getElementById('presetSafe').classList.toggle('active', state.preset === 'SAFE');
+  document.getElementById('presetBalanced').classList.toggle('active', state.preset === 'BALANCED');
   document.getElementById('presetScalper').classList.toggle('active', state.preset === 'SCALPER');
   document.getElementById('presetSniper').classList.toggle('active', state.preset === 'SNIPER');
   setText('miniPreset', `PRESET ${state.preset}`);
@@ -1611,27 +1656,54 @@ function applyPreset(name){
   if(name === 'SAFE'){
     state.riskMode = 'SAFE';
     state.tp1 = 18; state.tp2 = 40; state.sl = 12; state.minScore = 84; state.maxDdLimit = 4;
+    state.autoTriggerScore = 90;
     state.weights = {trend:0.24, volume:0.12, structure:0.22, volatility:0.10, liquidity:0.16, session:0.16};
+  }else if(name === 'BALANCED'){
+    state.riskMode = 'BALANCED';
+    state.tp1 = 25; state.tp2 = 60; state.sl = 18; state.minScore = 80; state.maxDdLimit = 5;
+    state.autoTriggerScore = 86;
+    state.weights = {trend:0.22, volume:0.15, structure:0.20, volatility:0.12, liquidity:0.18, session:0.13};
   }else if(name === 'SCALPER'){
     state.riskMode = 'BALANCED';
     state.tp1 = 14; state.tp2 = 28; state.sl = 10; state.minScore = 76; state.maxDdLimit = 5.5;
+    state.autoTriggerScore = 82;
     state.weights = {trend:0.16, volume:0.22, structure:0.20, volatility:0.18, liquidity:0.14, session:0.10};
   }else if(name === 'SNIPER'){
     state.riskMode = 'AGGRESSIVE';
     state.tp1 = 35; state.tp2 = 90; state.sl = 22; state.minScore = 88; state.maxDdLimit = 7;
+    state.autoTriggerScore = 92;
     state.weights = {trend:0.25, volume:0.14, structure:0.24, volatility:0.08, liquidity:0.19, session:0.10};
   }
 
+  updatePositionSize();
   renderPresetButtons();
   renderAll();
   showAlert(`PRESET ${name}`, 'info');
 }
 
-function toggleStorage(){
-  state.autoSave = !state.autoSave;
-  setText('storageBtnText', state.autoSave ? 'AutoSave ON' : 'AutoSave OFF');
-  if(state.autoSave) saveState();
-  showAlert(state.autoSave ? 'AUTOSAVE ON' : 'AUTOSAVE OFF', 'info');
+function toggleAutoEngine(){
+  state.autoEnabled = !state.autoEnabled;
+  renderAutoState();
+  showAlert(state.autoEnabled ? 'AUTO ENGINE ON' : 'AUTO ENGINE OFF', 'info');
+  saveState();
+}
+
+function renderAutoState(){
+  const on = state.autoEnabled && !state.killSwitch;
+  setText('storageBtnText', on ? 'AUTO ON' : 'AUTO OFF');
+  setText('miniEngine', on ? 'ENGINE ON' : 'ENGINE OFF');
+
+  const mini = document.getElementById('miniEngine');
+  mini.className = `miniBadge ${on ? 'good' : 'bad'}`;
+
+  const engineBadge = document.getElementById('engineBadge');
+  if(on){
+    engineBadge.className = 'pill buy';
+    engineBadge.textContent = 'AUTO ON';
+  }else{
+    engineBadge.className = 'pill';
+    engineBadge.textContent = 'AUTO OFF';
+  }
 }
 
 function beep(type='info'){
@@ -1709,6 +1781,10 @@ function syncSettingsForm(){
   document.getElementById('wVolatilityInput').value = state.weights.volatility;
   document.getElementById('wLiquidityInput').value = state.weights.liquidity;
   document.getElementById('wSessionInput').value = state.weights.session;
+  document.getElementById('autoEnabledSelect').value = String(state.autoEnabled);
+  document.getElementById('autoTriggerInput').value = state.autoTriggerScore;
+  document.getElementById('autoCooldownInput').value = state.autoCooldownSec;
+  document.getElementById('riskStopInput').value = state.autoRiskStopPct;
   highlightRiskButtons();
 }
 
@@ -1727,6 +1803,7 @@ function setRiskProfile(mode){
   }else{
     state.tp1 = 35; state.tp2 = 85; state.sl = 24; state.minScore = 75; state.maxDdLimit = 7;
   }
+  updatePositionSize();
   syncSettingsForm();
   showAlert(`RISK ${mode}`, 'info');
 }
@@ -1744,6 +1821,10 @@ function applySettings(){
   audioEnabled = document.getElementById('audioSelect').value === 'true';
   state.autoSave = document.getElementById('autosaveSelect').value === 'true';
   state.dockDefault = document.getElementById('dockDefaultSelect').value;
+  state.autoEnabled = document.getElementById('autoEnabledSelect').value === 'true';
+  state.autoTriggerScore = safeNum(document.getElementById('autoTriggerInput').value, state.autoTriggerScore);
+  state.autoCooldownSec = safeNum(document.getElementById('autoCooldownInput').value, state.autoCooldownSec);
+  state.autoRiskStopPct = safeNum(document.getElementById('riskStopInput').value, state.autoRiskStopPct);
 
   state.weights.trend = safeNum(document.getElementById('wTrendInput').value, state.weights.trend);
   state.weights.volume = safeNum(document.getElementById('wVolumeInput').value, state.weights.volume);
@@ -1753,7 +1834,9 @@ function applySettings(){
   state.weights.session = safeNum(document.getElementById('wSessionInput').value, state.weights.session);
 
   applyDockDefault();
-  addLog('SETTINGS', 'Omega X PRO settings applied');
+  updatePositionSize();
+  renderAutoState();
+  addLog('SETTINGS', 'God mode settings applied');
   closeSettings();
   renderAll();
   showAlert('SETTINGS APPLIED', 'info');
@@ -1777,6 +1860,24 @@ function calcScore(s){
   if(s.sessionOnly && !s.flags.sessionActive) score -= 16;
 
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function updatePositionSize(){
+  let size = state.baseSize || 1;
+
+  if(state.riskMode === 'SAFE') size *= 0.8;
+  if(state.riskMode === 'BALANCED') size *= 1.0;
+  if(state.riskMode === 'AGGRESSIVE') size *= 1.25;
+
+  if(state.streak >= 2) size *= 1.15;
+  if(state.streak >= 4) size *= 1.10;
+  if(state.streak <= -1) size *= 0.85;
+  if(state.streak <= -3) size *= 0.70;
+
+  if(state.maxDrawdown >= state.autoRiskStopPct * 0.7) size *= 0.70;
+  if(state.killSwitch) size *= 0.20;
+
+  state.posSize = Math.max(0.25, Math.min(3.0, Number(size.toFixed(2))));
 }
 
 function isToday(dateStr){
@@ -1811,16 +1912,16 @@ function renderGuard(score){
 
   let stateText = 'READY';
   let cls = 'guard ready';
-  let subtitle = 'System armed • waiting for omega-x-pro setup';
+  let subtitle = 'System armed • waiting for god-mode setup';
 
   if(state.killSwitch){
     stateText = 'KILL SWITCH'; cls = 'guard blocked'; subtitle = 'Protection active • trading blocked';
   }else if(state.cooldownLeft > 0){
     stateText = 'COOLDOWN'; cls = 'guard cooldown'; subtitle = `Cooling down • ${state.cooldownLeft}s left`;
-  }else if(score >= 94){
-    stateText = 'OMEGA'; cls = 'guard god pulse'; subtitle = 'Maximum alignment • omega-x-pro execution state';
-  }else if(score >= 86){
-    stateText = 'SNIPER'; cls = 'guard sniper pulse'; subtitle = 'High-quality setup • entry window open';
+  }else if(score >= 95){
+    stateText = 'GOD'; cls = 'guard god pulse'; subtitle = 'Maximum alignment • god mode engaged';
+  }else if(score >= 88){
+    stateText = 'SNIPER'; cls = 'guard sniper pulse'; subtitle = 'High-quality setup • precision entry ready';
   }else if(score >= state.minScore){
     stateText = 'READY'; cls = 'guard ready pulse'; subtitle = 'Conditions aligned • waiting for trigger';
   }else if(score >= 50){
@@ -1889,7 +1990,7 @@ function renderScore(score){
 
   document.getElementById('ruleScore').className = score >= state.minScore ? 'badge on' : 'badge off';
   document.getElementById('ruleCooldown').className = state.cooldownLeft === 0 ? 'badge on' : 'badge off';
-  document.getElementById('ruleRisk').className = state.riskMode !== 'OFF' ? 'badge on' : 'badge off';
+  document.getElementById('ruleRisk').className = (!state.killSwitch && state.maxDrawdown < state.autoRiskStopPct) ? 'badge on' : 'badge warn';
   document.getElementById('ruleDd').className = state.maxDrawdown < state.maxDdLimit ? 'badge on' : 'badge warn';
   document.getElementById('ruleSession').className = (!state.sessionOnly || state.flags.sessionActive) ? 'badge on' : 'badge warn';
   document.getElementById('ruleNews').className = (!state.blockNews || state.flags.newsSafe) ? 'badge on' : 'badge warn';
@@ -1909,6 +2010,9 @@ function renderStats(){
   setText('streak', state.streak);
   setText('wins', state.wins);
   setText('losses', state.losses);
+  setText('posSize', state.posSize.toFixed(2));
+  setText('sizeBox', state.posSize.toFixed(2));
+  setText('autoTrades', state.autoTrades);
   setText('dayTarget', state.dailyTarget.toFixed(2));
   setText('weekTarget', state.weeklyTarget.toFixed(2));
   setText('bias', state.bias);
@@ -1917,7 +2021,6 @@ function renderStats(){
   setText('tp1', state.tp1.toFixed(2));
   setText('tp2', state.tp2.toFixed(2));
   setText('sl', state.sl.toFixed(2));
-  setText('storageBtnText', state.autoSave ? 'AutoSave ON' : 'AutoSave OFF');
 
   setText('todayPnl', calcTodayPnl().toFixed(2));
   setText('todayTrades', calcTodayTrades());
@@ -1959,12 +2062,12 @@ function renderLog(){
   }
 
   el.innerHTML = '';
-  [...state.log].reverse().slice(0,50).forEach(item=>{
+  [...state.log].reverse().slice(0,60).forEach(item=>{
     const type = (item.type || 'INFO').toUpperCase();
     const msg = item.msg || item.message || JSON.stringify(item);
     const time = item.time || nowTime();
     let cls = 'mid';
-    if(type.includes('WIN') || type.includes('READY') || type.includes('BUY') || type.includes('SNIPER')) cls = 'ok';
+    if(type.includes('WIN') || type.includes('READY') || type.includes('BUY') || type.includes('SNIPER') || type.includes('AUTO')) cls = 'ok';
     if(type.includes('LOSS') || type.includes('ERROR') || type.includes('BLOCK') || type.includes('SELL')) cls = 'bad';
     const div = document.createElement('div');
     div.className = 'entry';
@@ -1991,7 +2094,7 @@ function renderHistory(){
     });
 
   if(!filtered.length){
-    tbody.innerHTML = `<tr><td colspan="10" class="tNeu">Keine passenden Trades</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" class="tNeu">Keine passenden Trades</td></tr>`;
     return;
   }
 
@@ -2007,6 +2110,8 @@ function renderHistory(){
       <td class="${pnlClass}">${safeNum(trade.pnl).toFixed(2)}</td>
       <td>${safeNum(trade.score).toFixed(0)}</td>
       <td>${escapeHtml(trade.riskMode || state.riskMode)}</td>
+      <td>${escapeHtml(trade.preset || state.preset)}</td>
+      <td>${safeNum(trade.posSize || 1).toFixed(2)}</td>
       <td>${safeNum(trade.tp1).toFixed(2)}</td>
       <td>${safeNum(trade.tp2).toFixed(2)}</td>
       <td>${safeNum(trade.sl).toFixed(2)}</td>
@@ -2016,9 +2121,11 @@ function renderHistory(){
 }
 
 function renderAll(){
+  updatePositionSize();
   const score = calcScore(state);
   renderHeroState();
   renderPresetButtons();
+  renderAutoState();
   renderGuard(score);
   renderPnl();
   renderScore(score);
@@ -2030,6 +2137,45 @@ function renderAll(){
   setDockMeta();
   switchTab(state.activeTab || 'overview');
   saveState();
+}
+
+function canAutoTrade(score){
+  if(!state.autoEnabled) return false;
+  if(state.killSwitch) return false;
+  if(state.cooldownLeft > 0) return false;
+  if(score < state.autoTriggerScore) return false;
+  if(state.maxDrawdown >= state.autoRiskStopPct) return false;
+  if(state.blockNews && !state.flags.newsSafe) return false;
+  if(state.sessionOnly && !state.flags.sessionActive) return false;
+  const now = Date.now();
+  if(now - safeNum(state.lastAutoAt,0) < state.autoCooldownSec * 1000) return false;
+  return true;
+}
+
+function chooseAutoSide(score){
+  if(state.bias === 'BUY' || state.bias === 'SELL') return state.bias;
+  if(state.flags.trendSync && state.flags.liquidityGrab && score >= 92) return 'BUY';
+  if(state.volatilityScore >= 70 && state.structureScore >= 70) return 'SELL';
+  return score % 2 === 0 ? 'BUY' : 'SELL';
+}
+
+function runAutoEngine(){
+  const score = calcScore(state);
+  if(!canAutoTrade(score)) return;
+
+  const side = chooseAutoSide(score);
+  state.side = side;
+  state.flags.biasMatch = state.bias === 'NEUTRAL' ? true : state.bias === side;
+  state.lastAutoAt = Date.now();
+  state.autoTrades += 1;
+
+  addLog('AUTO', `${side} auto-triggered at score ${score}`);
+  showAlert(`AUTO ${side}`, side === 'BUY' ? 'win' : 'loss');
+  beep('info');
+
+  const winChance = Math.max(0.35, Math.min(0.75, score / 130));
+  const didWin = Math.random() < winChance;
+  manualResult(didWin ? 'AUTO WIN' : 'AUTO LOSS', true);
 }
 
 async function load(){
@@ -2055,7 +2201,6 @@ async function load(){
     state.riskMode = data.riskMode || state.riskMode;
     state.bias = (data.bias || state.bias).toUpperCase();
     state.killSwitch = !!data.killSwitch;
-    state.guard = data.guard || state.guard;
     state.mode = data.mode || state.mode;
     state.side = (data.side || state.side).toUpperCase();
     state.tp1 = safeNum(data.tp1, state.tp1);
@@ -2082,7 +2227,14 @@ async function load(){
     const ddPct = state.peakPnl > 0 ? (ddAbs / state.peakPnl) * 100 : 0;
     state.maxDrawdown = Math.max(state.maxDrawdown, ddPct);
 
+    if(state.maxDrawdown >= state.autoRiskStopPct){
+      state.killSwitch = true;
+      state.autoEnabled = false;
+      addLog('BLOCK', `Auto risk stop hit at ${state.maxDrawdown.toFixed(1)}% DD`);
+    }
+
     renderAll();
+    runAutoEngine();
   }catch(err){
     addLog('ERROR', `API not reachable. Local state active. ${String(err)}`);
     renderAll();
@@ -2109,7 +2261,7 @@ function lockButtons(stateLocked){
 }
 
 async function toggleMode(){
-  localMode = localMode === 'OMEGA X PRO' ? 'GOD OMEGA X PRO' : 'OMEGA X PRO';
+  localMode = localMode === 'GOD MODE' ? 'ULTRA GOD MODE' : 'GOD MODE';
   state.mode = localMode;
   try{
     await fetch('/api/mode',{
@@ -2125,7 +2277,6 @@ async function toggleMode(){
 }
 
 async function forceSide(side){
-  localSide = side;
   state.side = side;
   state.flags.biasMatch = state.bias === 'NEUTRAL' ? true : state.bias === side;
   try{
@@ -2150,35 +2301,37 @@ function randomRange(min,max){
   return Math.random() * (max - min) + min;
 }
 
-function manualResult(result){
+function manualResult(result, fromAuto=false){
   const score = calcScore(state);
   const side = state.side === 'NONE' ? 'BUY' : state.side;
-  const signedPnl = result === 'WIN'
-    ? randomRange(Math.max(8, state.tp1 * 0.6), Math.max(14, state.tp2 * 0.95))
-    : -randomRange(Math.max(5, state.sl * 0.65), Math.max(8, state.sl * 1.1));
+  const sizeMul = safeNum(state.posSize, 1);
+
+  const winMove = randomRange(Math.max(8, state.tp1 * 0.6), Math.max(14, state.tp2 * 0.95));
+  const lossMove = randomRange(Math.max(5, state.sl * 0.65), Math.max(8, state.sl * 1.1));
+  const signedPnl = (result.includes('WIN') ? winMove : -lossMove) * sizeMul;
 
   state.pnl = Number((state.pnl + signedPnl).toFixed(2));
   state.ordersToday += 1;
-  state.cooldownLeft = 8;
+  state.cooldownLeft = fromAuto ? state.autoCooldownSec : 8;
 
   setTimeout(()=>{
     if(state.cooldownLeft > 0){
       state.cooldownLeft = 0;
       renderAll();
     }
-  }, 8000);
+  }, state.cooldownLeft * 1000);
 
-  if(result === 'WIN'){
+  if(result.includes('WIN')){
     state.wins += 1;
     state.streak = state.streak >= 0 ? state.streak + 1 : 1;
-    addLog('WIN', `${side} closed +${signedPnl.toFixed(2)}`);
-    showAlert(`WIN +${signedPnl.toFixed(2)}`, 'win');
+    addLog(result, `${side} closed +${signedPnl.toFixed(2)} size ${sizeMul.toFixed(2)}`);
+    showAlert(`${result} +${signedPnl.toFixed(2)}`, 'win');
     beep('win');
   }else{
     state.losses += 1;
     state.streak = state.streak <= 0 ? state.streak - 1 : -1;
-    addLog('LOSS', `${side} closed ${signedPnl.toFixed(2)}`);
-    showAlert(`LOSS ${signedPnl.toFixed(2)}`, 'loss');
+    addLog(result, `${side} closed ${signedPnl.toFixed(2)} size ${sizeMul.toFixed(2)}`);
+    showAlert(`${result} ${signedPnl.toFixed(2)}`, 'loss');
     beep('loss');
   }
 
@@ -2187,9 +2340,10 @@ function manualResult(result){
   const ddPct = state.peakPnl > 0 ? (ddAbs / state.peakPnl) * 100 : 0;
   state.maxDrawdown = Math.max(state.maxDrawdown, ddPct);
 
-  if(state.maxDrawdown >= state.maxDdLimit){
+  if(state.maxDrawdown >= state.maxDdLimit || state.maxDrawdown >= state.autoRiskStopPct){
     state.killSwitch = true;
-    addLog('BLOCK', `Kill Switch active. DD limit ${state.maxDdLimit}% reached`);
+    state.autoEnabled = false;
+    addLog('BLOCK', `Kill Switch active. DD ${state.maxDrawdown.toFixed(1)}% reached`);
   }
 
   state.tradeHistory.push({
@@ -2199,10 +2353,11 @@ function manualResult(result){
     pnl: Number(signedPnl.toFixed(2)),
     score,
     riskMode: state.riskMode,
+    preset: state.preset,
+    posSize: sizeMul,
     tp1: state.tp1,
     tp2: state.tp2,
-    sl: state.sl,
-    preset: state.preset
+    sl: state.sl
   });
 
   if(state.tradeHistory.length > HISTORY_LIMIT){
@@ -2210,6 +2365,7 @@ function manualResult(result){
   }
 
   pushPnlPoint(state.pnl);
+  updatePositionSize();
   renderAll();
 }
 
@@ -2226,8 +2382,11 @@ function hardReset(){
   state.killSwitch = false;
   state.tradeHistory = [];
   state.log = [];
+  state.autoTrades = 0;
+  state.lastAutoAt = 0;
   pnlSeries = [];
   setChartFromSeries([]);
+  updatePositionSize();
   addLog('RESET', 'System reset complete');
   showAlert('RESET DONE', 'info');
   renderAll();
@@ -2235,12 +2394,12 @@ function hardReset(){
 }
 
 function exportJson(){
-  const data = JSON.stringify({...state, audioEnabled}, null, 2);
+  const data = JSON.stringify({...state}, null, 2);
   const blob = new Blob([data], { type:'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v18_6_omega_x_pro_state.json';
+  a.download = 'v18_8_god_mode_state.json';
   a.click();
   URL.revokeObjectURL(url);
   addLog('EXPORT', 'JSON export ready');
@@ -2248,7 +2407,7 @@ function exportJson(){
 }
 
 function exportCsv(){
-  const rows = [['time','side','result','pnl','score','riskMode','preset','tp1','tp2','sl']];
+  const rows = [['time','side','result','pnl','score','riskMode','preset','posSize','tp1','tp2','sl']];
   state.tradeHistory.forEach(t=>{
     rows.push([
       t.time || '',
@@ -2258,6 +2417,7 @@ function exportCsv(){
       safeNum(t.score).toFixed(0),
       t.riskMode || '',
       t.preset || '',
+      safeNum(t.posSize).toFixed(2),
       safeNum(t.tp1).toFixed(2),
       safeNum(t.tp2).toFixed(2),
       safeNum(t.sl).toFixed(2)
@@ -2269,7 +2429,7 @@ function exportCsv(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v18_6_omega_x_pro_history.csv';
+  a.download = 'v18_8_god_mode_history.csv';
   a.click();
   URL.revokeObjectURL(url);
   addLog('EXPORT', 'CSV export ready');
@@ -2293,10 +2453,10 @@ function importJson(event){
         tradeHistory:Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : []
       };
 
-      audioEnabled = parsed.audioEnabled !== false;
       rebuildPnlSeriesFromHistory();
       applyDockDefault();
       renderHeroState();
+      renderAutoState();
       addLog('IMPORT', 'State imported');
       showAlert('IMPORT OK', 'info');
       renderAll();
@@ -2309,18 +2469,17 @@ function importJson(event){
   reader.readAsText(file);
 }
 
-document.addEventListener('click', ()=>{ audioEnabled = true; },{ once:true });
-
 loadLocalState();
 initCharts();
 applyDockDefault();
 renderHeroState();
+renderAutoState();
 updateSessionClock();
 setInterval(updateSessionClock, 1000);
 rebuildPnlSeriesFromHistory();
 renderAll();
 load();
-setInterval(load, 2500);
+autoTimer = setInterval(load, 2500);
 </script>
 </body>
 </html>
