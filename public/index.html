@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>V19.2.3 REAL MODE</title>
+<title>V19.2.4 AUTO REAL</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{
@@ -25,10 +25,7 @@
   --dockOpen:188px;
   --safeBottom:max(env(safe-area-inset-bottom), 0px);
 }
-*{
-  box-sizing:border-box;
-  -webkit-tap-highlight-color:transparent;
-}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
 body{
   margin:0;
@@ -41,7 +38,6 @@ body{
 }
 body.dock-open{ --activeDockHeight:var(--dockOpen); }
 body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
-
 .wrap{
   max-width:1080px;
   margin:auto;
@@ -100,30 +96,12 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.badge.good{
-  background:linear-gradient(90deg,var(--green),var(--cyan));
-  color:#041420;
-}
-.badge.bad{
-  background:linear-gradient(90deg,var(--red),#ffb27a);
-  color:#2a0909;
-}
-.badge.warn{
-  background:linear-gradient(90deg,var(--yellow),#ffe89a);
-  color:#372400;
-}
-.badge.blue{
-  background:linear-gradient(90deg,var(--blue),var(--purple));
-  color:#fff;
-}
-.badge.live{
-  background:linear-gradient(90deg,#56d5ff,#72f5a0);
-  color:#03121c;
-}
-.badge.demo{
-  background:linear-gradient(90deg,#7d7d9c,#a98cff);
-  color:#fff;
-}
+.badge.good{background:linear-gradient(90deg,var(--green),var(--cyan));color:#041420}
+.badge.bad{background:linear-gradient(90deg,var(--red),#ffb27a);color:#2a0909}
+.badge.warn{background:linear-gradient(90deg,var(--yellow),#ffe89a);color:#372400}
+.badge.blue{background:linear-gradient(90deg,var(--blue),var(--purple));color:#fff}
+.badge.live{background:linear-gradient(90deg,#56d5ff,#72f5a0);color:#03121c}
+.badge.demo{background:linear-gradient(90deg,#7d7d9c,#a98cff);color:#fff}
 .heroGrid{
   display:grid;
   grid-template-columns:1.05fr .95fr;
@@ -190,37 +168,18 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   background:rgba(255,255,255,.05);
   color:var(--muted);
 }
-.pill.buy{
-  background:linear-gradient(90deg,#5bd88d,#7cf7ff);
-  color:#041420;
-}
-.pill.sell{
-  background:linear-gradient(90deg,var(--red),#ffb27a);
-  color:#2a0909;
-}
-.pill.warn{
-  background:linear-gradient(90deg,var(--yellow),#ffe89a);
-  color:#372400;
-}
-.pill.flat{
-  background:linear-gradient(90deg,#67779f,#8a9bc4);
-  color:#fff;
-}
+.pill.buy{background:linear-gradient(90deg,#5bd88d,#7cf7ff);color:#041420}
+.pill.sell{background:linear-gradient(90deg,var(--red),#ffb27a);color:#2a0909}
+.pill.warn{background:linear-gradient(90deg,var(--yellow),#ffe89a);color:#372400}
+.pill.flat{background:linear-gradient(90deg,#67779f,#8a9bc4);color:#fff}
 .scoreHead{
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:10px;
 }
-.scoreTitle{
-  font-size:16px;
-  font-weight:900;
-}
-.scoreValue{
-  font-size:32px;
-  font-weight:900;
-  color:var(--cyan);
-}
+.scoreTitle{font-size:16px;font-weight:900}
+.scoreValue{font-size:32px;font-weight:900;color:var(--cyan)}
 .barTrack{
   height:12px;
   border-radius:999px;
@@ -254,15 +213,8 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   gap:8px;
   align-items:center;
 }
-.factorName{
-  font-size:11px;
-  color:var(--muted);
-  font-weight:700;
-}
-.factorVal{
-  font-size:15px;
-  font-weight:900;
-}
+.factorName{font-size:11px;color:var(--muted);font-weight:700}
+.factorVal{font-size:15px;font-weight:900}
 .ok{color:var(--green)}
 .mid{color:var(--yellow)}
 .bad{color:var(--red)}
@@ -279,16 +231,8 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   background:rgba(255,255,255,.05);
   border:1px solid rgba(255,255,255,.05);
 }
-.aiLabel{
-  font-size:10px;
-  color:var(--muted);
-  font-weight:700;
-  margin-bottom:4px;
-}
-.aiValue{
-  font-size:18px;
-  font-weight:900;
-}
+.aiLabel{font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px}
+.aiValue{font-size:18px;font-weight:900}
 .actionWrap{margin-top:12px}
 .actionBar{
   display:grid;
@@ -315,11 +259,7 @@ button,.fileLabel{
 }
 button:hover,.fileLabel:hover{transform:translateY(-1px)}
 button:active,.fileLabel:active{transform:scale(.985)}
-button:disabled{
-  opacity:.45;
-  cursor:not-allowed;
-  filter:grayscale(.2);
-}
+button:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.2)}
 .btnSend{background:linear-gradient(90deg,#6f7cff,#7cf7ff)}
 .btnBuy{background:linear-gradient(90deg,#3fcf7f,#64f0b0)}
 .btnSell{background:linear-gradient(90deg,#ff7f7f,#ffac6d)}
@@ -347,9 +287,7 @@ button:disabled{
   border:1px solid rgba(255,255,255,.06);
   box-shadow:none;
 }
-.tabBtn.active{
-  background:linear-gradient(90deg,var(--blue),var(--purple));
-}
+.tabBtn.active{background:linear-gradient(90deg,var(--blue),var(--purple))}
 .tabPane{display:none;margin-top:12px}
 .tabPane.active{display:block}
 .mainGrid{
@@ -369,21 +307,9 @@ button:disabled{
   background:rgba(255,255,255,.05);
   border:1px solid rgba(255,255,255,.05);
 }
-.infoName{
-  color:var(--muted);
-  font-size:11px;
-  font-weight:700;
-}
-.infoValue{
-  margin-top:5px;
-  font-size:22px;
-  font-weight:900;
-}
-.infoSub{
-  margin-top:3px;
-  font-size:10px;
-  color:var(--muted);
-}
+.infoName{color:var(--muted);font-size:11px;font-weight:700}
+.infoValue{margin-top:5px;font-size:22px;font-weight:900}
+.infoSub{margin-top:3px;font-size:10px;color:var(--muted)}
 .tradePanel{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -397,16 +323,8 @@ button:disabled{
   background:rgba(255,255,255,.05);
   border:1px solid rgba(255,255,255,.05);
 }
-.tradeName{
-  font-size:11px;
-  color:var(--muted);
-  font-weight:700;
-}
-.tradeValue{
-  margin-top:5px;
-  font-size:22px;
-  font-weight:900;
-}
+.tradeName{font-size:11px;color:var(--muted);font-weight:700}
+.tradeValue{margin-top:5px;font-size:22px;font-weight:900}
 .badges{
   display:flex;
   flex-wrap:wrap;
@@ -420,18 +338,9 @@ button:disabled{
   font-weight:900;
   border:1px solid rgba(255,255,255,.06);
 }
-.badgeRule.on{
-  background:linear-gradient(90deg,var(--green),var(--cyan));
-  color:#041420;
-}
-.badgeRule.warn{
-  background:linear-gradient(90deg,var(--yellow),#ffe89a);
-  color:#372400;
-}
-.badgeRule.off{
-  background:linear-gradient(90deg,#4d5876,#68769d);
-  color:#fff;
-}
+.badgeRule.on{background:linear-gradient(90deg,var(--green),var(--cyan));color:#041420}
+.badgeRule.warn{background:linear-gradient(90deg,var(--yellow),#ffe89a);color:#372400}
+.badgeRule.off{background:linear-gradient(90deg,#4d5876,#68769d);color:#fff}
 .log{
   max-height:420px;
   overflow:auto;
@@ -449,19 +358,9 @@ button:disabled{
   gap:10px;
   margin-bottom:5px;
 }
-.entryType{
-  font-size:11px;
-  font-weight:900;
-}
-.entryTime{
-  font-size:10px;
-  color:var(--muted);
-  font-weight:700;
-}
-.entryMsg{
-  font-size:12px;
-  line-height:1.35;
-}
+.entryType{font-size:11px;font-weight:900}
+.entryTime{font-size:10px;color:var(--muted);font-weight:700}
+.entryMsg{font-size:12px;line-height:1.35}
 .filterBar{
   display:grid;
   grid-template-columns:1fr 130px 130px;
@@ -522,21 +421,9 @@ th{
   background:rgba(255,255,255,.05);
   border:1px solid rgba(255,255,255,.05);
 }
-.weekName{
-  font-size:11px;
-  color:var(--muted);
-  font-weight:700;
-}
-.weekValue{
-  margin-top:5px;
-  font-size:22px;
-  font-weight:900;
-}
-.weekSub{
-  margin-top:3px;
-  font-size:10px;
-  color:var(--muted);
-}
+.weekName{font-size:11px;color:var(--muted);font-weight:700}
+.weekValue{margin-top:5px;font-size:22px;font-weight:900}
+.weekSub{margin-top:3px;font-size:10px;color:var(--muted)}
 .donutWrap{height:250px}
 .dock{
   position:fixed;
@@ -576,22 +463,10 @@ th{
   border-radius:999px;
   background:rgba(255,255,255,.25);
 }
-.dockMeta{
-  color:var(--muted);
-  font-size:11px;
-  font-weight:800;
-}
-.dockChevron{
-  transition:transform .2s ease;
-  font-size:14px;
-  font-weight:900;
-}
+.dockMeta{color:var(--muted);font-size:11px;font-weight:800}
+.dockChevron{transition:transform .2s ease;font-size:14px;font-weight:900}
 body.dock-open .dockChevron{transform:rotate(180deg)}
-.dockBody{
-  max-height:0;
-  overflow:hidden;
-  transition:max-height .22s ease;
-}
+.dockBody{max-height:0;overflow:hidden;transition:max-height .22s ease}
 body.dock-open .dockBody{max-height:220px}
 .dockButtons{
   display:grid;
@@ -628,18 +503,9 @@ body.dock-open .dockBody{max-height:220px}
   box-shadow:0 18px 46px rgba(0,0,0,.28);
   border:1px solid rgba(255,255,255,.06);
 }
-.alertBox.win{
-  background:linear-gradient(90deg,#59d98b,#7cf7ff);
-  color:#041420;
-}
-.alertBox.loss{
-  background:linear-gradient(90deg,#ff8f8f,#ffb46a);
-  color:#2c0909;
-}
-.alertBox.info{
-  background:linear-gradient(90deg,#7aa7ff,#ae8cff);
-  color:#fff;
-}
+.alertBox.win{background:linear-gradient(90deg,#59d98b,#7cf7ff);color:#041420}
+.alertBox.loss{background:linear-gradient(90deg,#ff8f8f,#ffb46a);color:#2c0909}
+.alertBox.info{background:linear-gradient(90deg,#7aa7ff,#ae8cff);color:#fff}
 .smallHint{
   margin-top:8px;
   text-align:center;
@@ -662,47 +528,30 @@ body.dock-open .dockBody{max-height:220px}
   .scoreValue{font-size:28px}
   .topBadges{gap:6px}
   .badge{font-size:10px;padding:6px 8px;max-width:140px}
-  .actionBar,.actionBarSecondary{
-    grid-template-columns:repeat(2,1fr);
-    gap:7px;
-  }
-  .tabs{
-    grid-template-columns:repeat(2,1fr);
-  }
-  .factorGrid,.infoGrid,.tradePanel,.weekGrid{
-    grid-template-columns:1fr;
-  }
-  .filterBar{
-    grid-template-columns:1fr;
-  }
-  .dockButtons{
-    grid-template-columns:1fr;
-  }
-  button,.fileLabel{
-    font-size:12.5px;
-    padding:11px 8px;
-  }
-  .dock{
-    left:8px;
-    right:8px;
-    bottom:calc(var(--safeBottom) + 2px);
-  }
+  .actionBar,.actionBarSecondary{grid-template-columns:repeat(2,1fr);gap:7px}
+  .tabs{grid-template-columns:repeat(2,1fr)}
+  .factorGrid,.infoGrid,.tradePanel,.weekGrid{grid-template-columns:1fr}
+  .filterBar{grid-template-columns:1fr}
+  .dockButtons{grid-template-columns:1fr}
+  button,.fileLabel{font-size:12.5px;padding:11px 8px}
+  .dock{left:8px;right:8px;bottom:calc(var(--safeBottom) + 2px)}
 }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="title">V19.2.3 REAL MODE ⚡</div>
+  <div class="title">V19.2.4 AUTO REAL ⚡</div>
 
   <div class="hero">
     <div class="heroInner">
       <div class="topBadges">
-        <div class="badge blue" id="miniMode">MODE REAL</div>
+        <div class="badge blue" id="miniMode">MODE AUTO REAL</div>
         <div class="badge good" id="miniPreset">PRESET BALANCED</div>
         <div class="badge" id="miniScore">SCORE 0</div>
         <div class="badge bad" id="miniEngine">AUTO OFF</div>
         <div class="badge" id="miniConfidence">CONF 0%</div>
         <div class="badge demo" id="liveModeBadge">DEMO MODE</div>
+        <div class="badge" id="autoStateBadge">AUTO IDLE</div>
       </div>
 
       <div class="heroGrid">
@@ -950,7 +799,7 @@ body.dock-open .dockBody{max-height:220px}
 let chart;
 let donutChart;
 let pnlSeries = [];
-const STORAGE_KEY = 'v19_2_3_real_mode_state';
+const STORAGE_KEY = 'v19_2_4_auto_real_state';
 const HISTORY_LIMIT = 500;
 const r1 = v => Number(safeNum(v).toFixed(1));
 const r2 = v => Number(safeNum(v).toFixed(2));
@@ -967,7 +816,9 @@ const API_ROUTES = {
 
 let app = {
   backendMode: 'checking',
-  lastLiveAt: null
+  lastLiveAt: null,
+  autoBusy: false,
+  autoLastFireAt: 0
 };
 
 let state = {
@@ -1015,12 +866,10 @@ function safeNum(v, fallback=0){
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
 }
-
 function setText(id, val){
   const el = document.getElementById(id);
   if(el) el.textContent = val;
 }
-
 function addLog(type, msg){
   state.log.push({
     type,
@@ -1029,11 +878,9 @@ function addLog(type, msg){
   });
   if(state.log.length > 160) state.log.shift();
 }
-
 function saveState(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, app }));
 }
-
 function loadState(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -1116,7 +963,6 @@ function setDockMeta(){
   const open = document.body.classList.contains('dock-open');
   setText('dockMetaText', open ? 'tap to close' : 'tap to open');
 }
-
 function switchTab(tab){
   state.activeTab = tab;
   document.querySelectorAll('.tabPane').forEach(el=>el.classList.remove('active'));
@@ -1125,7 +971,6 @@ function switchTab(tab){
   document.getElementById(`tabBtn-${tab}`).classList.add('active');
   saveState();
 }
-
 function showAlert(msg, type='info'){
   const overlay = document.getElementById('alertOverlay');
   const box = document.getElementById('alertBox');
@@ -1135,7 +980,6 @@ function showAlert(msg, type='info'){
   clearTimeout(window.__alertTimer);
   window.__alertTimer = setTimeout(()=>overlay.style.display='none', 1200);
 }
-
 function updateSessionClock(){
   const now = new Date();
   const time = now.toLocaleTimeString('de-DE');
@@ -1145,7 +989,6 @@ function updateSessionClock(){
   else if(h >= 13 && h < 22) session = 'NEW YORK';
   setText('sessionClock', `${session} ${time}`);
 }
-
 function setBackendMode(mode){
   app.backendMode = mode;
   const badge = document.getElementById('liveModeBadge');
@@ -1165,7 +1008,26 @@ function setBackendMode(mode){
     hint.textContent = 'Prüft echte API. Fallback ist Demo Mode.';
   }
 }
-
+function renderAutoStateBadge(score){
+  const el = document.getElementById('autoStateBadge');
+  if(app.autoBusy){
+    el.className = 'badge warn';
+    el.textContent = 'AUTO BUSY';
+    return;
+  }
+  if(!state.autoEnabled){
+    el.className = 'badge';
+    el.textContent = 'AUTO IDLE';
+    return;
+  }
+  if(score >= state.autoTrigger && state.cooldownLeft === 0 && state.flags.newsSafe && state.flags.sessionOk){
+    el.className = 'badge good';
+    el.textContent = 'AUTO ARMED';
+  }else{
+    el.className = 'badge';
+    el.textContent = 'AUTO WAIT';
+  }
+}
 function calcAiScore(){
   let score =
     state.trend * 0.22 +
@@ -1183,7 +1045,6 @@ function calcAiScore(){
 
   return Math.max(0, Math.min(100, Math.round(score)));
 }
-
 function updateRiskSize(){
   let size = 1.0;
   if(state.riskMode === 'SAFE') size *= 0.80;
@@ -1196,7 +1057,6 @@ function updateRiskSize(){
   if(state.maxDrawdown >= 10) size *= 0.65;
   state.size = Math.max(0.25, Math.min(3.00, r2(size)));
 }
-
 function renderGuard(score){
   const guard = document.getElementById('guard');
   const sub = document.getElementById('guardSub');
@@ -1227,7 +1087,6 @@ function renderGuard(score){
   guard.textContent = text;
   sub.textContent = subtitle;
 }
-
 function renderRules(score){
   const rules = [
     {label:'Score ≥ Min', state:score >= state.minScore ? 'on' : 'off'},
@@ -1241,7 +1100,6 @@ function renderRules(score){
   document.getElementById('rules').innerHTML = html;
   document.getElementById('statsRules').innerHTML = html;
 }
-
 function renderLog(){
   const el = document.getElementById('log');
   if(!state.log.length){
@@ -1260,7 +1118,6 @@ function renderLog(){
     el.appendChild(div);
   });
 }
-
 function renderHistory(){
   const tbody = document.getElementById('historyTable');
   const q = (document.getElementById('historySearch').value || '').trim().toLowerCase();
@@ -1300,13 +1157,11 @@ function renderHistory(){
     tbody.appendChild(tr);
   });
 }
-
 function sameDay(dateStr){
   const d = new Date(dateStr);
   const n = new Date();
   return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
 }
-
 function sameWeek(dateStr){
   const d = new Date(dateStr);
   const now = new Date();
@@ -1319,7 +1174,6 @@ function sameWeek(dateStr){
   end.setDate(end.getDate() + 7);
   return d >= start && d < end;
 }
-
 function updateCharts(){
   if(chart){
     chart.data.labels = pnlSeries.map((_,i)=>i+1);
@@ -1331,20 +1185,19 @@ function updateCharts(){
     donutChart.update('none');
   }
 }
-
 function setActionButtonsDisabled(disabled){
   ['btnSend','btnBuy','btnSell','btnWin','btnLoss'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.disabled = disabled;
   });
 }
-
 function renderAll(){
   const score = calcAiScore();
   updateRiskSize();
   renderGuard(score);
+  renderAutoStateBadge(score);
 
-  setText('miniMode', 'MODE REAL');
+  setText('miniMode', 'MODE AUTO REAL');
   setText('miniPreset', `PRESET ${state.preset}`);
   setText('miniScore', `SCORE ${score}`);
   setText('miniEngine', state.autoEnabled ? 'AUTO ON' : 'AUTO OFF');
@@ -1429,7 +1282,7 @@ function renderAll(){
   setText('weekPnl', r2(weekPnl).toFixed(2));
   setText('weekTrades', weekTrades);
 
-  setActionButtonsDisabled(state.cooldownLeft > 0 || state.maxDrawdown >= 18);
+  setActionButtonsDisabled(state.cooldownLeft > 0 || state.maxDrawdown >= 18 || app.autoBusy);
   updateCharts();
   renderLog();
   renderHistory();
@@ -1449,7 +1302,6 @@ async function tryFetchJson(url, options){
     return { ok:true, raw:text };
   }
 }
-
 function buildBodies(action){
   const side = action === 'BUY' || action === 'SELL' ? action : state.side;
   return [
@@ -1460,7 +1312,6 @@ function buildBodies(action){
     { type: action, side }
   ];
 }
-
 async function tryActionEndpoints(action){
   const routes = API_ROUTES[action] || [];
   const bodies = buildBodies(action);
@@ -1468,10 +1319,7 @@ async function tryActionEndpoints(action){
   for(const route of routes){
     for(const body of bodies){
       try{
-        const options = {
-          method:'POST',
-          headers:{}
-        };
+        const options = { method:'POST', headers:{} };
         if(body !== undefined){
           options.headers['Content-Type'] = 'application/json';
           options.body = JSON.stringify(body);
@@ -1485,7 +1333,6 @@ async function tryActionEndpoints(action){
   }
   throw new Error(`No action endpoint worked for ${action}`);
 }
-
 function localAction(action){
   const score = calcAiScore();
 
@@ -1600,14 +1447,12 @@ function togglePreset(){
   showAlert(`PRESET ${state.preset}`, 'info');
   renderAll();
 }
-
 function toggleAutoEngine(){
   state.autoEnabled = !state.autoEnabled;
   addLog('AUTO', state.autoEnabled ? 'Auto engine enabled' : 'Auto engine disabled');
   showAlert(state.autoEnabled ? 'AUTO ON' : 'AUTO OFF', 'info');
   renderAll();
 }
-
 function applyStatusData(d){
   if(typeof d.pnl !== 'undefined') state.pnl = r2(d.pnl);
   if(typeof d.ordersToday !== 'undefined') state.ordersToday = safeNum(d.ordersToday);
@@ -1636,7 +1481,6 @@ function applyStatusData(d){
     rebuildPnlSeries();
   }
 }
-
 async function loadStatus(silent=false){
   updateSessionClock();
   setBackendMode(app.backendMode === 'live' ? 'live' : 'checking');
@@ -1655,7 +1499,6 @@ async function loadStatus(silent=false){
     if(!silent) showAlert('DEMO MODE', 'info');
   }
 }
-
 function simulateDemoTick(){
   if(state.cooldownLeft > 0) state.cooldownLeft -= 1;
   state.trend = r1(Math.max(35, Math.min(95, state.trend + drift(.7))));
@@ -1665,11 +1508,9 @@ function simulateDemoTick(){
   state.liquidity = r1(Math.max(34, Math.min(95, state.liquidity + drift(.65))));
   state.session = r1(Math.max(40, Math.min(90, state.session + drift(.4))));
 }
-
 function drift(scale){
   return (Math.random() > .5 ? 1 : -1) * (Math.random() * 2.2) * scale;
 }
-
 function rebuildPnlSeries(){
   let running = 0;
   pnlSeries = state.tradeHistory.map(t=>{
@@ -1678,17 +1519,64 @@ function rebuildPnlSeries(){
   });
 }
 
+function getAutoSide(score){
+  if(state.aiBias === 'BUY' || state.aiBias === 'SELL') return state.aiBias;
+  if(state.side === 'BUY' || state.side === 'SELL') return state.side;
+  if(score >= state.autoTrigger){
+    return state.trend >= state.structure ? 'BUY' : 'SELL';
+  }
+  return null;
+}
+
+function canAutoFire(score){
+  if(!state.autoEnabled) return false;
+  if(app.autoBusy) return false;
+  if(state.cooldownLeft > 0) return false;
+  if(state.maxDrawdown >= 18) return false;
+  if(!state.flags.newsSafe) return false;
+  if(!state.flags.sessionOk) return false;
+  if(score < state.autoTrigger) return false;
+  const now = Date.now();
+  if(now - app.autoLastFireAt < 4000) return false;
+  return !!getAutoSide(score);
+}
+
+async function maybeAutoTrade(){
+  const score = calcAiScore();
+  if(!canAutoFire(score)) return;
+
+  const side = getAutoSide(score);
+  if(!side) return;
+
+  app.autoBusy = true;
+  app.autoLastFireAt = Date.now();
+  renderAll();
+
+  addLog('AUTO', `Auto armed → ${side} @ score ${score}`);
+  showAlert(`AUTO ${side}`, side === 'BUY' ? 'win' : 'info');
+
+  try{
+    await performAction(side);
+    state.autoTrades += 1;
+    addLog('AUTO', `Auto executed ${side}`);
+  }catch(err){
+    addLog('AUTO', `Auto failed ${side}`);
+  }finally{
+    app.autoBusy = false;
+    renderAll();
+  }
+}
+
 function exportJson(){
   const data = JSON.stringify({ state, app }, null, 2);
   const blob = new Blob([data], { type:'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v19_2_3_real_mode_state.json';
+  a.download = 'v19_2_4_auto_real_state.json';
   a.click();
   URL.revokeObjectURL(url);
 }
-
 function exportCsv(){
   const rows = [['time','side','result','pnl','score','confidence','size']];
   state.tradeHistory.forEach(t=>{
@@ -1707,11 +1595,10 @@ function exportCsv(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v19_2_3_real_mode_history.csv';
+  a.download = 'v19_2_4_auto_real_history.csv';
   a.click();
   URL.revokeObjectURL(url);
 }
-
 function importJson(event){
   const file = event.target.files?.[0];
   if(!file) return;
@@ -1755,8 +1642,12 @@ setDockMeta();
 updateSessionClock();
 renderAll();
 loadStatus(true);
+
 setInterval(updateSessionClock, 1000);
-setInterval(()=>loadStatus(true), 3500);
+setInterval(async ()=>{
+  await loadStatus(true);
+  await maybeAutoTrade();
+}, 3500);
 </script>
 </body>
 </html>
