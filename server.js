@@ -135,6 +135,19 @@ app.get('/', (req, res) => {
 });
 app.get('/api/status', (req, res) => {
   res.json(statusPayload());
+  
+  // BUY Wrapper
+app.post('/api/buy', (req, res) => {
+  req.body.side = 'BUY';
+  req.url = '/api/order';
+  app._router.handle(req, res);
+});
+
+// SELL Wrapper
+app.post('/api/sell', (req, res) => {
+  req.body.side = 'SELL';
+  req.url = '/api/order';
+  app._router.handle(req, res);
 });
 app.post('/api/order', (req, res) => {
   const info = getGuardInfo();
