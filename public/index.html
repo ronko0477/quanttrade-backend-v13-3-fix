@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>V19.1 GOD AI</title>
+<title>V19.2 ULTRA FIX</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -23,11 +23,11 @@
 
   --card:rgba(18,28,62,.94);
   --card2:rgba(28,42,86,.94);
-  --glass:rgba(255,255,255,.05);
 
   --shadow:0 18px 50px rgba(0,0,0,.35);
-  --dockClosed:76px;
-  --dockOpen:232px;
+
+  --dockClosed:68px;
+  --dockOpen:188px;
   --safeBottom:max(env(safe-area-inset-bottom), 0px);
 }
 
@@ -51,7 +51,8 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   max-width:1080px;
   margin:auto;
   padding:12px;
-  padding-bottom:calc(var(--activeDockHeight) + var(--safeBottom) + 92px);
+  padding-bottom:calc(var(--activeDockHeight) + var(--safeBottom) + 110px);
+  transition:padding-bottom .22s ease;
 }
 
 .title{
@@ -107,6 +108,8 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   font-weight:900;
   color:var(--muted);
   white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 .badge.good{
   background:linear-gradient(90deg,var(--green),var(--cyan));
@@ -265,6 +268,7 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   display:flex;
   justify-content:space-between;
   gap:8px;
+  align-items:center;
 }
 .factorName{
   font-size:11px;
@@ -571,16 +575,16 @@ th{
   position:fixed;
   left:10px;
   right:10px;
-  bottom:calc(var(--safeBottom) + 6px);
+  bottom:calc(var(--safeBottom) + 2px);
   z-index:60;
   pointer-events:none;
 }
 .dockPanel{
   pointer-events:auto;
-  background:linear-gradient(180deg,rgba(8,20,50,.95),rgba(22,37,79,.95));
+  background:linear-gradient(180deg,rgba(8,20,50,.96),rgba(22,37,79,.96));
   border:1px solid rgba(255,255,255,.08);
-  border-radius:20px;
-  box-shadow:0 18px 50px rgba(0,0,0,.35);
+  border-radius:18px;
+  box-shadow:0 14px 36px rgba(0,0,0,.30);
   overflow:hidden;
   backdrop-filter:blur(10px);
 }
@@ -589,9 +593,9 @@ th{
   align-items:center;
   justify-content:space-between;
   gap:10px;
-  padding:11px 13px;
+  padding:10px 12px;
   cursor:pointer;
-  min-height:54px;
+  min-height:52px;
 }
 .dockLeft{
   display:flex;
@@ -600,7 +604,7 @@ th{
   font-weight:900;
 }
 .dockGrip{
-  width:38px;
+  width:34px;
   height:5px;
   border-radius:999px;
   background:rgba(255,255,255,.25);
@@ -612,25 +616,25 @@ th{
 }
 .dockChevron{
   transition:transform .2s ease;
-  font-size:15px;
+  font-size:14px;
   font-weight:900;
 }
 body.dock-open .dockChevron{transform:rotate(180deg)}
 .dockBody{
   max-height:0;
   overflow:hidden;
-  transition:max-height .24s ease;
+  transition:max-height .22s ease;
 }
-body.dock-open .dockBody{max-height:250px}
+body.dock-open .dockBody{max-height:220px}
 .dockButtons{
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
   gap:8px;
-  padding:0 11px 11px;
+  padding:0 10px 10px;
 }
 .dockBtn{
-  min-height:46px;
-  border-radius:13px;
+  min-height:44px;
+  border-radius:12px;
   font-weight:900;
   box-shadow:none;
 }
@@ -680,14 +684,14 @@ body.dock-open .dockBody{max-height:250px}
 @media (max-width:760px){
   .wrap{
     padding:10px;
-    padding-bottom:calc(var(--activeDockHeight) + var(--safeBottom) + 112px);
+    padding-bottom:calc(var(--activeDockHeight) + var(--safeBottom) + 126px);
   }
   .title{font-size:20px}
   .guard{font-size:38px}
   .pnl{font-size:32px}
   .scoreValue{font-size:28px}
   .topBadges{gap:6px}
-  .badge{font-size:10px;padding:6px 8px;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+  .badge{font-size:10px;padding:6px 8px;max-width:140px}
   .actionBar,.actionBarSecondary{
     grid-template-columns:repeat(2,1fr);
     gap:7px;
@@ -708,17 +712,22 @@ body.dock-open .dockBody{max-height:250px}
     font-size:12.5px;
     padding:11px 8px;
   }
+  .dock{
+    left:8px;
+    right:8px;
+    bottom:calc(var(--safeBottom) + 2px);
+  }
 }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="title">V19.1 GOD AI ⚡</div>
+  <div class="title">V19.2 ULTRA FIX ⚡</div>
 
   <div class="hero">
     <div class="heroInner">
       <div class="topBadges">
-        <div class="badge blue" id="miniMode">MODE GOD AI</div>
+        <div class="badge blue" id="miniMode">MODE ULTRA FIX</div>
         <div class="badge good" id="miniPreset">PRESET BALANCED</div>
         <div class="badge" id="miniScore">SCORE 0</div>
         <div class="badge bad" id="miniEngine">AUTO OFF</div>
@@ -748,12 +757,12 @@ body.dock-open .dockBody{max-height:250px}
           <div class="barTrack"><div id="scoreBar" class="barFill"></div></div>
 
           <div class="factorGrid">
-            <div class="factor"><div class="factorTop"><div class="factorName">Trend</div><div id="fTrend" class="factorVal bad">0</div></div></div>
-            <div class="factor"><div class="factorTop"><div class="factorName">Volume</div><div id="fVolume" class="factorVal bad">0</div></div></div>
-            <div class="factor"><div class="factorTop"><div class="factorName">Structure</div><div id="fStructure" class="factorVal bad">0</div></div></div>
-            <div class="factor"><div class="factorTop"><div class="factorName">Volatility</div><div id="fVolatility" class="factorVal bad">0</div></div></div>
-            <div class="factor"><div class="factorTop"><div class="factorName">Liquidity</div><div id="fLiquidity" class="factorVal bad">0</div></div></div>
-            <div class="factor"><div class="factorTop"><div class="factorName">Session</div><div id="fSession" class="factorVal bad">0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Trend</div><div id="fTrend" class="factorVal bad">0.0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Volume</div><div id="fVolume" class="factorVal bad">0.0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Structure</div><div id="fStructure" class="factorVal bad">0.0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Volatility</div><div id="fVolatility" class="factorVal bad">0.0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Liquidity</div><div id="fLiquidity" class="factorVal bad">0.0</div></div></div>
+            <div class="factor"><div class="factorTop"><div class="factorName">Session</div><div id="fSession" class="factorVal bad">0.0</div></div></div>
           </div>
         </div>
       </div>
@@ -969,8 +978,11 @@ body.dock-open .dockBody{max-height:250px}
 let chart;
 let donutChart;
 let pnlSeries = [];
-const STORAGE_KEY = 'v19_1_god_ai_state';
+const STORAGE_KEY = 'v19_2_ultra_fix_state';
 const HISTORY_LIMIT = 500;
+
+const r1 = v => Number(safeNum(v).toFixed(1));
+const r2 = v => Number(safeNum(v).toFixed(2));
 
 let state = {
   pnl: 0,
@@ -1206,6 +1218,7 @@ function updateAiBrain(score){
     state.aiBias = 'NONE';
     state.confidence = Math.max(18, score - 20);
   }
+  state.confidence = Math.round(state.confidence);
 }
 
 function updateRiskSize(){
@@ -1224,7 +1237,7 @@ function updateRiskSize(){
 
   if(state.maxDrawdown >= 10) size *= 0.65;
 
-  state.size = Math.max(0.25, Math.min(3.00, Number(size.toFixed(2))));
+  state.size = Math.max(0.25, Math.min(3.00, r2(size)));
 }
 
 function renderGuard(score){
@@ -1287,10 +1300,10 @@ function renderHistory(){
       <td>${new Date(trade.time).toLocaleString('de-DE')}</td>
       <td>${trade.side}</td>
       <td>${trade.result}</td>
-      <td class="${pnlClass}">${safeNum(trade.pnl).toFixed(2)}</td>
+      <td class="${pnlClass}">${r2(trade.pnl).toFixed(2)}</td>
       <td>${safeNum(trade.score).toFixed(0)}</td>
       <td>${safeNum(trade.confidence).toFixed(0)}%</td>
-      <td>${safeNum(trade.size).toFixed(2)}</td>
+      <td>${r2(trade.size).toFixed(2)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -1371,7 +1384,7 @@ function renderAll(){
   updateRiskSize();
   renderGuard(score);
 
-  setText('miniMode', 'MODE GOD AI');
+  setText('miniMode', 'MODE ULTRA FIX');
   setText('miniPreset', `PRESET ${state.preset}`);
   setText('miniScore', `SCORE ${score}`);
   setText('miniEngine', state.autoEnabled ? 'AUTO ON' : 'AUTO OFF');
@@ -1382,7 +1395,7 @@ function renderAll(){
   setText('scoreValue', score);
 
   const pnlEl = document.getElementById('pnl');
-  pnlEl.innerHTML = `${state.pnl.toFixed(2)}<small>Net PnL</small>`;
+  pnlEl.innerHTML = `${r2(state.pnl).toFixed(2)}<small>Net PnL</small>`;
   pnlEl.style.background = state.pnl > 0
     ? 'linear-gradient(90deg,#72f5a0,#7cf7ff)'
     : state.pnl < 0
@@ -1402,23 +1415,24 @@ function renderAll(){
   ];
 
   factorMap.forEach(([id,val])=>{
+    const clean = r1(val);
     const el = document.getElementById(id);
-    el.textContent = val;
-    el.className = `factorVal ${val >= 80 ? 'ok' : val >= 50 ? 'mid' : 'bad'}`;
+    el.textContent = clean.toFixed(1);
+    el.className = `factorVal ${clean >= 80 ? 'ok' : clean >= 50 ? 'mid' : 'bad'}`;
   });
 
   setText('aiBias', state.aiBias);
   setText('aiConf', `${state.confidence}%`);
-  setText('aiSize', state.size.toFixed(2));
+  setText('aiSize', r2(state.size).toFixed(2));
   setText('autoTrades', state.autoTrades);
   setText('orders', state.ordersToday);
   setText('cd', state.cooldownLeft);
-  setText('dayTarget', state.dayTarget.toFixed(2));
-  setText('weekTarget', state.weekTarget.toFixed(2));
-  setText('tp1', state.tp1);
-  setText('tp2', state.tp2);
-  setText('sl', state.sl);
-  setText('sizeBox', state.size.toFixed(2));
+  setText('dayTarget', r2(state.dayTarget).toFixed(2));
+  setText('weekTarget', r2(state.weekTarget).toFixed(2));
+  setText('tp1', r2(state.tp1).toFixed(0));
+  setText('tp2', r2(state.tp2).toFixed(0));
+  setText('sl', r2(state.sl).toFixed(0));
+  setText('sizeBox', r2(state.size).toFixed(2));
 
   const dir = document.getElementById('directionBadge');
   if(state.side === 'BUY'){
@@ -1444,15 +1458,14 @@ function renderAll(){
 
   renderRules(score);
 
-  const total = state.wins + state.losses;
   const todayPnl = state.tradeHistory.filter(t=>sameDay(t.time)).reduce((a,b)=>a + safeNum(b.pnl),0);
   const todayTrades = state.tradeHistory.filter(t=>sameDay(t.time)).length;
   const weekPnl = state.tradeHistory.filter(t=>sameWeek(t.time)).reduce((a,b)=>a + safeNum(b.pnl),0);
   const weekTrades = state.tradeHistory.filter(t=>sameWeek(t.time)).length;
 
-  setText('todayPnl', todayPnl.toFixed(2));
+  setText('todayPnl', r2(todayPnl).toFixed(2));
   setText('todayTrades', todayTrades);
-  setText('weekPnl', weekPnl.toFixed(2));
+  setText('weekPnl', r2(weekPnl).toFixed(2));
   setText('weekTrades', weekTrades);
 
   updateCharts();
@@ -1492,42 +1505,42 @@ function manualResult(result, fromAuto=false){
   const lossMove = (Math.random() * (state.sl * 0.45) + state.sl * 0.75) * size;
   const signedPnl = result.includes('WIN') ? winMove : -lossMove;
 
-  state.pnl = Number((state.pnl + signedPnl).toFixed(2));
+  state.pnl = r2(state.pnl + signedPnl);
   state.ordersToday += 1;
   state.cooldownLeft = fromAuto ? 12 : 8;
 
   if(result.includes('WIN')){
     state.wins += 1;
     state.streak = state.streak >= 0 ? state.streak + 1 : 1;
-    addLog(result, `${side} closed +${signedPnl.toFixed(2)} size ${size.toFixed(2)}`);
-    showAlert(`${result} +${signedPnl.toFixed(2)}`, 'win');
+    addLog(result, `${side} closed +${r2(signedPnl).toFixed(2)} size ${r2(size).toFixed(2)}`);
+    showAlert(`${result} +${r2(signedPnl).toFixed(2)}`, 'win');
   }else{
     state.losses += 1;
     state.streak = state.streak <= 0 ? state.streak - 1 : -1;
-    addLog(result, `${side} closed ${signedPnl.toFixed(2)} size ${size.toFixed(2)}`);
-    showAlert(`${result} ${signedPnl.toFixed(2)}`, 'loss');
+    addLog(result, `${side} closed ${r2(signedPnl).toFixed(2)} size ${r2(size).toFixed(2)}`);
+    showAlert(`${result} ${r2(signedPnl).toFixed(2)}`, 'loss');
   }
 
   state.peakPnl = Math.max(state.peakPnl, state.pnl);
   const ddAbs = Math.max(0, state.peakPnl - state.pnl);
   const ddPct = state.peakPnl > 0 ? (ddAbs / state.peakPnl) * 100 : 0;
-  state.maxDrawdown = Math.max(state.maxDrawdown, ddPct);
+  state.maxDrawdown = Math.max(state.maxDrawdown, r2(ddPct));
 
   state.tradeHistory.push({
     time:new Date().toISOString(),
     side,
     result,
-    pnl:Number(signedPnl.toFixed(2)),
+    pnl:r2(signedPnl),
     score,
     confidence:state.confidence,
-    size:state.size
+    size:r2(state.size)
   });
 
   if(state.tradeHistory.length > HISTORY_LIMIT){
     state.tradeHistory = state.tradeHistory.slice(-HISTORY_LIMIT);
   }
 
-  pnlSeries.push(state.pnl);
+  pnlSeries.push(r2(state.pnl));
   if(pnlSeries.length > 120) pnlSeries.shift();
 
   renderAll();
@@ -1560,7 +1573,7 @@ function exportJson(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v19_1_god_ai_state.json';
+  a.download = 'v19_2_ultra_fix_state.json';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -1572,10 +1585,10 @@ function exportCsv(){
       t.time || '',
       t.side || '',
       t.result || '',
-      safeNum(t.pnl).toFixed(2),
+      r2(t.pnl).toFixed(2),
       safeNum(t.score).toFixed(0),
       `${safeNum(t.confidence).toFixed(0)}%`,
-      safeNum(t.size).toFixed(2)
+      r2(t.size).toFixed(2)
     ]);
   });
   const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
@@ -1583,7 +1596,7 @@ function exportCsv(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v19_1_god_ai_history.csv';
+  a.download = 'v19_2_ultra_fix_history.csv';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -1617,7 +1630,7 @@ function rebuildPnlSeries(){
   let running = 0;
   pnlSeries = state.tradeHistory.map(t=>{
     running += safeNum(t.pnl);
-    return Number(running.toFixed(2));
+    return r2(running);
   });
 }
 
@@ -1639,13 +1652,14 @@ function load(){
     if(state.cooldownLeft < 0) state.cooldownLeft = 0;
   }
 
-  const drift = () => Math.max(0, Math.min(100, Math.round((Math.random() - .5) * 6)));
-  state.trend = Math.max(35, Math.min(95, state.trend + (Math.random()>.5?1:-1) * drift() * 0.12));
-  state.volume = Math.max(30, Math.min(92, state.volume + (Math.random()>.5?1:-1) * drift() * 0.11));
-  state.structure = Math.max(30, Math.min(94, state.structure + (Math.random()>.5?1:-1) * drift() * 0.10));
-  state.volatility = Math.max(28, Math.min(88, state.volatility + (Math.random()>.5?1:-1) * drift() * 0.10));
-  state.liquidity = Math.max(34, Math.min(95, state.liquidity + (Math.random()>.5?1:-1) * drift() * 0.10));
-  state.session = Math.max(40, Math.min(90, state.session + (Math.random()>.5?1:-1) * drift() * 0.08));
+  const move = (scale=.12) => (Math.random() > .5 ? 1 : -1) * (Math.random() * 5) * scale;
+
+  state.trend = r1(Math.max(35, Math.min(95, state.trend + move(.7))));
+  state.volume = r1(Math.max(30, Math.min(92, state.volume + move(.6))));
+  state.structure = r1(Math.max(30, Math.min(94, state.structure + move(.55))));
+  state.volatility = r1(Math.max(28, Math.min(88, state.volatility + move(.6))));
+  state.liquidity = r1(Math.max(34, Math.min(95, state.liquidity + move(.65))));
+  state.session = r1(Math.max(40, Math.min(90, state.session + move(.4))));
 
   state.flags.newsSafe = Math.random() > 0.08;
   state.flags.sessionOk = true;
