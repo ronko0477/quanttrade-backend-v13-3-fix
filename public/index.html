@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>V19.2.2 INTERACTIVE</title>
+<title>V19.2.3 REAL MODE</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{
@@ -114,6 +114,14 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
 }
 .badge.blue{
   background:linear-gradient(90deg,var(--blue),var(--purple));
+  color:#fff;
+}
+.badge.live{
+  background:linear-gradient(90deg,#56d5ff,#72f5a0);
+  color:#03121c;
+}
+.badge.demo{
+  background:linear-gradient(90deg,#7d7d9c,#a98cff);
   color:#fff;
 }
 .heroGrid{
@@ -281,9 +289,7 @@ body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
   font-size:18px;
   font-weight:900;
 }
-.actionWrap{
-  margin-top:12px;
-}
+.actionWrap{margin-top:12px}
 .actionBar{
   display:grid;
   grid-template-columns:repeat(6,1fr);
@@ -304,7 +310,7 @@ button,.fileLabel{
   color:#fff;
   cursor:pointer;
   text-align:center;
-  transition:transform .14s ease, opacity .14s ease, filter .14s ease;
+  transition:transform .14s ease, opacity .14s ease, filter .14s ease, box-shadow .14s ease;
   box-shadow:0 12px 24px rgba(0,0,0,.18);
 }
 button:hover,.fileLabel:hover{transform:translateY(-1px)}
@@ -686,22 +692,23 @@ body.dock-open .dockBody{max-height:220px}
 </head>
 <body>
 <div class="wrap">
-  <div class="title">V19.2.2 INTERACTIVE ⚡</div>
+  <div class="title">V19.2.3 REAL MODE ⚡</div>
 
   <div class="hero">
     <div class="heroInner">
       <div class="topBadges">
-        <div class="badge blue" id="miniMode">MODE INTERACTIVE</div>
+        <div class="badge blue" id="miniMode">MODE REAL</div>
         <div class="badge good" id="miniPreset">PRESET BALANCED</div>
         <div class="badge" id="miniScore">SCORE 0</div>
         <div class="badge bad" id="miniEngine">AUTO OFF</div>
         <div class="badge" id="miniConfidence">CONF 0%</div>
+        <div class="badge demo" id="liveModeBadge">DEMO MODE</div>
       </div>
 
       <div class="heroGrid">
         <div class="card">
           <div id="guard" class="guard ready pulse">READY</div>
-          <div id="guardSub" class="sub">System ready • waiting for action</div>
+          <div id="guardSub" class="sub">Backend check läuft…</div>
           <div id="pnl" class="pnl">0.00<small>Net PnL</small></div>
 
           <div class="signalRow">
@@ -737,7 +744,7 @@ body.dock-open .dockBody{max-height:220px}
         <div class="aiMini"><div class="aiLabel">RISK SIZE</div><div id="aiSize" class="aiValue">1.00</div></div>
         <div class="aiMini"><div class="aiLabel">AUTO TRADES</div><div id="autoTrades" class="aiValue">0</div></div>
       </div>
-      <div class="smallHint">Backend wird genutzt, wenn verfügbar. Sonst läuft lokale Demo.</div>
+      <div class="smallHint" id="backendHint">Prüft echte API. Fallback ist Demo Mode.</div>
     </div>
   </div>
 
@@ -943,10 +950,25 @@ body.dock-open .dockBody{max-height:220px}
 let chart;
 let donutChart;
 let pnlSeries = [];
-const STORAGE_KEY = 'v19_2_2_interactive_state';
+const STORAGE_KEY = 'v19_2_3_real_mode_state';
 const HISTORY_LIMIT = 500;
 const r1 = v => Number(safeNum(v).toFixed(1));
 const r2 = v => Number(safeNum(v).toFixed(2));
+
+const API_ROUTES = {
+  status: ['/api/status'],
+  SEND: ['/api/order', '/api/action'],
+  BUY: ['/api/buy', '/api/order/buy', '/api/action'],
+  SELL: ['/api/sell', '/api/order/sell', '/api/action'],
+  WIN: ['/api/win', '/api/result/win'],
+  LOSS: ['/api/loss', '/api/result/loss'],
+  RESET: ['/api/reset']
+};
+
+let app = {
+  backendMode: 'checking',
+  lastLiveAt: null
+};
 
 let state = {
   pnl: 0,
@@ -1009,7 +1031,7 @@ function addLog(type, msg){
 }
 
 function saveState(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, app }));
 }
 
 function loadState(){
@@ -1017,13 +1039,18 @@ function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(!raw) return;
     const parsed = JSON.parse(raw);
-    state = {
-      ...state,
-      ...parsed,
-      flags:{...state.flags, ...(parsed.flags || {})},
-      tradeHistory:Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : [],
-      log:Array.isArray(parsed.log) ? parsed.log : []
-    };
+    if(parsed.state){
+      state = {
+        ...state,
+        ...parsed.state,
+        flags:{...state.flags, ...(parsed.state.flags || {})},
+        tradeHistory:Array.isArray(parsed.state.tradeHistory) ? parsed.state.tradeHistory : [],
+        log:Array.isArray(parsed.state.log) ? parsed.state.log : []
+      };
+    }
+    if(parsed.app){
+      app = { ...app, ...parsed.app };
+    }
   }catch(e){}
 }
 
@@ -1119,6 +1146,26 @@ function updateSessionClock(){
   setText('sessionClock', `${session} ${time}`);
 }
 
+function setBackendMode(mode){
+  app.backendMode = mode;
+  const badge = document.getElementById('liveModeBadge');
+  const hint = document.getElementById('backendHint');
+
+  if(mode === 'live'){
+    badge.className = 'badge live';
+    badge.textContent = 'LIVE MODE';
+    hint.textContent = 'Echte API aktiv. Aktionen gehen an dein Backend.';
+  }else if(mode === 'demo'){
+    badge.className = 'badge demo';
+    badge.textContent = 'DEMO MODE';
+    hint.textContent = 'API nicht erreichbar. UI läuft lokal im Demo Mode.';
+  }else{
+    badge.className = 'badge warn';
+    badge.textContent = 'CHECKING API';
+    hint.textContent = 'Prüft echte API. Fallback ist Demo Mode.';
+  }
+}
+
 function calcAiScore(){
   let score =
     state.trend * 0.22 +
@@ -1156,7 +1203,9 @@ function renderGuard(score){
 
   let text = 'READY';
   let cls = 'guard ready pulse';
-  let subtitle = 'System ready • waiting for action';
+  let subtitle = app.backendMode === 'live'
+    ? 'Live backend connected • waiting for action'
+    : 'Demo fallback active • waiting for action';
 
   if(state.maxDrawdown >= 18){
     text = 'BLOCKED'; cls = 'guard blocked'; subtitle = 'Drawdown protection active';
@@ -1203,8 +1252,8 @@ function renderLog(){
   [...state.log].reverse().slice(0,60).forEach(item=>{
     const type = (item.type || 'INFO').toUpperCase();
     let cls = 'mid';
-    if(type.includes('WIN') || type.includes('BUY') || type.includes('AUTO')) cls = 'ok';
-    if(type.includes('LOSS') || type.includes('SELL') || type.includes('BLOCK')) cls = 'bad';
+    if(type.includes('WIN') || type.includes('BUY') || type.includes('AUTO') || type.includes('LIVE')) cls = 'ok';
+    if(type.includes('LOSS') || type.includes('SELL') || type.includes('BLOCK') || type.includes('DEMO')) cls = 'bad';
     const div = document.createElement('div');
     div.className = 'entry';
     div.innerHTML = `<div class="entryHead"><div class="entryType ${cls}">${type}</div><div class="entryTime">${item.time || ''}</div></div><div class="entryMsg">${item.msg || ''}</div>`;
@@ -1295,7 +1344,7 @@ function renderAll(){
   updateRiskSize();
   renderGuard(score);
 
-  setText('miniMode', 'MODE INTERACTIVE');
+  setText('miniMode', 'MODE REAL');
   setText('miniPreset', `PRESET ${state.preset}`);
   setText('miniScore', `SCORE ${score}`);
   setText('miniEngine', state.autoEnabled ? 'AUTO ON' : 'AUTO OFF');
@@ -1374,6 +1423,7 @@ function renderAll(){
   const todayTrades = state.tradeHistory.filter(t=>sameDay(t.time)).length;
   const weekPnl = state.tradeHistory.filter(t=>sameWeek(t.time)).reduce((a,b)=>a + safeNum(b.pnl),0);
   const weekTrades = state.tradeHistory.filter(t=>sameWeek(t.time)).length;
+
   setText('todayPnl', r2(todayPnl).toFixed(2));
   setText('todayTrades', todayTrades);
   setText('weekPnl', r2(weekPnl).toFixed(2));
@@ -1387,8 +1437,58 @@ function renderAll(){
   saveState();
 }
 
+async function tryFetchJson(url, options){
+  const res = await fetch(url, options);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  const contentType = res.headers.get('content-type') || '';
+  if(contentType.includes('application/json')) return await res.json();
+  const text = await res.text();
+  try{
+    return JSON.parse(text);
+  }catch{
+    return { ok:true, raw:text };
+  }
+}
+
+function buildBodies(action){
+  const side = action === 'BUY' || action === 'SELL' ? action : state.side;
+  return [
+    undefined,
+    { action },
+    { type: action },
+    { action, side },
+    { type: action, side }
+  ];
+}
+
+async function tryActionEndpoints(action){
+  const routes = API_ROUTES[action] || [];
+  const bodies = buildBodies(action);
+
+  for(const route of routes){
+    for(const body of bodies){
+      try{
+        const options = {
+          method:'POST',
+          headers:{}
+        };
+        if(body !== undefined){
+          options.headers['Content-Type'] = 'application/json';
+          options.body = JSON.stringify(body);
+        }
+        const data = await tryFetchJson(route, options);
+        setBackendMode('live');
+        app.lastLiveAt = Date.now();
+        return data || {};
+      }catch(err){}
+    }
+  }
+  throw new Error(`No action endpoint worked for ${action}`);
+}
+
 function localAction(action){
   const score = calcAiScore();
+
   if(action === 'BUY' || action === 'SELL'){
     state.side = action;
     state.aiBias = action;
@@ -1469,30 +1569,13 @@ function localAction(action){
   }
 }
 
-function mapActionToEndpoint(action){
-  const endpoints = {
-    SEND:'/api/order',
-    BUY:'/api/buy',
-    SELL:'/api/sell',
-    WIN:'/api/win',
-    LOSS:'/api/loss',
-    RESET:'/api/reset'
-  };
-  return endpoints[action] || null;
-}
-
 async function performAction(action){
   try{
-    const endpoint = mapActionToEndpoint(action);
-    if(endpoint){
-      const res = await fetch(endpoint, { method:'POST' });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      await loadStatus(true);
-      showAlert(`${action} OK`, action === 'LOSS' ? 'loss' : 'info');
-      return;
-    }
-    throw new Error('No endpoint');
+    await tryActionEndpoints(action);
+    await loadStatus(true);
+    showAlert(`${action} LIVE`, action === 'LOSS' ? 'loss' : 'info');
   }catch(err){
+    setBackendMode('demo');
     localAction(action);
     renderAll();
   }
@@ -1525,53 +1608,62 @@ function toggleAutoEngine(){
   renderAll();
 }
 
+function applyStatusData(d){
+  if(typeof d.pnl !== 'undefined') state.pnl = r2(d.pnl);
+  if(typeof d.ordersToday !== 'undefined') state.ordersToday = safeNum(d.ordersToday);
+  if(typeof d.cooldownLeft !== 'undefined') state.cooldownLeft = safeNum(d.cooldownLeft);
+  if(typeof d.wins !== 'undefined') state.wins = safeNum(d.wins);
+  if(typeof d.losses !== 'undefined') state.losses = safeNum(d.losses);
+  if(typeof d.streak !== 'undefined') state.streak = safeNum(d.streak);
+  if(typeof d.maxDrawdown !== 'undefined') state.maxDrawdown = r2(d.maxDrawdown);
+  if(typeof d.side !== 'undefined') state.side = d.side || 'NONE';
+  if(typeof d.confidence !== 'undefined') state.confidence = safeNum(d.confidence);
+  if(typeof d.aiBias !== 'undefined') state.aiBias = d.aiBias || 'NONE';
+  if(typeof d.size !== 'undefined') state.size = r2(d.size);
+  if(typeof d.trend !== 'undefined') state.trend = r1(d.trend);
+  if(typeof d.volume !== 'undefined') state.volume = r1(d.volume);
+  if(typeof d.structure !== 'undefined') state.structure = r1(d.structure);
+  if(typeof d.volatility !== 'undefined') state.volatility = r1(d.volatility);
+  if(typeof d.liquidity !== 'undefined') state.liquidity = r1(d.liquidity);
+  if(typeof d.session !== 'undefined') state.session = r1(d.session);
+  if(typeof d.newsSafe !== 'undefined') state.flags.newsSafe = !!d.newsSafe;
+  if(typeof d.sessionOk !== 'undefined') state.flags.sessionOk = !!d.sessionOk;
+  if(Array.isArray(d.log)) state.log = d.log;
+  if(Array.isArray(d.tradeHistory)) state.tradeHistory = d.tradeHistory;
+  if(Array.isArray(d.pnlSeries)){
+    pnlSeries = d.pnlSeries.map(v => r2(v));
+  }else if(!pnlSeries.length && state.tradeHistory.length){
+    rebuildPnlSeries();
+  }
+}
+
 async function loadStatus(silent=false){
   updateSessionClock();
+  setBackendMode(app.backendMode === 'live' ? 'live' : 'checking');
+
   try{
-    const res = await fetch('/api/status', { method:'GET' });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const d = await res.json();
-
-    if(typeof d.pnl !== 'undefined') state.pnl = r2(d.pnl);
-    if(typeof d.ordersToday !== 'undefined') state.ordersToday = safeNum(d.ordersToday);
-    if(typeof d.cooldownLeft !== 'undefined') state.cooldownLeft = safeNum(d.cooldownLeft);
-    if(typeof d.wins !== 'undefined') state.wins = safeNum(d.wins);
-    if(typeof d.losses !== 'undefined') state.losses = safeNum(d.losses);
-    if(typeof d.streak !== 'undefined') state.streak = safeNum(d.streak);
-    if(typeof d.maxDrawdown !== 'undefined') state.maxDrawdown = r2(d.maxDrawdown);
-    if(typeof d.side !== 'undefined') state.side = d.side || 'NONE';
-    if(typeof d.confidence !== 'undefined') state.confidence = safeNum(d.confidence);
-    if(typeof d.aiBias !== 'undefined') state.aiBias = d.aiBias || 'NONE';
-    if(typeof d.size !== 'undefined') state.size = r2(d.size);
-    if(typeof d.trend !== 'undefined') state.trend = r1(d.trend);
-    if(typeof d.volume !== 'undefined') state.volume = r1(d.volume);
-    if(typeof d.structure !== 'undefined') state.structure = r1(d.structure);
-    if(typeof d.volatility !== 'undefined') state.volatility = r1(d.volatility);
-    if(typeof d.liquidity !== 'undefined') state.liquidity = r1(d.liquidity);
-    if(typeof d.session !== 'undefined') state.session = r1(d.session);
-    if(typeof d.newsSafe !== 'undefined') state.flags.newsSafe = !!d.newsSafe;
-    if(typeof d.sessionOk !== 'undefined') state.flags.sessionOk = !!d.sessionOk;
-    if(Array.isArray(d.log)) state.log = d.log;
-    if(Array.isArray(d.tradeHistory)) state.tradeHistory = d.tradeHistory;
-    if(Array.isArray(d.pnlSeries)){
-      pnlSeries = d.pnlSeries.map(v => r2(v));
-    }else if(!pnlSeries.length && state.tradeHistory.length){
-      rebuildPnlSeries();
-    }
-
+    const data = await tryFetchJson(API_ROUTES.status[0], { method:'GET' });
+    applyStatusData(data || {});
+    setBackendMode('live');
+    app.lastLiveAt = Date.now();
     renderAll();
-    if(!silent) showAlert('SYNC OK', 'info');
+    if(!silent) showAlert('LIVE SYNC OK', 'info');
   }catch(err){
-    if(state.cooldownLeft > 0) state.cooldownLeft -= 1;
-    state.trend = r1(Math.max(35, Math.min(95, state.trend + drift(.7))));
-    state.volume = r1(Math.max(30, Math.min(92, state.volume + drift(.6))));
-    state.structure = r1(Math.max(30, Math.min(94, state.structure + drift(.55))));
-    state.volatility = r1(Math.max(28, Math.min(88, state.volatility + drift(.6))));
-    state.liquidity = r1(Math.max(34, Math.min(95, state.liquidity + drift(.65))));
-    state.session = r1(Math.max(40, Math.min(90, state.session + drift(.4))));
+    setBackendMode('demo');
+    simulateDemoTick();
     renderAll();
-    if(!silent) showAlert('LOCAL DEMO MODE', 'info');
+    if(!silent) showAlert('DEMO MODE', 'info');
   }
+}
+
+function simulateDemoTick(){
+  if(state.cooldownLeft > 0) state.cooldownLeft -= 1;
+  state.trend = r1(Math.max(35, Math.min(95, state.trend + drift(.7))));
+  state.volume = r1(Math.max(30, Math.min(92, state.volume + drift(.6))));
+  state.structure = r1(Math.max(30, Math.min(94, state.structure + drift(.55))));
+  state.volatility = r1(Math.max(28, Math.min(88, state.volatility + drift(.6))));
+  state.liquidity = r1(Math.max(34, Math.min(95, state.liquidity + drift(.65))));
+  state.session = r1(Math.max(40, Math.min(90, state.session + drift(.4))));
 }
 
 function drift(scale){
@@ -1587,12 +1679,12 @@ function rebuildPnlSeries(){
 }
 
 function exportJson(){
-  const data = JSON.stringify({...state}, null, 2);
+  const data = JSON.stringify({ state, app }, null, 2);
   const blob = new Blob([data], { type:'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v19_2_2_interactive_state.json';
+  a.download = 'v19_2_3_real_mode_state.json';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -1615,7 +1707,7 @@ function exportCsv(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'v19_2_2_interactive_history.csv';
+  a.download = 'v19_2_3_real_mode_history.csv';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -1627,13 +1719,24 @@ function importJson(event){
   reader.onload = e=>{
     try{
       const parsed = JSON.parse(e.target.result);
-      state = {
-        ...state,
-        ...parsed,
-        flags:{...state.flags, ...(parsed.flags || {})},
-        tradeHistory:Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : [],
-        log:Array.isArray(parsed.log) ? parsed.log : []
-      };
+      if(parsed.state){
+        state = {
+          ...state,
+          ...parsed.state,
+          flags:{...state.flags, ...(parsed.state.flags || {})},
+          tradeHistory:Array.isArray(parsed.state.tradeHistory) ? parsed.state.tradeHistory : [],
+          log:Array.isArray(parsed.state.log) ? parsed.state.log : []
+        };
+      }else{
+        state = {
+          ...state,
+          ...parsed,
+          flags:{...state.flags, ...(parsed.flags || {})},
+          tradeHistory:Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : [],
+          log:Array.isArray(parsed.log) ? parsed.log : []
+        };
+      }
+      if(parsed.app) app = { ...app, ...parsed.app };
       rebuildPnlSeries();
       renderAll();
       showAlert('IMPORT OK', 'info');
@@ -1651,6 +1754,7 @@ rebuildPnlSeries();
 setDockMeta();
 updateSessionClock();
 renderAll();
+loadStatus(true);
 setInterval(updateSessionClock, 1000);
 setInterval(()=>loadStatus(true), 3500);
 </script>
