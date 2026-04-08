@@ -2,98 +2,101 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>V19.4 HARD LIVE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>V19.5 HARD LIVE ⚡</title>
   <style>
     :root{
-      --bg1:#04133d;
-      --bg2:#020a25;
-      --card:#1c2864;
+      --bg1:#03113f;
+      --bg2:#081a5c;
+      --card:#202d6d;
       --line:rgba(255,255,255,.08);
-      --text:#f3f6ff;
-      --muted:#a9b3df;
-      --green:#9cf0a8;
-      --red:#ff9b9b;
-      --yellow:#f4da7a;
-      --blue:#9fd8ff;
+      --text:#f5f7ff;
+      --muted:#b7bee7;
+      --green:#9be49d;
+      --red:#ef9b9b;
+      --yellow:#ecd57c;
+      --blue:#8fb3ff;
+      --shadow:0 12px 30px rgba(0,0,0,.25);
+      --safeBottom:env(safe-area-inset-bottom, 0px);
     }
 
     *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
     body{
-      margin:0;
-      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at top, #0b1f67 0%, #05113b 38%, #02081f 100%);
+        radial-gradient(circle at top, rgba(255,255,255,.08), transparent 28%),
+        linear-gradient(180deg,var(--bg2),var(--bg1));
+      min-height:100vh;
     }
 
     .wrap{
       max-width:920px;
       margin:0 auto;
-      padding:18px 14px 220;
+      padding:18px 14px 220px;
     }
 
     .title{
       text-align:center;
-      font-size:24px;
+      font-size:28px;
       font-weight:900;
       margin:8px 0 18px;
       letter-spacing:.4px;
     }
 
     .card{
-      background:rgba(28,40,100,.96);
+      background:rgba(32,45,109,.94);
       border:1px solid var(--line);
-      border-radius:24px;
-      box-shadow:0 14px 36px rgba(0,0,0,.24);
+      border-radius:26px;
+      box-shadow:var(--shadow);
     }
 
     .hero{
       padding:26px 18px;
       text-align:center;
+      margin-bottom:18px;
     }
 
     .guard{
-      font-size:72px;
+      font-size:74px;
       font-weight:900;
       line-height:1;
+      margin-top:4px;
     }
 
-    .guard.ready{color:var(--green)}
-    .guard.warn{color:var(--yellow)}
-    .guard.blocked{color:var(--red)}
-    .guard.locked{color:var(--blue)}
-    .guard.cooldown{color:var(--yellow)}
-    .guard.session_limit{color:var(--yellow)}
+    .ready{color:var(--green)}
+    .warn{color:var(--yellow)}
+    .blocked{color:var(--red)}
 
     .pnl{
-      margin-top:10px;
-      font-size:60px;
+      font-size:68px;
       font-weight:900;
       line-height:1;
+      margin-top:12px;
     }
 
     .pnl small{
       display:block;
-      font-size:14px;
+      font-size:16px;
       color:var(--muted);
-      margin-top:10px;
       font-weight:700;
+      margin-top:10px;
     }
 
-    .grid4{
+    .miniGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:14px;
-      margin-top:16px;
+      gap:18px;
+      margin-bottom:18px;
     }
 
-    .mini{
-      padding:22px 20px;
-      border-radius:22px;
-      background:rgba(28,40,100,.96);
+    .miniBox{
+      padding:26px 20px;
+      border-radius:26px;
+      background:rgba(32,45,109,.94);
       border:1px solid var(--line);
-      min-height:118px;
+      box-shadow:var(--shadow);
     }
 
     .miniLabel{
@@ -102,69 +105,73 @@
       margin-bottom:14px;
     }
 
-    .miniVal{
-      font-size:34px;
-      line-height:1.1;
+    .miniValue{
+      font-size:36px;
+      line-height:1.05;
     }
 
-    .actions{
-      margin-top:16px;
+    .ok{color:var(--green)}
+    .fail{color:var(--red)}
+    .mid{color:var(--yellow)}
+
+    .actionBar{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:14px;
+      gap:18px;
+      margin-bottom:18px;
     }
 
-    .actions .full{
-      grid-column:1 / -1;
+    .actionBar.single{
+      grid-template-columns:1fr;
     }
 
     button{
-      width:100%;
-      min-height:74px;
       border:none;
-      border-radius:22px;
-      color:#fff;
+      border-radius:24px;
+      min-height:78px;
+      font-size:24px;
       font-weight:900;
-      font-size:20px;
+      color:#fff;
       cursor:pointer;
-      box-shadow:0 10px 24px rgba(0,0,0,.16);
-      transition:transform .14s ease, opacity .14s ease, filter .14s ease;
+      transition:transform .12s ease, opacity .12s ease;
+      box-shadow:var(--shadow);
     }
 
-    button:hover{transform:translateY(-1px)}
     button:active{transform:scale(.985)}
-    button:disabled{
-      opacity:.45;
-      cursor:not-allowed;
-      filter:grayscale(.15);
-    }
+    button:disabled{opacity:.55;cursor:not-allowed}
 
-    .btnBuy{background:linear-gradient(90deg,#8adf97,#9cf0a8)}
-    .btnSell{background:linear-gradient(90deg,#ef9c9c,#e7b0b0)}
-    .btnWin{background:linear-gradient(90deg,#95e2a4,#a9efb4)}
-    .btnLoss{background:linear-gradient(90deg,#d58e8e,#e5b1b1)}
-    .btnReset{background:linear-gradient(90deg,#e7cf73,#f0df92)}
-    .btnSecondary{background:linear-gradient(90deg,#8897ff,#b09cff)}
+    .btnBuy{background:linear-gradient(90deg,#9ad89b,#a8eaa8)}
+    .btnSell{background:linear-gradient(90deg,#e8a6a6,#e0b0b0)}
+    .btnWin{background:linear-gradient(90deg,#a3e2a4,#b2edb3)}
+    .btnLoss{background:linear-gradient(90deg,#d9a0a0,#ddb0b0)}
+    .btnReset{background:linear-gradient(90deg,#d9c66b,#ead98c)}
+    .btnAuto{background:linear-gradient(90deg,#86a0ff,#98b1ff)}
 
     .logCard{
-      margin-top:16px;
-      margin-bottom:28px;
-      padding:22px 20px;
-      min-height:220px;
+      margin-top:12px;
+      margin-bottom:32px;
+      padding:22px 20px 90px;
+      min-height:260px;
     }
 
     .logTitle{
-      font-size:18px;
+      font-size:20px;
       font-weight:900;
-      margin-bottom:14px;
+      margin-bottom:16px;
     }
 
     .log{
-      max-height:260px;
+      max-height:360px;
       overflow:auto;
-      color:#d9def8;
-      line-height:1.55;
-      font-size:16px;
+      padding-right:4px;
+    }
+
+    .entry{
+      padding:8px 0;
+      font-size:17px;
+      line-height:1.4;
+      color:#d9def7;
+      border-bottom:1px solid rgba(255,255,255,.04);
     }
 
     .dock{
@@ -173,184 +180,177 @@
       right:14px;
       bottom:10px;
       z-index:60;
+      pointer-events:none;
     }
 
     .dockPanel{
-      background:rgba(28,40,100,.96);
-      border:1px solid var(--line);
+      pointer-events:auto;
+      background:rgba(34,45,110,.96);
+      border:1px solid rgba(255,255,255,.08);
       border-radius:24px;
-      box-shadow:0 14px 36px rgba(0,0,0,.28);
-      backdrop-filter:blur(10px);
       overflow:hidden;
+      box-shadow:0 14px 34px rgba(0,0,0,.30);
+      backdrop-filter:blur(10px);
     }
 
     .dockHandle{
-      padding:18px 18px;
+      padding:16px 18px;
       font-size:18px;
-      color:#e6ebff;
-      cursor:pointer;
-      user-select:none;
+      color:#dfe5ff;
+      min-height:58px;
+      display:flex;
+      align-items:center;
     }
 
-    .dockBody{
-      max-height:0;
-      overflow:hidden;
-      transition:max-height .25s ease;
+    .toastWrap{
+      position:fixed;
+      left:0;
+      right:0;
+      top:18px;
+      display:flex;
+      justify-content:center;
+      z-index:100;
+      pointer-events:none;
     }
 
-    body.dock-open .dockBody{
-      max-height:220px;
+    .toast{
+      background:rgba(15,20,45,.92);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.08);
+      padding:12px 16px;
+      border-radius:14px;
+      font-size:14px;
+      font-weight:800;
+      box-shadow:0 12px 24px rgba(0,0,0,.24);
+      opacity:0;
+      transform:translateY(-8px);
+      transition:.18s ease;
     }
 
-    .dockBtns{
-      display:grid;
-      grid-template-columns:1fr 1fr 1fr;
-      gap:10px;
-      padding:0 14px 14px;
+    .toast.show{
+      opacity:1;
+      transform:translateY(0);
     }
-
-    .dockBtns button{
-      min-height:54px;
-      font-size:16px;
-      border-radius:16px;
-    }
-
-    .ok{color:var(--green)!important}
-    .mid{color:var(--yellow)!important}
-    .bad{color:var(--red)!important}
 
     @media (max-width:760px){
-      .guard{font-size:62px}
-      .pnl{font-size:48px}
-      .miniVal{font-size:30px}
-      button{min-height:66px;font-size:18px}
+      .wrap{padding:14px 12px 220px}
+      .title{font-size:25px}
+      .guard{font-size:72px}
+      .pnl{font-size:64px}
+      .miniGrid{gap:12px}
+      .miniBox{padding:22px 18px}
+      .miniLabel{font-size:15px}
+      .miniValue{font-size:28px}
+      .actionBar{gap:12px}
+      button{min-height:66px;font-size:22px}
+      .logCard{padding:20px 18px 86px}
     }
   </style>
 </head>
 <body>
+  <div class="toastWrap">
+    <div id="toast" class="toast">SYNC</div>
+  </div>
+
   <div class="wrap">
-    <div class="title">V19.4 HARD LIVE ⚡</div>
+    <div class="title">V19.5 HARD LIVE ⚡</div>
 
     <div class="card hero">
       <div id="guard" class="guard ready">READY</div>
       <div id="pnl" class="pnl">0.00<small>Net PnL</small></div>
     </div>
 
-    <div class="grid4">
-      <div class="mini">
+    <div class="miniGrid">
+      <div class="miniBox">
         <div class="miniLabel">STATUS</div>
-        <div id="healthStatus" class="miniVal mid">CHECK</div>
+        <div id="healthStatus" class="miniValue mid">CHECK</div>
       </div>
-
-      <div class="mini">
+      <div class="miniBox">
         <div class="miniLabel">BUY POST</div>
-        <div id="healthBuy" class="miniVal mid">CHECK</div>
+        <div id="healthBuy" class="miniValue fail">FAIL</div>
       </div>
-
-      <div class="mini">
+      <div class="miniBox">
         <div class="miniLabel">SELL POST</div>
-        <div id="healthSell" class="miniVal mid">CHECK</div>
+        <div id="healthSell" class="miniValue fail">FAIL</div>
       </div>
-
-      <div class="mini">
+      <div class="miniBox">
         <div class="miniLabel">CONF</div>
-        <div id="confBox" class="miniVal mid">62%</div>
+        <div id="conf" class="miniValue mid">62%</div>
       </div>
     </div>
 
-    <div class="actions">
-      <button id="btnBuy" class="btnBuy" onclick="performAction('/api/buy')">BUY</button>
-      <button id="btnSell" class="btnSell" onclick="performAction('/api/sell')">SELL</button>
+    <div class="actionBar">
+      <button id="btnBuy" class="btnBuy" onclick="performAction('/api/buy','BUY gesendet')">BUY</button>
+      <button id="btnSell" class="btnSell" onclick="performAction('/api/sell','SELL gesendet')">SELL</button>
+      <button id="btnWin" class="btnWin" onclick="performAction('/api/win','WIN verbucht')">WIN</button>
+      <button id="btnLoss" class="btnLoss" onclick="performAction('/api/loss','LOSS verbucht')">LOSS</button>
+    </div>
 
-      <button id="btnWin" class="btnWin" onclick="performAction('/api/win')">WIN</button>
-      <button id="btnLoss" class="btnLoss" onclick="performAction('/api/loss')">LOSS</button>
-
-      <button id="btnReset" class="btnReset full" onclick="performAction('/api/reset')">RESET</button>
+    <div class="actionBar single">
+      <button id="btnReset" class="btnReset" onclick="performAction('/api/reset','System reset')">RESET</button>
     </div>
 
     <div class="logCard card">
       <div class="logTitle">LOG</div>
-      <div id="log" class="log">keine Einträge</div>
+      <div id="log" class="log"></div>
     </div>
   </div>
 
   <div class="dock">
     <div class="dockPanel">
-      <div class="dockHandle" onclick="toggleDock()">Quick Dock</div>
-      <div class="dockBody">
-        <div class="dockBtns">
-          <button class="btnBuy" onclick="performAction('/api/buy')">BUY</button>
-          <button class="btnSell" onclick="performAction('/api/sell')">SELL</button>
-          <button class="btnSecondary" onclick="toggleAutoMode()">AUTO</button>
-        </div>
-      </div>
+      <div class="dockHandle">Quick Dock</div>
     </div>
   </div>
 
   <script>
-    const API_BASE = '';
     const state = {
-      autoEnabled:false,
-      autoTrades:0,
-      confidence:62,
-      backendMode:'checking',
-      side:'NONE',
-      pnl:0
+      health: {
+        status: false,
+        buy: false,
+        sell: false
+      }
     };
 
-    function apiUrl(path){
-      return `${API_BASE}${path}`;
-    }
-
-    function setText(id, val){
+    function setText(id, value){
       const el = document.getElementById(id);
-      if(el) el.textContent = val;
+      if(el) el.textContent = value;
     }
 
-    function addLogLine(text){
-      const box = document.getElementById('log');
-      if(!box) return;
-
-      if(box.textContent === 'keine Einträge'){
-        box.innerHTML = '';
-      }
-
-      const line = document.createElement('div');
-      line.textContent = text;
-      box.prepend(line);
+    function setClass(el, cls){
+      el.className = cls;
     }
 
-    function renderLog(log){
-      const box = document.getElementById('log');
-      if(!box) return;
-
-      if(!log || !log.length){
-        box.textContent = 'keine Einträge';
-        return;
+    function formatTime(ts){
+      try{
+        return new Date(ts).toLocaleTimeString('de-DE');
+      }catch{
+        return '--:--:--';
       }
+    }
 
-      box.innerHTML = log.map(row => {
-        const time = new Date(row.ts).toLocaleTimeString('de-DE');
-        return `<div>${time} - ${String(row.type).toLowerCase()} OK</div>`;
-      }).join('');
+    function toast(msg){
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        el.classList.remove('show');
+      }, 1500);
     }
 
     async function postJSON(url, body = {}){
-      const res = await fetch(apiUrl(url), {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body:JSON.stringify(body)
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
       });
 
+      const text = await res.text();
       let data = {};
-      try {
-        data = await res.json();
-      } catch {
-        data = {};
-      }
+      try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
 
-      if(!res.ok){
-        const err = new Error('POST failed');
+      if (!res.ok) {
+        const err = new Error(data.message || 'Request failed');
         err.data = data;
         throw err;
       }
@@ -359,227 +359,118 @@
     }
 
     async function getStatus(){
-      const res = await fetch(apiUrl('/api/status'));
-      return await res.json();
+      const res = await fetch('/api/status');
+      if(!res.ok) throw new Error('status failed');
+      return res.json();
     }
 
-    function confClass(v){
-      const n = Number(v || 0);
-      if(n >= 70) return 'ok';
-      if(n >= 40) return 'mid';
-      return 'bad';
-    }
-
-    function canTradeNow(data){
-      if(!data) return false;
-      if(data.guard !== 'READY') return false;
-      if(data.processing) return false;
-      if((data.queueLength || 0) > 0) return false;
-      return true;
-    }
-
-    function lockActionButtons(locked){
-      const ids = ['btnBuy','btnSell','btnWin','btnLoss','btnReset'];
-      ids.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.disabled = !!locked;
-      });
-    }
-
-    function setCheckingState(){
-      setText('healthStatus', 'CHECK');
-      setText('healthBuy', 'CHECK');
-      setText('healthSell', 'CHECK');
-
-      document.getElementById('healthStatus')?.classList.remove('ok','mid','bad');
-      document.getElementById('healthBuy')?.classList.remove('ok','mid','bad');
-      document.getElementById('healthSell')?.classList.remove('ok','mid','bad');
-
-      document.getElementById('healthStatus')?.classList.add('mid');
-      document.getElementById('healthBuy')?.classList.add('mid');
-      document.getElementById('healthSell')?.classList.add('mid');
-    }
-
-    function renderStatus(data){
-      if(!data) return;
-
-      state.pnl = Number(data.pnl || 0);
-      state.autoTrades = Number(data.autoTrades || 0);
-      state.confidence = Number(data.confidence || 62);
-      state.side = data.side || 'NONE';
-      state.autoEnabled = !!data.autoEnabled;
-
-      const pnlEl = document.getElementById('pnl');
-      if(pnlEl){
-        pnlEl.innerHTML = `${Number(state.pnl).toFixed(2)}<small>Net PnL</small>`;
-      }
-
-      const guard = (data.guard || 'CHECK').toLowerCase();
-      const guardEl = document.getElementById('guard');
-      if(guardEl){
-        guardEl.textContent = data.guard || 'CHECK';
-        guardEl.className = `guard ${guard}`;
-      }
-
+    function renderHealth(){
       const hs = document.getElementById('healthStatus');
       const hb = document.getElementById('healthBuy');
       const hsell = document.getElementById('healthSell');
-      const conf = document.getElementById('confBox');
 
-      if(hs){
-        hs.textContent = 'OK';
-        hs.classList.remove('ok','mid','bad');
-        hs.classList.add('ok');
-      }
+      hs.textContent = state.health.status ? 'OK' : 'CHECK';
+      hb.textContent = state.health.buy ? 'OK' : 'FAIL';
+      hsell.textContent = state.health.sell ? 'OK' : 'FAIL';
 
-      if(hb){
-        hb.textContent = 'OK';
-        hb.classList.remove('ok','mid','bad');
-        hb.classList.add('ok');
-      }
+      hs.className = 'miniValue ' + (state.health.status ? 'ok' : 'mid');
+      hb.className = 'miniValue ' + (state.health.buy ? 'ok' : 'fail');
+      hsell.className = 'miniValue ' + (state.health.sell ? 'ok' : 'fail');
+    }
 
-      if(hsell){
-        hsell.textContent = 'OK';
-        hsell.classList.remove('ok','mid','bad');
-        hsell.classList.add('ok');
-      }
+    function renderLog(log){
+      const el = document.getElementById('log');
+      el.innerHTML = (log || []).map(item => {
+        return `<div class="entry">${formatTime(item.ts)} - ${(item.type || '').toLowerCase()} OK</div>`;
+      }).join('');
+      el.scrollTop = 0;
+    }
 
-      if(conf){
-        conf.textContent = `${Number(data.confidence || 62)}%`;
-        conf.classList.remove('ok','mid','bad');
-        conf.classList.add(confClass(data.confidence || 62));
-      }
+    function renderStatus(data){
+      const guardEl = document.getElementById('guard');
 
-      lockActionButtons(!!data.processing);
+      setText('guard', data.guard || 'READY');
+      setText('pnl', Number(data.pnl || 0).toFixed(2));
+      setText('conf', `${Number(data.confidence || 0)}%`);
+
+      let cls = 'guard ready';
+      if ((data.guard || '') === 'WARN') cls = 'guard warn';
+      if ((data.guard || '') === 'BLOCKED') cls = 'guard blocked';
+      guardEl.className = cls;
+
       renderLog(data.log || []);
     }
 
     async function runHealthChecks(){
-      setCheckingState();
+      state.health.status = false;
+      state.health.buy = false;
+      state.health.sell = false;
+      renderHealth();
 
-      let statusOk = false;
-      let buyOk = false;
-      let sellOk = false;
+      try{
+        await getStatus();
+        state.health.status = true;
+      }catch{}
 
-      try {
+      try{
+        await postJSON('/api/buy', { dryRun: true });
+        state.health.buy = true;
+      }catch{}
+
+      try{
+        await postJSON('/api/sell', { dryRun: true });
+        state.health.sell = true;
+      }catch{}
+
+      renderHealth();
+
+      try{
         const data = await getStatus();
         renderStatus(data);
-        statusOk = true;
-      } catch(e){
+      }catch(e){
         console.error(e);
-      }
-
-      try {
-        await postJSON('/api/buy', { dryRun:true });
-        buyOk = true;
-      } catch(e){
-        buyOk = false;
-      }
-
-      try {
-        await postJSON('/api/sell', { dryRun:true });
-        sellOk = true;
-      } catch(e){
-        sellOk = false;
-      }
-
-      const hs = document.getElementById('healthStatus');
-      const hb = document.getElementById('healthBuy');
-      const hsell = document.getElementById('healthSell');
-
-      if(hs){
-        hs.textContent = statusOk ? 'OK' : 'FAIL';
-        hs.classList.remove('ok','mid','bad');
-        hs.classList.add(statusOk ? 'ok' : 'bad');
-      }
-
-      if(hb){
-        hb.textContent = buyOk ? 'OK' : 'FAIL';
-        hb.classList.remove('ok','mid','bad');
-        hb.classList.add(buyOk ? 'ok' : 'bad');
-      }
-
-      if(hsell){
-        hsell.textContent = sellOk ? 'OK' : 'FAIL';
-        hsell.classList.remove('ok','mid','bad');
-        hsell.classList.add(sellOk ? 'ok' : 'bad');
       }
     }
 
-    async function performAction(url) {
-      try {
-        if (url === '/api/reset') {
-          setCheckingState();
-        }
+    function setButtonsDisabled(disabled){
+      document.querySelectorAll('button').forEach(btn => btn.disabled = disabled);
+    }
 
+    async function performAction(url, successMsg){
+      setButtonsDisabled(true);
+
+      try{
         const data = await postJSON(url, {});
         renderStatus(data.status || data);
+        toast(successMsg || 'OK');
 
         if (url === '/api/reset') {
           setTimeout(async () => {
             await runHealthChecks();
           }, 300);
         }
-
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function toggleDock(){
-      document.body.classList.toggle('dock-open');
-    }
-
-    async function toggleAutoMode(){
-      try{
-        const data = await postJSON('/api/auto/toggle', {});
-        renderStatus(data.status || data);
-        addLogLine(state.autoEnabled ? 'AUTO ON' : 'AUTO OFF');
       }catch(e){
         console.error(e);
-      }
-    }
-
-    async function autoEngineTick(){
-      try {
-        const data = await getStatus();
-        renderStatus(data);
-
-        if (!state.autoEnabled) return;
-        if (!canTradeNow(data)) return;
-
-        const conf = Number(data.confidence || 0);
-        const side = data.side || 'NONE';
-
-        if (conf < 80) return;
-
-        if (side === 'BUY') {
-          await postJSON('/api/buy', {});
-          addLogLine('AUTO ENTRY BUY');
-        } else if (side === 'SELL') {
-          await postJSON('/api/sell', {});
-          addLogLine('AUTO ENTRY SELL');
+        if (e.data && e.data.status) {
+          renderStatus(e.data.status);
         }
-      } catch(e){
-        console.error(e);
+        toast(e.message || 'Fehler');
       }
+
+      setButtonsDisabled(false);
     }
 
-    async function boot() {
+    async function boot(){
       await runHealthChecks();
 
       setInterval(async () => {
-        try {
+        try{
           const data = await getStatus();
           renderStatus(data);
-        } catch (e) {
+        }catch(e){
           console.error(e);
         }
       }, 2000);
-
-      setInterval(async () => {
-        await autoEngineTick();
-      }, 2500);
     }
 
     boot();
