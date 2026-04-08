@@ -2,848 +2,200 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>V19.3.2 HARD LIVE</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 :root{
-  --bg1:#030816;
-  --bg2:#08162f;
-  --bg3:#0b2150;
-  --green:#79f5a8;
-  --red:#ff8b8b;
-  --yellow:#ffd86f;
-  --blue:#79a9ff;
-  --cyan:#7cf7ff;
-  --purple:#a98cff;
-  --white:#eef4ff;
-  --muted:#b9c8eb;
-  --card:rgba(14,24,58,.95);
-  --card2:rgba(24,38,84,.95);
-  --line:rgba(255,255,255,.07);
-  --dockClosed:68px;
-  --dockOpen:196px;
-  --safeBottom:max(env(safe-area-inset-bottom), 0px);
-  --shadow:0 18px 52px rgba(0,0,0,.36);
+  --bg:#081432;
+  --card:#0f1f4a;
+  --line:rgba(255,255,255,.08);
+  --text:#fff;
+  --muted:#9fb3ff;
+  --green:#5cf7a4;
+  --red:#ff7f7f;
+  --yellow:#ffd166;
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{scroll-behavior:smooth}
+
 body{
   margin:0;
-  font-family:Arial,Helvetica,sans-serif;
-  color:var(--white);
-  background:
-    radial-gradient(circle at 10% 5%, rgba(124,247,255,.10), transparent 20%),
-    radial-gradient(circle at 90% 0%, rgba(169,140,255,.10), transparent 22%),
-    linear-gradient(180deg,var(--bg1),var(--bg2),var(--bg3));
+  font-family:system-ui;
+  background:linear-gradient(180deg,#081432,#0c1c40);
+  color:var(--text);
 }
-body.dock-open{ --activeDockHeight:var(--dockOpen); }
-body:not(.dock-open){ --activeDockHeight:var(--dockClosed); }
+
 .wrap{
-  max-width:1120px;
-  margin:auto;
-  padding:12px;
-  padding-bottom:calc(var(--activeDockHeight) + var(--safeBottom) + 120px);
-  transition:padding-bottom .22s ease;
+  padding:16px;
 }
+
 .title{
   text-align:center;
-  font-size:26px;
-  font-weight:900;
-  margin:8px 0 12px;
-  letter-spacing:.8px;
-  text-shadow:0 0 14px rgba(124,247,255,.18);
-}
-.hero{
-  position:relative;
-  overflow:hidden;
-  border-radius:24px;
-  padding:14px;
-  background:linear-gradient(180deg,var(--card),var(--card2));
-  border:1px solid var(--line);
-  box-shadow:var(--shadow);
-}
-.hero::before{
-  content:"";
-  position:absolute;
-  inset:-34%;
-  background:
-    radial-gradient(circle, rgba(124,247,255,.05) 0, transparent 18%),
-    radial-gradient(circle, rgba(169,140,255,.05) 0, transparent 22%);
-  animation:spinBg 18s linear infinite;
-  pointer-events:none;
-}
-@keyframes spinBg{
-  from{transform:rotate(0deg)}
-  to{transform:rotate(360deg)}
-}
-.heroInner{position:relative;z-index:2}
-.topBadges{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-bottom:12px;
-}
-.badge{
-  padding:7px 10px;
-  border-radius:999px;
-  background:rgba(255,255,255,.06);
-  border:1px solid var(--line);
-  font-size:11px;
-  font-weight:900;
-  color:var(--muted);
-}
-.badge.blue{background:linear-gradient(90deg,var(--blue),var(--purple));color:#fff}
-.badge.good{background:linear-gradient(90deg,var(--green),var(--cyan));color:#041420}
-.badge.bad{background:linear-gradient(90deg,var(--red),#ffb27a);color:#2b0a0a}
-.badge.warn{background:linear-gradient(90deg,var(--yellow),#ffe99f);color:#392500}
-.badge.live{background:linear-gradient(90deg,#53d8ff,#72f5a0);color:#041521}
-.badge.demo{background:linear-gradient(90deg,#66749f,#9d8cff);color:#fff}
-.heroGrid{
-  display:grid;
-  grid-template-columns:1.05fr .95fr;
-  gap:12px;
-}
-.card{
-  background:rgba(255,255,255,.04);
-  border:1px solid var(--line);
-  border-radius:20px;
-  padding:14px;
-  backdrop-filter:blur(8px);
-}
-.guard{
-  font-size:56px;
-  line-height:1;
-  font-weight:900;
-  text-align:center;
-}
-.guard.ready{color:var(--green)}
-.guard.warn{color:var(--yellow)}
-.guard.blocked{color:var(--red)}
-.guard.cooldown{color:var(--purple)}
-.guard.god{color:#fff}
-.guard.sniper{color:var(--cyan)}
-.pulse{animation:pulse 1.05s infinite}
-@keyframes pulse{
-  0%{transform:scale(1)}
-  50%{transform:scale(1.03)}
-  100%{transform:scale(1)}
-}
-.sub{
-  margin-top:8px;
-  text-align:center;
-  color:var(--muted);
-  font-size:12px;
-  font-weight:700;
-}
-.pnl{
-  margin-top:12px;
-  text-align:center;
-  font-size:42px;
-  font-weight:900;
-  line-height:1;
-}
-.pnl small{
-  display:block;
-  margin-top:6px;
-  font-size:11px;
-  color:var(--muted);
-}
-.signalRow{
-  margin-top:12px;
-  display:flex;
-  justify-content:center;
-  flex-wrap:wrap;
-  gap:8px;
-}
-.pill{
-  padding:8px 11px;
-  border-radius:999px;
-  font-size:11px;
-  font-weight:900;
-  border:1px solid var(--line);
-  background:rgba(255,255,255,.05);
-  color:var(--muted);
-}
-.pill.buy{background:linear-gradient(90deg,#5ad88b,#7cf7ff);color:#041420}
-.pill.sell{background:linear-gradient(90deg,var(--red),#ffb27a);color:#2b0a0a}
-.pill.warn{background:linear-gradient(90deg,var(--yellow),#ffe89a);color:#392500}
-.pill.flat{background:linear-gradient(90deg,#67779f,#8798c0);color:#fff}
-.scoreHead{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-}
-.scoreTitle{font-size:17px;font-weight:900}
-.scoreValue{font-size:34px;font-weight:900;color:var(--cyan)}
-.barTrack{
-  height:12px;
-  border-radius:999px;
-  margin-top:10px;
-  overflow:hidden;
-  background:rgba(255,255,255,.08);
-  border:1px solid var(--line);
-}
-.barFill{
-  height:100%;
-  width:0%;
-  border-radius:999px;
-  background:linear-gradient(90deg,var(--red),var(--yellow),var(--green),var(--cyan));
-  transition:width .25s ease;
-}
-.factorGrid{
-  margin-top:12px;
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:8px;
-}
-.factor{
-  padding:10px;
-  border-radius:14px;
-  background:rgba(255,255,255,.05);
-  border:1px solid var(--line);
-}
-.factorTop{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:8px;
-}
-.factorName{
-  font-size:11px;
-  color:var(--muted);
-  font-weight:700;
-}
-.factorVal{font-size:15px;font-weight:900}
-.ok{color:var(--green)}
-.mid{color:var(--yellow)}
-.bad{color:var(--red)}
-.aiGrid{
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:8px;
-  margin-top:12px;
-}
-.aiMini{
-  padding:10px;
-  border-radius:14px;
-  text-align:center;
-  background:rgba(255,255,255,.05);
-  border:1px solid var(--line);
-}
-.aiLabel{
-  font-size:10px;
-  color:var(--muted);
-  font-weight:700;
-  margin-bottom:4px;
-}
-.aiValue{
-  font-size:18px;
-  font-weight:900;
-}
-.actionWrap{margin-top:12px}
-.actionBar,.actionBarSecondary{
-  display:grid;
-  grid-template-columns:repeat(6,1fr);
-  gap:8px;
-}
-.actionBarSecondary{margin-top:8px}
-button,.fileLabel{
-  padding:12px 10px;
-  border:none;
-  border-radius:14px;
-  font-weight:900;
-  font-size:13px;
-  color:#fff;
-  cursor:pointer;
-  text-align:center;
-  transition:transform .14s ease, opacity .14s ease, filter .14s ease;
-  box-shadow:0 10px 22px rgba(0,0,0,.18);
-}
-button:hover,.fileLabel:hover{transform:translateY(-1px)}
-button:active,.fileLabel:active{transform:scale(.985)}
-button:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.25)}
-.btnSend{background:linear-gradient(90deg,#6f7cff,#7cf7ff)}
-.btnBuy{background:linear-gradient(90deg,#3fcf7f,#64f0b0)}
-.btnSell{background:linear-gradient(90deg,#ff7f7f,#ffac6d)}
-.btnWin{background:linear-gradient(90deg,#5cd98d,#7bf1ad)}
-.btnLoss{background:linear-gradient(90deg,#dd7e74,#ff9c9c)}
-.btnReset{background:linear-gradient(90deg,#b89d4c,#ffd86b)}
-.btnMode{background:linear-gradient(90deg,#8d79ff,#72a8ff)}
-.btnSync{background:linear-gradient(90deg,#2e5fff,#6f7cff)}
-.btnExport{background:linear-gradient(90deg,#4e5a79,#899bc5)}
-.fileInput{display:none}
-.fileLabel{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:linear-gradient(90deg,#4e5a79,#899bc5);
-}
-.tabs{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:8px;
-  margin-top:12px;
-}
-.tabBtn{
-  background:rgba(255,255,255,.06);
-  border:1px solid var(--line);
-  box-shadow:none;
-}
-.tabBtn.active{background:linear-gradient(90deg,var(--blue),var(--purple))}
-.tabPane{display:none;margin-top:12px}
-.tabPane.active{display:block}
-.mainGrid{
-  display:grid;
-  grid-template-columns:1.05fr .95fr;
-  gap:12px;
-}
-.chartWrap{height:310px}
-.infoGrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-}
-.infoBox,.tradeBox,.weekBox{
-  padding:11px;
-  border-radius:15px;
-  background:rgba(255,255,255,.05);
-  border:1px solid var(--line);
-}
-.infoName,.tradeName,.weekName{
-  color:var(--muted);
-  font-size:11px;
-  font-weight:700;
-}
-.infoValue,.tradeValue,.weekValue{
-  margin-top:5px;
   font-size:22px;
   font-weight:900;
-}
-.infoSub,.weekSub{
-  margin-top:3px;
-  font-size:10px;
-  color:var(--muted);
-}
-.tradePanel{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:8px;
-  margin-top:8px;
-}
-.badges{
-  display:flex;
-  flex-wrap:wrap;
-  gap:7px;
-  margin-top:10px;
-}
-.badgeRule{
-  padding:7px 9px;
-  border-radius:999px;
-  font-size:11px;
-  font-weight:900;
-  border:1px solid var(--line);
-}
-.badgeRule.on{background:linear-gradient(90deg,var(--green),var(--cyan));color:#041420}
-.badgeRule.warn{background:linear-gradient(90deg,var(--yellow),#ffe89a);color:#392500}
-.badgeRule.off{background:linear-gradient(90deg,#4d5876,#68769d);color:#fff}
-.log{
-  max-height:430px;
-  overflow:auto;
-}
-.entry{
-  padding:11px;
-  border-radius:13px;
-  margin-bottom:7px;
-  background:rgba(255,255,255,.05);
-  border:1px solid var(--line);
-}
-.entryHead{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  margin-bottom:5px;
-}
-.entryType{font-size:11px;font-weight:900}
-.entryTime{font-size:10px;color:var(--muted);font-weight:700}
-.entryMsg{font-size:12px;line-height:1.35}
-.filterBar{
-  display:grid;
-  grid-template-columns:1fr 130px 130px;
-  gap:8px;
   margin-bottom:10px;
 }
-.filterBar input,.filterBar select{
-  width:100%;
-  border:none;
-  outline:none;
-  border-radius:13px;
-  padding:11px;
-  background:rgba(255,255,255,.07);
-  color:#fff;
-  font-weight:700;
-}
-.tableWrap{
-  overflow:auto;
-  max-height:480px;
+
+/* HERO */
+
+.hero{
+  background:var(--card);
   border-radius:18px;
+  padding:16px;
   border:1px solid var(--line);
 }
-table{
-  width:100%;
-  min-width:980px;
-  border-collapse:collapse;
-  background:rgba(255,255,255,.03);
+
+.guard{
+  font-size:40px;
+  font-weight:900;
+  text-align:center;
 }
-th,td{
-  padding:10px 9px;
-  border-bottom:1px solid var(--line);
-  text-align:left;
-  font-size:12px;
+
+.pnl{
+  text-align:center;
+  font-size:34px;
+  font-weight:900;
 }
-th{
-  position:sticky;
-  top:0;
-  background:rgba(16,25,55,.98);
-  color:var(--muted);
+
+.smallHint{
+  text-align:center;
   font-size:11px;
+  color:var(--muted);
 }
-.tPos{color:var(--green);font-weight:900}
-.tNeg{color:var(--red);font-weight:900}
-.tNeu{color:var(--muted);font-weight:900}
-.statsGrid{
+
+/* GRID */
+
+.mainGrid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:12px;
-}
-.weekGrid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:8px;
-}
-.donutWrap{height:250px}
-.dock{
-  position:fixed;
-  left:10px;
-  right:10px;
-  bottom:calc(var(--safeBottom) + 2px);
-  z-index:60;
-  pointer-events:none;
-}
-.dockPanel{
-  pointer-events:auto;
-  background:linear-gradient(180deg,rgba(8,20,50,.96),rgba(22,37,79,.96));
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:18px;
-  box-shadow:0 14px 36px rgba(0,0,0,.30);
-  overflow:hidden;
-  backdrop-filter:blur(10px);
-}
-.dockHandle{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
   gap:10px;
-  padding:10px 12px;
-  cursor:pointer;
-  min-height:52px;
-}
-.dockLeft{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-weight:900;
-}
-.dockGrip{
-  width:34px;
-  height:5px;
-  border-radius:999px;
-  background:rgba(255,255,255,.25);
-}
-.dockMeta{color:var(--muted);font-size:11px;font-weight:800}
-.dockChevron{transition:transform .2s ease;font-size:14px;font-weight:900}
-body.dock-open .dockChevron{transform:rotate(180deg)}
-.dockBody{max-height:0;overflow:hidden;transition:max-height .22s ease}
-body.dock-open .dockBody{max-height:220px}
-.dockButtons{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  gap:8px;
-  padding:0 10px 10px;
-}
-.dockBtn{
-  min-height:44px;
-  border-radius:12px;
-  font-weight:900;
-  box-shadow:none;
-}
-.dockBuy{background:linear-gradient(90deg,#3fcf7f,#64f0b0)}
-.dockSell{background:linear-gradient(90deg,#ff7f7f,#ffac6d)}
-.dockSave{background:linear-gradient(90deg,#5c6cff,#a58bff)}
-.alertOverlay{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:flex-start;
-  justify-content:center;
-  padding-top:24px;
-  z-index:80;
-  pointer-events:none;
-}
-.alertBox{
-  min-width:250px;
-  max-width:90vw;
-  padding:13px 15px;
-  border-radius:16px;
-  font-size:14px;
-  font-weight:900;
-  box-shadow:0 18px 46px rgba(0,0,0,.28);
-  border:1px solid rgba(255,255,255,.06);
-}
-.alertBox.win{background:linear-gradient(90deg,#59d98b,#7cf7ff);color:#041420}
-.alertBox.loss{background:linear-gradient(90deg,#ff8f8f,#ffb46a);color:#2c0909}
-.alertBox.info{background:linear-gradient(90deg,#7aa7ff,#ae8cff);color:#fff}
-.smallHint{
-  margin-top:8px;
-  text-align:center;
-  color:var(--muted);
-  font-size:11px;
-}
-.healthGrid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px;
   margin-top:12px;
 }
-.healthBox{
-  padding:10px;
+
+.card{
+  background:var(--card);
   border-radius:14px;
-  text-align:center;
-  background:rgba(255,255,255,.05);
+  padding:12px;
   border:1px solid var(--line);
 }
-.healthName{
-  font-size:10px;
-  color:var(--muted);
-  font-weight:700;
-}
-.healthVal{
-  margin-top:6px;
-  font-size:16px;
+
+.scoreTitle{
+  font-size:14px;
   font-weight:900;
+  margin-bottom:8px;
 }
-@media (max-width:980px){
-  .heroGrid,.mainGrid,.statsGrid{grid-template-columns:1fr}
-  .aiGrid{grid-template-columns:repeat(3,1fr)}
-  .actionBar,.actionBarSecondary{grid-template-columns:repeat(3,1fr)}
+
+/* BUTTONS */
+
+button{
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  font-weight:900;
+  color:#fff;
 }
-@media (max-width:760px){
-  .wrap{
-    padding:10px;
-    padding-bottom:calc(var(--activeDockHeight) + var(--safeBottom) + 128px);
-  }
-  .title{font-size:21px}
-  .guard{font-size:40px}
-  .pnl{font-size:34px}
-  .scoreValue{font-size:29px}
-  .topBadges{gap:6px}
-  .badge{font-size:10px;padding:6px 8px;max-width:140px}
-  .actionBar,.actionBarSecondary{grid-template-columns:repeat(2,1fr);gap:7px}
-  .tabs{grid-template-columns:repeat(2,1fr)}
-  .factorGrid,.infoGrid,.tradePanel,.weekGrid,.healthGrid{grid-template-columns:1fr}
-  .aiGrid{grid-template-columns:repeat(2,1fr)}
-  .filterBar{grid-template-columns:1fr}
-  .dockButtons{grid-template-columns:1fr}
-  button,.fileLabel{font-size:12.5px;padding:11px 8px}
-  .dock{left:8px;right:8px}
+
+.btnBuy{background:linear-gradient(90deg,#3fcf7f,#64ffa0);}
+.btnSell{background:linear-gradient(90deg,#ff7f7f,#ff9a9a);}
+.btnWin{background:linear-gradient(90deg,#5cd98d,#7bffb1);}
+.btnLoss{background:linear-gradient(90deg,#dd7e7e,#ffaaaa);}
+.btnReset{background:linear-gradient(90deg,#ffd166,#ffdf85);}
+
+.actionBar{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px;
 }
+
+/* LOG */
+
+.log{
+  max-height:200px;
+  overflow:auto;
+  font-size:12px;
+}
+
+/* DOCK */
+
+.dock{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  right:10px;
+}
+
+.dockPanel{
+  background:var(--card);
+  border-radius:16px;
+  border:1px solid var(--line);
+  padding:10px;
+}
+
 </style>
 </head>
+
 <body>
+
 <div class="wrap">
-  <div class="title">V19.3.2 HARD LIVE ⚡</div>
 
-  <div class="hero">
-    <div class="heroInner">
-      <div class="topBadges">
-        <div class="badge blue" id="miniMode">MODE HARD LIVE</div>
-        <div class="badge good" id="miniPreset">PRESET BALANCED</div>
-        <div class="badge" id="miniScore">SCORE 0</div>
-        <div class="badge bad" id="miniEngine">AUTO OFF</div>
-        <div class="badge" id="miniConfidence">CONF 0%</div>
-        <div class="badge demo" id="liveModeBadge">CHECKING API</div>
-        <div class="badge" id="autoStateBadge">AUTO IDLE</div>
-      </div>
+<div class="title">V19.3.2 HARD LIVE ⚡</div>
 
-      <div class="heroGrid">
-        <div class="card">
-          <div id="guard" class="guard ready pulse">READY</div>
-          <div id="guardSub" class="sub">Hard live backend check läuft…</div>
-          <div id="pnl" class="pnl">0.00<small>Net PnL</small></div>
-
-          <div class="signalRow">
-            <div id="directionBadge" class="pill flat">NO SIGNAL</div>
-            <div id="sessionClock" class="pill">SESSION --:--:--</div>
-            <div id="newsBadge" class="pill">NEWS SAFE</div>
-            <div id="riskBadge" class="pill">RISK SAFE</div>
-            <div id="engineBadge" class="pill">AUTO OFF</div>
-          </div>
-
-          <div class="healthGrid">
-            <div class="healthBox">
-              <div class="healthName">STATUS</div>
-              <div id="healthStatus" class="healthVal mid">CHECK</div>
-            </div>
-            <div class="healthBox">
-              <div class="healthName">BUY POST</div>
-              <div id="healthBuy" class="healthVal bad">FAIL</div>
-            </div>
-            <div class="healthBox">
-              <div class="healthName">SELL POST</div>
-              <div id="healthSell" class="healthVal bad">FAIL</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="scoreHead">
-            <div class="scoreTitle">HARD LIVE SCORE</div>
-            <div id="scoreValue" class="scoreValue">0</div>
-          </div>
-          <div class="barTrack"><div id="scoreBar" class="barFill"></div></div>
-
-          <div class="factorGrid">
-            <div class="factor"><div class="factorTop"><div class="factorName">Trend</div><div id="fTrend" class="factorVal bad">0.0</div></div></div>
-            <div class="factor"><div class="factorTop"><div class="factorName">Volume</div><div id="fVolume" class="factorVal bad">0.0</div></div></div>
-            <div class="factor"><div class="factorTop"><div class="factorName">Structure</div><div id="fStructure" class="factorVal bad">0.0</div></div></div>
-            <div class="factor"><div class="factorTop"><div class="factorName">Volatility</div><div id="fVolatility" class="factorVal bad">0.0</div></div></div>
-            <div class="factor"><div class="factorTop"><div class="factorName">Liquidity</div><div id="fLiquidity" class="factorVal bad">0.0</div></div></div>
-            <div class="factor"><div class="factorTop"><div class="factorName">Session</div><div id="fSession" class="factorVal bad">0.0</div></div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="aiGrid">
-        <div class="aiMini"><div class="aiLabel">BIAS</div><div id="aiBias" class="aiValue">NONE</div></div>
-        <div class="aiMini"><div class="aiLabel">CONF</div><div id="aiConf" class="aiValue">0%</div></div>
-        <div class="aiMini"><div class="aiLabel">RISK SIZE</div><div id="aiSize" class="aiValue">1.00</div></div>
-        <div class="aiMini"><div class="aiLabel">AUTO TRADES</div><div id="autoTrades" class="aiValue">0</div></div>
-        <div class="aiMini"><div class="aiLabel">TRIGGER</div><div id="autoTriggerBox" class="aiValue">80</div></div>
-      </div>
-      <div class="smallHint" id="backendHint">LIVE nur wenn Status + Buy POST + Sell POST wirklich erfolgreich sind.</div>
-    </div>
-  </div>
-
-  <div class="actionWrap">
-    <div class="actionBar">
-      <button class="btnSend" onclick="performAction('BUY')" id="btnSend">SEND BUY</button>
-      <button class="btnBuy" onclick="performAction('BUY')" id="btnBuy">BUY</button>
-      <button class="btnSell" onclick="performAction('SELL')" id="btnSell">SELL</button>
-      <button class="btnWin" onclick="performAction('WIN')" id="btnWin">WIN</button>
-      <button class="btnLoss" onclick="performAction('LOSS')" id="btnLoss">LOSS</button>
-      <button class="btnReset" onclick="performAction('RESET')" id="btnReset">RESET</button>
-    </div>
-
-    <div class="actionBarSecondary">
-      <button class="btnMode" onclick="togglePreset()" id="btnPreset">PRESET</button>
-      <button class="btnMode" onclick="toggleAutoEngine()" id="btnAuto">AUTO</button>
-      <button class="btnSync" onclick="manualSync()" id="btnSync">SYNC</button>
-      <button class="btnExport" onclick="exportJson()">JSON</button>
-      <button class="btnExport" onclick="exportCsv()">CSV</button>
-      <label class="fileLabel" for="importFile">IMPORT</label>
-      <input id="importFile" class="fileInput" type="file" accept=".json" onchange="importJson(event)" />
-    </div>
-  </div>
-
-  <div class="tabs">
-    <button id="tabBtn-overview" class="tabBtn active" onclick="switchTab('overview')">OVERVIEW</button>
-    <button id="tabBtn-log" class="tabBtn" onclick="switchTab('log')">LOG</button>
-    <button id="tabBtn-history" class="tabBtn" onclick="switchTab('history')">HISTORY</button>
-    <button id="tabBtn-stats" class="tabBtn" onclick="switchTab('stats')">STATS</button>
-  </div>
-
-  <div id="tab-overview" class="tabPane active">
-    <div class="mainGrid">
-      <div class="card">
-        <div class="scoreTitle">PnL Momentum</div>
-        <div class="chartWrap"><canvas id="chart"></canvas></div>
-      </div>
-
-      <div class="card">
-        <div class="scoreTitle">Execution Core</div>
-        <div class="infoGrid">
-          <div class="infoBox">
-            <div class="infoName">Daily Target</div>
-            <div id="dayTarget" class="infoValue">150.00</div>
-            <div class="infoSub">session goal</div>
-          </div>
-          <div class="infoBox">
-            <div class="infoName">Weekly Target</div>
-            <div id="weekTarget" class="infoValue">750.00</div>
-            <div class="infoSub">weekly goal</div>
-          </div>
-          <div class="infoBox">
-            <div class="infoName">Today Orders</div>
-            <div id="orders" class="infoValue">0</div>
-            <div class="infoSub">day executions</div>
-          </div>
-          <div class="infoBox">
-            <div class="infoName">Cooldown</div>
-            <div id="cd" class="infoValue">0</div>
-            <div class="infoSub">seconds left</div>
-          </div>
-        </div>
-
-        <div class="tradePanel">
-          <div class="tradeBox">
-            <div class="tradeName">TP1</div>
-            <div id="tp1" class="tradeValue">25</div>
-          </div>
-          <div class="tradeBox">
-            <div class="tradeName">TP2</div>
-            <div id="tp2" class="tradeValue">60</div>
-          </div>
-          <div class="tradeBox">
-            <div class="tradeName">SL</div>
-            <div id="sl" class="tradeValue">18</div>
-          </div>
-          <div class="tradeBox">
-            <div class="tradeName">SIZE</div>
-            <div id="sizeBox" class="tradeValue">1.00</div>
-          </div>
-        </div>
-
-        <div class="badges" id="rules"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="tab-log" class="tabPane">
-    <div class="card">
-      <div class="scoreTitle">System Log</div>
-      <div id="log" class="log"></div>
-    </div>
-  </div>
-
-  <div id="tab-history" class="tabPane">
-    <div class="card">
-      <div class="scoreTitle">Trade History</div>
-
-      <div class="filterBar">
-        <input id="historySearch" type="text" placeholder="Filter: BUY, SELL, WIN, LOSS..." oninput="renderHistory()" />
-        <select id="historySideFilter" onchange="renderHistory()">
-          <option value="ALL">All Sides</option>
-          <option value="BUY">BUY</option>
-          <option value="SELL">SELL</option>
-        </select>
-        <select id="historyResultFilter" onchange="renderHistory()">
-          <option value="ALL">All Results</option>
-          <option value="WIN">WIN</option>
-          <option value="LOSS">LOSS</option>
-          <option value="AUTO ENTRY">AUTO ENTRY</option>
-          <option value="EXECUTED">EXECUTED</option>
-        </select>
-      </div>
-
-      <div class="tableWrap">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Zeit</th>
-              <th>Side</th>
-              <th>Result</th>
-              <th>PnL</th>
-              <th>Score</th>
-              <th>Confidence</th>
-              <th>Size</th>
-            </tr>
-          </thead>
-          <tbody id="historyTable">
-            <tr><td colspan="8" class="tNeu">Keine Trades vorhanden</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div id="tab-stats" class="tabPane">
-    <div class="statsGrid">
-      <div class="card">
-        <div class="scoreTitle">Win / Loss Ratio</div>
-        <div class="donutWrap"><canvas id="donutChart"></canvas></div>
-      </div>
-
-      <div class="card">
-        <div class="scoreTitle">Day / Week Stats</div>
-        <div class="weekGrid">
-          <div class="weekBox">
-            <div class="weekName">Today PnL</div>
-            <div id="todayPnl" class="weekValue">0.00</div>
-            <div class="weekSub">current day result</div>
-          </div>
-          <div class="weekBox">
-            <div class="weekName">Today Trades</div>
-            <div id="todayTrades" class="weekValue">0</div>
-            <div class="weekSub">day executions</div>
-          </div>
-          <div class="weekBox">
-            <div class="weekName">Week PnL</div>
-            <div id="weekPnl" class="weekValue">0.00</div>
-            <div class="weekSub">current week result</div>
-          </div>
-          <div class="weekBox">
-            <div class="weekName">Week Trades</div>
-            <div id="weekTrades" class="weekValue">0</div>
-            <div class="weekSub">week executions</div>
-          </div>
-        </div>
-
-        <div class="badges" id="statsRules"></div>
-      </div>
-    </div>
-  </div>
+<div class="hero">
+  <div id="guard" class="guard">READY</div>
+  <div id="pnl" class="pnl">0.00</div>
+  <div class="smallHint">Net PnL</div>
 </div>
 
+<div class="mainGrid">
+
+  <div class="card">
+    <div class="scoreTitle">STATUS</div>
+    <div id="healthStatus">CHECK</div>
+  </div>
+
+  <div class="card">
+    <div class="scoreTitle">BUY POST</div>
+    <div id="healthBuy">FAIL</div>
+  </div>
+
+  <div class="card">
+    <div class="scoreTitle">SELL POST</div>
+    <div id="healthSell">FAIL</div>
+  </div>
+
+  <div class="card">
+    <div class="scoreTitle">CONF</div>
+    <div id="conf">0%</div>
+  </div>
+
+</div>
+
+<div class="actionBar">
+  <button class="btnBuy" onclick="send('buy')">BUY</button>
+  <button class="btnSell" onclick="send('sell')">SELL</button>
+  <button class="btnWin" onclick="send('win')">WIN</button>
+  <button class="btnLoss" onclick="send('loss')">LOSS</button>
+  <button class="btnReset" onclick="send('reset')">RESET</button>
+</div>
+
+<div class="card" style="margin-top:12px;">
+  <div class="scoreTitle">LOG</div>
+  <div id="log" class="log"></div>
+</div>
+
+</div>
+
+<!-- DOCK -->
 <div class="dock">
   <div class="dockPanel">
-    <div class="dockHandle" onclick="toggleDock()">
-      <div class="dockLeft">
-        <div class="dockGrip"></div>
-        <div>
-          <div style="font-weight:900;">Quick Dock</div>
-          <div class="dockMeta" id="dockMetaText">tap to open</div>
-        </div>
-      </div>
-      <div class="dockChevron">⌃</div>
-    </div>
-
-    <div class="dockBody">
-      <div class="dockButtons">
-        <button class="dockBtn dockBuy" onclick="performAction('BUY')">Quick BUY</button>
-        <button class="dockBtn dockSell" onclick="performAction('SELL')">Quick SELL</button>
-        <button class="dockBtn dockSave" onclick="toggleAutoEngine()"><span id="storageBtnText">AUTO OFF</span></button>
-      </div>
-    </div>
+    Quick Dock
   </div>
-</div>
-
-<div id="alertOverlay" class="alertOverlay">
-  <div id="alertBox" class="alertBox info">SYNC</div>
 </div>
 
 <script>
-let chart;
-let donutChart;
-let pnlSeries = [];
 
-const STORAGE_KEY = 'v19_3_2_hard_live_state';
-const HISTORY_LIMIT = 500;
-const r1 = v => Number(safeNum(v).toFixed(1));
-const r2 = v => Number(safeNum(v).toFixed(2));
+const API_BASE = "";
 
-const API_BASE = '';
 const ENDPOINTS = {
   status:'/api/status',
   buy:'/api/buy',
@@ -853,74 +205,56 @@ const ENDPOINTS = {
   reset:'/api/reset'
 };
 
-let app = {
-  backendMode:'checking',
-  lastLiveAt:null,
-  autoBusy:false,
-  autoLastFireAt:0,
-  autoLastExecutedAt:0,
-  lastError:'',
-  health:{
-    status:false,
-    buy:false,
-    sell:false
+function setText(id,val){
+  const el=document.getElementById(id);
+  if(el) el.textContent=val;
+}
+
+function log(msg){
+  const el=document.getElementById('log');
+  const div=document.createElement('div');
+  div.textContent=new Date().toLocaleTimeString()+" - "+msg;
+  el.prepend(div);
+}
+
+async function send(type){
+  try{
+    const res=await fetch(API_BASE+ENDPOINTS[type],{method:'POST'});
+    const data=await res.json();
+    log(type+" OK");
+    update(data);
+  }catch(e){
+    log(type+" ERROR");
   }
-};
+}
 
-let state = {
-  pnl:0,
-  ordersToday:0,
-  cooldownLeft:0,
-  wins:0,
-  losses:0,
-  streak:0,
-  maxDrawdown:0,
-  dayTarget:150,
-  weekTarget:750,
-  side:'NONE',
-  preset:'BALANCED',
-  riskMode:'BALANCED',
-  autoEnabled:false,
-  autoTrades:0,
-  confidence:62,
-  aiBias:'NONE',
-  tp1:25,
-  tp2:60,
-  sl:18,
-  size:1.00,
-  trend:72.3,
-  volume:65.5,
-  structure:80.1,
-  volatility:51.2,
-  liquidity:81.9,
-  session:68.0,
-  minScore:80,
-  autoTrigger:80,
-  peakPnl:0,
-  flags:{
-    newsSafe:true,
-    sessionOk:true,
-    biasMatch:false,
-    directionSet:false
-  },
-  tradeHistory:[],
-  log:[],
-  activeTab:'overview'
-};
+async function fetchStatus(){
+  try{
+    const res=await fetch(API_BASE+ENDPOINTS.status);
+    const data=await res.json();
+    update(data);
+  }catch(e){
+    log("status error");
+  }
+}
 
-function safeNum(v, fallback=0){
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
+function update(d){
+  if(!d) return;
+
+  setText("pnl", Number(d.pnl||0).toFixed(2));
+  setText("guard", d.guard || "READY");
+
+  setText("healthStatus", d.processing ? "RUN" : "CHECK");
+  setText("healthBuy", d.lastBuy ? "OK" : "FAIL");
+  setText("healthSell", d.lastSell ? "OK" : "FAIL");
+
+  setText("conf", (d.confidence||0)+"%");
 }
-function apiUrl(path){
-  return `${API_BASE}${path}`;
-}
-function setText(id, val){
-  const el = document.getElementById(id);
-  if(el) el.textContent = val;
-}
-function addLog(type, msg){
-  state.log.push({
-    type,
-    msg,
-    time:new Date().toLocaleTimeString('de-DE')
+
+setInterval(fetchStatus,3000);
+fetchStatus();
+
+</script>
+
+</body>
+</html>
