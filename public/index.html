@@ -1,345 +1,347 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V19.8.3 HARD LIVE ⚡</title>
+  <title>V19.8.4 HARD LIVE</title>
   <style>
     :root{
-      --bg1:#06144a;
-      --bg2:#0a1f6d;
-      --card:rgba(45,57,132,.88);
-      --card2:rgba(57,69,150,.88);
+      --bg1:#07124d;
+      --bg2:#030b35;
+      --card:#263271;
+      --card2:#32408f;
       --line:rgba(255,255,255,.08);
-      --text:#f5f7ff;
+      --text:#f3f5ff;
       --muted:rgba(255,255,255,.72);
-      --green:#b8f08f;
-      --red:#efb0b0;
-      --yellow:#ecd982;
-      --cyan:#aeeaff;
-      --safeBottom: env(safe-area-inset-bottom, 0px);
-      --dockClosedH: 58px;
-      --dockOpenH: 122px;
-      --activeDockHeight: var(--dockClosedH);
+      --green:#b5e28e;
+      --red:#e7a5a5;
+      --yellow:#e8d37b;
+      --cyan:#a9dbf5;
+      --safeBottom:env(safe-area-inset-bottom, 0px);
+      --dockClosedH:74px;
+      --dockOpenH:228px;
+      --activeDockHeight:var(--dockClosedH);
     }
 
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
     body{
-      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(circle at 50% 35%, rgba(76,92,195,.18), transparent 38%),
-        linear-gradient(180deg, #13297c 0%, #06144a 26%, #04104a 100%);
       min-height:100vh;
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(74,95,210,.28), transparent 35%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
       overflow-x:hidden;
     }
 
     .wrap{
-      width:min(980px,100%);
+      width:min(980px, 100%);
       margin:0 auto;
-      padding:14px 14px calc(var(--activeDockHeight) + var(--safeBottom) + 26px);
+      padding:22px 18px calc(var(--activeDockHeight) + var(--safeBottom) + 34px);
     }
 
     .title{
       text-align:center;
-      font-weight:900;
-      font-size:19px;
-      letter-spacing:.4px;
-      margin:4px 0 10px;
-      color:#f8f7f2;
+      font-size:28px;
+      font-weight:1000;
+      letter-spacing:.5px;
+      margin:10px 0 18px;
+      text-transform:uppercase;
     }
 
-    .heroShell{
-      background:linear-gradient(180deg, rgba(59,73,162,.92), rgba(39,51,126,.92));
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:26px;
-      padding:14px;
-      box-shadow:0 20px 60px rgba(0,0,0,.22);
-      margin-bottom:14px;
+    .hero{
+      background:linear-gradient(180deg, rgba(65,81,182,.32), rgba(39,52,123,.32));
+      border:1px solid var(--line);
+      border-radius:34px;
+      padding:22px;
+      box-shadow:0 20px 55px rgba(0,0,0,.22);
     }
 
     .heroInner{
-      border-radius:24px;
-      border:1px solid rgba(255,255,255,.08);
-      background:linear-gradient(180deg, rgba(67,79,168,.92), rgba(47,59,145,.92));
-      padding:22px 12px 18px;
+      background:linear-gradient(180deg, rgba(82,96,196,.20), rgba(44,56,131,.18));
+      border:1px solid var(--line);
+      border-radius:30px;
+      padding:34px 18px 28px;
       text-align:center;
-      min-height:0;
+      overflow:hidden;
     }
 
     .guard{
-      font-size:64px;
-      line-height:.96;
+      font-size:96px;
+      line-height:.92;
       font-weight:1000;
-      letter-spacing:.3px;
-      margin:0;
-      word-break:break-word;
-      overflow-wrap:anywhere;
+      letter-spacing:-1px;
+      margin:0 auto 8px;
+      max-width:100%;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      text-transform:uppercase;
     }
 
     .guard.ready{color:var(--green)}
-    .guard.locked{color:var(--cyan)}
-    .guard.blocked{color:var(--red)}
     .guard.warn{color:var(--yellow)}
-    .guard.cooldown{color:#d5d9ff}
-    .guard.limit{color:#f2f1de}
+    .guard.blocked{color:var(--red)}
+    .guard.cooldown,.guard.locked,.guard.session_limit{color:var(--cyan)}
 
     .guardSub{
-      margin-top:6px;
-      font-size:12px;
       color:var(--muted);
+      font-size:22px;
       font-weight:800;
-      min-height:16px;
+      margin-top:4px;
+      margin-bottom:16px;
     }
 
     .pnl{
-      margin-top:10px;
-      font-size:64px;
-      line-height:.95;
+      font-size:92px;
+      line-height:.92;
       font-weight:1000;
-      color:#f4f5fb;
+      margin:0;
     }
 
     .pnl small{
       display:block;
-      margin-top:6px;
-      font-size:11px;
+      margin-top:10px;
+      font-size:20px;
       color:var(--muted);
       font-weight:800;
     }
 
-    .grid2{
+    .healthGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-bottom:14px;
+      gap:18px;
+      margin-top:22px;
     }
 
-    .card{
-      background:linear-gradient(180deg, rgba(43,54,132,.92), rgba(36,47,122,.92));
-      border:1px solid rgba(255,255,255,.07);
-      border-radius:22px;
-      padding:18px 18px 16px;
-      box-shadow:0 16px 44px rgba(0,0,0,.18);
+    .healthBox,.miniBox,.factor,.logCard,.sectionCard{
+      background:linear-gradient(180deg, rgba(65,81,182,.24), rgba(39,52,123,.24));
+      border:1px solid var(--line);
+      border-radius:26px;
+      box-shadow:0 14px 34px rgba(0,0,0,.18);
     }
 
-    .miniLabel{
-      font-size:14px;
+    .healthBox{
+      padding:26px 28px;
+      min-height:170px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+
+    .healthName{
+      font-size:28px;
       font-weight:1000;
-      color:#fffdf5;
-      margin-bottom:10px;
+      text-transform:uppercase;
+      margin-bottom:18px;
     }
 
-    .miniValue{
-      font-size:30px;
+    .healthVal{
+      font-size:64px;
       font-weight:1000;
       line-height:1;
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     .ok{color:var(--green)}
-    .bad{color:var(--red)}
     .mid{color:var(--yellow)}
-    .cyan{color:var(--cyan)}
+    .bad{color:var(--red)}
+    .flat{color:var(--cyan)}
 
-    .actionGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-bottom:14px;
+    .actionWrap{
+      margin-top:22px;
     }
 
-    .btn{
-      width:100%;
+    .actionBar,.actionBarSecondary{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+    }
+
+    .actionBarSecondary{
+      grid-template-columns:1fr 1fr;
+      margin-top:18px;
+    }
+
+    button{
       border:none;
-      border-radius:20px;
-      min-height:74px;
-      font-size:22px;
+      border-radius:22px;
+      min-height:90px;
+      font-size:24px;
       font-weight:1000;
       color:#fff;
       cursor:pointer;
-      box-shadow:none;
+      transition:transform .12s ease, opacity .12s ease;
+      box-shadow:0 10px 28px rgba(0,0,0,.16);
     }
+    button:active{transform:scale(.985)}
 
-    .btn:active{transform:scale(.99)}
-    .btnBuy{background:linear-gradient(90deg,#b7e8a9,#c6f1b7)}
-    .btnSell{background:linear-gradient(90deg,#efc1c1,#e7c2c2)}
-    .btnWin{background:linear-gradient(90deg,#b9eab0,#c9efbe)}
-    .btnLoss{background:linear-gradient(90deg,#dbb5b5,#dbb7b7)}
+    .btnBuy{background:linear-gradient(90deg,#b4e4a6,#bde8af)}
+    .btnSell{background:linear-gradient(90deg,#e7bcbc,#e4c2c2)}
+    .btnWin{background:linear-gradient(90deg,#b4e4a6,#bde8af)}
+    .btnLoss{background:linear-gradient(90deg,#dcb7b7,#d8bcbc)}
     .btnReset{
+      background:linear-gradient(90deg,#d8cb77,#e5d58b);
       grid-column:1 / -1;
-      background:linear-gradient(90deg,#d7c86c,#e3d68a);
-      color:#fffef7;
     }
 
-    .subGrid{
+    .miniGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:12px;
+      gap:18px;
+      margin-top:18px;
+    }
+
+    .miniBox{
+      padding:22px 24px;
+      min-height:150px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+
+    .miniLabel{
+      font-size:18px;
+      font-weight:900;
+      text-transform:uppercase;
+      color:rgba(255,255,255,.86);
       margin-bottom:14px;
     }
 
-    .smallCard{
-      background:linear-gradient(180deg, rgba(43,54,132,.92), rgba(36,47,122,.92));
-      border:1px solid rgba(255,255,255,.07);
-      border-radius:20px;
-      padding:16px;
-    }
-
-    .smallTitle{
-      font-size:12px;
-      color:var(--muted);
-      font-weight:900;
-      margin-bottom:8px;
+    .miniValue{
+      font-size:34px;
+      font-weight:1000;
+      line-height:1.04;
       text-transform:uppercase;
     }
 
-    .smallValue{
-      font-size:26px;
-      font-weight:1000;
-      line-height:1.05;
-    }
-
     .scoreCard{
-      background:linear-gradient(180deg, rgba(48,59,144,.95), rgba(40,51,128,.95));
-      border:1px solid rgba(255,255,255,.07);
-      border-radius:24px;
-      padding:16px;
-      margin-bottom:14px;
+      margin-top:18px;
+      padding:24px;
     }
 
     .scoreHead{
       display:flex;
-      justify-content:space-between;
       align-items:flex-end;
+      justify-content:space-between;
       gap:12px;
-      margin-bottom:14px;
+      margin-bottom:18px;
     }
 
     .scoreTitle{
-      font-size:18px;
+      font-size:28px;
       font-weight:1000;
+      text-transform:uppercase;
     }
 
     .scoreValue{
-      font-size:54px;
+      font-size:82px;
       line-height:.9;
       font-weight:1000;
       color:var(--cyan);
     }
 
     .barTrack{
-      height:14px;
+      height:20px;
       border-radius:999px;
       overflow:hidden;
-      background:rgba(255,255,255,.09);
-      border:1px solid rgba(255,255,255,.07);
-      margin-bottom:14px;
+      background:rgba(255,255,255,.10);
+      border:1px solid var(--line);
+      margin-bottom:18px;
     }
 
     .barFill{
       height:100%;
-      width:0%;
       border-radius:999px;
-      background:linear-gradient(90deg,#efb0b0 0%, #e6d67f 35%, #b8efaa 65%, #9fe7ff 100%);
+      background:linear-gradient(90deg,#e3a8a8,#dfd67f,#aee29e,#9fd6f0);
       transition:width .25s ease;
     }
 
     .factorGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:10px;
+      gap:18px;
     }
 
     .factor{
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.07);
-      background:rgba(255,255,255,.03);
-      padding:13px 14px;
+      padding:18px 20px;
+      min-height:118px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
     }
 
     .factorTop{
       display:flex;
-      justify-content:space-between;
       align-items:center;
-      gap:10px;
+      justify-content:space-between;
+      gap:8px;
     }
 
     .factorName{
-      font-size:11px;
       color:var(--muted);
+      font-size:18px;
       font-weight:900;
     }
 
     .factorVal{
-      font-size:18px;
+      font-size:26px;
       font-weight:1000;
     }
 
     .logCard{
-      background:linear-gradient(180deg, rgba(43,54,132,.94), rgba(35,46,120,.94));
-      border:1px solid rgba(255,255,255,.07);
-      border-radius:24px;
-      padding:16px;
-      margin-bottom:14px;
+      margin-top:18px;
+      padding:24px;
     }
 
     .logTitle{
-      font-size:18px;
+      font-size:28px;
       font-weight:1000;
-      margin-bottom:10px;
+      text-transform:uppercase;
+      margin-bottom:18px;
     }
 
-    .logList{
-      display:flex;
-      flex-direction:column;
-      gap:0;
-      max-height:none;
-      overflow:visible;
+    .log{
+      max-height:520px;
+      overflow:auto;
+      padding-right:6px;
     }
 
-    .logEntry{
-      padding:11px 0;
+    .entry{
+      padding:16px 2px;
       border-bottom:1px solid rgba(255,255,255,.06);
-    }
-
-    .logEntry:last-child{border-bottom:none}
-
-    .logLine{
-      font-size:13px;
+      font-size:18px;
       line-height:1.35;
-      color:#dfe5ff;
       word-break:break-word;
-      white-space:pre-wrap;
     }
+    .entry:last-child{border-bottom:none}
 
-    .logLine.processing{color:var(--yellow)}
-    .logLine.executed{color:var(--cyan)}
-    .logLine.queued{color:#c6ccff}
-    .logLine.reset{color:#efe6b0}
-    .logLine.auto{color:#e7d27d}
-    .logLine.sync{color:#efe6b0}
-    .logLine.hard_block{color:#f1bbbb}
-    .logLine.loss{color:#f1c0c0}
-    .logLine.win{color:#ccefbf}
-    .logLine.cooldown{color:#d8dcff}
-    .logLine.info{color:#dfe5ff}
+    .entry.processing{color:var(--yellow)}
+    .entry.executed{color:var(--cyan)}
+    .entry.queued{color:#d9ddff}
+    .entry.loss,.entry.hard_block{color:var(--red)}
+    .entry.win,.entry.reset,.entry.sync,.entry.auto{color:var(--yellow)}
 
+    /* dock */
     .dock{
       position:fixed;
-      left:12px;
-      right:12px;
-      bottom:calc(var(--safeBottom) + 8px);
+      left:14px;
+      right:14px;
+      bottom:calc(var(--safeBottom) + 10px);
       z-index:60;
       pointer-events:none;
     }
 
     .dockPanel{
       pointer-events:auto;
-      background:linear-gradient(180deg, rgba(90,102,202,.96), rgba(63,74,170,.96));
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:22px;
-      box-shadow:0 12px 34px rgba(0,0,0,.26);
+      background:linear-gradient(180deg, rgba(98,112,219,.96), rgba(73,86,188,.96));
+      border:1px solid rgba(255,255,255,.11);
+      border-radius:26px;
+      box-shadow:0 16px 36px rgba(0,0,0,.24);
       overflow:hidden;
       backdrop-filter:blur(10px);
     }
@@ -349,8 +351,8 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding:12px 14px;
-      min-height:58px;
+      padding:14px 16px;
+      min-height:74px;
       cursor:pointer;
     }
 
@@ -362,29 +364,46 @@
     }
 
     .dockGrip{
-      width:34px;
-      height:5px;
+      width:42px;
+      height:6px;
       border-radius:999px;
       background:rgba(255,255,255,.28);
       flex:0 0 auto;
     }
 
+    .dockTextWrap{
+      min-width:0;
+    }
+
+    .dockTitle{
+      font-size:22px;
+      font-weight:1000;
+      line-height:1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
     .dockMeta{
-      font-size:11px;
-      color:rgba(255,255,255,.82);
+      margin-top:5px;
+      color:rgba(255,255,255,.78);
+      font-size:14px;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
 
     .dockChevron{
-      font-size:16px;
+      font-size:24px;
       color:#fff;
       opacity:.9;
       transition:transform .2s ease;
+      flex:0 0 auto;
     }
 
-    body.dock-open .dockChevron{transform:rotate(180deg)}
+    body.dock-open .dockChevron{
+      transform:rotate(180deg);
+    }
 
     .dockBody{
       max-height:0;
@@ -393,35 +412,166 @@
     }
 
     body.dock-open .dockBody{
-      max-height:130px;
+      max-height:220px;
     }
 
     .dockButtons{
       display:grid;
       grid-template-columns:1fr;
-      gap:8px;
-      padding:0 12px 12px;
+      gap:10px;
+      padding:0 14px 14px;
     }
 
     .dockBtn{
-      min-height:40px;
-      border:none;
-      border-radius:12px;
-      font-size:12px;
+      min-height:56px;
+      border-radius:16px;
+      font-size:16px;
       font-weight:1000;
-      color:#fff;
+      box-shadow:none;
     }
 
-    .dockBuy{background:linear-gradient(90deg,#a9e3a0,#b9ebb0)}
-    .dockSell{background:linear-gradient(90deg,#e6b1b1,#dfb2b2)}
-    .dockSave{background:linear-gradient(90deg,#8ea1ff,#95b3ff)}
+    .dockBuy{background:linear-gradient(90deg,#b4e4a6,#bde8af)}
+    .dockSell{background:linear-gradient(90deg,#e7bcbc,#e4c2c2)}
+    .dockSync{background:linear-gradient(90deg,#8da2ff,#98b6ff)}
+
+    @media (max-width: 760px){
+      .wrap{
+        padding:16px 14px calc(var(--activeDockHeight) + var(--safeBottom) + 30px);
+      }
+
+      .title{
+        font-size:24px;
+        margin:8px 0 14px;
+      }
+
+      .hero{
+        border-radius:26px;
+        padding:16px;
+      }
+
+      .heroInner{
+        border-radius:24px;
+        padding:26px 14px 22px;
+      }
+
+      .guard{
+        font-size:clamp(40px, 15vw, 82px);
+        letter-spacing:-.5px;
+      }
+
+      .guardSub{
+        font-size:16px;
+        margin-bottom:12px;
+      }
+
+      .pnl{
+        font-size:clamp(54px, 18vw, 84px);
+      }
+
+      .pnl small{
+        font-size:14px;
+      }
+
+      .healthGrid,.miniGrid,.factorGrid,
+      .actionBar,.actionBarSecondary{
+        grid-template-columns:1fr 1fr;
+        gap:12px;
+      }
+
+      .healthBox{
+        min-height:126px;
+        padding:18px;
+        border-radius:22px;
+      }
+
+      .healthName{
+        font-size:18px;
+        margin-bottom:12px;
+      }
+
+      .healthVal{
+        font-size:32px;
+      }
+
+      button{
+        min-height:76px;
+        border-radius:18px;
+        font-size:18px;
+      }
+
+      .miniBox{
+        min-height:112px;
+        padding:16px;
+        border-radius:22px;
+      }
+
+      .miniLabel{
+        font-size:13px;
+        margin-bottom:10px;
+      }
+
+      .miniValue{
+        font-size:28px;
+      }
+
+      .scoreCard,.logCard{
+        padding:18px;
+        border-radius:24px;
+      }
+
+      .scoreTitle,.logTitle{
+        font-size:18px;
+      }
+
+      .scoreValue{
+        font-size:58px;
+      }
+
+      .factor{
+        min-height:90px;
+        padding:14px;
+        border-radius:20px;
+      }
+
+      .factorName{
+        font-size:12px;
+      }
+
+      .factorVal{
+        font-size:22px;
+      }
+
+      .entry{
+        font-size:15px;
+        padding:14px 0;
+      }
+
+      .dock{
+        left:12px;
+        right:12px;
+        bottom:calc(var(--safeBottom) + 8px);
+      }
+
+      .dockHandle{
+        min-height:72px;
+        padding:12px 14px;
+      }
+
+      .dockTitle{
+        font-size:19px;
+      }
+
+      .dockMeta{
+        font-size:12px;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="title">V19.8.3 HARD LIVE ⚡</div>
+    <div class="title">V19.8.4 HARD LIVE ⚡</div>
 
-    <div class="heroShell">
+    <div class="hero">
       <div class="heroInner">
         <div id="guard" class="guard ready">READY</div>
         <div id="guardSub" class="guardSub">System bereit.</div>
@@ -429,67 +579,72 @@
       </div>
     </div>
 
-    <div class="grid2">
-      <div class="card">
-        <div class="miniLabel">STATUS</div>
-        <div id="healthStatus" class="miniValue ok">OK</div>
+    <div class="healthGrid">
+      <div class="healthBox">
+        <div class="healthName">STATUS</div>
+        <div id="healthStatus" class="healthVal ok">OK</div>
       </div>
-      <div class="card">
-        <div class="miniLabel">BUY POST</div>
-        <div id="healthBuy" class="miniValue ok">OK</div>
+      <div class="healthBox">
+        <div class="healthName">BUY POST</div>
+        <div id="healthBuy" class="healthVal ok">OK</div>
       </div>
-      <div class="card">
-        <div class="miniLabel">SELL POST</div>
-        <div id="healthSell" class="miniValue ok">OK</div>
+      <div class="healthBox">
+        <div class="healthName">SELL POST</div>
+        <div id="healthSell" class="healthVal ok">OK</div>
       </div>
-      <div class="card">
-        <div class="miniLabel">CONF</div>
-        <div id="confValue" class="miniValue mid">62%</div>
-      </div>
-    </div>
-
-    <div class="actionGrid">
-      <button class="btn btnBuy" onclick="performAction('/api/buy')">BUY</button>
-      <button class="btn btnSell" onclick="performAction('/api/sell')">SELL</button>
-      <button class="btn btnWin" onclick="performAction('/api/win')">WIN</button>
-      <button class="btn btnLoss" onclick="performAction('/api/loss')">LOSS</button>
-      <button class="btn btnReset" onclick="performAction('/api/reset')">RESET</button>
-    </div>
-
-    <div class="subGrid">
-      <div class="smallCard">
-        <div class="smallTitle">AUTO ON</div>
-        <div id="autoOnText" class="smallValue cyan">AUTO ON</div>
-      </div>
-      <div class="smallCard">
-        <div class="smallTitle">AUTO OFF</div>
-        <div id="autoOffText" class="smallValue">AUTO OFF</div>
-      </div>
-      <div class="smallCard">
-        <div class="smallTitle">QUEUE</div>
-        <div id="queueValue" class="smallValue">0</div>
-      </div>
-      <div class="smallCard">
-        <div class="smallTitle">PROCESSING</div>
-        <div id="processingValue" class="smallValue">OFF</div>
-      </div>
-      <div class="smallCard">
-        <div class="smallTitle">AUTO</div>
-        <div id="autoValue" class="smallValue">OFF</div>
-      </div>
-      <div class="smallCard">
-        <div class="smallTitle">TRIGGER</div>
-        <div id="triggerValue" class="smallValue">80</div>
+      <div class="healthBox">
+        <div class="healthName">CONF</div>
+        <div id="conf" class="healthVal mid">62%</div>
       </div>
     </div>
 
-    <div class="scoreCard">
+    <div class="actionWrap">
+      <div class="actionBar">
+        <button class="btnBuy" onclick="performAction('/api/buy')">BUY</button>
+        <button class="btnSell" onclick="performAction('/api/sell')">SELL</button>
+        <button class="btnWin" onclick="performAction('/api/win')">WIN</button>
+        <button class="btnLoss" onclick="performAction('/api/loss')">LOSS</button>
+      </div>
+
+      <div class="actionBarSecondary">
+        <button class="btnReset" onclick="performAction('/api/reset')">RESET</button>
+      </div>
+    </div>
+
+    <div class="miniGrid">
+      <div class="miniBox">
+        <div class="miniLabel">AUTO ON</div>
+        <div class="miniValue flat" id="autoOnState">AUTO ON</div>
+      </div>
+      <div class="miniBox">
+        <div class="miniLabel">AUTO OFF</div>
+        <div class="miniValue" id="autoOffState">AUTO OFF</div>
+      </div>
+      <div class="miniBox">
+        <div class="miniLabel">QUEUE</div>
+        <div class="miniValue" id="queueLength">0</div>
+      </div>
+      <div class="miniBox">
+        <div class="miniLabel">PROCESSING</div>
+        <div class="miniValue" id="processingState">OFF</div>
+      </div>
+      <div class="miniBox">
+        <div class="miniLabel">AUTO</div>
+        <div class="miniValue" id="autoState">OFF</div>
+      </div>
+      <div class="miniBox">
+        <div class="miniLabel">TRIGGER</div>
+        <div class="miniValue" id="triggerVal">80</div>
+      </div>
+    </div>
+
+    <div class="scoreCard sectionCard">
       <div class="scoreHead">
         <div class="scoreTitle">AI SCORE</div>
         <div id="scoreValue" class="scoreValue">82</div>
       </div>
       <div class="barTrack">
-        <div id="scoreBar" class="barFill"></div>
+        <div id="scoreBar" class="barFill" style="width:82%"></div>
       </div>
 
       <div class="factorGrid">
@@ -504,17 +659,17 @@
 
     <div class="logCard">
       <div class="logTitle">LOG</div>
-      <div id="logList" class="logList"></div>
+      <div id="log" class="log"></div>
     </div>
   </div>
 
-  <div class="dock" id="quickDock">
+  <div class="dock" id="dock">
     <div class="dockPanel">
       <div class="dockHandle" onclick="toggleDock()">
         <div class="dockLeft">
           <div class="dockGrip"></div>
-          <div>
-            <div style="font-weight:1000;font-size:20px;">Quick Dock</div>
+          <div class="dockTextWrap">
+            <div class="dockTitle">Quick Dock</div>
             <div class="dockMeta" id="dockMetaText">tap to open</div>
           </div>
         </div>
@@ -525,7 +680,7 @@
         <div class="dockButtons">
           <button class="dockBtn dockBuy" onclick="performAction('/api/buy')">BUY</button>
           <button class="dockBtn dockSell" onclick="performAction('/api/sell')">SELL</button>
-          <button class="dockBtn dockSave" onclick="manualSync()">SYNC</button>
+          <button class="dockBtn dockSync" onclick="performAction('/api/sync')">SYNC</button>
         </div>
       </div>
     </div>
@@ -533,42 +688,39 @@
 
   <script>
     const API_BASE = '';
-    const CONF_VALUE = 62;
-    const AI_SCORE = 82;
-    const FACTORS = {
-      trend: 72.3,
-      volume: 65.5,
-      structure: 80.1,
-      volatility: 51.2,
-      liquidity: 81.9,
-      session: 68.0
-    };
-
-    let appState = {
-      auto: false
-    };
 
     function apiUrl(path){
       return `${API_BASE}${path}`;
     }
 
     async function getStatus(){
-      const res = await fetch(apiUrl('/api/status'), { cache:'no-store' });
-      if(!res.ok) throw new Error('Status fetch failed');
-      return await res.json();
+      const res = await fetch(apiUrl('/api/status'));
+      if(!res.ok) throw new Error('status failed');
+      return res.json();
     }
 
-    async function postJSON(path, body = {}){
-      const res = await fetch(apiUrl(path), {
+    async function postJSON(url, body = {}){
+      const res = await fetch(apiUrl(url), {
         method:'POST',
-        headers:{ 'Content-Type':'application/json' },
+        headers:{'Content-Type':'application/json'},
         body: JSON.stringify(body)
       });
       const data = await res.json().catch(() => ({}));
-      if(!res.ok){
+      if(!res.ok) {
         throw data;
       }
       return data;
+    }
+
+    function fmt(n){
+      const num = Number(n || 0);
+      return num.toFixed(2);
+    }
+
+    function factorClass(v){
+      if (v >= 80) return 'ok';
+      if (v >= 60) return 'mid';
+      return 'bad';
     }
 
     function setText(id, val){
@@ -576,158 +728,88 @@
       if(el) el.textContent = val;
     }
 
-    function fmtPnL(v){
-      const n = Number(v || 0);
-      return n.toFixed(2);
-    }
-
-    function guardClass(guard){
-      const g = String(guard || 'READY').toUpperCase();
-      if (g === 'READY') return 'ready';
-      if (g === 'LOCKED') return 'locked';
-      if (g === 'BLOCKED') return 'blocked';
-      if (g === 'WARN') return 'warn';
-      if (g === 'COOLDOWN') return 'cooldown';
-      if (g === 'SESSION_LIMIT') return 'limit';
-      return 'ready';
-    }
-
-    function prettyGuard(guard){
-      const map = {
-        READY:'READY',
-        LOCKED:'LOCKED',
-        BLOCKED:'BLOCKED',
-        WARN:'WARN',
-        COOLDOWN:'COOLDOWN',
-        SESSION_LIMIT:'LIMIT'
-      };
-      return map[String(guard || 'READY').toUpperCase()] || String(guard || 'READY');
-    }
-
-    function healthClass(ok){
-      return ok ? 'miniValue ok' : 'miniValue bad';
-    }
-
-    function factorClass(v){
-      const n = Number(v || 0);
-      if(n >= 75) return 'factorVal ok';
-      if(n >= 60) return 'factorVal mid';
-      return 'factorVal bad';
-    }
-
-    function logTypeClass(type){
-      const t = String(type || '').toLowerCase();
-      if(t.includes('processing')) return 'processing';
-      if(t.includes('executed')) return 'executed';
-      if(t.includes('queued')) return 'queued';
-      if(t.includes('reset')) return 'reset';
-      if(t.includes('auto')) return 'auto';
-      if(t.includes('sync')) return 'sync';
-      if(t.includes('hard_block')) return 'hard_block';
-      if(t.includes('loss')) return 'loss';
-      if(t.includes('win')) return 'win';
-      if(t.includes('cooldown')) return 'cooldown';
-      return 'info';
-    }
-
-    function renderLog(log){
-      const box = document.getElementById('logList');
-      if(!box) return;
+    function renderLog(list){
+      const box = document.getElementById('log');
       box.innerHTML = '';
 
-      const items = Array.isArray(log) ? log : [];
-      if(!items.length){
-        box.innerHTML = '<div class="logEntry"><div class="logLine info">Keine Einträge.</div></div>';
-        return;
-      }
-
-      items.slice(0, 12).forEach(entry => {
-        const row = document.createElement('div');
-        row.className = 'logEntry';
-
-        const line = document.createElement('div');
-        line.className = `logLine ${logTypeClass(entry.type)}`;
-
-        const time = entry.ts
-          ? new Date(entry.ts).toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
-          : '--:--:--';
-
-        const type = entry.type || 'INFO';
-        const msg = entry.msg || '';
-
-        line.textContent = `${time} - ${type} ${msg}`.trim();
-        row.appendChild(line);
-        box.appendChild(row);
+      (list || []).forEach(item => {
+        const div = document.createElement('div');
+        const type = String(item.type || '').toLowerCase();
+        div.className = `entry ${type}`;
+        div.textContent = `${item.time} - ${item.type} ${item.msg}`;
+        box.appendChild(div);
       });
     }
 
-    function renderStaticScore(){
-      setText('scoreValue', String(AI_SCORE));
-      document.getElementById('scoreBar').style.width = `${AI_SCORE}%`;
-
-      setText('trendVal', FACTORS.trend.toFixed(1));
-      setText('volumeVal', FACTORS.volume.toFixed(1));
-      setText('structureVal', FACTORS.structure.toFixed(1));
-      setText('volatilityVal', FACTORS.volatility.toFixed(1));
-      setText('liquidityVal', FACTORS.liquidity.toFixed(1));
-      setText('sessionVal', FACTORS.session.toFixed(1));
-
-      document.getElementById('trendVal').className = factorClass(FACTORS.trend);
-      document.getElementById('volumeVal').className = factorClass(FACTORS.volume);
-      document.getElementById('structureVal').className = factorClass(FACTORS.structure);
-      document.getElementById('volatilityVal').className = factorClass(FACTORS.volatility);
-      document.getElementById('liquidityVal').className = factorClass(FACTORS.liquidity);
-      document.getElementById('sessionVal').className = factorClass(FACTORS.session);
-
-      setText('confValue', `${CONF_VALUE}%`);
-    }
-
-    function renderAutoBlock(){
-      setText('autoOnText', 'AUTO ON');
-      setText('autoOffText', 'AUTO OFF');
-      setText('autoValue', appState.auto ? 'ON' : 'OFF');
-      setText('triggerValue', '80');
-    }
-
     function renderStatus(data){
-      const guard = String(data.guard || 'READY').toUpperCase();
-      const guardEl = document.getElementById('guard');
+      const guard = document.getElementById('guard');
+      const guardSub = document.getElementById('guardSub');
 
-      guardEl.textContent = prettyGuard(guard);
-      guardEl.className = `guard ${guardClass(guard)}`;
+      guard.className = 'guard';
+      const g = String(data.guard || '').toLowerCase();
+      if (g === 'ready') guard.classList.add('ready');
+      else if (g === 'warn') guard.classList.add('warn');
+      else if (g === 'blocked') guard.classList.add('blocked');
+      else if (g === 'locked') guard.classList.add('locked');
+      else if (g === 'cooldown') guard.classList.add('cooldown');
+      else if (g === 'session_limit') guard.classList.add('session_limit');
+      else guard.classList.add('flat');
 
-      setText('guardSub', data.reasonHint || 'System bereit.');
-      setText('pnl', fmtPnL(data.pnl || 0));
+      guard.textContent = data.reasonLabel || data.guard || 'READY';
+      guardSub.textContent = data.reasonHint || 'System bereit.';
 
-      const statusOk = true;
-      const buyOk = guard !== 'BLOCKED' && guard !== 'SESSION_LIMIT' ? true : true;
-      const sellOk = guard !== 'BLOCKED' && guard !== 'SESSION_LIMIT' ? true : true;
+      document.getElementById('pnl').innerHTML = `${fmt(data.pnl)}<small>Net PnL</small>`;
 
-      const healthStatus = document.getElementById('healthStatus');
-      const healthBuy = document.getElementById('healthBuy');
-      const healthSell = document.getElementById('healthSell');
+      setText('healthStatus', data.health && data.health.status ? 'OK' : 'FAIL');
+      setText('healthBuy', data.health && data.health.buy ? 'OK' : 'FAIL');
+      setText('healthSell', data.health && data.health.sell ? 'OK' : 'FAIL');
+      setText('conf', `${Number(data.confidence || 0)}%`);
 
-      healthStatus.className = healthClass(statusOk);
-      healthBuy.className = healthClass(buyOk);
-      healthSell.className = healthClass(sellOk);
+      setText('queueLength', String(data.queueLength || 0));
+      setText('processingState', data.processing ? 'ON' : 'OFF');
+      setText('autoState', data.autoEnabled ? 'ON' : 'OFF');
+      setText('autoOnState', 'AUTO ON');
+      setText('autoOffState', 'AUTO OFF');
+      setText('triggerVal', String(data.trigger || 80));
 
-      healthStatus.textContent = statusOk ? 'OK' : 'FAIL';
-      healthBuy.textContent = buyOk ? 'OK' : 'FAIL';
-      healthSell.textContent = sellOk ? 'OK' : 'FAIL';
+      setText('scoreValue', String(data.aiScore || 0));
+      document.getElementById('scoreBar').style.width = `${Math.max(0, Math.min(100, Number(data.aiScore || 0)))}%`;
 
-      setText('queueValue', String(data.queueLength ?? 0));
-      setText('processingValue', data.processing ? 'ON' : 'OFF');
+      const f = data.factors || {};
+      setText('trendVal', Number(f.trend || 0).toFixed(1));
+      setText('volumeVal', Number(f.volume || 0).toFixed(1));
+      setText('structureVal', Number(f.structure || 0).toFixed(1));
+      setText('volatilityVal', Number(f.volatility || 0).toFixed(1));
+      setText('liquidityVal', Number(f.liquidity || 0).toFixed(1));
+      setText('sessionVal', Number(f.session || 0).toFixed(1));
 
-      renderAutoBlock();
-      renderStaticScore();
+      document.getElementById('trendVal').className = `factorVal ${factorClass(f.trend || 0)}`;
+      document.getElementById('volumeVal').className = `factorVal ${factorClass(f.volume || 0)}`;
+      document.getElementById('structureVal').className = `factorVal ${factorClass(f.structure || 0)}`;
+      document.getElementById('volatilityVal').className = `factorVal ${factorClass(f.volatility || 0)}`;
+      document.getElementById('liquidityVal').className = `factorVal ${factorClass(f.liquidity || 0)}`;
+      document.getElementById('sessionVal').className = `factorVal ${factorClass(f.session || 0)}`;
+
+      document.getElementById('healthStatus').className = `healthVal ${(data.health && data.health.status) ? 'ok' : 'bad'}`;
+      document.getElementById('healthBuy').className = `healthVal ${(data.health && data.health.buy) ? 'ok' : 'bad'}`;
+      document.getElementById('healthSell').className = `healthVal ${(data.health && data.health.sell) ? 'ok' : 'bad'}`;
+      document.getElementById('conf').className = 'healthVal mid';
+
+      const dockMeta = [];
+      dockMeta.push(data.autoEnabled ? 'auto on' : 'auto off');
+      dockMeta.push(`queue ${data.queueLength || 0}`);
+      document.getElementById('dockMetaText').textContent = dockMeta.join(' • ');
+
       renderLog(data.log || []);
     }
 
     async function runHealthChecks(){
-      try{
+      try { await postJSON('/api/buy', { dryRun:true }); } catch {}
+      try { await postJSON('/api/sell', { dryRun:true }); } catch {}
+      try {
         const data = await getStatus();
         renderStatus(data);
-      }catch(e){
+      } catch (e) {
         console.error(e);
       }
     }
@@ -737,32 +819,16 @@
         const data = await postJSON(url, {});
         renderStatus(data.status || data);
 
-        if(url === '/api/reset'){
+        if (url === '/api/reset') {
           setTimeout(async () => {
             await runHealthChecks();
           }, 300);
         }
-      }catch(e){
+      } catch(e){
         console.error(e);
-        try{
-          await runHealthChecks();
-        }catch{}
-      }
-    }
-
-    async function manualSync(){
-      try{
-        const data = await getStatus();
-        const log = Array.isArray(data.log) ? data.log.slice() : [];
-        log.unshift({
-          ts:new Date().toISOString(),
-          type:'SYNC',
-          msg:'Sync OK'
-        });
-        data.log = log;
-        renderStatus(data);
-      }catch(e){
-        console.error(e);
+        if (e && e.status) {
+          renderStatus(e.status);
+        }
       }
     }
 
@@ -776,29 +842,18 @@
 
     function toggleDock(){
       document.body.classList.toggle('dock-open');
-      const meta = document.getElementById('dockMetaText');
-      if(meta){
-        meta.textContent = document.body.classList.contains('dock-open')
-          ? 'quick actions'
-          : 'tap to open';
-      }
       applyDockHeight();
     }
 
-    window.addEventListener('resize', applyDockHeight);
-    window.addEventListener('orientationchange', applyDockHeight);
-
     async function boot(){
       applyDockHeight();
-      renderStaticScore();
-      renderAutoBlock();
       await runHealthChecks();
 
       setInterval(async () => {
         try{
           const data = await getStatus();
           renderStatus(data);
-        }catch(e){
+        } catch(e){
           console.error(e);
         }
       }, 2000);
