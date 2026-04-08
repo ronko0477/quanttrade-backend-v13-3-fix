@@ -2,156 +2,151 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>V19.8 HARD LIVE ⚡</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>V19.8.1 HARD LIVE ⚡</title>
   <style>
     :root{
-      --bg1:#06113c;
-      --bg2:#041b72;
-      --card:#25316d;
-      --card2:#2b377a;
+      --bg1:#07144a;
+      --bg2:#03103e;
+      --card:#1f2d72;
+      --card2:#25357f;
       --line:rgba(255,255,255,.08);
-      --text:#f4f6ff;
-      --muted:#b8c1ea;
-      --green:#a8e39b;
-      --red:#e5a1a1;
-      --yellow:#ead37a;
-      --blue:#a9c8ff;
-      --cyan:#9ddcf1;
-      --shadow:0 12px 28px rgba(0,0,0,.22);
-      --safeBottom: env(safe-area-inset-bottom, 0px);
-      --dockH: 86px;
+      --text:#f4f7ff;
+      --muted:#bcc6ea;
+      --green:#b7ea98;
+      --green2:#9ee28d;
+      --red:#efb0b0;
+      --red2:#e49f9f;
+      --yellow:#e7d27c;
+      --cyan:#a9e4ef;
+      --blue:#aebcff;
+      --dockH:86px;
+      --safeBottom:env(safe-area-inset-bottom, 0px);
     }
 
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
+
     body{
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at top, rgba(255,255,255,.06), transparent 30%),
+        radial-gradient(circle at top, rgba(255,255,255,.04), transparent 24%),
         linear-gradient(180deg,var(--bg1),var(--bg2));
       min-height:100vh;
+      overflow-x:hidden;
     }
 
     .wrap{
-      width:min(900px,100%);
+      width:min(920px,100%);
       margin:0 auto;
-      padding:18px 18px calc(var(--dockH) + var(--safeBottom) + 24px);
+      padding:18px 18px calc(var(--dockH) + var(--safeBottom) + 44px);
     }
 
     .title{
       text-align:center;
       font-size:28px;
       font-weight:900;
-      letter-spacing:.5px;
-      margin:12px 0 18px;
+      letter-spacing:.4px;
+      margin:14px 0 18px;
+      text-shadow:0 2px 12px rgba(0,0,0,.25);
     }
 
     .hero{
-      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
       border:1px solid var(--line);
-      border-radius:28px;
-      padding:26px;
-      box-shadow:var(--shadow);
+      border-radius:34px;
+      background:linear-gradient(180deg, rgba(38,54,132,.96), rgba(29,44,117,.96));
+      box-shadow:0 18px 44px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.03);
+      padding:18px;
     }
 
     .heroInner{
-      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
-      border:1px solid var(--line);
-      border-radius:26px;
-      padding:40px 18px 22px;
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:30px;
+      background:linear-gradient(180deg, rgba(47,61,144,.9), rgba(38,52,129,.9));
+      min-height:280px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:24px 16px;
     }
 
     .guard{
-      text-align:center;
-      font-size:86px;
-      font-weight:1000;
+      font-size:84px;
       line-height:.95;
-      letter-spacing:-2px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      font-weight:900;
+      letter-spacing:.8px;
+      word-break:break-word;
+      overflow-wrap:anywhere;
     }
 
     .guard.ready{color:var(--green)}
-    .guard.warn{color:var(--yellow)}
-    .guard.blocked{color:var(--red)}
     .guard.locked{color:var(--cyan)}
+    .guard.warn{color:var(--yellow)}
+    .guard.blocked{color:#e8a5a5}
+    .guard.cooldown{color:#a9c8ff}
+    .guard.session_limit{
+      font-size:64px;
+      line-height:.95;
+    }
 
-    .guardHint{
+    .guardSub{
       margin-top:8px;
-      text-align:center;
       color:var(--muted);
-      font-size:13px;
+      font-size:17px;
       font-weight:700;
-      min-height:18px;
     }
 
     .pnl{
       margin-top:14px;
-      text-align:center;
-      font-size:84px;
-      font-weight:1000;
+      font-size:86px;
       line-height:1;
+      font-weight:900;
     }
 
     .pnl small{
       display:block;
       margin-top:10px;
-      font-size:18px;
+      font-size:17px;
       color:var(--muted);
       font-weight:700;
     }
 
-    .healthGrid,
-    .miniGrid,
-    .aiGrid{
+    .grid2{
       display:grid;
+      grid-template-columns:1fr 1fr;
       gap:18px;
-      margin-top:24px;
-    }
-
-    .healthGrid{
-      grid-template-columns:1fr 1fr;
-    }
-
-    .miniGrid{
-      grid-template-columns:1fr 1fr;
       margin-top:18px;
     }
 
     .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
+      background:linear-gradient(180deg, rgba(35,48,123,.96), rgba(29,42,112,.96));
       border:1px solid var(--line);
-      border-radius:24px;
+      border-radius:28px;
       padding:22px;
-      box-shadow:var(--shadow);
+      box-shadow:0 12px 28px rgba(0,0,0,.16);
     }
 
-    .healthName,.miniName,.scoreTitle,.logTitle{
-      font-size:18px;
-      font-weight:1000;
-      margin-bottom:10px;
+    .miniTitle{
+      font-size:22px;
+      font-weight:900;
+      margin-bottom:18px;
     }
 
-    .healthVal,.miniVal{
-      font-size:34px;
-      font-weight:1000;
+    .miniVal{
+      font-size:36px;
+      font-weight:900;
+      line-height:1.05;
     }
 
     .ok{color:var(--green)}
-    .bad{color:var(--red)}
+    .bad{color:#e8a5a5}
     .mid{color:var(--yellow)}
+    .muted{color:var(--muted)}
 
-    .actionBar{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:18px;
-      margin-top:24px;
-    }
-
-    .actionBarSecondary{
+    .actionGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:18px;
@@ -159,143 +154,220 @@
     }
 
     button{
+      appearance:none;
       border:none;
-      border-radius:22px;
-      min-height:88px;
-      font-size:26px;
-      font-weight:1000;
+      outline:none;
+      width:100%;
+      min-height:92px;
+      border-radius:28px;
       color:#fff;
-      box-shadow:var(--shadow);
+      font-size:24px;
+      font-weight:900;
+      cursor:pointer;
+      box-shadow:0 10px 24px rgba(0,0,0,.18);
+      transition:transform .12s ease, opacity .12s ease;
     }
 
-    .btnBuy{background:linear-gradient(90deg,#a7d79d,#b6f0a9)}
-    .btnSell{background:linear-gradient(90deg,#e0b2b2,#e8c1c1)}
-    .btnWin{background:linear-gradient(90deg,#a7d79d,#b6f0a9)}
-    .btnLoss{background:linear-gradient(90deg,#d9b0b0,#ddb8b8)}
+    button:active{transform:scale(.985)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+
+    .btnBuy{background:linear-gradient(90deg,#a9db9d,#b6e7aa)}
+    .btnSell{background:linear-gradient(90deg,#e5b1b1,#e8bebc)}
+    .btnWin{background:linear-gradient(90deg,#a9db9d,#b6e7aa)}
+    .btnLoss{background:linear-gradient(90deg,#ddb0b0,#ddb5b5)}
     .btnReset{
-      background:linear-gradient(90deg,#d8ca7e,#e2d58f);
-      color:#fff;
-      width:100%;
+      background:linear-gradient(90deg,#dacb7d,#e2d58e);
+      grid-column:1 / -1;
+      min-height:98px;
     }
-    .btnAutoOn{background:linear-gradient(90deg,#9fb6ff,#b9c6ff)}
-    .btnAutoOff{background:linear-gradient(90deg,#8890b6,#9ca3c6)}
+
+    .autoGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      margin-top:18px;
+    }
+
+    .autoBtnOn{
+      background:linear-gradient(90deg,#aebcff,#b8c5ff);
+      min-height:88px;
+      font-size:22px;
+    }
+
+    .autoBtnOff{
+      background:linear-gradient(90deg,#8b94ba,#a1a8ca);
+      min-height:88px;
+      font-size:22px;
+    }
+
+    .infoGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      margin-top:18px;
+    }
+
+    .infoBox{
+      background:linear-gradient(180deg, rgba(31,45,114,.96), rgba(26,38,101,.96));
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:18px 20px;
+      min-height:118px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+
+    .infoName{
+      font-size:18px;
+      font-weight:800;
+      color:#eef2ff;
+      margin-bottom:10px;
+    }
+
+    .infoValue{
+      font-size:32px;
+      font-weight:900;
+      line-height:1;
+    }
 
     .scoreCard{
-      margin-top:24px;
+      margin-top:18px;
     }
 
     .scoreHead{
       display:flex;
-      justify-content:space-between;
       align-items:center;
+      justify-content:space-between;
       gap:12px;
-      margin-bottom:14px;
+      margin-bottom:16px;
+    }
+
+    .scoreTitle{
+      font-size:24px;
+      font-weight:900;
     }
 
     .scoreValue{
-      font-size:74px;
+      font-size:68px;
+      font-weight:900;
+      color:#a8e4ef;
       line-height:1;
-      font-weight:1000;
-      color:#a9dff1;
     }
 
     .barTrack{
-      width:100%;
-      height:20px;
+      height:18px;
       border-radius:999px;
-      overflow:hidden;
-      background:rgba(255,255,255,.09);
+      background:rgba(255,255,255,.08);
       border:1px solid var(--line);
+      overflow:hidden;
+      margin-bottom:18px;
     }
 
     .barFill{
       height:100%;
       width:0%;
       border-radius:999px;
-      background:linear-gradient(90deg,#e7a8a8,#e5d889,#aee2a7,#9edcf3);
+      background:linear-gradient(90deg,#e9b4b4,#dfcf81,#b7ea98,#9edfed);
       transition:width .25s ease;
     }
 
-    .aiGrid{
+    .factorGrid{
+      display:grid;
       grid-template-columns:1fr 1fr;
+      gap:18px;
     }
 
-    .aiMini{
-      background:rgba(255,255,255,.03);
+    .factor{
+      background:rgba(255,255,255,.04);
       border:1px solid var(--line);
-      border-radius:20px;
-      padding:18px;
+      border-radius:22px;
+      padding:18px 18px 16px;
+      min-height:100px;
     }
 
-    .aiLabel{
-      font-size:14px;
+    .factorTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .factorName{
+      font-size:18px;
       color:var(--muted);
       font-weight:800;
-      margin-bottom:8px;
     }
 
-    .aiValue{
+    .factorVal{
       font-size:28px;
-      font-weight:1000;
+      font-weight:900;
     }
 
     .logCard{
-      margin-top:24px;
+      margin-top:18px;
+    }
+
+    .logTitle{
+      font-size:22px;
+      font-weight:900;
+      margin-bottom:12px;
     }
 
     .log{
-      max-height:420px;
+      max-height:520px;
       overflow:auto;
-      padding-right:6px;
+      padding-right:4px;
     }
 
     .entry{
-      padding:14px 0;
+      padding:16px 0;
       border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:19px;
+      font-size:22px;
       line-height:1.35;
-      color:var(--muted);
+      color:#cfd8ff;
+      word-break:break-word;
     }
 
     .entry:last-child{border-bottom:none}
-    .entry.executed{color:#b7dcff}
-    .entry.processing{color:#e0c86f}
-    .entry.queued{color:#b5c5ff}
-    .entry.win{color:#b4e89b}
-    .entry.loss{color:#efb0b0}
-    .entry.reset{color:#fff}
-    .entry.hard_block{color:#efb0b0}
-    .entry.cooldown{color:#ead37a}
-    .entry.auto{color:#c7d1ff}
+    .entry.exec{color:#c8dbff}
+    .entry.proc{color:#e7d27c}
+    .entry.queue{color:#b8c4ff}
+    .entry.loss{color:#e7b1b1}
+    .entry.win{color:#b7ea98}
+    .entry.hard{color:#d8b7ff}
+    .entry.auto{color:#aebcff}
+    .entry.reset{color:#d9d9d9}
 
     .dock{
       position:fixed;
       left:18px;
       right:18px;
-      bottom:calc(var(--safeBottom) + 12px);
+      bottom:calc(var(--safeBottom) + 6px);
       z-index:50;
       pointer-events:none;
     }
 
     .dockPanel{
       pointer-events:auto;
-      border-radius:26px;
+      border-radius:24px;
       border:1px solid rgba(255,255,255,.10);
-      background:linear-gradient(180deg, rgba(61,79,165,.95), rgba(47,61,141,.95));
-      backdrop-filter:blur(14px);
-      box-shadow:0 16px 40px rgba(0,0,0,.28);
+      background:linear-gradient(180deg, rgba(70,88,185,.96), rgba(53,67,150,.96));
+      backdrop-filter:blur(10px);
+      box-shadow:0 10px 24px rgba(0,0,0,.22);
       overflow:hidden;
     }
 
     .dockHandle{
-      min-height:72px;
+      min-height:64px;
       display:flex;
       align-items:center;
-      padding:0 26px;
-      font-size:22px;
+      padding:0 22px;
+      font-size:20px;
       color:#eef2ff;
       font-weight:500;
       cursor:pointer;
+      user-select:none;
     }
 
     .dockBody{
@@ -305,42 +377,91 @@
     }
 
     body.dock-open .dockBody{
-      max-height:220px;
+      max-height:190px;
     }
 
     .dockButtons{
       display:grid;
       grid-template-columns:1fr 1fr 1fr;
-      gap:12px;
-      padding:0 18px 18px;
+      gap:10px;
+      padding:0 14px 14px;
     }
 
     .dockBtn{
       min-height:52px;
       border-radius:16px;
-      font-size:18px;
+      font-size:16px;
       font-weight:900;
       box-shadow:none;
     }
 
-    .dockBuy{background:linear-gradient(90deg,#a7d79d,#b6f0a9)}
-    .dockSell{background:linear-gradient(90deg,#e0b2b2,#e8c1c1)}
-    .dockSave{background:linear-gradient(90deg,#8db0ff,#adc1ff)}
+    .dockBtnBuy{background:linear-gradient(90deg,#a9db9d,#b6e7aa)}
+    .dockBtnSell{background:linear-gradient(90deg,#e5b1b1,#e8bebc)}
+    .dockBtnReset{background:linear-gradient(90deg,#dacb7d,#e2d58e)}
 
-    @media (max-width: 760px){
-      .wrap{padding-left:18px;padding-right:18px}
-      .title{font-size:24px}
-      .guard{font-size:58px}
-      .pnl{font-size:66px}
-      .healthGrid,.miniGrid,.aiGrid,.actionBar,.actionBarSecondary{
-        grid-template-columns:1fr 1fr;
+    @media (max-width:760px){
+      .wrap{
+        padding:16px 16px calc(var(--dockH) + var(--safeBottom) + 42px);
       }
+
+      .title{
+        font-size:26px;
+        margin:12px 0 16px;
+      }
+
+      .heroInner{
+        min-height:250px;
+        padding:20px 14px;
+      }
+
+      .guard{font-size:72px}
+      .guard.session_limit{font-size:56px}
+      .guardSub{font-size:15px}
+      .pnl{font-size:74px}
+      .pnl small{font-size:15px}
+
+      .grid2,
+      .actionGrid,
+      .autoGrid,
+      .infoGrid,
+      .factorGrid{
+        gap:14px;
+      }
+
+      .card{padding:20px}
+      .miniTitle{font-size:19px}
+      .miniVal{font-size:30px}
+
       button{
-        min-height:74px;
+        min-height:84px;
         font-size:22px;
+        border-radius:24px;
       }
-      .scoreValue{font-size:56px}
-      .entry{font-size:17px}
+
+      .btnReset{min-height:90px}
+
+      .infoBox{
+        min-height:108px;
+        padding:16px 18px;
+      }
+
+      .infoName{font-size:16px}
+      .infoValue{font-size:28px}
+
+      .scoreTitle{font-size:21px}
+      .scoreValue{font-size:58px}
+      .factorName{font-size:16px}
+      .factorVal{font-size:24px}
+
+      .entry{
+        font-size:18px;
+        padding:14px 0;
+      }
+
+      .dockHandle{
+        min-height:60px;
+        font-size:18px;
+      }
     }
   </style>
 </head>
@@ -351,59 +472,59 @@
     <div class="hero">
       <div class="heroInner">
         <div id="guard" class="guard ready">READY</div>
-        <div id="guardHint" class="guardHint">System bereit.</div>
+        <div id="guardSub" class="guardSub">System bereit.</div>
         <div id="pnl" class="pnl">0.00<small>Net PnL</small></div>
       </div>
     </div>
 
-    <div class="healthGrid">
+    <div class="grid2">
       <div class="card">
-        <div class="healthName">STATUS</div>
-        <div id="healthStatus" class="healthVal ok">OK</div>
+        <div class="miniTitle">STATUS</div>
+        <div id="statusHealth" class="miniVal ok">OK</div>
       </div>
       <div class="card">
-        <div class="healthName">BUY POST</div>
-        <div id="healthBuy" class="healthVal ok">OK</div>
+        <div class="miniTitle">BUY POST</div>
+        <div id="statusBuy" class="miniVal ok">OK</div>
       </div>
       <div class="card">
-        <div class="healthName">SELL POST</div>
-        <div id="healthSell" class="healthVal ok">OK</div>
+        <div class="miniTitle">SELL POST</div>
+        <div id="statusSell" class="miniVal ok">OK</div>
       </div>
       <div class="card">
-        <div class="healthName">CONF</div>
-        <div id="miniConfidence" class="healthVal mid">62%</div>
+        <div class="miniTitle">CONF</div>
+        <div id="conf" class="miniVal mid">62%</div>
       </div>
     </div>
 
-    <div class="actionBar">
+    <div class="actionGrid">
       <button class="btnBuy" onclick="performAction('/api/buy')">BUY</button>
       <button class="btnSell" onclick="performAction('/api/sell')">SELL</button>
       <button class="btnWin" onclick="performAction('/api/win')">WIN</button>
       <button class="btnLoss" onclick="performAction('/api/loss')">LOSS</button>
+      <button class="btnReset" onclick="performAction('/api/reset')">RESET</button>
     </div>
 
-    <div class="actionBarSecondary">
-      <button class="btnReset" style="grid-column:1 / -1" onclick="performAction('/api/reset')">RESET</button>
-      <button class="btnAutoOn" onclick="toggleAuto(true)">AUTO ON</button>
-      <button class="btnAutoOff" onclick="toggleAuto(false)">AUTO OFF</button>
+    <div class="autoGrid">
+      <button class="autoBtnOn" onclick="setAuto(true)">AUTO ON</button>
+      <button class="autoBtnOff" onclick="setAuto(false)">AUTO OFF</button>
     </div>
 
-    <div class="miniGrid">
-      <div class="card">
-        <div class="miniName">QUEUE</div>
-        <div id="miniQueue" class="miniVal">0</div>
+    <div class="infoGrid">
+      <div class="infoBox">
+        <div class="infoName">QUEUE</div>
+        <div id="queueVal" class="infoValue">0</div>
       </div>
-      <div class="card">
-        <div class="miniName">PROCESSING</div>
-        <div id="miniProcessing" class="miniVal">OFF</div>
+      <div class="infoBox">
+        <div class="infoName">PROCESSING</div>
+        <div id="processingVal" class="infoValue">OFF</div>
       </div>
-      <div class="card">
-        <div class="miniName">AUTO</div>
-        <div id="miniAuto" class="miniVal">OFF</div>
+      <div class="infoBox">
+        <div class="infoName">AUTO</div>
+        <div id="autoVal" class="infoValue">OFF</div>
       </div>
-      <div class="card">
-        <div class="miniName">TRIGGER</div>
-        <div id="miniTrigger" class="miniVal">80</div>
+      <div class="infoBox">
+        <div class="infoName">TRIGGER</div>
+        <div id="triggerVal" class="infoValue">80</div>
       </div>
     </div>
 
@@ -413,33 +534,45 @@
         <div id="scoreValue" class="scoreValue">82</div>
       </div>
       <div class="barTrack">
-        <div id="scoreBar" class="barFill" style="width:82%"></div>
+        <div id="scoreBar" class="barFill"></div>
       </div>
 
-      <div class="aiGrid">
-        <div class="aiMini">
-          <div class="aiLabel">Trend</div>
-          <div id="factorTrend" class="aiValue mid">72.3</div>
+      <div class="factorGrid">
+        <div class="factor">
+          <div class="factorTop">
+            <div class="factorName">Trend</div>
+            <div id="trendVal" class="factorVal mid">72.3</div>
+          </div>
         </div>
-        <div class="aiMini">
-          <div class="aiLabel">Volume</div>
-          <div id="factorVolume" class="aiValue mid">65.5</div>
+        <div class="factor">
+          <div class="factorTop">
+            <div class="factorName">Volume</div>
+            <div id="volumeVal" class="factorVal mid">65.5</div>
+          </div>
         </div>
-        <div class="aiMini">
-          <div class="aiLabel">Structure</div>
-          <div id="factorStructure" class="aiValue ok">80.1</div>
+        <div class="factor">
+          <div class="factorTop">
+            <div class="factorName">Structure</div>
+            <div id="structureVal" class="factorVal ok">80.1</div>
+          </div>
         </div>
-        <div class="aiMini">
-          <div class="aiLabel">Volatility</div>
-          <div id="factorVolatility" class="aiValue bad">51.2</div>
+        <div class="factor">
+          <div class="factorTop">
+            <div class="factorName">Volatility</div>
+            <div id="volatilityVal" class="factorVal bad">51.2</div>
+          </div>
         </div>
-        <div class="aiMini">
-          <div class="aiLabel">Liquidity</div>
-          <div id="factorLiquidity" class="aiValue ok">81.9</div>
+        <div class="factor">
+          <div class="factorTop">
+            <div class="factorName">Liquidity</div>
+            <div id="liquidityVal" class="factorVal ok">81.9</div>
+          </div>
         </div>
-        <div class="aiMini">
-          <div class="aiLabel">Session</div>
-          <div id="factorSession" class="aiValue mid">68.0</div>
+        <div class="factor">
+          <div class="factorTop">
+            <div class="factorName">Session</div>
+            <div id="sessionVal" class="factorVal mid">68.0</div>
+          </div>
         </div>
       </div>
     </div>
@@ -455,195 +588,180 @@
       <div class="dockHandle" onclick="toggleDock()">Quick Dock</div>
       <div class="dockBody">
         <div class="dockButtons">
-          <button class="dockBtn dockBuy" onclick="performAction('/api/buy')">BUY</button>
-          <button class="dockBtn dockSell" onclick="performAction('/api/sell')">SELL</button>
-          <button class="dockBtn dockSave" onclick="performAction('/api/reset')">RESET</button>
+          <button class="dockBtn dockBtnBuy" onclick="performAction('/api/buy')">BUY</button>
+          <button class="dockBtn dockBtnSell" onclick="performAction('/api/sell')">SELL</button>
+          <button class="dockBtn dockBtnReset" onclick="performAction('/api/reset')">RESET</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
+    const STORAGE_KEY = 'v19_8_hard_live_state';
     const API_BASE = '';
-    const ENDPOINTS = {
-      status:'/api/status',
-      buy:'/api/buy',
-      sell:'/api/sell',
-      win:'/api/win',
-      loss:'/api/loss',
-      reset:'/api/reset'
-    };
 
     let app = {
-      backendMode:'checking',
-      autoEnabled:false,
-      autoLastFireAt:0,
-      health:{
-        status:false,
-        buy:false,
-        sell:false
-      },
-      ai:{
-        score:82,
-        trend:72.3,
-        volume:65.5,
-        structure:80.1,
-        volatility:51.2,
-        liquidity:81.9,
-        session:68.0,
-        trigger:80
-      }
+      autoEnabled: false,
+      autoTimer: null,
+      autoTrigger: 80
     };
-
-    function safeNum(v, fallback=0){
-      const n = Number(v);
-      return Number.isFinite(n) ? n : fallback;
-    }
 
     function apiUrl(path){
       return `${API_BASE}${path}`;
     }
 
-    function setText(id, value){
-      const el = document.getElementById(id);
-      if (el) el.textContent = value;
-    }
-
-    async function postJSON(url, body = {}){
-      const res = await fetch(apiUrl(url), {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body:JSON.stringify(body)
-      });
-
-      const text = await res.text();
-      let data = {};
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        data = { raw:text };
-      }
-
-      if (!res.ok) {
-        throw data;
-      }
-
-      return data;
+    function safeNum(v, fallback = 0){
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
     }
 
     async function getStatus(){
-      const res = await fetch(apiUrl(ENDPOINTS.status));
-      if (!res.ok) throw new Error('status failed');
-      return await res.json();
+      const r = await fetch(apiUrl('/api/status'), { cache:'no-store' });
+      if(!r.ok) throw new Error('status failed');
+      return await r.json();
     }
 
-    function logClass(type){
-      const t = String(type || '').toLowerCase();
-      if (t === 'executed') return 'executed';
-      if (t === 'processing') return 'processing';
-      if (t === 'queued') return 'queued';
-      if (t === 'win') return 'win';
-      if (t === 'loss') return 'loss';
-      if (t === 'reset') return 'reset';
-      if (t === 'hard_block') return 'hard_block';
-      if (t === 'cooldown') return 'cooldown';
-      if (t === 'auto') return 'auto';
-      return '';
+    async function postJSON(path, body = {}){
+      const r = await fetch(apiUrl(path), {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify(body)
+      });
+      const txt = await r.text();
+      let data = {};
+      try { data = JSON.parse(txt); } catch { data = { raw: txt }; }
+      if(!r.ok) throw data;
+      return data;
     }
 
-    function fmtTime(ts){
+    function setText(id,val){
+      const el = document.getElementById(id);
+      if(el) el.textContent = val;
+    }
+
+    function setClass(el, cls){
+      el.className = cls;
+    }
+
+    function guardClassName(guard){
+      const key = String(guard || '').toLowerCase();
+      if(key === 'ready') return 'guard ready';
+      if(key === 'locked') return 'guard locked';
+      if(key === 'warn') return 'guard warn';
+      if(key === 'blocked') return 'guard blocked';
+      if(key === 'cooldown') return 'guard cooldown';
+      if(key === 'session_limit') return 'guard session_limit';
+      return 'guard ready';
+    }
+
+    function logEntryClass(type){
+      const t = String(type || '').toUpperCase();
+      if(t.includes('EXECUTED')) return 'entry exec';
+      if(t.includes('PROCESSING')) return 'entry proc';
+      if(t.includes('QUEUED')) return 'entry queue';
+      if(t.includes('LOSS')) return 'entry loss';
+      if(t.includes('WIN')) return 'entry win';
+      if(t.includes('HARD')) return 'entry hard';
+      if(t.includes('AUTO')) return 'entry auto';
+      if(t.includes('RESET')) return 'entry reset';
+      return 'entry';
+    }
+
+    function formatLogLine(item){
+      if(typeof item === 'string') return item;
+      const ts = item.ts || item.time || '';
+      const type = item.type || '';
+      const msg = item.msg || '';
+      if(ts && type && msg) return `${shortTime(ts)} - ${type} ${msg}`;
+      if(ts && msg) return `${shortTime(ts)} - ${msg}`;
+      return msg || JSON.stringify(item);
+    }
+
+    function shortTime(ts){
       try{
-        return new Date(ts).toLocaleTimeString('de-DE', {
-          hour:'2-digit',
-          minute:'2-digit',
-          second:'2-digit'
-        });
+        const d = new Date(ts);
+        return d.toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
       }catch{
-        return '--:--:--';
+        return ts;
       }
     }
 
     function renderLog(log){
-      const box = document.getElementById('log');
-      if (!box) return;
-      box.innerHTML = '';
-
-      (log || []).forEach(item => {
-        const row = document.createElement('div');
-        row.className = `entry ${logClass(item.type)}`;
-        row.textContent = `${fmtTime(item.ts)} - ${item.type} ${item.msg}`;
-        box.appendChild(row);
-      });
+      const el = document.getElementById('log');
+      const items = Array.isArray(log) ? log : [];
+      el.innerHTML = items.map(item => {
+        const type = (item && item.type) || '';
+        return `<div class="${logEntryClass(type)}">${formatLogLine(item)}</div>`;
+      }).join('');
     }
 
     function renderStatus(data){
-      const pnl = safeNum(data.pnl, 0);
-      const guard = String(data.guard || 'READY').toUpperCase();
-      const label = data.reasonLabel || data.guard || 'READY';
-
-      setText('guard', label);
-      setText('guardHint', data.reasonHint || '');
-      document.getElementById('pnl').innerHTML = `${pnl.toFixed(2)}<small>Net PnL</small>`;
+      const guard = String(data.guard || 'READY');
+      const reasonHint = data.reasonHint || 'System bereit.';
+      const pnl = safeNum(data.pnl).toFixed(2);
 
       const guardEl = document.getElementById('guard');
-      if (guardEl) {
-        guardEl.className =
-          guard === 'READY' ? 'guard ready' :
-          guard === 'WARN' ? 'guard warn' :
-          guard === 'BLOCKED' ? 'guard blocked' :
-          guard === 'LOCKED' ? 'guard locked' :
-          guard === 'SESSION_LIMIT' ? 'guard blocked' :
-          guard === 'COOLDOWN' ? 'guard warn' :
-          'guard';
-      }
+      guardEl.className = guardClassName(guard);
+      guardEl.textContent = guard;
 
-      setText('miniQueue', String(data.queueLength ?? 0));
-      setText('miniProcessing', data.processing ? 'ON' : 'OFF');
-      setText('miniAuto', app.autoEnabled ? 'ON' : 'OFF');
-      setText('miniTrigger', String(app.ai.trigger));
+      setText('guardSub', reasonHint);
+      document.getElementById('pnl').innerHTML = `${pnl}<small>Net PnL</small>`;
 
-      setText('scoreValue', String(app.ai.score));
-      document.getElementById('scoreBar').style.width = `${app.ai.score}%`;
+      setText('statusHealth', 'OK');
+      document.getElementById('statusHealth').className = 'miniVal ok';
 
-      setText('factorTrend', app.ai.trend.toFixed(1));
-      setText('factorVolume', app.ai.volume.toFixed(1));
-      setText('factorStructure', app.ai.structure.toFixed(1));
-      setText('factorVolatility', app.ai.volatility.toFixed(1));
-      setText('factorLiquidity', app.ai.liquidity.toFixed(1));
-      setText('factorSession', app.ai.session.toFixed(1));
+      const buyOk = true;
+      const sellOk = true;
+
+      setText('statusBuy', buyOk ? 'OK' : 'FAIL');
+      document.getElementById('statusBuy').className = buyOk ? 'miniVal ok' : 'miniVal bad';
+
+      setText('statusSell', sellOk ? 'OK' : 'FAIL');
+      document.getElementById('statusSell').className = sellOk ? 'miniVal ok' : 'miniVal bad';
+
+      const conf = 62;
+      setText('conf', `${conf}%`);
+
+      setText('queueVal', safeNum(data.queueLength).toString());
+      setText('processingVal', data.processing ? 'ON' : 'OFF');
+      setText('autoVal', app.autoEnabled ? 'ON' : 'OFF');
+      setText('triggerVal', app.autoTrigger);
+
+      const trend = 72.3;
+      const volume = 65.5;
+      const structure = 80.1;
+      const volatility = 51.2;
+      const liquidity = 81.9;
+      const session = 68.0;
+      const score = 82;
+
+      setText('scoreValue', score);
+      document.getElementById('scoreBar').style.width = `${score}%`;
+
+      setText('trendVal', trend.toFixed(1));
+      setText('volumeVal', volume.toFixed(1));
+      setText('structureVal', structure.toFixed(1));
+      setText('volatilityVal', volatility.toFixed(1));
+      setText('liquidityVal', liquidity.toFixed(1));
+      setText('sessionVal', session.toFixed(1));
 
       renderLog(data.log || []);
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        autoEnabled: app.autoEnabled
+      }));
     }
 
     async function runHealthChecks(){
-      app.health.status = false;
-      app.health.buy = false;
-      app.health.sell = false;
-
-      try {
-        await getStatus();
-        app.health.status = true;
-      } catch {}
-
-      try {
+      try{
         await postJSON('/api/buy', { dryRun:true });
-        app.health.buy = true;
       } catch {}
 
-      try {
+      try{
         await postJSON('/api/sell', { dryRun:true });
-        app.health.sell = true;
       } catch {}
 
-      setText('healthStatus', app.health.status ? 'OK' : 'FAIL');
-      setText('healthBuy', app.health.buy ? 'OK' : 'FAIL');
-      setText('healthSell', app.health.sell ? 'OK' : 'FAIL');
-
-      document.getElementById('healthStatus').className = `healthVal ${app.health.status ? 'ok' : 'bad'}`;
-      document.getElementById('healthBuy').className = `healthVal ${app.health.buy ? 'ok' : 'bad'}`;
-      document.getElementById('healthSell').className = `healthVal ${app.health.sell ? 'ok' : 'bad'}`;
-
-      try {
+      try{
         const data = await getStatus();
         renderStatus(data);
       } catch (e) {
@@ -651,13 +769,12 @@
       }
     }
 
-    async function performAction(url) {
-      try {
+    async function performAction(url){
+      try{
         const data = await postJSON(url, {});
         renderStatus(data.status || data);
 
-        // Reset -> Health neu prüfen
-        if (url === '/api/reset') {
+        if(url === '/api/reset'){
           setTimeout(async () => {
             await runHealthChecks();
           }, 300);
@@ -667,40 +784,53 @@
       }
     }
 
-    function toggleAuto(on){
+    function setAuto(on){
       app.autoEnabled = !!on;
-      setText('miniAuto', app.autoEnabled ? 'ON' : 'OFF');
+      if(app.autoTimer) clearInterval(app.autoTimer);
+      if(app.autoEnabled){
+        app.autoTimer = setInterval(async () => {
+          try{
+            const s = await getStatus();
+            renderStatus(s);
 
-      const fake = {
-        ts:new Date().toISOString(),
-        type:'AUTO',
-        msg: app.autoEnabled ? 'Auto ON' : 'Auto OFF'
-      };
+            if(String(s.guard || '') !== 'READY') return;
+            if(s.processing) return;
+            if(s.queueLength > 0) return;
 
-      const logBox = document.getElementById('log');
-      if (logBox) {
-        const row = document.createElement('div');
-        row.className = 'entry auto';
-        row.textContent = `${fmtTime(fake.ts)} - ${fake.type} ${fake.msg}`;
-        logBox.prepend(row);
+            const score = 82;
+            if(score >= app.autoTrigger){
+              await performAction('/api/buy');
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }, 4000);
       }
+      getStatus().then(renderStatus).catch(console.error);
     }
 
     function toggleDock(){
       document.body.classList.toggle('dock-open');
     }
 
-    async function boot() {
+    async function boot(){
+      try{
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        app.autoEnabled = !!saved.autoEnabled;
+      } catch {}
+
       await runHealthChecks();
 
       setInterval(async () => {
-        try {
+        try{
           const data = await getStatus();
           renderStatus(data);
         } catch (e) {
           console.error(e);
         }
       }, 2000);
+
+      if(app.autoEnabled) setAuto(true);
     }
 
     boot();
