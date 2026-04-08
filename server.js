@@ -197,39 +197,6 @@ function placeOrder(side, res) {
     message: 'Order angenommen',
     status: statusPayload()
   });
-}
-
-// ===== ORDER LOGIC =====
-function placeOrder(side, res) {
-  const info = getGuardInfo();
-
-  if (info.guard !== 'READY') {
-    return res.status(429).json({
-      message: 'Order blockiert',
-      status: statusPayload()
-    });
-  }
-
-  if (now() - state.lastOrderAt < 1000) {
-    return res.status(429).json({
-      message: 'Zu schnell',
-      status: statusPayload()
-    });
-  }
-
-  const id = now();
-  state.lastOrderAt = now();
-
-  state.queue.push({ id, side });
-  addLog('QUEUED', `Order ${id} queued (${side})`);
-
-  processQueue();
-
-  return res.json({
-    message: 'Order angenommen',
-    status: statusPayload()
-  });
-}
 
 // ===== UI =====
 app.get('/', (req, res) => {
