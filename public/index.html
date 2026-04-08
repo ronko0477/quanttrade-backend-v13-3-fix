@@ -289,12 +289,21 @@
     }
 
     async function performAction(url) {
-      try {
-        const data = await postJSON(url, {});
-        renderStatus(data.status || data);
-      } catch (e) {
-        console.error(e);
-      }
+       try {
+    const data = await postJSON(url, {});
+    renderStatus(data.status || data);
+
+    // 🔥 FIX: nach RESET Health neu prüfen
+    if (url === '/api/reset') {
+      setTimeout(async () => {
+        await runHealthChecks();
+      }, 300);
+    }
+
+  } catch (e) {
+    console.error(e);
+  }
+}
     }
 
     async function boot() {
