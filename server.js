@@ -9,7 +9,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 let state = {
   pnl: 0,
   ordersToday: 0,
-  maxOrdersPerSession: 10,
+  maxOrderPerSession: 10,
   queue: [],
   processing: false,
   lastOrderAt: 0,
@@ -20,8 +20,7 @@ let state = {
   winStreak: 0,
   lossStreak: 0,
   totalWins: 0,
-  totalLosses: 0,
-  autoEnabled: false
+  totalLosses: 0
 };
 
 // ===== HELPERS =====
@@ -35,13 +34,23 @@ function addLog(type, msg) {
     type,
     msg
   });
-  state.log = state.log.slice(0, 60);
+  state.log = state.log.slice(0, 80);
 }
 
 function computeBaseGuard() {
   if (state.pnl <= -15) return 'BLOCKED';
   if (state.pnl <= -10) return 'WARN';
   return 'READY';
+}
+
+function explainReason(reason) {
+  if (reason === 'HARD_LOCK') return 'Trading bleibt gesperrt bis Reset.';
+  if (reason === 'QUEUE_LOCK') return 'Eine Order läuft gerade oder wartet in der Queue.';
+  if (reason === 'SESSION_LIMIT') return 'Tageslimit erreicht.';
+  if (reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv.';
+  if (reason === 'PNL_LIMIT') return 'PnL-Limit unterschritten.';
+  if (reason === 'WARN_LIMIT') return 'Warnbereich erreicht.';
+  return 'System bereit.';
 }
 
 function getGuardInfo() {
@@ -51,11 +60,13 @@ function getGuardInfo() {
     return { guard: 'BLOCKED', reason: 'HARD_LOCK', label: 'HARD BLOCK' };
   }
 
-  if (state.processing || state.queue.length) {
+  // V19.8 FIX:
+  // LOCKED nur wenn wirklich processing + queue aktiv
+  if (state.processing && state.queue.length > 0) {
     return { guard: 'LOCKED', reason: 'QUEUE_LOCK', label: 'QUEUE LOCK' };
   }
 
-  if (state.ordersToday >= state.maxOrdersPerSession) {
+  if (state.ordersToday >= state.maxOrderPerSession) {
     return { guard: 'SESSION_LIMIT', reason: 'SESSION_LIMIT', label: 'SESSION LIMIT' };
   }
 
@@ -64,30 +75,14 @@ function getGuardInfo() {
   }
 
   if (base === 'BLOCKED') {
-    return { guard: 'BLOCKED', reason: 'PNL_LIMIT', label: 'PNL BLOCKED' };
+    return { guard: 'BLOCKED', reason: 'PNL_LIMIT', label: 'PnL LIMIT' };
   }
 
   if (base === 'WARN') {
-    return { guard: 'WARN', reason: 'WARN_LIMIT', label: 'WARN RANGE' };
+    return { guard: 'WARN', reason: 'WARN_LIMIT', label: 'WARN' };
   }
 
   return { guard: 'READY', reason: 'SYSTEM_READY', label: 'READY' };
-}
-
-function explainReason(reason) {
-  if (reason === 'HARD_LOCK') return 'Trading bleibt gesperrt.';
-  if (reason === 'QUEUE_LOCK') return 'Eine Order läuft gerade.';
-  if (reason === 'SESSION_LIMIT') return 'Tageslimit erreicht.';
-  if (reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv.';
-  if (reason === 'PNL_LIMIT') return 'PnL-Limit unterschritten.';
-  if (reason === 'WARN_LIMIT') return 'Warnbereich erreicht.';
-  return 'System bereit.';
-}
-
-function calcWinRate() {
-  const total = state.totalWins + state.totalLosses;
-  if (!total) return 0;
-  return Number(((state.totalWins / total) * 100).toFixed(2));
 }
 
 function statusPayload() {
@@ -99,23 +94,21 @@ function statusPayload() {
     reason: info.reason,
     reasonLabel: info.label,
     reasonHint: explainReason(info.reason),
-
     ordersToday: state.ordersToday,
-    maxOrdersPerSession: state.maxOrdersPerSession,
+    maxOrderPerSession: state.maxOrderPerSession,
     queueLength: state.queue.length,
     processing: state.processing,
     cooldownLeft: Math.max(0, Math.ceil((state.cooldownUntil - now()) / 1000)),
     hardBlocked: state.hardBlocked,
     currentOrderId: state.currentOrderId,
-
     winStreak: state.winStreak,
     lossStreak: state.lossStreak,
     totalWins: state.totalWins,
     totalLosses: state.totalLosses,
-    winRate: calcWinRate(),
-
-    autoEnabled: state.autoEnabled,
-
+    winRate:
+      state.totalWins + state.totalLosses > 0
+        ? Number(((state.totalWins / (state.totalWins + state.totalLosses)) * 100).toFixed(2))
+        : 0,
     log: state.log
   };
 }
@@ -184,18 +177,28 @@ app.get('/api/status', (req, res) => {
   res.json(statusPayload());
 });
 
-// BUY
+// FIXED BUY
 app.post('/api/buy', (req, res) => {
+  if (req.body && req.body.dryRun) {
+    return res.json({ ok: true, status: statusPayload() });
+  }
   return placeOrder('BUY', res);
 });
 
-// SELL
+// FIXED SELL
 app.post('/api/sell', (req, res) => {
+  if (req.body && req.body.dryRun) {
+    return res.json({ ok: true, status: statusPayload() });
+  }
   return placeOrder('SELL', res);
 });
 
-// ORDER
+// FIXED ORDER (optional body support)
 app.post('/api/order', (req, res) => {
+  if (req.body && req.body.dryRun) {
+    return res.json({ ok: true, status: statusPayload() });
+  }
+
   const side = (req.body && req.body.side) || 'BUY';
   return placeOrder(side, res);
 });
@@ -260,18 +263,6 @@ app.post('/api/hardblock/on', (req, res) => {
 app.post('/api/hardblock/off', (req, res) => {
   state.hardBlocked = false;
   addLog('HARD_BLOCK', 'Manuell deaktiviert');
-  res.json(statusPayload());
-});
-
-app.post('/api/auto/on', (req, res) => {
-  state.autoEnabled = true;
-  addLog('AUTO', 'Auto ON');
-  res.json(statusPayload());
-});
-
-app.post('/api/auto/off', (req, res) => {
-  state.autoEnabled = false;
-  addLog('AUTO', 'Auto OFF');
   res.json(statusPayload());
 });
 
