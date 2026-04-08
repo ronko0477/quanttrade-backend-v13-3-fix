@@ -1,6 +1,8 @@
 const path = require('path');
 const express = require('express');
+
 const app = express();
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -23,7 +25,9 @@ let state = {
 };
 
 // ===== HELPERS =====
-function now() { return Date.now(); }
+function now() {
+  return Date.now();
+}
 
 function addLog(type, msg) {
   state.log.unshift({
@@ -44,37 +48,65 @@ function getGuardInfo() {
   const base = computeBaseGuard();
 
   if (state.hardBlocked) {
-    return { guard: 'BLOCKED', reason: 'HARD_LOCK', label: 'HARD LOCK' };
+    return {
+      guard: 'BLOCKED',
+      reason: 'HARD_LOCK',
+      label: 'HARD LOCK'
+    };
   }
 
   if (state.processing || state.queue.length) {
-    return { guard: 'LOCKED', reason: 'QUEUE_LOCK', label: 'QUEUE LOCK' };
+    return {
+      guard: 'LOCKED',
+      reason: 'QUEUE_LOCK',
+      label: 'QUEUE LOCK'
+    };
   }
 
   if (state.ordersToday >= state.maxOrdersPerSession) {
-    return { guard: 'SESSION_LIMIT', reason: 'SESSION_LIMIT', label: 'SESSION LIMIT' };
+    return {
+      guard: 'SESSION_LIMIT',
+      reason: 'SESSION_LIMIT',
+      label: 'SESSION LIMIT'
+    };
   }
 
   if (now() < state.cooldownUntil) {
-    return { guard: 'COOLDOWN', reason: 'COOLDOWN_TIMER', label: 'COOLDOWN' };
+    return {
+      guard: 'COOLDOWN',
+      reason: 'COOLDOWN_TIMER',
+      label: 'COOLDOWN'
+    };
   }
 
   if (base === 'BLOCKED') {
-    return { guard: 'BLOCKED', reason: 'PNL_LIMIT', label: 'BLOCKED' };
+    return {
+      guard: 'BLOCKED',
+      reason: 'PNL_LIMIT',
+      label: 'PnL LIMIT'
+    };
   }
 
   if (base === 'WARN') {
-    return { guard: 'WARN', reason: 'WARN_LIMIT', label: 'WARNING' };
+    return {
+      guard: 'WARN',
+      reason: 'WARN_LIMIT',
+      label: 'WARN'
+    };
   }
 
-  return { guard: 'READY', reason: 'SYSTEM_READY', label: 'SYSTEM READY' };
+  return {
+    guard: 'READY',
+    reason: 'SYSTEM_READY',
+    label: 'SYSTEM READY'
+  };
 }
 
 function explainReason(reason) {
-  if (reason === 'HARD_LOCK') return 'Trading bleibt gesperrt bis Reset.';
-  if (reason === 'QUEUE_LOCK') return 'Eine Order läuft bereits oder wartet in der Queue.';
+  if (reason === 'HARD_LOCK') return 'Trading bleibt gesperrt.';
+  if (reason === 'QUEUE_LOCK') return 'Eine Order läuft bereits.';
   if (reason === 'SESSION_LIMIT') return 'Tageslimit erreicht.';
-  if (reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv. Bitte warten.';
+  if (reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv.';
   if (reason === 'PNL_LIMIT') return 'PnL-Limit unterschritten.';
   if (reason === 'WARN_LIMIT') return 'Warnbereich erreicht.';
   return 'System bereit.';
@@ -100,9 +132,15 @@ function statusPayload() {
     lossStreak: state.lossStreak,
     totalWins: state.totalWins,
     totalLosses: state.totalLosses,
-    winRate: (state.totalWins + state.totalLosses) > 0
-      ? Number((state.totalWins / (state.totalWins + state.totalLosses) * 100).toFixed(1))
-      : 0,
+    winRate:
+      state.totalWins + state.totalLosses > 0
+        ? Number(
+            (
+              (state.totalWins / (state.totalWins + state.totalLosses)) *
+              100
+            ).toFixed(2)
+          )
+        : 0,
     log: state.log
   };
 }
@@ -113,14 +151,15 @@ function processQueue() {
   if (!state.queue.length) return;
 
   state.processing = true;
-  const id = state.queue.shift();
-  state.currentOrderId = id;
 
-  addLog('PROCESSING', `Order ${id} wird verarbeitet`);
+  const job = state.queue.shift();
+  state.currentOrderId = job.id;
+
+  addLog('PROCESSING', `Order ${job.id} wird verarbeitet`);
 
   setTimeout(() => {
     state.ordersToday += 1;
-    addLog('EXECUTED', `Order ${id} ausgeführt`);
+    addLog('EXECUTED', `Order ${job.id} ausgeführt (${job.side})`);
 
     state.processing = false;
     state.currentOrderId = null;
@@ -129,27 +168,7 @@ function processQueue() {
   }, 1200);
 }
 
-// ===== UI =====
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-app.get('/api/status', (req, res) => {
-  res.json(statusPayload());
-  
-  // BUY Wrapper
-app.post('/api/buy', (req, res) => {
-  req.body.side = 'BUY';
-  req.url = '/api/order';
-  app._router.handle(req, res);
-});
-
-// SELL Wrapper
-app.post('/api/sell', (req, res) => {
-  req.body.side = 'SELL';
-  req.url = '/api/order';
-  app._router.handle(req, res);
-});
-app.post('/api/order', (req, res) => {
+function placeOrder(side, res) {
   const info = getGuardInfo();
 
   if (info.guard !== 'READY') {
@@ -168,15 +187,38 @@ app.post('/api/order', (req, res) => {
 
   const id = now();
   state.lastOrderAt = now();
-  state.queue.push(id);
 
-  addLog('QUEUED', `Order ${id}`);
+  state.queue.push({ id, side });
+  addLog('QUEUED', `Order ${id} queued (${side})`);
+
   processQueue();
 
-  res.json({
+  return res.json({
     message: 'Order angenommen',
     status: statusPayload()
   });
+}
+
+// ===== UI =====
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/api/status', (req, res) => {
+  res.json(statusPayload());
+});
+
+app.post('/api/buy', (req, res) => {
+  return placeOrder('BUY', res);
+});
+
+app.post('/api/sell', (req, res) => {
+  return placeOrder('SELL', res);
+});
+
+app.post('/api/order', (req, res) => {
+  const side = (req.body && req.body.side) || 'BUY';
+  return placeOrder(side, res);
 });
 
 app.post('/api/win', (req, res) => {
@@ -217,6 +259,8 @@ app.post('/api/reset', (req, res) => {
   state.currentOrderId = null;
   state.winStreak = 0;
   state.lossStreak = 0;
+  state.totalWins = 0;
+  state.totalLosses = 0;
 
   addLog('RESET', 'System reset');
   res.json(statusPayload());
@@ -242,5 +286,5 @@ app.post('/api/hardblock/off', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log('V16 läuft auf Port ' + PORT);
+  console.log('Server läuft auf Port ' + PORT);
 });
