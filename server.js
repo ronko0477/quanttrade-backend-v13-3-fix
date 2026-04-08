@@ -48,7 +48,7 @@ function getGuardInfo() {
   const base = computeBaseGuard();
 
   if (state.hardBlocked) {
-    return { guard: 'BLOCKED', reason: 'HARD_LOCK', label: 'HARD LOCK' };
+    return { guard: 'BLOCKED', reason: 'HARD_LOCK', label: 'HARD BLOCK' };
   }
 
   if (state.processing || state.queue.length) {
@@ -64,24 +64,30 @@ function getGuardInfo() {
   }
 
   if (base === 'BLOCKED') {
-    return { guard: 'BLOCKED', reason: 'PNL_LIMIT', label: 'PNL LIMIT' };
+    return { guard: 'BLOCKED', reason: 'PNL_LIMIT', label: 'PNL BLOCKED' };
   }
 
   if (base === 'WARN') {
-    return { guard: 'WARN', reason: 'WARN_LIMIT', label: 'WARN LIMIT' };
+    return { guard: 'WARN', reason: 'WARN_LIMIT', label: 'WARN RANGE' };
   }
 
-  return { guard: 'READY', reason: 'SYSTEM_READY', label: 'SYSTEM READY' };
+  return { guard: 'READY', reason: 'SYSTEM_READY', label: 'READY' };
 }
 
 function explainReason(reason) {
   if (reason === 'HARD_LOCK') return 'Trading bleibt gesperrt.';
-  if (reason === 'QUEUE_LOCK') return 'Eine Order läuft noch.';
+  if (reason === 'QUEUE_LOCK') return 'Eine Order läuft gerade.';
   if (reason === 'SESSION_LIMIT') return 'Tageslimit erreicht.';
   if (reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv.';
   if (reason === 'PNL_LIMIT') return 'PnL-Limit unterschritten.';
   if (reason === 'WARN_LIMIT') return 'Warnbereich erreicht.';
   return 'System bereit.';
+}
+
+function calcWinRate() {
+  const total = state.totalWins + state.totalLosses;
+  if (!total) return 0;
+  return Number(((state.totalWins / total) * 100).toFixed(2));
 }
 
 function statusPayload() {
@@ -93,6 +99,7 @@ function statusPayload() {
     reason: info.reason,
     reasonLabel: info.label,
     reasonHint: explainReason(info.reason),
+
     ordersToday: state.ordersToday,
     maxOrdersPerSession: state.maxOrdersPerSession,
     queueLength: state.queue.length,
@@ -100,25 +107,15 @@ function statusPayload() {
     cooldownLeft: Math.max(0, Math.ceil((state.cooldownUntil - now()) / 1000)),
     hardBlocked: state.hardBlocked,
     currentOrderId: state.currentOrderId,
+
     winStreak: state.winStreak,
     lossStreak: state.lossStreak,
     totalWins: state.totalWins,
     totalLosses: state.totalLosses,
-    winRate:
-      state.totalWins + state.totalLosses > 0
-        ? Number(((state.totalWins / (state.totalWins + state.totalLosses)) * 100).toFixed(2))
-        : 0,
+    winRate: calcWinRate(),
+
     autoEnabled: state.autoEnabled,
-    score: 82,
-    confidence: 62,
-    bias: computeBaseGuard() === 'READY' ? 'BUY' : 'NONE',
-    trigger: 80,
-    trend: 72.3,
-    volume: 65.5,
-    structure: 80.1,
-    volatility: 51.2,
-    liquidity: 81.9,
-    session: 68.0,
+
     log: state.log
   };
 }
@@ -187,17 +184,17 @@ app.get('/api/status', (req, res) => {
   res.json(statusPayload());
 });
 
-// FIXED BUY
+// BUY
 app.post('/api/buy', (req, res) => {
   return placeOrder('BUY', res);
 });
 
-// FIXED SELL
+// SELL
 app.post('/api/sell', (req, res) => {
   return placeOrder('SELL', res);
 });
 
-// FIXED ORDER
+// ORDER
 app.post('/api/order', (req, res) => {
   const side = (req.body && req.body.side) || 'BUY';
   return placeOrder(side, res);
