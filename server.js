@@ -168,6 +168,7 @@ function processQueue() {
   }, 1200);
 }
 
+// ===== ORDER LOGIC =====
 function placeOrder(side, res) {
   const info = getGuardInfo();
 
