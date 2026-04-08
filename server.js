@@ -2,24 +2,13 @@ const path = require('path');
 const express = require('express');
 
 const app = express();
-
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ===== CONFIG =====
-const CONFIG = {
-  maxOrdersPerSession: 10,
-  cooldownMs: 15000,
-  minOrderGapMs: 1000,
-  queueProcessMs: 1200,
-  hardBlockPnL: -15,
-  warnPnL: -10
-};
-
-// ===== STATE =====
 let state = {
   pnl: 0,
   ordersToday: 0,
+  maxOrdersPerSession: 10,
   queue: [],
   processing: false,
   lastOrderAt: 0,
@@ -31,13 +20,11 @@ let state = {
   totalWins: 0,
   totalLosses: 0,
   autoEnabled: false,
-  autoBusy: false,
   autoLastFireAt: 0,
   autoLastExecutedAt: 0,
   confidence: 62,
-  aiBias: 'BUY',
   trigger: 80,
-  score: 82,
+  aiScore: 82,
   factors: {
     trend: 72.3,
     volume: 65.5,
@@ -49,7 +36,6 @@ let state = {
   log: []
 };
 
-// ===== HELPERS =====
 function now() {
   return Date.now();
 }
@@ -68,12 +54,12 @@ function addLog(type, msg) {
     type,
     msg
   });
-  state.log = state.log.slice(0, 80);
+  state.log = state.log.slice(0, 120);
 }
 
 function computeBaseGuard() {
-  if (state.pnl <= CONFIG.hardBlockPnL) return 'BLOCKED';
-  if (state.pnl <= CONFIG.warnPnL) return 'WARN';
+  if (state.pnl <= -15) return 'BLOCKED';
+  if (state.pnl <= -10) return 'WARN';
   return 'READY';
 }
 
@@ -81,30 +67,58 @@ function getGuardInfo() {
   const base = computeBaseGuard();
 
   if (state.hardBlocked) {
-    return { guard: 'BLOCKED', reason: 'HARD_LOCK', label: 'BLOCKED' };
+    return {
+      guard: 'BLOCKED',
+      reason: 'HARD_LOCK',
+      label: 'BLOCKED'
+    };
   }
 
-  if (state.ordersToday >= CONFIG.maxOrdersPerSession) {
-    return { guard: 'SESSION_LIMIT', reason: 'SESSION_LIMIT', label: 'SESSION LIMIT' };
+  if (state.ordersToday >= state.maxOrdersPerSession) {
+    return {
+      guard: 'SESSION_LIMIT',
+      reason: 'SESSION_LIMIT',
+      label: 'SESSION LIMIT'
+    };
   }
 
   if (now() < state.cooldownUntil) {
-    return { guard: 'COOLDOWN', reason: 'COOLDOWN_TIMER', label: 'COOLDOWN' };
-  }
-
-  if (state.processing || state.queue.length > 0) {
-    return { guard: 'LOCKED', reason: 'QUEUE_LOCK', label: 'LOCKED' };
+    return {
+      guard: 'COOLDOWN',
+      reason: 'COOLDOWN_TIMER',
+      label: 'COOLDOWN'
+    };
   }
 
   if (base === 'BLOCKED') {
-    return { guard: 'BLOCKED', reason: 'PNL_LIMIT', label: 'BLOCKED' };
+    return {
+      guard: 'BLOCKED',
+      reason: 'PNL_LIMIT',
+      label: 'BLOCKED'
+    };
+  }
+
+  if (state.processing || state.queue.length > 0) {
+    return {
+      guard: 'LOCKED',
+      reason: 'QUEUE_LOCK',
+      label: 'LOCKED'
+    };
   }
 
   if (base === 'WARN') {
-    return { guard: 'WARN', reason: 'WARN_LIMIT', label: 'WARN' };
+    return {
+      guard: 'WARN',
+      reason: 'WARN_LIMIT',
+      label: 'WARN'
+    };
   }
 
-  return { guard: 'READY', reason: 'SYSTEM_READY', label: 'READY' };
+  return {
+    guard: 'READY',
+    reason: 'SYSTEM_READY',
+    label: 'READY'
+  };
 }
 
 function explainReason(reason) {
@@ -112,7 +126,7 @@ function explainReason(reason) {
     case 'HARD_LOCK':
       return 'Hard Block aktiv.';
     case 'QUEUE_LOCK':
-      return 'Order läuft oder wartet in der Queue.';
+      return 'Order läuft oder ist in Queue.';
     case 'SESSION_LIMIT':
       return 'Tageslimit erreicht.';
     case 'COOLDOWN_TIMER':
@@ -127,6 +141,15 @@ function explainReason(reason) {
   }
 }
 
+function healthPayload() {
+  const info = getGuardInfo();
+  return {
+    status: true,
+    buy: info.guard !== 'BLOCKED' && info.guard !== 'SESSION_LIMIT',
+    sell: info.guard !== 'BLOCKED' && info.guard !== 'SESSION_LIMIT'
+  };
+}
+
 function statusPayload() {
   const info = getGuardInfo();
   const totalTrades = state.totalWins + state.totalLosses;
@@ -139,7 +162,7 @@ function statusPayload() {
     reasonHint: explainReason(info.reason),
 
     ordersToday: state.ordersToday,
-    maxOrdersPerSession: CONFIG.maxOrdersPerSession,
+    maxOrdersPerSession: state.maxOrdersPerSession,
     queueLength: state.queue.length,
     processing: state.processing,
     cooldownLeft: Math.max(0, Math.ceil((state.cooldownUntil - now()) / 1000)),
@@ -150,30 +173,22 @@ function statusPayload() {
     lossStreak: state.lossStreak,
     totalWins: state.totalWins,
     totalLosses: state.totalLosses,
-    winRate: totalTrades > 0 ? Number(((state.totalWins / totalTrades) * 100).toFixed(1)) : 0,
+    winRate: totalTrades > 0 ? Number(((state.totalWins / totalTrades) * 100).toFixed(2)) : 0,
 
     autoEnabled: state.autoEnabled,
-    autoBusy: state.autoBusy,
     autoLastFireAt: state.autoLastFireAt,
     autoLastExecutedAt: state.autoLastExecutedAt,
 
     confidence: state.confidence,
-    aiBias: state.aiBias,
     trigger: state.trigger,
-    score: state.score,
+    aiScore: state.aiScore,
     factors: state.factors,
 
-    health: {
-      status: true,
-      buy: true,
-      sell: true
-    },
-
+    health: healthPayload(),
     log: state.log
   };
 }
 
-// ===== ORDER ENGINE =====
 function processQueue() {
   if (state.processing) return;
   if (!state.queue.length) return;
@@ -195,61 +210,68 @@ function processQueue() {
     state.currentOrderId = null;
 
     processQueue();
-  }, CONFIG.queueProcessMs);
+  }, 1200);
 }
 
-function placeOrder(side, res) {
-  const info = getGuardInfo();
+function placeOrder(side, res, options = {}) {
+  const dryRun = !!options.dryRun;
 
-  if (info.guard !== 'READY') {
-    return res.status(429).json({
-      message: 'Order blockiert',
+  if (!dryRun) {
+    const info = getGuardInfo();
+
+    if (info.guard !== 'READY' && info.guard !== 'WARN') {
+      return res.status(429).json({
+        message: 'Order blockiert',
+        status: statusPayload()
+      });
+    }
+
+    if (now() - state.lastOrderAt < 1000) {
+      return res.status(429).json({
+        message: 'Zu schnell',
+        status: statusPayload()
+      });
+    }
+
+    const id = now();
+    state.lastOrderAt = now();
+    state.queue.push({ id, side });
+
+    addLog('QUEUED', `Order ${id} queued (${side})`);
+    processQueue();
+
+    return res.json({
+      message: 'Order angenommen',
       status: statusPayload()
     });
   }
-
-  if (now() - state.lastOrderAt < CONFIG.minOrderGapMs) {
-    return res.status(429).json({
-      message: 'Zu schnell',
-      status: statusPayload()
-    });
-  }
-
-  const id = now();
-  state.lastOrderAt = now();
-
-  state.queue.push({ id, side });
-  addLog('QUEUED', `Order ${id} queued (${side})`);
-
-  processQueue();
 
   return res.json({
-    message: 'Order angenommen',
+    message: `${side} dry-run OK`,
+    ok: true,
     status: statusPayload()
   });
 }
 
-// ===== UI =====
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ===== API =====
 app.get('/api/status', (req, res) => {
   res.json(statusPayload());
 });
 
 app.post('/api/buy', (req, res) => {
-  return placeOrder('BUY', res);
+  return placeOrder('BUY', res, req.body || {});
 });
 
 app.post('/api/sell', (req, res) => {
-  return placeOrder('SELL', res);
+  return placeOrder('SELL', res, req.body || {});
 });
 
 app.post('/api/order', (req, res) => {
   const side = (req.body && req.body.side) || 'BUY';
-  return placeOrder(String(side).toUpperCase(), res);
+  return placeOrder(String(side).toUpperCase(), res, req.body || {});
 });
 
 app.post('/api/win', (req, res) => {
@@ -273,7 +295,6 @@ app.post('/api/loss', (req, res) => {
 
   if (computeBaseGuard() === 'BLOCKED') {
     state.hardBlocked = true;
-    state.cooldownUntil = now() + CONFIG.cooldownMs;
     addLog('HARD_BLOCK', 'Auto aktiviert');
   }
 
@@ -293,9 +314,6 @@ app.post('/api/reset', (req, res) => {
   state.lossStreak = 0;
   state.totalWins = 0;
   state.totalLosses = 0;
-  state.autoBusy = false;
-  state.autoLastFireAt = 0;
-  state.autoLastExecutedAt = 0;
 
   addLog('RESET', 'System reset');
 
@@ -303,8 +321,8 @@ app.post('/api/reset', (req, res) => {
 });
 
 app.post('/api/cooldown', (req, res) => {
-  state.cooldownUntil = now() + CONFIG.cooldownMs;
-  addLog('COOLDOWN', 'Manueller Cooldown gestartet');
+  state.cooldownUntil = now() + 15000;
+  addLog('COOLDOWN', 'Manueller Cooldown 15s gestartet');
   res.json(statusPayload());
 });
 
@@ -322,6 +340,7 @@ app.post('/api/hardblock/off', (req, res) => {
 
 app.post('/api/auto/on', (req, res) => {
   state.autoEnabled = true;
+  state.autoLastFireAt = now();
   addLog('AUTO', 'Auto ON');
   res.json(statusPayload());
 });
@@ -339,5 +358,5 @@ app.post('/api/sync', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log('V19.8.2 FULL PRO läuft auf Port ' + PORT);
+  console.log('V19.8.4 läuft auf Port ' + PORT);
 });
