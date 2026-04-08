@@ -197,6 +197,7 @@ function placeOrder(side, res) {
     message: 'Order angenommen',
     status: statusPayload()
   });
+}
 
 // ===== UI =====
 app.get('/', (req, res) => {
