@@ -5,7 +5,6 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ===== STATE =====
 let state = {
   pnl: 0,
   ordersToday: 0,
@@ -15,20 +14,24 @@ let state = {
   lastOrderAt: 0,
   cooldownUntil: 0,
   hardBlocked: false,
-  log: [],
   currentOrderId: null,
-  winStreak: 0,
-  lossStreak: 0,
-  totalWins: 0,
-  totalLosses: 0,
-
+  currentSide: 'NONE',
   autoEnabled: false,
   autoTrades: 0,
   confidence: 62,
-  side: 'NONE'
+  trend: 72.3,
+  volume: 65.5,
+  structure: 80.1,
+  volatility: 51.2,
+  liquidity: 81.9,
+  session: 68.0,
+  log: [],
+  winStreak: 0,
+  lossStreak: 0,
+  totalWins: 0,
+  totalLosses: 0
 };
 
-// ===== HELPERS =====
 function now() {
   return Date.now();
 }
@@ -48,78 +51,49 @@ function computeBaseGuard() {
   return 'READY';
 }
 
-function getGuardInfo() {
-  const base = computeBaseGuard();
-
-  if (state.hardBlocked) {
-    return {
-      guard: 'BLOCKED',
-      reason: 'HARD_LOCK',
-      label: 'HARD LOCK'
-    };
-  }
-
-  if (state.processing || state.queue.length) {
-    return {
-      guard: 'LOCKED',
-      reason: 'QUEUE_LOCK',
-      label: 'QUEUE LOCK'
-    };
-  }
-
-  if (state.ordersToday >= state.maxOrdersPerSession) {
-    return {
-      guard: 'SESSION_LIMIT',
-      reason: 'SESSION_LIMIT',
-      label: 'SESSION LIMIT'
-    };
-  }
-
-  if (now() < state.cooldownUntil) {
-    return {
-      guard: 'COOLDOWN',
-      reason: 'COOLDOWN_TIMER',
-      label: 'COOLDOWN'
-    };
-  }
-
-  if (base === 'BLOCKED') {
-    return {
-      guard: 'BLOCKED',
-      reason: 'PNL_LIMIT',
-      label: 'PNL BLOCKED'
-    };
-  }
-
-  if (base === 'WARN') {
-    return {
-      guard: 'WARN',
-      reason: 'WARN_LIMIT',
-      label: 'WARN'
-    };
-  }
-
-  return {
-    guard: 'READY',
-    reason: 'SYSTEM_READY',
-    label: 'SYSTEM READY'
-  };
-}
-
 function explainReason(reason) {
-  if (reason === 'HARD_LOCK') return 'Trading bleibt gesperrt.';
-  if (reason === 'QUEUE_LOCK') return 'Eine Order läuft gerade.';
-  if (reason === 'SESSION_LIMIT') return 'Tageslimit erreicht.';
+  if (reason === 'HARD_LOCK') return 'Trading manuell gesperrt.';
+  if (reason === 'QUEUE_LOCK') return 'Order wird verarbeitet.';
+  if (reason === 'SESSION_LIMIT') return 'Sessionlimit erreicht.';
   if (reason === 'COOLDOWN_TIMER') return 'Cooldown aktiv.';
   if (reason === 'PNL_LIMIT') return 'PnL-Limit unterschritten.';
   if (reason === 'WARN_LIMIT') return 'Warnbereich erreicht.';
   return 'System bereit.';
 }
 
+function getGuardInfo() {
+  const base = computeBaseGuard();
+
+  if (state.hardBlocked) {
+    return { guard: 'BLOCKED', reason: 'HARD_LOCK', label: 'HARD LOCK' };
+  }
+
+  if (state.processing || state.queue.length) {
+    return { guard: 'LOCKED', reason: 'QUEUE_LOCK', label: 'QUEUE LOCK' };
+  }
+
+  if (state.ordersToday >= state.maxOrdersPerSession) {
+    return { guard: 'SESSION_LIMIT', reason: 'SESSION_LIMIT', label: 'SESSION LIMIT' };
+  }
+
+  if (now() < state.cooldownUntil) {
+    return { guard: 'COOLDOWN', reason: 'COOLDOWN_TIMER', label: 'COOLDOWN' };
+  }
+
+  if (base === 'BLOCKED') {
+    return { guard: 'BLOCKED', reason: 'PNL_LIMIT', label: 'PNL LIMIT' };
+  }
+
+  if (base === 'WARN') {
+    return { guard: 'WARN', reason: 'WARN_LIMIT', label: 'WARN LIMIT' };
+  }
+
+  return { guard: 'READY', reason: 'SYSTEM_READY', label: 'SYSTEM READY' };
+}
+
 function statusPayload() {
   const info = getGuardInfo();
-  const total = state.totalWins + state.totalLosses;
-  const winRate = total > 0 ? Number(((state.totalWins / total) * 100).toFixed(2)) : 0;
+  const totalTrades = state.totalWins + state.totalLosses;
 
   return {
     pnl: Number(state.pnl.toFixed(2)),
@@ -127,7 +101,6 @@ function statusPayload() {
     reason: info.reason,
     reasonLabel: info.label,
     reasonHint: explainReason(info.reason),
-
     ordersToday: state.ordersToday,
     maxOrdersPerSession: state.maxOrdersPerSession,
     queueLength: state.queue.length,
@@ -135,23 +108,25 @@ function statusPayload() {
     cooldownLeft: Math.max(0, Math.ceil((state.cooldownUntil - now()) / 1000)),
     hardBlocked: state.hardBlocked,
     currentOrderId: state.currentOrderId,
-
+    currentSide: state.currentSide,
+    autoEnabled: state.autoEnabled,
+    autoTrades: state.autoTrades,
+    confidence: state.confidence,
+    trend: state.trend,
+    volume: state.volume,
+    structure: state.structure,
+    volatility: state.volatility,
+    liquidity: state.liquidity,
+    session: state.session,
     winStreak: state.winStreak,
     lossStreak: state.lossStreak,
     totalWins: state.totalWins,
     totalLosses: state.totalLosses,
-    winRate,
-
-    autoEnabled: state.autoEnabled,
-    autoTrades: state.autoTrades,
-    confidence: state.confidence,
-    side: state.side,
-
+    winRate: totalTrades > 0 ? Number(((state.totalWins / totalTrades) * 100).toFixed(2)) : 0,
     log: state.log
   };
 }
 
-// ===== QUEUE =====
 function processQueue() {
   if (state.processing) return;
   if (!state.queue.length) return;
@@ -160,23 +135,33 @@ function processQueue() {
 
   const job = state.queue.shift();
   state.currentOrderId = job.id;
+  state.currentSide = job.side;
 
   addLog('PROCESSING', `Order ${job.id} wird verarbeitet (${job.side})`);
 
   setTimeout(() => {
     state.ordersToday += 1;
+    state.autoTrades += job.auto ? 1 : 0;
     addLog('EXECUTED', `Order ${job.id} ausgeführt (${job.side})`);
 
     state.processing = false;
     state.currentOrderId = null;
+    state.currentSide = 'NONE';
 
     processQueue();
   }, 1200);
 }
 
-// ===== ORDER LOGIC =====
-function placeOrder(side, res) {
+function placeOrder(side, res, options = {}) {
   const info = getGuardInfo();
+
+  if (options.dryRun) {
+    return res.json({
+      ok: info.guard === 'READY',
+      side,
+      status: statusPayload()
+    });
+  }
 
   if (info.guard !== 'READY') {
     return res.status(429).json({
@@ -195,11 +180,13 @@ function placeOrder(side, res) {
   const id = now();
   state.lastOrderAt = now();
 
-  state.side = side;
-  state.queue.push({ id, side });
+  state.queue.push({
+    id,
+    side,
+    auto: !!options.auto
+  });
 
   addLog('QUEUED', `Order ${id} queued (${side})`);
-
   processQueue();
 
   return res.json({
@@ -208,7 +195,6 @@ function placeOrder(side, res) {
   });
 }
 
-// ===== UI =====
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -217,18 +203,20 @@ app.get('/api/status', (req, res) => {
   res.json(statusPayload());
 });
 
-// ===== FIXED ORDER ROUTES =====
 app.post('/api/buy', (req, res) => {
-  return placeOrder('BUY', res);
+  return placeOrder('BUY', res, { dryRun: !!req.body?.dryRun });
 });
 
 app.post('/api/sell', (req, res) => {
-  return placeOrder('SELL', res);
+  return placeOrder('SELL', res, { dryRun: !!req.body?.dryRun });
 });
 
 app.post('/api/order', (req, res) => {
   const side = (req.body && req.body.side) || 'BUY';
-  return placeOrder(side, res);
+  return placeOrder(side, res, {
+    dryRun: !!req.body?.dryRun,
+    auto: !!req.body?.auto
+  });
 });
 
 app.post('/api/win', (req, res) => {
@@ -236,9 +224,7 @@ app.post('/api/win', (req, res) => {
   state.winStreak += 1;
   state.lossStreak = 0;
   state.totalWins += 1;
-
   addLog('WIN', 'PnL +4');
-
   res.json(statusPayload());
 });
 
@@ -247,7 +233,6 @@ app.post('/api/loss', (req, res) => {
   state.lossStreak += 1;
   state.winStreak = 0;
   state.totalLosses += 1;
-
   addLog('LOSS', 'PnL -5');
 
   if (computeBaseGuard() === 'BLOCKED') {
@@ -268,16 +253,14 @@ app.post('/api/reset', (req, res) => {
   state.cooldownUntil = 0;
   state.hardBlocked = false;
   state.currentOrderId = null;
+  state.currentSide = 'NONE';
+  state.autoTrades = 0;
   state.winStreak = 0;
   state.lossStreak = 0;
   state.totalWins = 0;
   state.totalLosses = 0;
-  state.autoTrades = 0;
-  state.side = 'NONE';
-  state.confidence = 62;
 
   addLog('RESET', 'System reset');
-
   res.json(statusPayload());
 });
 
@@ -299,31 +282,15 @@ app.post('/api/hardblock/off', (req, res) => {
   res.json(statusPayload());
 });
 
-app.post('/api/auto/toggle', (req, res) => {
-  state.autoEnabled = !state.autoEnabled;
-  addLog('AUTO', state.autoEnabled ? 'Auto aktiviert' : 'Auto deaktiviert');
+app.post('/api/auto/on', (req, res) => {
+  state.autoEnabled = true;
+  addLog('AUTO', 'AUTO ON');
   res.json(statusPayload());
 });
 
-// Optional: einfacher Demo-Score Refresh
-app.post('/api/sync', (req, res) => {
-  const trend = 72.3;
-  const volume = 65.5;
-  const structure = 80.1;
-  const volatility = 51.2;
-  const liquidity = 81.9;
-  const session = 68.0;
-
-  const score = Math.round((trend + volume + structure + volatility + liquidity + session) / 6);
-
-  state.confidence = Math.min(99, Math.max(0, score));
-  if (state.confidence >= 80) {
-    state.side = trend >= 70 ? 'BUY' : 'SELL';
-  } else {
-    state.side = 'NONE';
-  }
-
-  addLog('SYNC', `Score aktualisiert ${state.confidence}`);
+app.post('/api/auto/off', (req, res) => {
+  state.autoEnabled = false;
+  addLog('AUTO', 'AUTO OFF');
   res.json(statusPayload());
 });
 
