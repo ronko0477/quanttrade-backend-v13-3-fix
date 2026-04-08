@@ -1,260 +1,316 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>V19.3.2 HARD LIVE</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V19.3.2 HARD LIVE</title>
+  <style>
+    :root{
+      --bg1:#07122f;
+      --bg2:#0d1c4f;
+      --card:#18265d;
+      --line:rgba(255,255,255,.08);
+      --text:#f5f7ff;
+      --muted:#aeb8df;
+      --green:#83f0a5;
+      --red:#ff9c9c;
+      --yellow:#f4d56d;
+      --blue:#9bb3ff;
+    }
 
-<style>
-:root{
-  --bg:#081432;
-  --card:#0f1f4a;
-  --line:rgba(255,255,255,.08);
-  --text:#fff;
-  --muted:#9fb3ff;
-  --green:#5cf7a4;
-  --red:#ff7f7f;
-  --yellow:#ffd166;
-}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:radial-gradient(circle at top,#102566 0%, var(--bg1) 42%, #06112b 100%);
+    }
 
-body{
-  margin:0;
-  font-family:system-ui;
-  background:linear-gradient(180deg,#081432,#0c1c40);
-  color:var(--text);
-}
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding:18px;
+      padding-bottom:120px;
+    }
 
-.wrap{
-  padding:16px;
-}
+    .title{
+      text-align:center;
+      font-size:28px;
+      font-weight:900;
+      margin:10px 0 18px;
+      letter-spacing:.5px;
+    }
 
-.title{
-  text-align:center;
-  font-size:22px;
-  font-weight:900;
-  margin-bottom:10px;
-}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:18px;
+      box-shadow:0 12px 34px rgba(0,0,0,.22);
+    }
 
-/* HERO */
+    .hero{
+      text-align:center;
+      padding:26px 18px;
+      margin-bottom:14px;
+    }
 
-.hero{
-  background:var(--card);
-  border-radius:18px;
-  padding:16px;
-  border:1px solid var(--line);
-}
+    .guard{
+      font-size:72px;
+      font-weight:900;
+      line-height:1;
+      margin-bottom:10px;
+    }
 
-.guard{
-  font-size:40px;
-  font-weight:900;
-  text-align:center;
-}
+    .guard.ready{color:var(--green)}
+    .guard.warn{color:var(--yellow)}
+    .guard.blocked{color:var(--red)}
+    .guard.other{color:#fff}
 
-.pnl{
-  text-align:center;
-  font-size:34px;
-  font-weight:900;
-}
+    .pnl{
+      font-size:58px;
+      font-weight:900;
+      line-height:1;
+    }
 
-.smallHint{
-  text-align:center;
-  font-size:11px;
-  color:var(--muted);
-}
+    .sub{
+      color:var(--muted);
+      margin-top:8px;
+      font-size:14px;
+    }
 
-/* GRID */
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      margin-bottom:14px;
+    }
 
-.mainGrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-top:12px;
-}
+    .miniTitle{
+      font-size:18px;
+      font-weight:900;
+      margin-bottom:14px;
+    }
 
-.card{
-  background:var(--card);
-  border-radius:14px;
-  padding:12px;
-  border:1px solid var(--line);
-}
+    .miniVal{
+      font-size:24px;
+      line-height:1.2;
+    }
 
-.scoreTitle{
-  font-size:14px;
-  font-weight:900;
-  margin-bottom:8px;
-}
+    .actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      margin-bottom:14px;
+    }
 
-/* BUTTONS */
+    button{
+      border:none;
+      border-radius:18px;
+      min-height:66px;
+      font-size:20px;
+      font-weight:900;
+      color:#fff;
+      cursor:pointer;
+    }
 
-button{
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  font-weight:900;
-  color:#fff;
-}
+    .buy{background:linear-gradient(90deg,#6ad08d,#9cf0a2)}
+    .sell{background:linear-gradient(90deg,#ee8c8c,#e8a2a2)}
+    .win{background:linear-gradient(90deg,#79d591,#96ecae)}
+    .loss{background:linear-gradient(90deg,#d98f8f,#e7b0b0)}
+    .reset{background:linear-gradient(90deg,#e0c05d,#f1d57c)}
 
-.btnBuy{background:linear-gradient(90deg,#3fcf7f,#64ffa0);}
-.btnSell{background:linear-gradient(90deg,#ff7f7f,#ff9a9a);}
-.btnWin{background:linear-gradient(90deg,#5cd98d,#7bffb1);}
-.btnLoss{background:linear-gradient(90deg,#dd7e7e,#ffaaaa);}
-.btnReset{background:linear-gradient(90deg,#ffd166,#ffdf85);}
+    .log{
+      margin-top:8px;
+      font-size:16px;
+      line-height:1.5;
+      color:#eef2ff;
+      white-space:pre-line;
+    }
 
-.actionBar{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-top:12px;
-}
+    .dock{
+      position:fixed;
+      left:16px;
+      right:16px;
+      bottom:16px;
+      background:rgba(24,38,93,.96);
+      border:1px solid var(--line);
+      border-radius:22px;
+      min-height:64px;
+      display:flex;
+      align-items:center;
+      padding:0 18px;
+      color:#dfe7ff;
+      font-size:18px;
+      box-shadow:0 16px 40px rgba(0,0,0,.28);
+      backdrop-filter:blur(10px);
+    }
 
-/* LOG */
+    .muted{
+      color:var(--muted);
+    }
 
-.log{
-  max-height:200px;
-  overflow:auto;
-  font-size:12px;
-}
-
-/* DOCK */
-
-.dock{
-  position:fixed;
-  bottom:10px;
-  left:10px;
-  right:10px;
-}
-
-.dockPanel{
-  background:var(--card);
-  border-radius:16px;
-  border:1px solid var(--line);
-  padding:10px;
-}
-
-</style>
+    @media (max-width:760px){
+      .title{font-size:22px}
+      .guard{font-size:52px}
+      .pnl{font-size:42px}
+      .grid,.actions{grid-template-columns:1fr 1fr}
+      button{min-height:58px;font-size:16px}
+    }
+  </style>
 </head>
-
 <body>
+  <div class="wrap">
+    <div class="title">V19.3.2 HARD LIVE ⚡</div>
 
-<div class="wrap">
+    <div class="card hero">
+      <div id="guard" class="guard ready">READY</div>
+      <div id="pnl" class="pnl">0.00</div>
+      <div class="sub">Net PnL</div>
+    </div>
 
-<div class="title">V19.3.2 HARD LIVE ⚡</div>
+    <div class="grid">
+      <div class="card">
+        <div class="miniTitle">STATUS</div>
+        <div id="healthStatus" class="miniVal">CHECK</div>
+      </div>
 
-<div class="hero">
-  <div id="guard" class="guard">READY</div>
-  <div id="pnl" class="pnl">0.00</div>
-  <div class="smallHint">Net PnL</div>
-</div>
+      <div class="card">
+        <div class="miniTitle">BUY POST</div>
+        <div id="healthBuy" class="miniVal">FAIL</div>
+      </div>
 
-<div class="mainGrid">
+      <div class="card">
+        <div class="miniTitle">SELL POST</div>
+        <div id="healthSell" class="miniVal">FAIL</div>
+      </div>
 
-  <div class="card">
-    <div class="scoreTitle">STATUS</div>
-    <div id="healthStatus">CHECK</div>
+      <div class="card">
+        <div class="miniTitle">CONF</div>
+        <div id="confVal" class="miniVal">0%</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="buy" onclick="performAction('/api/buy')">BUY</button>
+      <button class="sell" onclick="performAction('/api/sell')">SELL</button>
+      <button class="win" onclick="performAction('/api/win')">WIN</button>
+      <button class="loss" onclick="performAction('/api/loss')">LOSS</button>
+      <button class="reset" onclick="performAction('/api/reset')" style="grid-column:1 / span 1;">RESET</button>
+    </div>
+
+    <div class="card">
+      <div class="miniTitle">LOG</div>
+      <div id="logBox" class="log muted">lade...</div>
+    </div>
   </div>
 
-  <div class="card">
-    <div class="scoreTitle">BUY POST</div>
-    <div id="healthBuy">FAIL</div>
-  </div>
+  <div class="dock">Quick Dock</div>
 
-  <div class="card">
-    <div class="scoreTitle">SELL POST</div>
-    <div id="healthSell">FAIL</div>
-  </div>
+  <script>
+    async function postJSON(url, body = {}) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      return res.json();
+    }
 
-  <div class="card">
-    <div class="scoreTitle">CONF</div>
-    <div id="conf">0%</div>
-  </div>
+    async function getStatus() {
+      const res = await fetch('/api/status');
+      return res.json();
+    }
 
-</div>
+    function setGuardUI(guard) {
+      const el = document.getElementById('guard');
+      el.textContent = guard;
 
-<div class="actionBar">
-  <button class="btnBuy" onclick="send('buy')">BUY</button>
-  <button class="btnSell" onclick="send('sell')">SELL</button>
-  <button class="btnWin" onclick="send('win')">WIN</button>
-  <button class="btnLoss" onclick="send('loss')">LOSS</button>
-  <button class="btnReset" onclick="send('reset')">RESET</button>
-</div>
+      el.className = 'guard';
+      if (guard === 'READY') el.classList.add('ready');
+      else if (guard === 'WARN') el.classList.add('warn');
+      else if (guard === 'BLOCKED') el.classList.add('blocked');
+      else el.classList.add('other');
+    }
 
-<div class="card" style="margin-top:12px;">
-  <div class="scoreTitle">LOG</div>
-  <div id="log" class="log"></div>
-</div>
+    function setHealthUI(id, ok) {
+      const el = document.getElementById(id);
+      el.textContent = ok ? 'OK' : 'FAIL';
+      el.style.color = ok ? '#83f0a5' : '#ff9c9c';
+    }
 
-</div>
+    function renderLog(items) {
+      const box = document.getElementById('logBox');
+      if (!items || !items.length) {
+        box.textContent = 'keine Einträge';
+        return;
+      }
 
-<!-- DOCK -->
-<div class="dock">
-  <div class="dockPanel">
-    Quick Dock
-  </div>
-</div>
+      box.textContent = items
+        .slice(0, 8)
+        .map(x => {
+          const t = new Date(x.ts).toLocaleTimeString('de-DE');
+          return `${t} - ${String(x.type || '').toLowerCase()} OK`;
+        })
+        .join('\n');
+    }
 
-<script>
+    function renderStatus(data) {
+      setGuardUI(data.guard || 'READY');
+      document.getElementById('pnl').textContent = Number(data.pnl || 0).toFixed(2);
+      document.getElementById('confVal').textContent = `${Number(data.confidence || 0)}%`;
 
-const API_BASE = "";
+      setHealthUI('healthStatus', !!(data.health && data.health.status));
+      setHealthUI('healthBuy', !!(data.health && data.health.buy));
+      setHealthUI('healthSell', !!(data.health && data.health.sell));
 
-const ENDPOINTS = {
-  status:'/api/status',
-  buy:'/api/buy',
-  sell:'/api/sell',
-  win:'/api/win',
-  loss:'/api/loss',
-  reset:'/api/reset'
-};
+      renderLog(data.log || []);
+    }
 
-function setText(id,val){
-  const el=document.getElementById(id);
-  if(el) el.textContent=val;
-}
+    async function runHealthChecks() {
+      try {
+        await getStatus();
+      } catch {}
 
-function log(msg){
-  const el=document.getElementById('log');
-  const div=document.createElement('div');
-  div.textContent=new Date().toLocaleTimeString()+" - "+msg;
-  el.prepend(div);
-}
+      try {
+        await postJSON('/api/buy', { dryRun: true });
+      } catch {}
 
-async function send(type){
-  try{
-    const res=await fetch(API_BASE+ENDPOINTS[type],{method:'POST'});
-    const data=await res.json();
-    log(type+" OK");
-    update(data);
-  }catch(e){
-    log(type+" ERROR");
-  }
-}
+      try {
+        await postJSON('/api/sell', { dryRun: true });
+      } catch {}
 
-async function fetchStatus(){
-  try{
-    const res=await fetch(API_BASE+ENDPOINTS.status);
-    const data=await res.json();
-    update(data);
-  }catch(e){
-    log("status error");
-  }
-}
+      try {
+        const data = await getStatus();
+        renderStatus(data);
+      } catch (e) {
+        console.error(e);
+      }
+    }
 
-function update(d){
-  if(!d) return;
+    async function performAction(url) {
+      try {
+        const data = await postJSON(url, {});
+        renderStatus(data.status || data);
+      } catch (e) {
+        console.error(e);
+      }
+    }
 
-  setText("pnl", Number(d.pnl||0).toFixed(2));
-  setText("guard", d.guard || "READY");
+    async function boot() {
+      await runHealthChecks();
 
-  setText("healthStatus", d.processing ? "RUN" : "CHECK");
-  setText("healthBuy", d.lastBuy ? "OK" : "FAIL");
-  setText("healthSell", d.lastSell ? "OK" : "FAIL");
+      setInterval(async () => {
+        try {
+          const data = await getStatus();
+          renderStatus(data);
+        } catch (e) {
+          console.error(e);
+        }
+      }, 2000);
+    }
 
-  setText("conf", (d.confidence||0)+"%");
-}
-
-setInterval(fetchStatus,3000);
-fetchStatus();
-
-</script>
-
+    boot();
+  </script>
 </body>
 </html>
