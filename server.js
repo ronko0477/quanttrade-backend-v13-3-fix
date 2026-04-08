@@ -199,6 +199,38 @@ function placeOrder(side, res) {
   });
 }
 
+// ===== ORDER LOGIC =====
+function placeOrder(side, res) {
+  const info = getGuardInfo();
+
+  if (info.guard !== 'READY') {
+    return res.status(429).json({
+      message: 'Order blockiert',
+      status: statusPayload()
+    });
+  }
+
+  if (now() - state.lastOrderAt < 1000) {
+    return res.status(429).json({
+      message: 'Zu schnell',
+      status: statusPayload()
+    });
+  }
+
+  const id = now();
+  state.lastOrderAt = now();
+
+  state.queue.push({ id, side });
+  addLog('QUEUED', `Order ${id} queued (${side})`);
+
+  processQueue();
+
+  return res.json({
+    message: 'Order angenommen',
+    status: statusPayload()
+  });
+}
+
 // ===== UI =====
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -208,14 +240,17 @@ app.get('/api/status', (req, res) => {
   res.json(statusPayload());
 });
 
+// 🔥 FIXED BUY
 app.post('/api/buy', (req, res) => {
   return placeOrder('BUY', res);
 });
 
+// 🔥 FIXED SELL
 app.post('/api/sell', (req, res) => {
   return placeOrder('SELL', res);
 });
 
+// 🔥 FIXED ORDER (optional body support)
 app.post('/api/order', (req, res) => {
   const side = (req.body && req.body.side) || 'BUY';
   return placeOrder(side, res);
