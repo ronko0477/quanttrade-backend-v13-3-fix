@@ -3,24 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V19.8.5 HARD LIVE ⚡</title>
+  <title>V19.8.6 HARD LIVE ⚡</title>
   <style>
     :root{
-      --bg1:#07124d;
-      --bg2:#030b35;
-      --card:#263271;
-      --card2:#32408f;
+      --bg1:#06124a;
+      --bg2:#020b35;
+      --card:#1f2a6b;
+      --card2:#2a3580;
       --line:rgba(255,255,255,.08);
-      --text:#f3f5ff;
-      --muted:rgba(255,255,255,.72);
-      --green:#b5e28e;
-      --red:#e7a5a5;
-      --yellow:#e8d37b;
-      --cyan:#a9dbf5;
-      --safeBottom:env(safe-area-inset-bottom, 0px);
-      --dockClosedH:66px;
-      --dockOpenH:224px;
-      --activeDockHeight:var(--dockClosedH);
+      --text:#f3f6ff;
+      --muted:#b8c0ea;
+      --green:#b7e48c;
+      --red:#e8a6aa;
+      --yellow:#eadb8c;
+      --blue:#9fd7ef;
+      --dock-h:74px;
+      --dock-open-h:230px;
     }
 
     *{box-sizing:border-box}
@@ -29,62 +27,65 @@
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at 50% 30%, rgba(75,96,220,.18), transparent 28%),
+        radial-gradient(circle at 50% 35%, rgba(88,110,255,.10), transparent 32%),
         linear-gradient(180deg,var(--bg1),var(--bg2));
       min-height:100vh;
+      padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom, 0px) + 18px);
+    }
+
+    body.dock-open{
+      padding-bottom:calc(var(--dock-open-h) + env(safe-area-inset-bottom, 0px) + 22px);
     }
 
     .wrap{
-      width:min(980px, 100%);
+      width:min(920px, 100%);
       margin:0 auto;
-      padding:28px 18px calc(var(--activeDockHeight) + var(--safeBottom) + 44px);
+      padding:18px 14px 24px;
     }
 
     .title{
       text-align:center;
-      font-size:30px;
+      font-size:29px;
       font-weight:900;
+      margin:10px 0 18px;
       letter-spacing:.4px;
-      margin:10px 0 22px;
-      text-shadow:0 6px 18px rgba(0,0,0,.22);
     }
 
     .hero{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:32px;
       padding:20px;
-      border-radius:34px;
-      background:linear-gradient(180deg, rgba(71,88,189,.32), rgba(44,60,146,.22));
-      border:1px solid rgba(255,255,255,.06);
-      box-shadow:0 18px 44px rgba(0,0,0,.22);
-      margin-bottom:20px;
+      box-shadow:0 18px 42px rgba(0,0,0,.18);
     }
 
     .heroInner{
-      border-radius:28px;
-      padding:36px 18px 30px;
-      text-align:center;
-      background:linear-gradient(180deg, rgba(83,101,210,.20), rgba(53,69,163,.12));
+      background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.02));
       border:1px solid rgba(255,255,255,.07);
+      border-radius:28px;
+      padding:28px 20px 22px;
+      text-align:center;
     }
 
     .guard{
-      font-size:86px;
-      line-height:.95;
-      font-weight:900;
+      font-size:92px;
+      line-height:.92;
+      font-weight:1000;
       letter-spacing:-2px;
-      margin:0;
+      color:var(--green);
+      text-transform:uppercase;
       word-break:break-word;
       overflow-wrap:anywhere;
-    }
-
-    .guard.ready,.guard.warn,.guard.locked,.guard.cooldown,.guard.session,.guard.blocked{
-      color:var(--cyan);
     }
     .guard.ready{color:var(--green)}
     .guard.warn{color:var(--yellow)}
     .guard.blocked{color:var(--red)}
+    .guard.locked{color:var(--blue)}
+    .guard.cooldown{color:var(--yellow)}
+    .guard.session{color:var(--blue)}
 
-    .guardSub{
-      margin-top:10px;
+    .sub{
+      margin-top:8px;
       font-size:18px;
       color:var(--muted);
       font-weight:700;
@@ -92,258 +93,200 @@
 
     .pnl{
       margin-top:18px;
-      text-align:center;
-      font-size:84px;
-      font-weight:900;
+      font-size:86px;
       line-height:1;
+      font-weight:1000;
+      letter-spacing:-2px;
     }
-
     .pnl small{
       display:block;
-      margin-top:10px;
+      margin-top:8px;
       font-size:18px;
+      letter-spacing:0;
       color:var(--muted);
-      font-weight:800;
+      font-weight:700;
     }
 
-    .healthGrid{
+    .grid2{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:18px;
       margin-top:18px;
     }
 
-    .healthBox,.miniBox,.factor,.logCard{
-      background:linear-gradient(180deg, rgba(55,71,162,.22), rgba(37,48,116,.18));
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
       border:1px solid var(--line);
-      border-radius:28px;
-      box-shadow:0 14px 32px rgba(0,0,0,.18);
+      border-radius:24px;
+      padding:22px 22px 20px;
+      box-shadow:0 10px 28px rgba(0,0,0,.14);
     }
 
-    .healthBox{
-      padding:24px 28px;
-      min-height:140px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-    }
-
-    .healthName{
-      font-size:20px;
+    .kicker{
+      font-size:18px;
       font-weight:900;
-      margin-bottom:18px;
+      margin-bottom:14px;
     }
 
-    .healthVal{
+    .bigVal{
       font-size:34px;
-      font-weight:900;
+      font-weight:1000;
       line-height:1;
     }
 
     .ok{color:var(--green)}
     .bad{color:var(--red)}
     .mid{color:var(--yellow)}
+    .ice{color:var(--blue)}
 
-    .actionGrid{
+    .actionBar,
+    .actionBarSecondary{
       display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:18px;
+      grid-template-columns:repeat(2,1fr);
+      gap:16px;
       margin-top:18px;
     }
 
     button{
       appearance:none;
       border:none;
-      outline:none;
-      cursor:pointer;
       border-radius:24px;
-      min-height:116px;
-      color:#fff;
+      min-height:82px;
       font-size:26px;
-      font-weight:900;
-      box-shadow:0 10px 24px rgba(0,0,0,.18);
-      transition:transform .14s ease, opacity .14s ease, filter .14s ease;
-    }
-
-    button:hover{transform:translateY(-1px)}
-    button:active{transform:scale(.985)}
-    button:disabled{opacity:.45; cursor:not-allowed; filter:saturate(.85)}
-
-    .btnBuy{background:linear-gradient(90deg,#a6d59b,#b9ebb2)}
-    .btnSell{background:linear-gradient(90deg,#deb0b0,#e8c9c9)}
-    .btnWin{background:linear-gradient(90deg,#a6d59b,#b9ebb2)}
-    .btnLoss{background:linear-gradient(90deg,#d9b0b0,#dfc0c0)}
-    .btnReset{
-      grid-column:1 / -1;
-      min-height:108px;
-      background:linear-gradient(90deg,#d4c977,#e2d59a);
+      font-weight:1000;
       color:#fff;
+      cursor:pointer;
+      box-shadow:0 8px 20px rgba(0,0,0,.16);
     }
 
-    .miniGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:18px;
-      margin-top:18px;
-    }
-
-    .miniBox{
-      padding:22px 28px;
-      min-height:126px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-    }
-
-    .miniLabel{
-      font-size:18px;
-      font-weight:900;
-      color:rgba(255,255,255,.88);
-      margin-bottom:14px;
-      text-transform:uppercase;
-    }
-
-    .miniValue{
-      font-size:32px;
-      font-weight:900;
-      line-height:1;
-      word-break:break-word;
+    .btnBuy{background:linear-gradient(90deg,#b7e4a0,#c7e8bb)}
+    .btnSell{background:linear-gradient(90deg,#e9c7c9,#ddbfc1)}
+    .btnWin{background:linear-gradient(90deg,#b7e4a0,#c7e8bb)}
+    .btnLoss{background:linear-gradient(90deg,#e2b7b7,#d4b0b0)}
+    .btnReset{
+      background:linear-gradient(90deg,#d8cc7a,#e4daa0);
+      color:#fff;
+      grid-column:1 / -1;
     }
 
     .scoreCard{
       margin-top:18px;
-      padding:24px 28px 28px;
-      border-radius:34px;
-      background:linear-gradient(180deg, rgba(74,89,194,.20), rgba(44,60,146,.15));
-      border:1px solid var(--line);
-      box-shadow:0 16px 38px rgba(0,0,0,.18);
     }
 
     .scoreHead{
       display:flex;
-      align-items:flex-end;
       justify-content:space-between;
-      gap:12px;
-      margin-bottom:18px;
+      align-items:center;
+      gap:10px;
     }
-
     .scoreTitle{
-      font-size:26px;
-      font-weight:900;
+      font-size:22px;
+      font-weight:1000;
     }
-
     .scoreValue{
-      font-size:78px;
-      font-weight:900;
-      color:var(--cyan);
-      line-height:.9;
+      font-size:84px;
+      font-weight:1000;
+      line-height:1;
+      color:var(--blue);
     }
 
     .barTrack{
-      height:22px;
+      height:18px;
       border-radius:999px;
       overflow:hidden;
-      background:rgba(255,255,255,.10);
+      background:rgba(255,255,255,.09);
       border:1px solid var(--line);
-      margin-bottom:18px;
+      margin-top:18px;
     }
-
     .barFill{
       height:100%;
       width:0%;
       border-radius:999px;
-      background:linear-gradient(90deg,#e6b1b1,#ddd078,#b8e29d,#9fd6ef);
+      background:linear-gradient(90deg,#e5b5b5,#d6d483,#bce29d,#9fd7ef);
       transition:width .25s ease;
     }
 
     .factorGrid{
+      margin-top:18px;
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:18px;
+      gap:16px;
     }
-
     .factor{
-      padding:20px 24px;
-      min-height:118px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:18px;
     }
-
     .factorTop{
       display:flex;
-      align-items:center;
       justify-content:space-between;
+      align-items:center;
       gap:8px;
     }
-
     .factorName{
-      font-size:18px;
-      font-weight:800;
+      font-size:16px;
       color:var(--muted);
+      font-weight:800;
     }
-
     .factorVal{
-      font-size:24px;
-      font-weight:900;
+      font-size:22px;
+      font-weight:1000;
     }
 
-    .logCard{
-      margin-top:22px;
-      padding:24px 28px;
-    }
-
-    .logTitle{
-      font-size:28px;
-      font-weight:900;
-      margin-bottom:12px;
-    }
-
+    .logCard{margin-top:18px}
     .log{
-      max-height:520px;
+      display:flex;
+      flex-direction:column;
+      gap:0;
+      max-height:440px;
       overflow:auto;
+      padding-right:4px;
     }
-
     .entry{
       padding:16px 0;
       border-bottom:1px solid rgba(255,255,255,.06);
-      line-height:1.35;
       font-size:22px;
-      color:rgba(255,255,255,.82);
+      line-height:1.35;
+      color:#dbe1ff;
     }
-
     .entry:last-child{border-bottom:none}
-    .entry.processing{color:var(--yellow)}
-    .entry.executed{color:var(--cyan)}
-    .entry.loss,.entry.hard_block{color:var(--red)}
-    .entry.win,.entry.auto,.entry.sync,.entry.reset{color:var(--yellow)}
+    .entry.exec{color:#dbe1ff}
+    .entry.proc{color:var(--yellow)}
+    .entry.queue{color:#cfd4ff}
+    .entry.reset{color:#dbe1ff}
+    .entry.sync{color:var(--yellow)}
+    .entry.auto{color:var(--yellow)}
+    .entry.block{color:#f0b6b8}
+    .entry.win{color:#dbe1ff}
+    .entry.loss{color:#f0b6b8}
 
     .dock{
       position:fixed;
       left:14px;
       right:14px;
-      bottom:calc(var(--safeBottom) + 4px);
-      z-index:60;
+      bottom:calc(env(safe-area-inset-bottom, 0px) + 10px);
+      z-index:9999;
       pointer-events:none;
     }
 
     .dockPanel{
       pointer-events:auto;
       border-radius:26px;
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(180deg, rgba(110,120,255,.85), rgba(88,98,215,.82));
+      backdrop-filter:blur(12px);
+      box-shadow:0 16px 44px rgba(0,0,0,.28);
       overflow:hidden;
-      background:linear-gradient(180deg, rgba(112,125,234,.88), rgba(73,86,192,.90));
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow:0 18px 46px rgba(0,0,0,.30);
-      backdrop-filter:blur(10px);
     }
 
     .dockHandle{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:10px;
-      padding:11px 14px;
-      min-height:66px;
+      gap:12px;
+      min-height:74px;
+      padding:14px 18px;
       cursor:pointer;
     }
 
@@ -352,44 +295,42 @@
       align-items:center;
       gap:14px;
       min-width:0;
-      flex:1;
     }
 
     .dockGrip{
-      width:62px;
-      height:8px;
+      width:34px;
+      height:6px;
       border-radius:999px;
-      background:rgba(255,255,255,.22);
+      background:rgba(255,255,255,.28);
       flex:0 0 auto;
     }
 
     .dockText{
       min-width:0;
     }
-
     .dockTitle{
-      font-size:18px;
-      font-weight:900;
+      font-size:20px;
+      font-weight:1000;
       line-height:1.1;
       white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
     }
-
     .dockMeta{
+      margin-top:4px;
       font-size:12px;
       color:rgba(255,255,255,.80);
-      margin-top:3px;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
 
     .dockChevron{
-      font-size:24px;
-      color:rgba(255,255,255,.88);
+      font-size:20px;
+      font-weight:1000;
+      opacity:.95;
       transition:transform .2s ease;
-      flex:0 0 auto;
+    }
+    body.dock-open .dockChevron{
+      transform:rotate(180deg);
     }
 
     .dockBody{
@@ -397,194 +338,113 @@
       overflow:hidden;
       transition:max-height .22s ease;
     }
-
     body.dock-open .dockBody{
-      max-height:214px;
-    }
-
-    body.dock-open .dockChevron{
-      transform:rotate(180deg);
+      max-height:240px;
     }
 
     .dockButtons{
       display:grid;
       grid-template-columns:1fr;
-      gap:12px;
+      gap:10px;
       padding:0 14px 14px;
     }
 
     .dockBtn{
-      min-height:60px;
+      min-height:56px;
       border-radius:18px;
       font-size:18px;
+      font-weight:1000;
       box-shadow:none;
     }
+    .dockBuy{background:linear-gradient(90deg,#b7e4a0,#c7e8bb)}
+    .dockSell{background:linear-gradient(90deg,#e9c7c9,#ddbfc1)}
+    .dockSync{background:linear-gradient(90deg,#9eb1ff,#8fa0f1)}
 
-    .dockBuy{background:linear-gradient(90deg,#a6d59b,#b9ebb2)}
-    .dockSell{background:linear-gradient(90deg,#deb0b0,#e8c9c9)}
-    .dockSync{background:linear-gradient(90deg,#9aacf0,#9fb2f4)}
-
-    @media (max-width: 760px){
-      .wrap{
-        padding:20px 14px calc(var(--activeDockHeight) + var(--safeBottom) + 40px);
-      }
-
-      .title{
-        font-size:26px;
-        margin-top:8px;
-        margin-bottom:18px;
-      }
-
-      .hero{
-        padding:16px;
-        border-radius:28px;
-      }
-
-      .heroInner{
-        padding:30px 14px 24px;
-        border-radius:24px;
-      }
-
+    @media (max-width:760px){
+      .wrap{padding:14px 12px 22px}
+      .title{font-size:22px}
+      .hero{padding:16px}
+      .heroInner{padding:22px 16px 18px}
       .guard{
-        font-size:clamp(64px, 13vw, 96px);
-        letter-spacing:-1.5px;
+        font-size:clamp(44px, 15vw, 76px);
+        letter-spacing:-1px;
       }
-
-      .guardSub{
-        font-size:16px;
-      }
-
+      .sub{font-size:14px}
       .pnl{
-        font-size:clamp(64px, 13vw, 96px);
+        font-size:clamp(54px, 16vw, 88px);
+        letter-spacing:-1px;
       }
-
-      .pnl small{
-        font-size:15px;
+      .pnl small{font-size:14px}
+      .grid2{gap:14px}
+      .card{
+        border-radius:22px;
+        padding:18px 18px 16px;
       }
-
-      .healthGrid,.actionGrid,.miniGrid,.factorGrid{
-        gap:14px;
-      }
-
-      .healthBox,.miniBox{
-        min-height:120px;
-        padding:20px 22px;
-        border-radius:24px;
-      }
-
-      .healthName,.miniLabel{
-        font-size:16px;
-        margin-bottom:12px;
-      }
-
-      .healthVal,.miniValue{
-        font-size:28px;
-      }
-
+      .kicker{font-size:16px;margin-bottom:12px}
+      .bigVal{font-size:28px}
       button{
-        min-height:100px;
+        min-height:76px;
         font-size:22px;
         border-radius:22px;
       }
-
-      .btnReset{
-        min-height:96px;
-      }
-
-      .scoreCard{
-        padding:20px 20px 22px;
-        border-radius:28px;
-      }
-
-      .scoreTitle{
-        font-size:22px;
-      }
-
-      .scoreValue{
-        font-size:68px;
-      }
-
+      .scoreTitle{font-size:18px}
+      .scoreValue{font-size:64px}
+      .factorGrid{gap:12px}
       .factor{
-        min-height:100px;
-        padding:16px 18px;
-        border-radius:22px;
+        border-radius:20px;
+        padding:16px;
       }
-
-      .factorName{
-        font-size:15px;
-      }
-
-      .factorVal{
-        font-size:20px;
-      }
-
-      .logCard{
-        padding:20px 20px;
-        border-radius:28px;
-      }
-
-      .logTitle{
-        font-size:22px;
-      }
-
+      .factorName{font-size:14px}
+      .factorVal{font-size:18px}
       .entry{
         font-size:18px;
         padding:14px 0;
       }
-
       .dock{
-        left:12px;
-        right:12px;
-        bottom:calc(var(--safeBottom) + 4px);
+        left:10px;
+        right:10px;
+        bottom:calc(env(safe-area-inset-bottom, 0px) + 8px);
       }
-
       .dockHandle{
-        min-height:64px;
-        padding:10px 13px;
+        min-height:68px;
+        padding:12px 16px;
       }
-
-      .dockTitle{
-        font-size:18px;
-      }
-
-      .dockMeta{
-        font-size:11px;
-      }
+      .dockTitle{font-size:18px}
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="title">V19.8.5 HARD LIVE ⚡</div>
+    <div class="title">V19.8.6 HARD LIVE ⚡</div>
 
     <div class="hero">
       <div class="heroInner">
         <div id="guard" class="guard ready">READY</div>
-        <div id="guardSub" class="guardSub">System bereit.</div>
+        <div id="guardSub" class="sub">System bereit.</div>
         <div id="pnl" class="pnl">0.00<small>Net PnL</small></div>
       </div>
     </div>
 
-    <div class="healthGrid">
-      <div class="healthBox">
-        <div class="healthName">STATUS</div>
-        <div id="healthStatus" class="healthVal ok">OK</div>
+    <div class="grid2">
+      <div class="card">
+        <div class="kicker">STATUS</div>
+        <div id="healthStatus" class="bigVal ok">OK</div>
       </div>
-      <div class="healthBox">
-        <div class="healthName">BUY POST</div>
-        <div id="healthBuy" class="healthVal ok">OK</div>
+      <div class="card">
+        <div class="kicker">BUY POST</div>
+        <div id="healthBuy" class="bigVal ok">OK</div>
       </div>
-      <div class="healthBox">
-        <div class="healthName">SELL POST</div>
-        <div id="healthSell" class="healthVal ok">OK</div>
+      <div class="card">
+        <div class="kicker">SELL POST</div>
+        <div id="healthSell" class="bigVal ok">OK</div>
       </div>
-      <div class="healthBox">
-        <div class="healthName">CONF</div>
-        <div id="confVal" class="healthVal mid">62%</div>
+      <div class="card">
+        <div class="kicker">CONF</div>
+        <div id="confidence" class="bigVal mid">62%</div>
       </div>
     </div>
 
-    <div class="actionGrid">
+    <div class="actionBar">
       <button class="btnBuy" onclick="performAction('/api/buy')">BUY</button>
       <button class="btnSell" onclick="performAction('/api/sell')">SELL</button>
       <button class="btnWin" onclick="performAction('/api/win')">WIN</button>
@@ -592,36 +452,36 @@
       <button class="btnReset" onclick="performAction('/api/reset')">RESET</button>
     </div>
 
-    <div class="miniGrid">
-      <div class="miniBox">
-        <div class="miniLabel">AUTO ON</div>
-        <div class="miniValue" style="color:var(--cyan)">AUTO ON</div>
+    <div class="grid2">
+      <div class="card">
+        <div class="kicker">AUTO ON</div>
+        <div class="bigVal ice">AUTO ON</div>
       </div>
-      <div class="miniBox">
-        <div class="miniLabel">AUTO OFF</div>
-        <div class="miniValue">AUTO OFF</div>
-      </div>
-
-      <div class="miniBox">
-        <div class="miniLabel">QUEUE</div>
-        <div id="queueVal" class="miniValue">0</div>
-      </div>
-      <div class="miniBox">
-        <div class="miniLabel">PROCESSING</div>
-        <div id="processingVal" class="miniValue">OFF</div>
+      <div class="card">
+        <div class="kicker">AUTO OFF</div>
+        <div class="bigVal">AUTO OFF</div>
       </div>
 
-      <div class="miniBox">
-        <div class="miniLabel">AUTO</div>
-        <div id="autoVal" class="miniValue">OFF</div>
+      <div class="card">
+        <div class="kicker">QUEUE</div>
+        <div id="queueVal" class="bigVal">0</div>
       </div>
-      <div class="miniBox">
-        <div class="miniLabel">TRIGGER</div>
-        <div id="triggerVal" class="miniValue">80</div>
+      <div class="card">
+        <div class="kicker">PROCESSING</div>
+        <div id="processingVal" class="bigVal">OFF</div>
+      </div>
+
+      <div class="card">
+        <div class="kicker">AUTO</div>
+        <div id="autoVal" class="bigVal">OFF</div>
+      </div>
+      <div class="card">
+        <div class="kicker">TRIGGER</div>
+        <div id="triggerVal" class="bigVal">80</div>
       </div>
     </div>
 
-    <div class="scoreCard">
+    <div class="card scoreCard">
       <div class="scoreHead">
         <div class="scoreTitle">AI SCORE</div>
         <div id="scoreValue" class="scoreValue">82</div>
@@ -638,30 +498,35 @@
             <div id="trendVal" class="factorVal mid">72.3</div>
           </div>
         </div>
+
         <div class="factor">
           <div class="factorTop">
             <div class="factorName">Volume</div>
             <div id="volumeVal" class="factorVal mid">65.5</div>
           </div>
         </div>
+
         <div class="factor">
           <div class="factorTop">
             <div class="factorName">Structure</div>
             <div id="structureVal" class="factorVal ok">80.1</div>
           </div>
         </div>
+
         <div class="factor">
           <div class="factorTop">
             <div class="factorName">Volatility</div>
             <div id="volatilityVal" class="factorVal bad">51.2</div>
           </div>
         </div>
+
         <div class="factor">
           <div class="factorTop">
             <div class="factorName">Liquidity</div>
             <div id="liquidityVal" class="factorVal ok">81.9</div>
           </div>
         </div>
+
         <div class="factor">
           <div class="factorTop">
             <div class="factorName">Session</div>
@@ -671,20 +536,20 @@
       </div>
     </div>
 
-    <div class="logCard">
-      <div class="logTitle">LOG</div>
+    <div class="card logCard">
+      <div class="kicker">LOG</div>
       <div id="log" class="log"></div>
     </div>
   </div>
 
-  <div class="dock" id="dock">
+  <div class="dock">
     <div class="dockPanel">
       <div class="dockHandle" onclick="toggleDock()">
         <div class="dockLeft">
           <div class="dockGrip"></div>
           <div class="dockText">
             <div class="dockTitle">Quick Dock</div>
-            <div id="dockMeta" class="dockMeta">auto off • queue 0</div>
+            <div id="dockMetaText" class="dockMeta">auto off • queue 0</div>
           </div>
         </div>
         <div class="dockChevron">⌃</div>
@@ -694,105 +559,58 @@
         <div class="dockButtons">
           <button class="dockBtn dockBuy" onclick="performAction('/api/buy')">BUY</button>
           <button class="dockBtn dockSell" onclick="performAction('/api/sell')">SELL</button>
-          <button class="dockBtn dockSync" onclick="performAction('/api/sync')">SYNC</button>
+          <button class="dockBtn dockSync" onclick="manualSync()">SYNC</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    const r1 = (v) => Number(Number(v || 0).toFixed(1));
-    const r2 = (v) => Number(Number(v || 0).toFixed(2));
-
-    function setText(id, val) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = val;
+    function safeNum(v, fallback = 0){
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
     }
 
-    function guardClass(guard) {
-      if (guard === 'READY') return 'ready';
-      if (guard === 'WARN') return 'warn';
-      if (guard === 'BLOCKED') return 'blocked';
-      if (guard === 'LOCKED') return 'locked';
-      if (guard === 'COOLDOWN') return 'cooldown';
-      if (guard === 'SESSION_LIMIT') return 'session';
+    function shortGuardLabel(guard){
+      const raw = String(guard || 'READY').toUpperCase();
+      const map = {
+        READY: 'READY',
+        WARN: 'WARN',
+        BLOCKED: 'BLOCKED',
+        LOCKED: 'LOCKED',
+        COOLDOWN: 'COOLDOWN',
+        SESSION_LIMIT: 'SESSION...',
+        SESSION: 'SESSION...'
+      };
+      return map[raw] || (raw.length > 9 ? raw.slice(0, 7) + '…' : raw);
+    }
+
+    function guardCssClass(guard){
+      const raw = String(guard || '').toUpperCase();
+      if (raw === 'READY') return 'ready';
+      if (raw === 'WARN') return 'warn';
+      if (raw === 'BLOCKED') return 'blocked';
+      if (raw === 'LOCKED') return 'locked';
+      if (raw === 'COOLDOWN') return 'cooldown';
+      if (raw === 'SESSION_LIMIT' || raw === 'SESSION') return 'session';
       return 'ready';
     }
 
-    function shortGuardLabel(label) {
-      if (!label) return 'READY';
-      if (label === 'SESSION_LIMIT') return 'SESSION...';
-      return label;
+    function isExpectedBlockedState(status){
+      const guard = String(status?.guard || '').toUpperCase();
+      return ['BLOCKED','LOCKED','COOLDOWN','SESSION_LIMIT','WARN'].includes(guard);
     }
 
-    function renderHealth(el, ok) {
-      el.textContent = ok ? 'OK' : 'FAIL';
-      el.className = 'healthVal ' + (ok ? 'ok' : 'bad');
-    }
+    function healthOkFromDryRunResult(result){
+      if (!result) return false;
+      if (result.ok === true) return true;
+      if (result.status && isExpectedBlockedState(result.status)) return true;
+      if (isExpectedBlockedState(result)) return true;
 
-    function entryClass(type) {
-      const t = String(type || '').toLowerCase();
-      if (t === 'processing') return 'entry processing';
-      if (t === 'executed') return 'entry executed';
-      if (t === 'loss' || t === 'hard_block') return 'entry loss';
-      if (t === 'win' || t === 'auto' || t === 'sync' || t === 'reset') return 'entry win';
-      return 'entry';
-    }
+      const message = String(result.message || '').toLowerCase();
+      if (message.includes('order blockiert')) return true;
 
-    function renderLog(items) {
-      const box = document.getElementById('log');
-      if (!Array.isArray(items) || !items.length) {
-        box.innerHTML = '<div class="entry">Keine Einträge</div>';
-        return;
-      }
-
-      box.innerHTML = items.map((item) => {
-        const time = new Date(item.ts).toLocaleTimeString('de-DE', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-        return `<div class="${entryClass(item.type)}">${time} - ${item.type} ${item.msg}</div>`;
-      }).join('');
-    }
-
-    function renderStatus(data) {
-      const guard = document.getElementById('guard');
-      const guardLabel = shortGuardLabel(data.reasonLabel || data.guard || 'READY');
-
-      guard.textContent = guardLabel;
-      guard.className = `guard ${guardClass(data.guard)}`;
-
-      setText('guardSub', data.reasonHint || 'System bereit.');
-      document.getElementById('pnl').innerHTML = `${r2(data.pnl)}<small>Net PnL</small>`;
-
-      setText('confVal', '62%');
-
-      setText('queueVal', String(data.queueLength ?? 0));
-      setText('processingVal', data.processing ? 'ON' : 'OFF');
-      setText('autoVal', data.autoEnabled ? 'ON' : 'OFF');
-      setText('triggerVal', String(data.autoTrigger ?? 80));
-
-      setText('scoreValue', String(data.aiScore ?? 82));
-      document.getElementById('scoreBar').style.width = `${Math.max(0, Math.min(100, data.aiScore ?? 82))}%`;
-
-      setText('trendVal', r1(data.metrics?.trend ?? 72.3));
-      setText('volumeVal', r1(data.metrics?.volume ?? 65.5));
-      setText('structureVal', r1(data.metrics?.structure ?? 80.1));
-      setText('volatilityVal', r1(data.metrics?.volatility ?? 51.2));
-      setText('liquidityVal', r1(data.metrics?.liquidity ?? 81.9));
-      setText('sessionVal', r1(data.metrics?.session ?? 68.0));
-
-      const dockMeta = `${data.autoEnabled ? 'auto on' : 'auto off'} • queue ${data.queueLength ?? 0}`;
-      setText('dockMeta', dockMeta);
-
-      renderLog(data.log || []);
-    }
-
-    async function getStatus() {
-      const res = await fetch('/api/status', { cache: 'no-store' });
-      if (!res.ok) throw new Error('Status fetch failed');
-      return await res.json();
+      return false;
     }
 
     async function postJSON(url, body = {}) {
@@ -802,45 +620,141 @@
         body: JSON.stringify(body)
       });
 
-      const data = await res.json().catch(() => ({}));
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {}
 
       if (!res.ok) {
-        const err = new Error(data.message || 'Request failed');
+        const err = new Error(data?.message || ('HTTP ' + res.status));
         err.data = data;
+        err.status = res.status;
         throw err;
       }
 
       return data;
     }
 
+    async function getStatus() {
+      const res = await fetch('/api/status', { cache: 'no-store' });
+      return await res.json();
+    }
+
+    function setText(id, val){
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    }
+
+    function renderStatus(data, health = {}) {
+      const guard = String(data?.guard || 'READY').toUpperCase();
+      const reasonHint = data?.reasonHint || 'System bereit.';
+      const pnl = safeNum(data?.pnl, 0);
+      const conf = safeNum(data?.confidence ?? 62, 62);
+
+      const guardEl = document.getElementById('guard');
+      if (guardEl) {
+        guardEl.textContent = shortGuardLabel(guard);
+        guardEl.className = 'guard ' + guardCssClass(guard);
+      }
+
+      setText('guardSub', reasonHint);
+      setText('pnl', Number(pnl).toFixed(2));
+      document.getElementById('pnl').innerHTML = `${Number(pnl).toFixed(2)}<small>Net PnL</small>`;
+
+      setText('healthStatus', 'OK');
+
+      const buyHealth = document.getElementById('healthBuy');
+      const sellHealth = document.getElementById('healthSell');
+
+      const buyOk = health.buyOk !== undefined ? health.buyOk : true;
+      const sellOk = health.sellOk !== undefined ? health.sellOk : true;
+
+      if (buyHealth) {
+        buyHealth.textContent = buyOk ? 'OK' : 'FAIL';
+        buyHealth.className = 'bigVal ' + (buyOk ? 'ok' : 'bad');
+      }
+      if (sellHealth) {
+        sellHealth.textContent = sellOk ? 'OK' : 'FAIL';
+        sellHealth.className = 'bigVal ' + (sellOk ? 'ok' : 'bad');
+      }
+
+      const hs = document.getElementById('healthStatus');
+      if (hs) hs.className = 'bigVal ok';
+
+      setText('confidence', `${Math.round(conf)}%`);
+      const confidenceEl = document.getElementById('confidence');
+      if (confidenceEl) confidenceEl.className = 'bigVal mid';
+
+      setText('queueVal', String(safeNum(data?.queueLength, 0)));
+      setText('processingVal', data?.processing ? 'ON' : 'OFF');
+      setText('autoVal', data?.autoEnabled ? 'ON' : 'OFF');
+      setText('triggerVal', String(safeNum(data?.autoTrigger ?? 80, 80)));
+
+      setText('scoreValue', String(Math.round(safeNum(data?.score ?? 82, 82))));
+      const bar = document.getElementById('scoreBar');
+      if (bar) {
+        bar.style.width = `${Math.max(0, Math.min(100, safeNum(data?.score ?? 82, 82)))}%`;
+      }
+
+      setText('trendVal', safeNum(data?.trend ?? 72.3, 72.3).toFixed(1));
+      setText('volumeVal', safeNum(data?.volume ?? 65.5, 65.5).toFixed(1));
+      setText('structureVal', safeNum(data?.structure ?? 80.1, 80.1).toFixed(1));
+      setText('volatilityVal', safeNum(data?.volatility ?? 51.2, 51.2).toFixed(1));
+      setText('liquidityVal', safeNum(data?.liquidity ?? 81.9, 81.9).toFixed(1));
+      setText('sessionVal', safeNum(data?.session ?? 68.0, 68.0).toFixed(1));
+
+      const logEl = document.getElementById('log');
+      if (logEl && Array.isArray(data?.log)) {
+        logEl.innerHTML = data.log.map(entry => {
+          const type = String(entry.type || '').toLowerCase();
+          let cls = 'entry';
+          if (type.includes('execut')) cls += ' exec';
+          else if (type.includes('process')) cls += ' proc';
+          else if (type.includes('queue')) cls += ' queue';
+          else if (type.includes('reset')) cls += ' reset';
+          else if (type.includes('sync')) cls += ' sync';
+          else if (type.includes('auto')) cls += ' auto';
+          else if (type.includes('block')) cls += ' block';
+          else if (type.includes('win')) cls += ' win';
+          else if (type.includes('loss')) cls += ' loss';
+
+          const ts = entry.ts
+            ? new Date(entry.ts).toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+            : '--:--:--';
+
+          return `<div class="${cls}">${ts} - ${entry.type || ''} ${entry.msg || ''}</div>`;
+        }).join('');
+      }
+
+      const dockMeta = document.getElementById('dockMetaText');
+      if (dockMeta) {
+        const autoText = data?.autoEnabled ? 'auto on' : 'auto off';
+        const qText = `queue ${safeNum(data?.queueLength, 0)}`;
+        dockMeta.textContent = `${autoText} • ${qText}`;
+      }
+    }
+
     async function runHealthChecks() {
-      let statusOk = false;
       let buyOk = false;
       let sellOk = false;
 
       try {
-        const data = await getStatus();
-        renderStatus(data);
-        statusOk = true;
-      } catch {}
+        const buy = await postJSON('/api/buy', { dryRun: true });
+        buyOk = healthOkFromDryRunResult(buy);
+      } catch (e) {
+        buyOk = healthOkFromDryRunResult(e.data);
+      }
 
       try {
-        await postJSON('/api/buy', { dryRun: true });
-        buyOk = true;
-      } catch {}
-
-      try {
-        await postJSON('/api/sell', { dryRun: true });
-        sellOk = true;
-      } catch {}
-
-      renderHealth(document.getElementById('healthStatus'), statusOk);
-      renderHealth(document.getElementById('healthBuy'), buyOk);
-      renderHealth(document.getElementById('healthSell'), sellOk);
+        const sell = await postJSON('/api/sell', { dryRun: true });
+        sellOk = healthOkFromDryRunResult(sell);
+      } catch (e) {
+        sellOk = healthOkFromDryRunResult(e.data);
+      }
 
       try {
         const data = await getStatus();
-        renderStatus(data);
+        renderStatus(data, { buyOk, sellOk });
       } catch (e) {
         console.error(e);
       }
@@ -854,35 +768,41 @@
         if (url === '/api/reset') {
           setTimeout(async () => {
             await runHealthChecks();
-          }, 300);
-        } else {
-          setTimeout(async () => {
-            await runHealthChecks();
-          }, 250);
+          }, 350);
         }
       } catch (e) {
         console.error(e);
-        if (e.data && e.data.status) {
+
+        if (e.data?.status) {
           renderStatus(e.data.status);
         }
-        setTimeout(async () => {
-          await runHealthChecks();
-        }, 250);
+
+        if (url === '/api/reset') {
+          setTimeout(async () => {
+            await runHealthChecks();
+          }, 350);
+        }
       }
     }
 
     function toggleDock() {
       document.body.classList.toggle('dock-open');
-      document.documentElement.style.setProperty(
-        '--activeDockHeight',
-        document.body.classList.contains('dock-open')
-          ? 'var(--dockOpenH)'
-          : 'var(--dockClosedH)'
-      );
+    }
+
+    async function manualSync() {
+      try {
+        await postJSON('/api/sync', {});
+      } catch (_) {}
+
+      try {
+        const data = await getStatus();
+        renderStatus(data);
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     async function boot() {
-      document.documentElement.style.setProperty('--activeDockHeight', 'var(--dockClosedH)');
       await runHealthChecks();
 
       setInterval(async () => {
@@ -893,10 +813,6 @@
           console.error(e);
         }
       }, 2000);
-
-      setInterval(async () => {
-        await runHealthChecks();
-      }, 7000);
     }
 
     boot();
