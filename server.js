@@ -2,6 +2,7 @@ const path = require('path');
 const express = require('express');
 
 const app = express();
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -12,17 +13,19 @@ function now() {
 const state = {
   pnl: 0,
   ordersToday: 0,
-  maxOrderspPerSessionTypoCompat: 10, // nur safety
   maxOrdersPerSession: 10,
+
   queue: [],
   processing: false,
   cooldownUntil: 0,
   hardBlocked: false,
   currentOrderId: null,
+
   winStreak: 0,
   lossStreak: 0,
   totalWins: 0,
   totalLosses: 0,
+
   confidence: 62,
   score: 82,
   trend: 72.3,
@@ -31,8 +34,12 @@ const state = {
   volatility: 51.2,
   liquidity: 81.9,
   session: 68.0,
+
   autoEnabled: false,
   autoTrigger: 80,
+  autoLastFireAt: 0,
+  autoLastSide: 'SELL',
+
   log: []
 };
 
@@ -42,7 +49,7 @@ function addLog(type, msg) {
     type,
     msg
   });
-  state.log = state.log.slice(0, 80);
+  state.log = state.log.slice(0, 120);
 }
 
 function computeBaseGuard() {
@@ -122,7 +129,9 @@ function explainReason(reason) {
 function statusPayload() {
   const info = getGuardInfo();
   const totalTrades = state.totalWins + state.totalLosses;
-  const winRate = totalTrades > 0 ? Number(((state.totalWins / totalTrades) * 100).toFixed(2)) : 0;
+  const winRate = totalTrades > 0
+    ? Number(((state.totalWins / totalTrades) * 100).toFixed(2))
+    : 0;
 
   return {
     pnl: Number(state.pnl.toFixed(2)),
@@ -156,6 +165,7 @@ function statusPayload() {
 
     autoEnabled: state.autoEnabled,
     autoTrigger: state.autoTrigger,
+    autoLastSide: state.autoLastSide,
 
     log: state.log
   };
@@ -174,7 +184,6 @@ function processQueue() {
 
   setTimeout(() => {
     state.ordersToday += 1;
-
     addLog('EXECUTED', `Order ${job.id} ausgeführt (${job.side})`);
 
     state.processing = false;
@@ -182,6 +191,15 @@ function processQueue() {
 
     processQueue();
   }, 1200);
+}
+
+function enqueueOrder(side) {
+  const id = now();
+  state.queue.push({ id, side });
+  addLog('QUEUED', `Order ${id} queued (${side})`);
+  processQueue();
+
+  return id;
 }
 
 function placeOrder(side, req, res) {
@@ -211,16 +229,34 @@ function placeOrder(side, req, res) {
     });
   }
 
-  const id = now();
-  state.queue.push({ id, side });
-  addLog('QUEUED', `Order ${id} queued (${side})`);
-
-  processQueue();
+  enqueueOrder(side);
 
   return res.json({
     message: 'Order angenommen',
     status: statusPayload()
   });
+}
+
+function nextAutoSide() {
+  return state.autoLastSide === 'BUY' ? 'SELL' : 'BUY';
+}
+
+function runAutoLoop() {
+  if (!state.autoEnabled) return;
+  if (state.processing) return;
+  if (state.queue.length > 0) return;
+  if (state.score < state.autoTrigger) return;
+  if (now() - state.autoLastFireAt < 2500) return;
+
+  const info = getGuardInfo();
+  if (info.guard !== 'READY') return;
+
+  const side = nextAutoSide();
+  state.autoLastSide = side;
+  state.autoLastFireAt = now();
+
+  addLog('AUTO', `Auto fire ${side}`);
+  enqueueOrder(side);
 }
 
 // ===== UI =====
@@ -232,12 +268,11 @@ app.get('/api/status', (req, res) => {
   res.json(statusPayload());
 });
 
-// optionaler Status-POST für Sync aus Frontend
 app.post('/api/status', (req, res) => {
   res.json(statusPayload());
 });
 
-// ===== ORDER ROUTES =====
+// ===== ORDERS =====
 app.post('/api/buy', (req, res) => {
   return placeOrder('BUY', req, res);
 });
@@ -247,13 +282,12 @@ app.post('/api/sell', (req, res) => {
 });
 
 app.post('/api/order', (req, res) => {
-  const side = ((req.body && req.body.side) || 'BUY').toString().toUpperCase() === 'SELL'
-    ? 'SELL'
-    : 'BUY';
+  const rawSide = ((req.body && req.body.side) || 'BUY').toString().toUpperCase();
+  const side = rawSide === 'SELL' ? 'SELL' : 'BUY';
   return placeOrder(side, req, res);
 });
 
-// ===== RESULT ROUTES =====
+// ===== RESULTS =====
 app.post('/api/win', (req, res) => {
   state.pnl += 4;
   state.winStreak += 1;
@@ -291,6 +325,8 @@ app.post('/api/reset', (req, res) => {
   state.lossStreak = 0;
   state.totalWins = 0;
   state.totalLosses = 0;
+  state.autoLastFireAt = 0;
+  state.autoLastSide = 'SELL';
 
   addLog('RESET', 'System reset');
 
@@ -332,7 +368,12 @@ app.post('/api/sync', (req, res) => {
   res.json(statusPayload());
 });
 
+// Auto loop
+setInterval(() => {
+  runAutoLoop();
+}, 800);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log('V19.8.6 läuft auf Port ' + PORT);
+  console.log('V19.8.7 läuft auf Port ' + PORT);
 });
