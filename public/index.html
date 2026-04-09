@@ -1,272 +1,753 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QuantTrade V19.8.10</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>V19.8.10 HARD LIVE ⚡</title>
+  <style>
+    :root{
+      --bg:#03050d;
+      --bg2:#07143e;
+      --card:#24307a;
+      --card2:#2a3685;
+      --line:rgba(255,255,255,.08);
+      --text:#f5f7ff;
+      --muted:rgba(255,255,255,.68);
+      --green:#b7dc7b;
+      --green2:#7ccb7e;
+      --red:#ddb9b9;
+      --red2:#c79292;
+      --yellow:#e4d588;
+      --blue:#9db7ef;
+      --dock1:#6f7ff0;
+      --dock2:#7a86ea;
+      --shadow:0 10px 28px rgba(0,0,0,.34);
+      --radius:26px;
+      --safeTop: env(safe-area-inset-top, 0px);
+      --safeBottom: env(safe-area-inset-bottom, 0px);
+    }
 
-<style>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;padding:0}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 50% 18%, rgba(69,84,190,.28), transparent 30%),
+        radial-gradient(circle at 50% 65%, rgba(25,47,150,.18), transparent 28%),
+        linear-gradient(180deg, #000000 0%, #020616 16%, #041051 62%, #020819 100%);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
 
-body {
-  background: radial-gradient(circle at top, #0a0f2a, #000000);
-  color: white;
-  padding: 14px;
-}
+    .wrap{
+      width:min(100%, 760px);
+      margin:0 auto;
+      padding:calc(22px + var(--safeTop)) 14px calc(150px + var(--safeBottom));
+    }
 
-/* HEADER */
-h1 {
-  text-align: center;
-  margin-bottom: 14px;
-  font-size: 18px;
-  letter-spacing: 1px;
-}
+    .title{
+      text-align:center;
+      font-weight:1000;
+      font-size:30px;
+      letter-spacing:.4px;
+      margin:10px 0 18px;
+      text-transform:uppercase;
+      text-shadow:0 2px 10px rgba(0,0,0,.22);
+    }
 
-/* MAIN CARD */
-.main {
-  background: linear-gradient(180deg, #2c3570, #1a2255);
-  border-radius: 22px;
-  padding: 20px;
-  text-align: center;
-  margin-bottom: 14px;
-  box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
-}
+    .hero{
+      background:linear-gradient(180deg, rgba(61,76,184,.88), rgba(43,58,147,.88));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:32px;
+      box-shadow:0 16px 40px rgba(0,0,0,.34);
+      padding:18px;
+      margin-bottom:18px;
+    }
 
-.main h2 {
-  font-size: 46px;
-  color: #a8e063;
-}
+    .heroInner{
+      border:1px solid rgba(255,255,255,.09);
+      border-radius:28px;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      min-height:300px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:22px 18px;
+    }
 
-.pnl {
-  font-size: 40px;
-  margin-top: 8px;
-}
+    .guard{
+      font-size:clamp(64px, 12vw, 110px);
+      line-height:.92;
+      font-weight:1000;
+      letter-spacing:-1.8px;
+      margin:0;
+      word-break:break-word;
+      overflow-wrap:anywhere;
+      text-shadow:0 3px 16px rgba(0,0,0,.2);
+    }
 
-/* GRID */
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
-}
+    .guard.ready{color:var(--green)}
+    .guard.locked{color:#a9cbef}
+    .guard.blocked{color:#e2a8a8}
+    .guard.session{color:#c7d9ef;font-size:clamp(48px, 10vw, 88px)}
 
-.card {
-  background: linear-gradient(180deg, rgba(40,50,120,.92), rgba(25,35,95,.95));
-  border-radius: 16px;
-  padding: 14px;
-  text-align: center;
-}
+    .heroReason{
+      margin:8px 0 18px;
+      color:rgba(255,255,255,.72);
+      font-size:clamp(15px,2.7vw,18px);
+      font-weight:700;
+    }
 
-.card span {
-  font-size: 13px;
-  opacity: 0.7;
-}
+    .pnl{
+      font-size:clamp(68px, 12vw, 120px);
+      line-height:.95;
+      font-weight:1000;
+      margin:0;
+      letter-spacing:-2px;
+    }
 
-.card b {
-  display: block;
-  margin-top: 6px;
-  font-size: 18px;
-}
+    .pnlLabel{
+      margin-top:6px;
+      color:rgba(255,255,255,.72);
+      font-weight:800;
+      font-size:clamp(18px,3.8vw,22px);
+    }
 
-/* BUTTONS */
-.buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 10px 0;
-}
+    .grid2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
 
-button {
-  border: none;
-  border-radius: 14px;
-  padding: 16px;
-  font-size: 14px;
-  font-weight: bold;
-  color: white;
-}
+    .card{
+      background:linear-gradient(180deg, rgba(45,57,144,.97), rgba(30,40,113,.98));
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:18px 18px 16px;
+      box-shadow:0 4px 14px rgba(0,0,0,.35);
+    }
 
-/* COLORS toned down */
-.buy { background: linear-gradient(90deg, #7fbf7f, #6aa96a); }
-.sell { background: linear-gradient(90deg, #caa9a9, #b89393); }
-.win { background: linear-gradient(90deg, #7fbf7f, #6aa96a); }
-.loss { background: linear-gradient(90deg, #caa9a9, #b89393); }
+    .miniTitle{
+      font-size:clamp(14px,2.8vw,18px);
+      color:rgba(255,255,255,.9);
+      font-weight:900;
+      text-transform:uppercase;
+      margin-bottom:10px;
+    }
 
-.reset {
-  width: 100%;
-  margin-top: 8px;
-  background: linear-gradient(90deg, #c9c27a, #b4ac63);
-}
+    .miniVal{
+      font-size:clamp(28px,5vw,46px);
+      line-height:1;
+      font-weight:1000;
+      letter-spacing:-.5px;
+    }
 
-/* AI SCORE */
-.score {
-  background: linear-gradient(180deg, #2c3570, #1a2255);
-  border-radius: 20px;
-  padding: 16px;
-  margin-top: 14px;
-}
+    .miniVal.ok{color:var(--green)}
+    .miniVal.bad{color:#e2a8a8}
+    .miniVal.warn{color:var(--yellow)}
+    .miniVal.neutral{color:#fff}
 
-.scoreTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+    .actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin:12px 0;
+    }
 
-.scoreTop h3 {
-  font-size: 14px;
-}
+    .btn{
+      border:none;
+      border-radius:22px;
+      min-height:74px;
+      padding:14px 16px;
+      color:#fff;
+      font-weight:1000;
+      font-size:clamp(20px,4.1vw,28px);
+      letter-spacing:.2px;
+      box-shadow:0 10px 20px rgba(0,0,0,.18);
+      cursor:pointer;
+      transition:transform .12s ease, opacity .12s ease, filter .12s ease;
+    }
 
-.scoreValue {
-  font-size: 32px;
-  text-shadow: 0 0 10px rgba(160,200,255,.25);
-}
+    .btn:active{transform:scale(.985)}
+    .btn:disabled{opacity:.65;filter:saturate(.8)}
+    .btnBuy{background:linear-gradient(90deg, #8fbd7c, #8ab876)}
+    .btnSell{background:linear-gradient(90deg, #ccb8b8, #c4afaf)}
+    .btnWin{background:linear-gradient(90deg, #97c98a, #91c283)}
+    .btnLoss{background:linear-gradient(90deg, #c9b0b0, #c0a7a7)}
+    .btnReset{
+      width:100%;
+      margin:0 0 12px;
+      background:linear-gradient(90deg, #cfc67d, #c7bd77);
+      min-height:76px;
+      font-size:clamp(22px,4.3vw,30px);
+    }
 
-.bar {
-  height: 8px;
-  border-radius: 10px;
-  background: #2a2f5c;
-  margin: 10px 0;
-  overflow: hidden;
-}
+    .autoButtons{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin:6px 0 12px;
+    }
 
-.barInner {
-  height: 100%;
-  width: 70%;
-  background: linear-gradient(90deg, #d9a, #9df);
-}
+    .btnAutoOn{background:linear-gradient(180deg, #31408d, #23306f)}
+    .btnAutoOff{background:linear-gradient(180deg, #28357f, #1f2966)}
 
-/* SUB GRID */
-.subgrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
+    .scoreCard{
+      background:linear-gradient(180deg, rgba(56,68,171,.95), rgba(43,55,144,.95));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:28px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      margin:8px 0 14px;
+    }
 
-.subcard {
-  background: rgba(0,0,0,0.2);
-  border-radius: 12px;
-  padding: 10px;
-  text-align: center;
-  font-size: 13px;
-}
+    .scoreTop{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
 
-/* LOG */
-.log {
-  margin-top: 14px;
-  background: #1a2255;
-  border-radius: 16px;
-  padding: 12px;
-  font-size: 12px;
-  max-height: 180px;
-  overflow-y: auto;
-}
+    .scoreTitle{
+      font-size:clamp(22px,4.5vw,34px);
+      font-weight:1000;
+      text-transform:uppercase;
+    }
 
-.entry {
-  margin-bottom: 6px;
-  opacity: 0.9;
-}
+    .scoreVal{
+      font-size:clamp(56px,9vw,88px);
+      line-height:.9;
+      font-weight:1000;
+      color:#abd5ef;
+      letter-spacing:-2px;
+    }
 
-.entry.processing {
-  color: #ffd36a;
-  opacity: 1;
-}
+    .bar{
+      height:16px;
+      border-radius:999px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.06);
+      overflow:hidden;
+      margin-bottom:16px;
+    }
 
-/* QUICK DOCK */
-.dock {
-  position: fixed;
-  bottom: 14px;
-  left: 14px;
-  right: 14px;
-  background: linear-gradient(180deg, #6c79d6, #5a65c7);
-  border-radius: 20px;
-  padding: 14px;
-  backdrop-filter: blur(12px);
-}
+    .barFill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg, #d4b0aa 0%, #d4cf8b 25%, #b6d48d 50%, #a8d7d3 100%);
+      transition:width .25s ease;
+    }
 
-.dock h4 {
-  font-size: 14px;
-  margin-bottom: 8px;
-}
+    .factorGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
 
-.dockButtons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-</style>
+    .factor{
+      background:rgba(22,31,102,.72);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:20px;
+      padding:16px 16px 14px;
+      min-height:94px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+    }
+
+    .factorName{
+      color:rgba(255,255,255,.68);
+      font-weight:800;
+      font-size:clamp(14px,2.7vw,18px);
+      margin-bottom:8px;
+    }
+
+    .factorVal{
+      font-size:clamp(26px,4.6vw,38px);
+      line-height:1;
+      font-weight:1000;
+      letter-spacing:-.5px;
+    }
+
+    .factorVal.good{color:var(--green)}
+    .factorVal.warn{color:var(--yellow)}
+    .factorVal.bad{color:#e2b0b0}
+
+    .logCard{
+      background:linear-gradient(180deg, rgba(30,40,113,.98), rgba(24,31,97,.98));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:28px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      margin:14px 0 8px;
+    }
+
+    .logTitle{
+      font-size:clamp(22px,4.4vw,34px);
+      font-weight:1000;
+      text-transform:uppercase;
+      margin-bottom:12px;
+    }
+
+    .log{
+      display:flex;
+      flex-direction:column;
+      gap:0;
+      max-height:none;
+      overflow:visible;
+    }
+
+    .entry{
+      padding:14px 4px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:clamp(16px,3.1vw,21px);
+      line-height:1.45;
+      color:#eef2ff;
+    }
+
+    .entry:last-child{border-bottom:none}
+    .entry.processing{color:#e1cf79}
+    .entry.executed{color:#dfe8ff}
+    .entry.queued{color:#d5d9f2}
+    .entry.win{color:#b7dc7b}
+    .entry.loss{color:#ddb0b0}
+    .entry.reset{color:#d8ddff}
+    .entry.sync{color:#d9c980}
+    .empty{
+      color:rgba(255,255,255,.66);
+      font-size:clamp(16px,3vw,20px);
+      padding:6px 0 2px;
+    }
+
+    .dock{
+      position:fixed;
+      left:14px;
+      right:14px;
+      bottom:calc(14px + var(--safeBottom));
+      z-index:50;
+      pointer-events:none;
+    }
+
+    .dockPanel{
+      pointer-events:auto;
+      border-radius:28px;
+      background:linear-gradient(180deg, rgba(126,137,241,.96), rgba(104,117,231,.96));
+      border:1px solid rgba(255,255,255,.16);
+      box-shadow:0 16px 36px rgba(0,0,0,.34);
+      overflow:hidden;
+      backdrop-filter:blur(10px);
+    }
+
+    .dockHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 18px;
+      cursor:pointer;
+    }
+
+    .dockLeft{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      min-width:0;
+    }
+
+    .dockGrip{
+      width:54px;
+      height:8px;
+      border-radius:999px;
+      background:rgba(255,255,255,.26);
+      flex:0 0 auto;
+    }
+
+    .dockTextWrap{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .dockTitle{
+      font-size:clamp(22px,4vw,28px);
+      font-weight:1000;
+      line-height:1;
+      color:#fff;
+    }
+
+    .dockMeta{
+      margin-top:4px;
+      color:rgba(255,255,255,.78);
+      font-size:clamp(12px,2.3vw,15px);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .dockChevron{
+      font-size:36px;
+      line-height:1;
+      color:#fff;
+      transform:rotate(0deg);
+      transition:transform .18s ease;
+      flex:0 0 auto;
+    }
+
+    .dock.open .dockChevron{transform:rotate(180deg)}
+
+    .dockBody{
+      max-height:0;
+      overflow:hidden;
+      transition:max-height .22s ease;
+      padding:0 18px;
+    }
+
+    .dock.open .dockBody{
+      max-height:260px;
+      padding:0 18px 18px;
+    }
+
+    .dockButtons{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+    }
+
+    .dockBtn{
+      border:none;
+      border-radius:20px;
+      min-height:78px;
+      padding:14px;
+      font-size:clamp(18px,3.7vw,24px);
+      font-weight:1000;
+      color:#fff;
+      cursor:pointer;
+    }
+
+    .dockBuy{background:linear-gradient(90deg, #92bf7d, #89b574)}
+    .dockSell{background:linear-gradient(90deg, #ccb8b8, #c3afaf)}
+    .dockSync{background:linear-gradient(90deg, #8e9ae0, #7f8ddb)}
+
+    @media (max-width:760px){
+      .wrap{padding-left:12px;padding-right:12px}
+      .title{font-size:26px}
+      .hero{padding:16px;border-radius:28px}
+      .heroInner{min-height:280px;border-radius:24px}
+      .grid2,.actions,.autoButtons,.factorGrid{gap:10px}
+      .card{border-radius:22px;padding:16px 16px 14px}
+      .btn{min-height:68px;padding:12px 14px;font-size:18px}
+      .btnReset{min-height:70px}
+      .scoreCard,.logCard{padding:16px}
+      .factor{min-height:88px}
+      .dock{left:12px;right:12px;bottom:calc(12px + var(--safeBottom))}
+      .dockHead{padding:13px 16px}
+      .dockBtn{min-height:72px}
+    }
+  </style>
 </head>
-
 <body>
+  <div class="wrap">
+    <div class="title" id="titleText">V19.8.10 HARD LIVE ⚡</div>
 
-<h1>V19.8.10 HARD LIVE ⚡</h1>
+    <section class="hero">
+      <div class="heroInner">
+        <div>
+          <div id="guardText" class="guard ready">READY</div>
+          <div id="reasonHint" class="heroReason">System bereit.</div>
+          <div id="pnl" class="pnl">0</div>
+          <div class="pnlLabel">Net PnL</div>
+        </div>
+      </div>
+    </section>
 
-<div class="main">
-  <h2>READY</h2>
-  <div class="pnl">0.00</div>
-  <div>Net PnL</div>
-</div>
+    <section class="grid2">
+      <div class="card">
+        <div class="miniTitle">STATUS</div>
+        <div id="statusBox" class="miniVal ok">OK</div>
+      </div>
+      <div class="card">
+        <div class="miniTitle">BUY POST</div>
+        <div id="buyPostBox" class="miniVal ok">OK</div>
+      </div>
+      <div class="card">
+        <div class="miniTitle">SELL POST</div>
+        <div id="sellPostBox" class="miniVal ok">OK</div>
+      </div>
+      <div class="card">
+        <div class="miniTitle">CONF</div>
+        <div id="confBox" class="miniVal warn">62%</div>
+      </div>
+    </section>
 
-<div class="grid">
-  <div class="card"><span>STATUS</span><b>OK</b></div>
-  <div class="card"><span>BUY POST</span><b>OK</b></div>
-  <div class="card"><span>SELL POST</span><b>OK</b></div>
-  <div class="card"><span>CONF</span><b>62%</b></div>
-</div>
+    <section class="actions">
+      <button class="btn btnBuy" onclick="performAction('/api/buy')">BUY</button>
+      <button class="btn btnSell" onclick="performAction('/api/sell')">SELL</button>
+      <button class="btn btnWin" onclick="performAction('/api/win')">WIN</button>
+      <button class="btn btnLoss" onclick="performAction('/api/loss')">LOSS</button>
+    </section>
 
-<div class="buttons">
-  <button class="buy">BUY</button>
-  <button class="sell">SELL</button>
-  <button class="win">WIN</button>
-  <button class="loss">LOSS</button>
-</div>
+    <button class="btn btnReset" onclick="performAction('/api/reset')">RESET</button>
 
-<button class="reset">RESET</button>
+    <section class="grid2">
+      <div class="card">
+        <div class="miniTitle">AUTO ON</div>
+        <div class="miniVal neutral">AUTO ON</div>
+      </div>
+      <div class="card">
+        <div class="miniTitle">AUTO OFF</div>
+        <div class="miniVal neutral">AUTO OFF</div>
+      </div>
+      <div class="card">
+        <div class="miniTitle">QUEUE</div>
+        <div id="queueBox" class="miniVal neutral">0</div>
+      </div>
+      <div class="card">
+        <div class="miniTitle">PROCESSING</div>
+        <div id="processingBox" class="miniVal neutral">OFF</div>
+      </div>
+      <div class="card">
+        <div class="miniTitle">AUTO</div>
+        <div id="autoBox" class="miniVal neutral">OFF</div>
+      </div>
+      <div class="card">
+        <div class="miniTitle">TRIGGER</div>
+        <div id="triggerBox" class="miniVal neutral">80</div>
+      </div>
+    </section>
 
-<div class="grid">
-  <div class="card"><span>AUTO ON</span><b>AUTO ON</b></div>
-  <div class="card"><span>AUTO OFF</span><b>AUTO OFF</b></div>
-  <div class="card"><span>QUEUE</span><b>0</b></div>
-  <div class="card"><span>PROCESSING</span><b>OFF</b></div>
-  <div class="card"><span>AUTO</span><b>OFF</b></div>
-  <div class="card"><span>TRIGGER</span><b>80</b></div>
-</div>
+    <section class="scoreCard">
+      <div class="scoreTop">
+        <div class="scoreTitle">AI SCORE</div>
+        <div id="scoreVal" class="scoreVal">82</div>
+      </div>
+      <div class="bar"><div id="scoreBar" class="barFill" style="width:82%"></div></div>
 
-<div class="score">
-  <div class="scoreTop">
-    <h3>AI SCORE</h3>
-    <div class="scoreValue">82</div>
+      <div class="factorGrid">
+        <div class="factor">
+          <div class="factorName">Trend</div>
+          <div id="trendVal" class="factorVal warn">72.3</div>
+        </div>
+        <div class="factor">
+          <div class="factorName">Volume</div>
+          <div id="volumeVal" class="factorVal warn">65.5</div>
+        </div>
+        <div class="factor">
+          <div class="factorName">Structure</div>
+          <div id="structureVal" class="factorVal good">80.1</div>
+        </div>
+        <div class="factor">
+          <div class="factorName">Volatility</div>
+          <div id="volatilityVal" class="factorVal bad">51.2</div>
+        </div>
+        <div class="factor">
+          <div class="factorName">Liquidity</div>
+          <div id="liquidityVal" class="factorVal good">81.9</div>
+        </div>
+        <div class="factor">
+          <div class="factorName">Session</div>
+          <div id="sessionVal" class="factorVal warn">68.0</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="logCard">
+      <div class="logTitle">LOG</div>
+      <div id="log" class="log">
+        <div class="empty">Keine Einträge.</div>
+      </div>
+    </section>
   </div>
 
-  <div class="bar">
-    <div class="barInner"></div>
+  <div id="dock" class="dock">
+    <div class="dockPanel">
+      <div class="dockHead" onclick="toggleDock()">
+        <div class="dockLeft">
+          <div class="dockGrip"></div>
+          <div class="dockTextWrap">
+            <div class="dockTitle">Quick Dock</div>
+            <div id="dockMeta" class="dockMeta">auto off • queue 0</div>
+          </div>
+        </div>
+        <div class="dockChevron">⌃</div>
+      </div>
+      <div class="dockBody">
+        <div class="dockButtons">
+          <button class="dockBtn dockBuy" onclick="performAction('/api/buy')">BUY</button>
+          <button class="dockBtn dockSell" onclick="performAction('/api/sell')">SELL</button>
+          <button class="dockBtn dockSync" onclick="manualSync()">SYNC</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="subgrid">
-    <div class="subcard">Trend 72.3</div>
-    <div class="subcard">Volume 65.5</div>
-    <div class="subcard">Structure 80.1</div>
-    <div class="subcard">Volatility 51.2</div>
-    <div class="subcard">Liquidity 81.9</div>
-    <div class="subcard">Session 68</div>
-  </div>
-</div>
+  <script>
+    let dockOpen = false;
 
-<div class="log">
-  <div class="entry">Keine Einträge.</div>
-</div>
+    function toggleDock(){
+      dockOpen = !dockOpen;
+      document.getElementById('dock').classList.toggle('open', dockOpen);
+    }
 
-<div class="dock">
-  <h4>Quick Dock • auto off • queue 0</h4>
-  <div class="dockButtons">
-    <button class="buy">BUY</button>
-    <button class="sell">SELL</button>
-    <button style="background:#7a8ed6;">SYNC</button>
-  </div>
-</div>
+    function setGuardVisual(guard, reasonHint){
+      const el = document.getElementById('guardText');
+      el.className = 'guard';
+      if(guard === 'READY'){
+        el.textContent = 'READY';
+        el.classList.add('ready');
+      } else if(guard === 'BLOCKED'){
+        el.textContent = 'BLOCKED';
+        el.classList.add('blocked');
+      } else if(guard === 'LOCKED'){
+        el.textContent = 'LOCKED';
+        el.classList.add('locked');
+      } else if(guard === 'SESSION_LIMIT'){
+        el.textContent = 'SESSION...';
+        el.classList.add('session');
+      } else {
+        el.textContent = guard || 'READY';
+        el.classList.add('locked');
+      }
+      document.getElementById('reasonHint').textContent = reasonHint || 'System bereit.';
+    }
 
+    function setStateClass(el, ok){
+      el.classList.remove('ok','bad','warn','neutral');
+      el.classList.add(ok ? 'ok' : 'bad');
+    }
+
+    function formatPnl(v){
+      const n = Number(v || 0);
+      return Number.isInteger(n) ? String(n) : n.toFixed(2);
+    }
+
+    function renderLog(log){
+      const box = document.getElementById('log');
+      box.innerHTML = '';
+
+      if(!Array.isArray(log) || !log.length){
+        box.innerHTML = '<div class="empty">Keine Einträge.</div>';
+        return;
+      }
+
+      const latest = [...log].slice(-8).reverse();
+      latest.forEach(item => {
+        const div = document.createElement('div');
+        const type = String(item.type || '').toLowerCase();
+        div.className = 'entry ' + type;
+        div.textContent = `${item.time || '--:--:--'} - ${item.type || 'LOG'} ${item.msg || ''}`;
+        box.appendChild(div);
+      });
+    }
+
+    function renderStatus(data){
+      if(!data) return;
+
+      document.getElementById('pnl').textContent = formatPnl(data.pnl || 0);
+
+      const buyOk = data.buyPostOk !== false;
+      const sellOk = data.sellPostOk !== false;
+      const statusOk = data.statusOk !== false;
+
+      const statusBox = document.getElementById('statusBox');
+      const buyBox = document.getElementById('buyPostBox');
+      const sellBox = document.getElementById('sellPostBox');
+
+      statusBox.textContent = statusOk ? 'OK' : 'FAIL';
+      buyBox.textContent = buyOk ? 'OK' : 'FAIL';
+      sellBox.textContent = sellOk ? 'OK' : 'FAIL';
+
+      setStateClass(statusBox, statusOk);
+      setStateClass(buyBox, buyOk);
+      setStateClass(sellBox, sellOk);
+
+      const conf = Number(data.confidence ?? data.conf ?? 62);
+      const score = Number(data.score ?? 82);
+
+      document.getElementById('confBox').textContent = `${Math.round(conf)}%`;
+      document.getElementById('scoreVal').textContent = Math.round(score);
+      document.getElementById('scoreBar').style.width = `${Math.max(0, Math.min(100, score))}%`;
+
+      document.getElementById('queueBox').textContent = data.queueLength ?? 0;
+      document.getElementById('processingBox').textContent = data.processing ? 'ON' : 'OFF';
+      document.getElementById('autoBox').textContent = data.autoEnabled ? 'ON' : 'OFF';
+      document.getElementById('triggerBox').textContent = data.autoTrigger ?? 80;
+
+      document.getElementById('trendVal').textContent = Number(data.trend ?? 72.3).toFixed(1);
+      document.getElementById('volumeVal').textContent = Number(data.volume ?? 65.5).toFixed(1);
+      document.getElementById('structureVal').textContent = Number(data.structure ?? 80.1).toFixed(1);
+      document.getElementById('volatilityVal').textContent = Number(data.volatility ?? 51.2).toFixed(1);
+      document.getElementById('liquidityVal').textContent = Number(data.liquidity ?? 81.9).toFixed(1);
+      document.getElementById('sessionVal').textContent = Number(data.session ?? 68).toFixed(1);
+
+      const dockMeta = `auto ${data.autoEnabled ? 'on' : 'off'} • queue ${data.queueLength ?? 0}`;
+      document.getElementById('dockMeta').textContent = dockMeta;
+
+      const guard = data.guard || 'READY';
+      const reasonHint = data.reasonHint || 'System bereit.';
+      setGuardVisual(guard, reasonHint);
+
+      renderLog(data.log || []);
+    }
+
+    async function apiGet(url){
+      const res = await fetch(url, { cache:'no-store' });
+      if(!res.ok) throw new Error('GET failed');
+      return await res.json();
+    }
+
+    async function apiPost(url, body = {}){
+      const res = await fetch(url, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify(body)
+      });
+      if(!res.ok) throw new Error('POST failed');
+      return await res.json();
+    }
+
+    async function performAction(url){
+      try{
+        const data = await apiPost(url, {});
+        renderStatus(data.status || data);
+      } catch(err){
+        console.error(err);
+      }
+    }
+
+    async function manualSync(){
+      try{
+        const data = await apiGet('/api/status');
+        renderStatus(data);
+      } catch(err){
+        console.error(err);
+      }
+    }
+
+    async function boot(){
+      try{
+        const data = await apiGet('/api/status');
+        renderStatus(data);
+      } catch(err){
+        console.error(err);
+      }
+
+      setInterval(async () => {
+        try{
+          const data = await apiGet('/api/status');
+          renderStatus(data);
+        } catch(err){
+          console.error(err);
+        }
+      }, 2000);
+    }
+
+    boot();
+  </script>
 </body>
 </html>
