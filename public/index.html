@@ -1,894 +1,272 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V19.8.10 HARD LIVE ⚡</title>
-
-  <style>
-    :root{
-      --bg:#02040b;
-      --bg2:#06113a;
-      --panel:#242f78;
-      --panel2:#2d3787;
-      --line:rgba(255,255,255,.08);
-      --text:#f4f6ff;
-      --muted:rgba(236,240,255,.72);
-      --green:#b8e28e;
-      --blue:#aed8f3;
-      --yellow:#eadb8e;
-      --red:#efb3b3;
-      --dock1:#6f7cff;
-      --dock2:#7c8cff;
-      --shadow:0 16px 44px rgba(0,0,0,.34);
-      --radius:26px;
-      --safeTop:env(safe-area-inset-top, 0px);
-      --safeBottom:env(safe-area-inset-bottom, 0px);
-      --dockPeek:88px;
-      --dockOpen:270px;
-    }
-
-    *{box-sizing:border-box}
-    html,body{
-      margin:0;
-      padding:0;
-      background:
-        radial-gradient(circle at 50% 18%, rgba(61,79,177,.30), transparent 28%),
-        linear-gradient(180deg, #010205 0%, #030818 18%, #04124a 55%, #030c34 100%);
-      color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-      min-height:100%;
-    }
-
-    body{
-      min-height:100vh;
-    }
-
-    .wrap{
-      width:min(100%, 760px);
-      margin:0 auto;
-      padding:calc(18px + var(--safeTop)) 16px calc(var(--dockPeek) + 26px + var(--safeBottom));
-    }
-
-    .title{
-      text-align:center;
-      font-weight:900;
-      letter-spacing:.5px;
-      font-size:28px;
-      margin:6px 0 18px;
-      color:#f7f8ff;
-      text-shadow:0 6px 20px rgba(0,0,0,.35);
-    }
-
-    .hero{
-      background:linear-gradient(180deg, rgba(64,78,180,.92), rgba(37,49,125,.96));
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:34px;
-      padding:18px;
-      box-shadow:var(--shadow);
-    }
-
-    .heroInner{
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:30px;
-      min-height:302px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-direction:column;
-      text-align:center;
-      background:linear-gradient(180deg, rgba(82,96,210,.16), rgba(0,0,0,0));
-    }
-
-    .guard{
-      font-size:88px;
-      line-height:.95;
-      font-weight:1000;
-      letter-spacing:-2px;
-      margin:0;
-      text-transform:uppercase;
-      word-break:break-word;
-      overflow-wrap:anywhere;
-      max-width:92%;
-    }
-    .guard.ready{color:var(--green)}
-    .guard.locked{color:var(--blue)}
-    .guard.blocked{color:var(--red)}
-    .guard.warn{color:var(--yellow)}
-
-    .guardSub{
-      margin-top:10px;
-      color:var(--muted);
-      font-size:18px;
-      font-weight:800;
-      min-height:24px;
-    }
-
-    .pnl{
-      margin-top:14px;
-      font-size:92px;
-      line-height:1;
-      font-weight:1000;
-      letter-spacing:-2px;
-    }
-
-    .pnlLabel{
-      margin-top:8px;
-      color:var(--muted);
-      font-size:20px;
-      font-weight:900;
-    }
-
-    .grid2{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      margin-top:16px;
-    }
-
-    .card{
-      background:linear-gradient(180deg, rgba(49,63,150,.96), rgba(30,40,115,.96));
-      border:1px solid var(--line);
-      border-radius:28px;
-      padding:18px 18px 16px;
-      box-shadow:0 10px 24px rgba(0,0,0,.18);
-    }
-
-    .label{
-      color:#ffffff;
-      opacity:.96;
-      font-size:18px;
-      font-weight:1000;
-      letter-spacing:.3px;
-      text-transform:uppercase;
-    }
-
-    .value{
-      margin-top:10px;
-      font-size:36px;
-      line-height:1.05;
-      font-weight:1000;
-      letter-spacing:-1px;
-    }
-    .ok{color:var(--green)}
-    .bad{color:var(--red)}
-    .mid{color:var(--yellow)}
-    .ice{color:var(--blue)}
-
-    .actionGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      margin-top:16px;
-    }
-
-    button{
-      appearance:none;
-      border:none;
-      outline:none;
-      width:100%;
-      min-height:78px;
-      border-radius:24px;
-      font-size:22px;
-      font-weight:1000;
-      letter-spacing:.2px;
-      color:#fff;
-      box-shadow:0 12px 26px rgba(0,0,0,.18);
-      cursor:pointer;
-      transition:transform .12s ease, opacity .12s ease, filter .12s ease;
-    }
-    button:active{transform:scale(.985)}
-    button:disabled{opacity:.45; cursor:not-allowed}
-
-    .btnBuy{background:linear-gradient(90deg,#b9dfa4,#c4ebb2)}
-    .btnSell{background:linear-gradient(90deg,#dbc3c4,#e4cbcc)}
-    .btnWin{background:linear-gradient(90deg,#b9dfa4,#c4ebb2)}
-    .btnLoss{background:linear-gradient(90deg,#dbc3c4,#e4cbcc)}
-    .btnReset{
-      grid-column:1 / -1;
-      background:linear-gradient(90deg,#d1c77a,#e1da9f);
-      min-height:82px;
-    }
-
-    .miniGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      margin-top:16px;
-    }
-
-    .miniCard{
-      background:linear-gradient(180deg, rgba(32,45,124,.96), rgba(24,35,100,.96));
-      border:1px solid var(--line);
-      border-radius:24px;
-      padding:16px 16px 14px;
-      min-height:116px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-    }
-
-    .miniLabel{
-      color:#f4f7ff;
-      opacity:.96;
-      font-size:17px;
-      font-weight:1000;
-      text-transform:uppercase;
-    }
-
-    .miniValue{
-      margin-top:8px;
-      font-size:28px;
-      font-weight:1000;
-      line-height:1.05;
-      color:#f4f7ff;
-    }
-
-    .scoreCard{
-      margin-top:16px;
-      background:linear-gradient(180deg, rgba(54,68,164,.96), rgba(39,51,132,.96));
-      border:1px solid var(--line);
-      border-radius:30px;
-      padding:20px;
-      box-shadow:var(--shadow);
-    }
-
-    .scoreTop{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:12px;
-    }
-
-    .scoreTitle{
-      font-size:21px;
-      font-weight:1000;
-      text-transform:uppercase;
-    }
-
-    .scoreValue{
-      font-size:78px;
-      line-height:.9;
-      font-weight:1000;
-      color:var(--blue);
-      letter-spacing:-2px;
-    }
-
-    .bar{
-      margin-top:16px;
-      height:20px;
-      border-radius:999px;
-      overflow:hidden;
-      background:rgba(255,255,255,.10);
-      border:1px solid rgba(255,255,255,.06);
-    }
-
-    .barFill{
-      height:100%;
-      width:0%;
-      border-radius:999px;
-      background:linear-gradient(90deg,#e5b7b4 0%, #dcd48b 28%, #b8df9f 58%, #a6d8f2 100%);
-      transition:width .25s ease;
-    }
-
-    .factors{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      margin-top:16px;
-    }
-
-    .factor{
-      background:rgba(18,25,82,.44);
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:24px;
-      padding:16px 18px;
-      min-height:94px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-
-    .factorName{
-      color:var(--muted);
-      font-size:18px;
-      font-weight:900;
-    }
-
-    .factorVal{
-      font-size:28px;
-      font-weight:1000;
-      line-height:1;
-    }
-
-    .logCard{
-      margin-top:16px;
-      background:linear-gradient(180deg, rgba(43,55,145,.95), rgba(27,37,106,.95));
-      border:1px solid var(--line);
-      border-radius:30px;
-      padding:18px;
-      box-shadow:0 12px 28px rgba(0,0,0,.18);
-    }
-
-    .logTitle{
-      font-size:22px;
-      font-weight:1000;
-      text-transform:uppercase;
-      margin-bottom:12px;
-    }
-
-    .log{
-      display:flex;
-      flex-direction:column;
-      gap:0;
-      max-height:420px;
-      overflow:auto;
-      padding-right:4px;
-    }
-
-    .entry{
-      padding:14px 0;
-      border-bottom:1px solid rgba(255,255,255,.07);
-      font-size:17px;
-      line-height:1.35;
-      color:#eef1ff;
-      word-break:break-word;
-    }
-    .entry:last-child{border-bottom:none}
-    .entry.processing{color:var(--yellow)}
-    .entry.executed{color:#dfe8ff}
-    .entry.queued{color:#cfd5ff}
-    .entry.system{color:#dfe8ff}
-    .entry.win{color:var(--green)}
-    .entry.loss{color:var(--red)}
-    .entry.reset{color:#dfe8ff}
-    .entry.auto{color:var(--yellow)}
-    .entry.sync{color:var(--yellow)}
-
-    .empty{
-      color:var(--muted);
-      font-size:18px;
-      padding:6px 0 2px;
-    }
-
-    .dock{
-      position:fixed;
-      left:16px;
-      right:16px;
-      bottom:calc(14px + var(--safeBottom));
-      z-index:60;
-      pointer-events:none;
-    }
-
-    .dockPanel{
-      pointer-events:auto;
-      background:linear-gradient(180deg, rgba(119,132,255,.96), rgba(101,114,234,.96));
-      border:1px solid rgba(255,255,255,.16);
-      border-radius:28px;
-      overflow:hidden;
-      box-shadow:0 20px 50px rgba(0,0,0,.42);
-      backdrop-filter:blur(16px);
-    }
-
-    .dockHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:16px 18px;
-      cursor:pointer;
-      min-height:88px;
-    }
-
-    .dockLeft{
-      display:flex;
-      align-items:center;
-      gap:14px;
-      min-width:0;
-    }
-
-    .dockGrip{
-      width:54px;
-      height:8px;
-      border-radius:999px;
-      background:rgba(255,255,255,.24);
-      flex:0 0 auto;
-    }
-
-    .dockText{
-      min-width:0;
-    }
-
-    .dockTitle{
-      font-size:20px;
-      font-weight:1000;
-      line-height:1.05;
-      color:#fff;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    .dockMeta{
-      margin-top:4px;
-      font-size:14px;
-      color:rgba(255,255,255,.80);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    .dockChevron{
-      font-size:20px;
-      color:#fff;
-      transition:transform .18s ease;
-      flex:0 0 auto;
-      line-height:1;
-    }
-
-    .dockBody{
-      max-height:0;
-      overflow:hidden;
-      transition:max-height .22s ease;
-      padding:0 18px;
-    }
-
-    .dock.open .dockBody{
-      max-height:330px;
-      padding:0 18px 18px;
-    }
-
-    .dock.open .dockChevron{
-      transform:rotate(180deg);
-    }
-
-    .dockBtns{
-      display:grid;
-      grid-template-columns:1fr;
-      gap:12px;
-    }
-
-    .dockBtn{
-      min-height:70px;
-      border-radius:22px;
-      font-size:20px;
-      box-shadow:none;
-    }
-
-    .dockSync{background:linear-gradient(90deg,#a1acf5,#93a0f0)}
-
-    @media (max-width:760px){
-      .wrap{
-        padding-left:16px;
-        padding-right:16px;
-      }
-
-      .title{
-        font-size:26px;
-        margin-bottom:16px;
-      }
-
-      .hero{
-        padding:16px;
-        border-radius:30px;
-      }
-
-      .heroInner{
-        min-height:280px;
-        border-radius:26px;
-      }
-
-      .guard{
-        font-size:82px;
-      }
-
-      .guardSub{
-        font-size:17px;
-      }
-
-      .pnl{
-        font-size:84px;
-      }
-
-      .pnlLabel{
-        font-size:18px;
-      }
-
-      .grid2,.actionGrid,.miniGrid,.factors{
-        gap:14px;
-      }
-
-      .card{
-        padding:16px;
-        border-radius:26px;
-      }
-
-      .label{
-        font-size:17px;
-      }
-
-      .value{
-        font-size:34px;
-      }
-
-      button{
-        min-height:74px;
-        font-size:20px;
-        border-radius:22px;
-      }
-
-      .btnReset{
-        min-height:78px;
-      }
-
-      .miniCard{
-        min-height:108px;
-        padding:15px;
-      }
-
-      .miniLabel{
-        font-size:16px;
-      }
-
-      .miniValue{
-        font-size:26px;
-      }
-
-      .scoreCard,.logCard{
-        border-radius:28px;
-      }
-
-      .scoreTitle{
-        font-size:20px;
-      }
-
-      .scoreValue{
-        font-size:74px;
-      }
-
-      .factor{
-        min-height:88px;
-        border-radius:22px;
-      }
-
-      .factorName{
-        font-size:16px;
-      }
-
-      .factorVal{
-        font-size:24px;
-      }
-
-      .entry{
-        font-size:16px;
-      }
-
-      .dock{
-        left:14px;
-        right:14px;
-      }
-
-      .dockHead{
-        min-height:84px;
-      }
-    }
-
-    @media (max-width:560px){
-      .title{font-size:24px}
-      .heroInner{min-height:250px}
-      .guard{font-size:72px}
-      .pnl{font-size:74px}
-      .pnlLabel{font-size:17px}
-      .label{font-size:16px}
-      .value{font-size:30px}
-      button{min-height:68px;font-size:18px}
-      .btnReset{min-height:72px}
-      .miniCard{min-height:96px}
-      .miniValue{font-size:22px}
-      .scoreValue{font-size:66px}
-      .factorVal{font-size:22px}
-      .dockTitle{font-size:18px}
-      .dockMeta{font-size:13px}
-      .dockBtn{min-height:64px;font-size:18px}
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuantTrade V19.8.10</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  background: radial-gradient(circle at top, #0a0f2a, #000000);
+  color: white;
+  padding: 14px;
+}
+
+/* HEADER */
+h1 {
+  text-align: center;
+  margin-bottom: 14px;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+
+/* MAIN CARD */
+.main {
+  background: linear-gradient(180deg, #2c3570, #1a2255);
+  border-radius: 22px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 14px;
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
+}
+
+.main h2 {
+  font-size: 46px;
+  color: #a8e063;
+}
+
+.pnl {
+  font-size: 40px;
+  margin-top: 8px;
+}
+
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.card {
+  background: linear-gradient(180deg, rgba(40,50,120,.92), rgba(25,35,95,.95));
+  border-radius: 16px;
+  padding: 14px;
+  text-align: center;
+}
+
+.card span {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.card b {
+  display: block;
+  margin-top: 6px;
+  font-size: 18px;
+}
+
+/* BUTTONS */
+.buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+button {
+  border: none;
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+}
+
+/* COLORS toned down */
+.buy { background: linear-gradient(90deg, #7fbf7f, #6aa96a); }
+.sell { background: linear-gradient(90deg, #caa9a9, #b89393); }
+.win { background: linear-gradient(90deg, #7fbf7f, #6aa96a); }
+.loss { background: linear-gradient(90deg, #caa9a9, #b89393); }
+
+.reset {
+  width: 100%;
+  margin-top: 8px;
+  background: linear-gradient(90deg, #c9c27a, #b4ac63);
+}
+
+/* AI SCORE */
+.score {
+  background: linear-gradient(180deg, #2c3570, #1a2255);
+  border-radius: 20px;
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.scoreTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scoreTop h3 {
+  font-size: 14px;
+}
+
+.scoreValue {
+  font-size: 32px;
+  text-shadow: 0 0 10px rgba(160,200,255,.25);
+}
+
+.bar {
+  height: 8px;
+  border-radius: 10px;
+  background: #2a2f5c;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.barInner {
+  height: 100%;
+  width: 70%;
+  background: linear-gradient(90deg, #d9a, #9df);
+}
+
+/* SUB GRID */
+.subgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.subcard {
+  background: rgba(0,0,0,0.2);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* LOG */
+.log {
+  margin-top: 14px;
+  background: #1a2255;
+  border-radius: 16px;
+  padding: 12px;
+  font-size: 12px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.entry {
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+
+.entry.processing {
+  color: #ffd36a;
+  opacity: 1;
+}
+
+/* QUICK DOCK */
+.dock {
+  position: fixed;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  background: linear-gradient(180deg, #6c79d6, #5a65c7);
+  border-radius: 20px;
+  padding: 14px;
+  backdrop-filter: blur(12px);
+}
+
+.dock h4 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.dockButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="title">V19.8.10 HARD LIVE ⚡</div>
 
-    <section class="hero">
-      <div class="heroInner">
-        <div id="guard" class="guard ready">READY</div>
-        <div id="guardSub" class="guardSub">System bereit.</div>
-        <div id="pnl" class="pnl">0</div>
-        <div class="pnlLabel">Net PnL</div>
-      </div>
-    </section>
+<h1>V19.8.10 HARD LIVE ⚡</h1>
 
-    <section class="grid2">
-      <div class="card">
-        <div class="label">STATUS</div>
-        <div id="healthStatus" class="value ok">OK</div>
-      </div>
-      <div class="card">
-        <div class="label">BUY POST</div>
-        <div id="healthBuy" class="value ok">OK</div>
-      </div>
-      <div class="card">
-        <div class="label">SELL POST</div>
-        <div id="healthSell" class="value ok">OK</div>
-      </div>
-      <div class="card">
-        <div class="label">CONF</div>
-        <div id="conf" class="value mid">62%</div>
-      </div>
-    </section>
+<div class="main">
+  <h2>READY</h2>
+  <div class="pnl">0.00</div>
+  <div>Net PnL</div>
+</div>
 
-    <section class="actionGrid">
-      <button id="btnBuy" class="btnBuy">BUY</button>
-      <button id="btnSell" class="btnSell">SELL</button>
-      <button id="btnWin" class="btnWin">WIN</button>
-      <button id="btnLoss" class="btnLoss">LOSS</button>
-      <button id="btnReset" class="btnReset">RESET</button>
-    </section>
+<div class="grid">
+  <div class="card"><span>STATUS</span><b>OK</b></div>
+  <div class="card"><span>BUY POST</span><b>OK</b></div>
+  <div class="card"><span>SELL POST</span><b>OK</b></div>
+  <div class="card"><span>CONF</span><b>62%</b></div>
+</div>
 
-    <section class="miniGrid">
-      <div class="miniCard">
-        <div class="miniLabel">AUTO ON</div>
-        <div class="miniValue ice">AUTO ON</div>
-      </div>
-      <div class="miniCard">
-        <div class="miniLabel">AUTO OFF</div>
-        <div class="miniValue">AUTO OFF</div>
-      </div>
-      <div class="miniCard">
-        <div class="miniLabel">QUEUE</div>
-        <div id="queueVal" class="miniValue">0</div>
-      </div>
-      <div class="miniCard">
-        <div class="miniLabel">PROCESSING</div>
-        <div id="processingVal" class="miniValue">OFF</div>
-      </div>
-      <div class="miniCard">
-        <div class="miniLabel">AUTO</div>
-        <div id="autoVal" class="miniValue">OFF</div>
-      </div>
-      <div class="miniCard">
-        <div class="miniLabel">TRIGGER</div>
-        <div id="triggerVal" class="miniValue">80</div>
-      </div>
-    </section>
+<div class="buttons">
+  <button class="buy">BUY</button>
+  <button class="sell">SELL</button>
+  <button class="win">WIN</button>
+  <button class="loss">LOSS</button>
+</div>
 
-    <section class="scoreCard">
-      <div class="scoreTop">
-        <div class="scoreTitle">AI SCORE</div>
-        <div id="scoreValue" class="scoreValue">82</div>
-      </div>
-      <div class="bar">
-        <div id="scoreBar" class="barFill" style="width:82%"></div>
-      </div>
+<button class="reset">RESET</button>
 
-      <div class="factors">
-        <div class="factor">
-          <div class="factorName">Trend</div>
-          <div id="trendVal" class="factorVal mid">72.3</div>
-        </div>
-        <div class="factor">
-          <div class="factorName">Volume</div>
-          <div id="volumeVal" class="factorVal mid">65.5</div>
-        </div>
-        <div class="factor">
-          <div class="factorName">Structure</div>
-          <div id="structureVal" class="factorVal ok">80.1</div>
-        </div>
-        <div class="factor">
-          <div class="factorName">Volatility</div>
-          <div id="volatilityVal" class="factorVal bad">51.2</div>
-        </div>
-        <div class="factor">
-          <div class="factorName">Liquidity</div>
-          <div id="liquidityVal" class="factorVal ok">81.9</div>
-        </div>
-        <div class="factor">
-          <div class="factorName">Session</div>
-          <div id="sessionVal" class="factorVal mid">68.0</div>
-        </div>
-      </div>
-    </section>
+<div class="grid">
+  <div class="card"><span>AUTO ON</span><b>AUTO ON</b></div>
+  <div class="card"><span>AUTO OFF</span><b>AUTO OFF</b></div>
+  <div class="card"><span>QUEUE</span><b>0</b></div>
+  <div class="card"><span>PROCESSING</span><b>OFF</b></div>
+  <div class="card"><span>AUTO</span><b>OFF</b></div>
+  <div class="card"><span>TRIGGER</span><b>80</b></div>
+</div>
 
-    <section class="logCard">
-      <div class="logTitle">LOG</div>
-      <div id="log" class="log">
-        <div class="empty">Keine Einträge.</div>
-      </div>
-    </section>
+<div class="score">
+  <div class="scoreTop">
+    <h3>AI SCORE</h3>
+    <div class="scoreValue">82</div>
   </div>
 
-  <div class="dock" id="dock">
-    <div class="dockPanel">
-      <div class="dockHead" id="dockHead">
-        <div class="dockLeft">
-          <div class="dockGrip"></div>
-          <div class="dockText">
-            <div class="dockTitle">Quick Dock</div>
-            <div id="dockMeta" class="dockMeta">auto off • queue 0</div>
-          </div>
-        </div>
-        <div class="dockChevron" id="dockChevron">⌃</div>
-      </div>
-
-      <div class="dockBody">
-        <div class="dockBtns">
-          <button id="dockBuy" class="dockBtn btnBuy">BUY</button>
-          <button id="dockSell" class="dockBtn btnSell">SELL</button>
-          <button id="dockSync" class="dockBtn dockSync">SYNC</button>
-        </div>
-      </div>
-    </div>
+  <div class="bar">
+    <div class="barInner"></div>
   </div>
 
-  <script>
-    const API = '';
+  <div class="subgrid">
+    <div class="subcard">Trend 72.3</div>
+    <div class="subcard">Volume 65.5</div>
+    <div class="subcard">Structure 80.1</div>
+    <div class="subcard">Volatility 51.2</div>
+    <div class="subcard">Liquidity 81.9</div>
+    <div class="subcard">Session 68</div>
+  </div>
+</div>
 
-    const $ = (id) => document.getElementById(id);
+<div class="log">
+  <div class="entry">Keine Einträge.</div>
+</div>
 
-    async function postJSON(path, body = {}) {
-      const res = await fetch(API + path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      return await res.json();
-    }
+<div class="dock">
+  <h4>Quick Dock • auto off • queue 0</h4>
+  <div class="dockButtons">
+    <button class="buy">BUY</button>
+    <button class="sell">SELL</button>
+    <button style="background:#7a8ed6;">SYNC</button>
+  </div>
+</div>
 
-    async function getStatus() {
-      const res = await fetch(API + '/api/status');
-      return await res.json();
-    }
-
-    function fmtPnl(v){
-      const n = Number(v || 0);
-      if (Number.isInteger(n)) return String(n);
-      return n.toFixed(2);
-    }
-
-    function guardText(reason){
-      if (reason === 'SESSION_LIMIT') return 'SESSION...';
-      if (reason === 'HARD_BLOCK') return 'BLOCKED';
-      if (reason === 'QUEUE_BUSY') return 'LOCKED';
-      return 'READY';
-    }
-
-    function guardClass(reason){
-      if (reason === 'SESSION_LIMIT') return 'warn';
-      if (reason === 'HARD_BLOCK') return 'blocked';
-      if (reason === 'QUEUE_BUSY') return 'locked';
-      return 'ready';
-    }
-
-    function stateColor(ok){
-      return ok ? 'ok' : 'bad';
-    }
-
-    function entryClass(type=''){
-      const t = String(type).toLowerCase();
-      if (t.includes('processing')) return 'processing';
-      if (t.includes('executed')) return 'executed';
-      if (t.includes('queued')) return 'queued';
-      if (t.includes('win')) return 'win';
-      if (t.includes('loss')) return 'loss';
-      if (t.includes('reset')) return 'reset';
-      if (t.includes('sync')) return 'sync';
-      if (t.includes('auto')) return 'auto';
-      return 'system';
-    }
-
-    function renderLog(log){
-      const box = $('log');
-      box.innerHTML = '';
-      if (!Array.isArray(log) || !log.length) {
-        box.innerHTML = '<div class="empty">Keine Einträge.</div>';
-        return;
-      }
-      log.slice().reverse().forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'entry ' + entryClass(item.type || '');
-        row.textContent = `${item.time || '--:--:--'} - ${item.type || 'LOG'} ${item.msg || ''}`.trim();
-        box.appendChild(row);
-      });
-    }
-
-    function renderStatus(data){
-      const reason = data.reason || 'SYSTEM_READY';
-      $('guard').textContent = guardText(reason);
-      $('guard').className = 'guard ' + guardClass(reason);
-      $('guardSub').textContent = data.reasonHint || 'System bereit.';
-      $('pnl').textContent = fmtPnl(data.pnl);
-
-      $('healthStatus').textContent = (data.statusOk ?? true) ? 'OK' : 'FAIL';
-      $('healthStatus').className = 'value ' + stateColor(data.statusOk ?? true);
-
-      $('healthBuy').textContent = (data.buyOk ?? true) ? 'OK' : 'FAIL';
-      $('healthBuy').className = 'value ' + stateColor(data.buyOk ?? true);
-
-      $('healthSell').textContent = (data.sellOk ?? true) ? 'OK' : 'FAIL';
-      $('healthSell').className = 'value ' + stateColor(data.sellOk ?? true);
-
-      $('conf').textContent = `${Number(data.confidence ?? 62)}%`;
-
-      $('queueVal').textContent = String(data.queueLength ?? 0);
-      $('processingVal').textContent = data.processing ? 'ON' : 'OFF';
-      $('autoVal').textContent = data.autoEnabled ? 'ON' : 'OFF';
-      $('triggerVal').textContent = String(data.autoTrigger ?? 80);
-
-      const score = Number(data.score ?? 82);
-      $('scoreValue').textContent = String(score);
-      $('scoreBar').style.width = `${Math.max(0, Math.min(100, score))}%`;
-
-      $('trendVal').textContent = Number(data.trend ?? 72.3).toFixed(1);
-      $('volumeVal').textContent = Number(data.volume ?? 65.5).toFixed(1);
-      $('structureVal').textContent = Number(data.structure ?? 80.1).toFixed(1);
-      $('volatilityVal').textContent = Number(data.volatility ?? 51.2).toFixed(1);
-      $('liquidityVal').textContent = Number(data.liquidity ?? 81.9).toFixed(1);
-      $('sessionVal').textContent = Number(data.session ?? 68.0).toFixed(1);
-
-      $('dockMeta').textContent = `${data.autoEnabled ? 'auto on' : 'auto off'} • queue ${data.queueLength ?? 0}`;
-
-      renderLog(data.log || []);
-    }
-
-    async function act(path){
-      try{
-        const res = await postJSON(path, {});
-        renderStatus(res.status || res);
-      }catch(err){
-        console.error(err);
-      }
-    }
-
-    $('btnBuy').onclick = () => act('/api/buy');
-    $('btnSell').onclick = () => act('/api/sell');
-    $('btnWin').onclick = () => act('/api/win');
-    $('btnLoss').onclick = () => act('/api/loss');
-    $('btnReset').onclick = () => act('/api/reset');
-
-    $('dockBuy').onclick = () => act('/api/buy');
-    $('dockSell').onclick = () => act('/api/sell');
-    $('dockSync').onclick = async () => {
-      try{
-        const data = await getStatus();
-        renderStatus(data);
-      }catch(err){
-        console.error(err);
-      }
-    };
-
-    const dock = $('dock');
-    $('dockHead').onclick = () => {
-      dock.classList.toggle('open');
-    };
-
-    async function boot(){
-      try{
-        const data = await getStatus();
-        renderStatus(data);
-      }catch(err){
-        console.error(err);
-      }
-
-      setInterval(async () => {
-        try{
-          const data = await getStatus();
-          renderStatus(data);
-        }catch(err){
-          console.error(err);
-        }
-      }, 2000);
-    }
-
-    boot();
-  </script>
 </body>
 </html>
