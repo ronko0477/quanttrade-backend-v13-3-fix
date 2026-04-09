@@ -3,34 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V19.8.6 HARD LIVE ⚡</title>
+  <title>V19.8.7 HARD LIVE ⚡</title>
   <style>
     :root{
-      --bg1:#06124a;
-      --bg2:#020b35;
-      --card:#1f2a6b;
-      --card2:#2a3580;
+      --bg1:#08165a;
+      --bg2:#020b38;
+      --card:#24307a;
+      --card2:#313e92;
       --line:rgba(255,255,255,.08);
-      --text:#f3f6ff;
-      --muted:#b8c0ea;
-      --green:#b7e48c;
-      --red:#e8a6aa;
-      --yellow:#eadb8c;
-      --blue:#9fd7ef;
-      --dock-h:74px;
-      --dock-open-h:230px;
+      --text:#f4f7ff;
+      --muted:#c0c7eb;
+      --green:#b8e38e;
+      --red:#e7adb3;
+      --yellow:#e8d98b;
+      --blue:#a9d9ef;
+
+      --dock-h:78px;
+      --dock-open-h:300px;
     }
 
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
+
     body{
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at 50% 35%, rgba(88,110,255,.10), transparent 32%),
+        radial-gradient(circle at 50% 35%, rgba(100,116,255,.10), transparent 34%),
         linear-gradient(180deg,var(--bg1),var(--bg2));
       min-height:100vh;
-      padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom, 0px) + 18px);
+      padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom, 0px) + 16px);
     }
 
     body.dock-open{
@@ -38,32 +40,32 @@
     }
 
     .wrap{
-      width:min(920px, 100%);
+      width:min(940px, 100%);
       margin:0 auto;
-      padding:18px 14px 24px;
+      padding:16px 14px 24px;
     }
 
     .title{
       text-align:center;
-      font-size:29px;
-      font-weight:900;
-      margin:10px 0 18px;
-      letter-spacing:.4px;
+      font-size:28px;
+      font-weight:1000;
+      margin:12px 0 18px;
+      letter-spacing:.5px;
     }
 
     .hero{
-      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.02));
       border:1px solid var(--line);
-      border-radius:32px;
+      border-radius:34px;
       padding:20px;
-      box-shadow:0 18px 42px rgba(0,0,0,.18);
+      box-shadow:0 16px 42px rgba(0,0,0,.20);
     }
 
     .heroInner{
-      background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.02));
-      border:1px solid rgba(255,255,255,.07);
-      border-radius:28px;
-      padding:28px 20px 22px;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:30px;
+      padding:28px 18px 24px;
       text-align:center;
     }
 
@@ -72,7 +74,6 @@
       line-height:.92;
       font-weight:1000;
       letter-spacing:-2px;
-      color:var(--green);
       text-transform:uppercase;
       word-break:break-word;
       overflow-wrap:anywhere;
@@ -86,14 +87,14 @@
 
     .sub{
       margin-top:8px;
-      font-size:18px;
+      font-size:17px;
       color:var(--muted);
-      font-weight:700;
+      font-weight:800;
     }
 
     .pnl{
       margin-top:18px;
-      font-size:86px;
+      font-size:92px;
       line-height:1;
       font-weight:1000;
       letter-spacing:-2px;
@@ -101,10 +102,10 @@
     .pnl small{
       display:block;
       margin-top:8px;
-      font-size:18px;
-      letter-spacing:0;
+      font-size:16px;
       color:var(--muted);
-      font-weight:700;
+      letter-spacing:0;
+      font-weight:800;
     }
 
     .grid2{
@@ -118,20 +119,20 @@
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
       border:1px solid var(--line);
       border-radius:24px;
-      padding:22px 22px 20px;
+      padding:22px 20px 18px;
       box-shadow:0 10px 28px rgba(0,0,0,.14);
     }
 
     .kicker{
       font-size:18px;
-      font-weight:900;
-      margin-bottom:14px;
+      font-weight:1000;
+      margin-bottom:16px;
     }
 
     .bigVal{
       font-size:34px;
-      font-weight:1000;
       line-height:1;
+      font-weight:1000;
     }
 
     .ok{color:var(--green)}
@@ -139,10 +140,9 @@
     .mid{color:var(--yellow)}
     .ice{color:var(--blue)}
 
-    .actionBar,
-    .actionBarSecondary{
+    .actionBar{
       display:grid;
-      grid-template-columns:repeat(2,1fr);
+      grid-template-columns:1fr 1fr;
       gap:16px;
       margin-top:18px;
     }
@@ -152,32 +152,28 @@
       border:none;
       border-radius:24px;
       min-height:82px;
-      font-size:26px;
+      font-size:24px;
       font-weight:1000;
       color:#fff;
       cursor:pointer;
       box-shadow:0 8px 20px rgba(0,0,0,.16);
     }
 
-    .btnBuy{background:linear-gradient(90deg,#b7e4a0,#c7e8bb)}
-    .btnSell{background:linear-gradient(90deg,#e9c7c9,#ddbfc1)}
-    .btnWin{background:linear-gradient(90deg,#b7e4a0,#c7e8bb)}
-    .btnLoss{background:linear-gradient(90deg,#e2b7b7,#d4b0b0)}
+    .btnBuy{background:linear-gradient(90deg,#b7e39d,#c6e8b7)}
+    .btnSell{background:linear-gradient(90deg,#e8c7c9,#ddbec0)}
+    .btnWin{background:linear-gradient(90deg,#b7e39d,#c6e8b7)}
+    .btnLoss{background:linear-gradient(90deg,#dfb8b8,#d3b0b0)}
     .btnReset{
-      background:linear-gradient(90deg,#d8cc7a,#e4daa0);
-      color:#fff;
       grid-column:1 / -1;
+      background:linear-gradient(90deg,#d5c874,#e2d79d);
     }
 
-    .scoreCard{
-      margin-top:18px;
-    }
-
+    .scoreCard{margin-top:18px}
     .scoreHead{
       display:flex;
       justify-content:space-between;
       align-items:center;
-      gap:10px;
+      gap:12px;
     }
     .scoreTitle{
       font-size:22px;
@@ -185,8 +181,8 @@
     }
     .scoreValue{
       font-size:84px;
-      font-weight:1000;
       line-height:1;
+      font-weight:1000;
       color:var(--blue);
     }
 
@@ -194,23 +190,23 @@
       height:18px;
       border-radius:999px;
       overflow:hidden;
-      background:rgba(255,255,255,.09);
+      background:rgba(255,255,255,.10);
       border:1px solid var(--line);
-      margin-top:18px;
+      margin-top:16px;
     }
     .barFill{
       height:100%;
       width:0%;
       border-radius:999px;
-      background:linear-gradient(90deg,#e5b5b5,#d6d483,#bce29d,#9fd7ef);
+      background:linear-gradient(90deg,#e5b7b7,#ded88f,#bce3a3,#9dd7ef);
       transition:width .25s ease;
     }
 
     .factorGrid{
-      margin-top:18px;
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:16px;
+      margin-top:18px;
     }
     .factor{
       background:rgba(255,255,255,.03);
@@ -222,12 +218,12 @@
       display:flex;
       justify-content:space-between;
       align-items:center;
-      gap:8px;
+      gap:10px;
     }
     .factorName{
       font-size:16px;
-      color:var(--muted);
       font-weight:800;
+      color:var(--muted);
     }
     .factorVal{
       font-size:22px;
@@ -238,34 +234,33 @@
     .log{
       display:flex;
       flex-direction:column;
-      gap:0;
-      max-height:440px;
+      max-height:430px;
       overflow:auto;
       padding-right:4px;
     }
     .entry{
       padding:16px 0;
       border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:22px;
+      font-size:20px;
       line-height:1.35;
-      color:#dbe1ff;
+      color:#d9defc;
     }
     .entry:last-child{border-bottom:none}
-    .entry.exec{color:#dbe1ff}
+    .entry.exec{color:#d9defc}
     .entry.proc{color:var(--yellow)}
-    .entry.queue{color:#cfd4ff}
-    .entry.reset{color:#dbe1ff}
+    .entry.queue{color:#cfd5ff}
+    .entry.reset{color:#d9defc}
     .entry.sync{color:var(--yellow)}
     .entry.auto{color:var(--yellow)}
-    .entry.block{color:#f0b6b8}
-    .entry.win{color:#dbe1ff}
-    .entry.loss{color:#f0b6b8}
+    .entry.block{color:#f1b7bb}
+    .entry.win{color:#d9defc}
+    .entry.loss{color:#f1b7bb}
 
     .dock{
       position:fixed;
-      left:14px;
-      right:14px;
-      bottom:calc(env(safe-area-inset-bottom, 0px) + 10px);
+      left:12px;
+      right:12px;
+      bottom:calc(env(safe-area-inset-bottom, 0px) + 8px);
       z-index:9999;
       pointer-events:none;
     }
@@ -273,20 +268,20 @@
     .dockPanel{
       pointer-events:auto;
       border-radius:26px;
-      border:1px solid rgba(255,255,255,.12);
-      background:linear-gradient(180deg, rgba(110,120,255,.85), rgba(88,98,215,.82));
-      backdrop-filter:blur(12px);
-      box-shadow:0 16px 44px rgba(0,0,0,.28);
+      border:1px solid rgba(255,255,255,.14);
+      background:linear-gradient(180deg, rgba(116,125,255,.86), rgba(96,105,220,.84));
+      backdrop-filter:blur(13px);
+      box-shadow:0 16px 42px rgba(0,0,0,.28);
       overflow:hidden;
     }
 
     .dockHandle{
+      min-height:78px;
+      padding:14px 18px;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:12px;
-      min-height:74px;
-      padding:14px 18px;
       cursor:pointer;
     }
 
@@ -298,18 +293,16 @@
     }
 
     .dockGrip{
-      width:34px;
+      width:38px;
       height:6px;
       border-radius:999px;
-      background:rgba(255,255,255,.28);
+      background:rgba(255,255,255,.26);
       flex:0 0 auto;
     }
 
-    .dockText{
-      min-width:0;
-    }
+    .dockText{min-width:0}
     .dockTitle{
-      font-size:20px;
+      font-size:18px;
       font-weight:1000;
       line-height:1.1;
       white-space:nowrap;
@@ -317,16 +310,15 @@
     .dockMeta{
       margin-top:4px;
       font-size:12px;
-      color:rgba(255,255,255,.80);
+      color:rgba(255,255,255,.82);
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
 
     .dockChevron{
-      font-size:20px;
+      font-size:22px;
       font-weight:1000;
-      opacity:.95;
       transition:transform .2s ease;
     }
     body.dock-open .dockChevron{
@@ -339,7 +331,7 @@
       transition:max-height .22s ease;
     }
     body.dock-open .dockBody{
-      max-height:240px;
+      max-height:300px;
     }
 
     .dockButtons{
@@ -350,28 +342,27 @@
     }
 
     .dockBtn{
-      min-height:56px;
-      border-radius:18px;
+      min-height:58px;
       font-size:18px;
-      font-weight:1000;
+      border-radius:18px;
       box-shadow:none;
     }
-    .dockBuy{background:linear-gradient(90deg,#b7e4a0,#c7e8bb)}
-    .dockSell{background:linear-gradient(90deg,#e9c7c9,#ddbfc1)}
-    .dockSync{background:linear-gradient(90deg,#9eb1ff,#8fa0f1)}
+    .dockBuy{background:linear-gradient(90deg,#b7e39d,#c6e8b7)}
+    .dockSell{background:linear-gradient(90deg,#e8c7c9,#ddbec0)}
+    .dockSync{background:linear-gradient(90deg,#a6b4ff,#91a1ef)}
 
     @media (max-width:760px){
       .wrap{padding:14px 12px 22px}
       .title{font-size:22px}
-      .hero{padding:16px}
-      .heroInner{padding:22px 16px 18px}
+      .hero{padding:16px;border-radius:30px}
+      .heroInner{padding:22px 16px 18px;border-radius:28px}
       .guard{
-        font-size:clamp(44px, 15vw, 76px);
+        font-size:clamp(46px, 16vw, 74px);
         letter-spacing:-1px;
       }
       .sub{font-size:14px}
       .pnl{
-        font-size:clamp(54px, 16vw, 88px);
+        font-size:clamp(54px, 16vw, 86px);
         letter-spacing:-1px;
       }
       .pnl small{font-size:14px}
@@ -383,39 +374,26 @@
       .kicker{font-size:16px;margin-bottom:12px}
       .bigVal{font-size:28px}
       button{
-        min-height:76px;
-        font-size:22px;
+        min-height:74px;
+        font-size:21px;
         border-radius:22px;
       }
       .scoreTitle{font-size:18px}
       .scoreValue{font-size:64px}
       .factorGrid{gap:12px}
-      .factor{
-        border-radius:20px;
-        padding:16px;
-      }
+      .factor{padding:16px;border-radius:20px}
       .factorName{font-size:14px}
       .factorVal{font-size:18px}
-      .entry{
-        font-size:18px;
-        padding:14px 0;
-      }
-      .dock{
-        left:10px;
-        right:10px;
-        bottom:calc(env(safe-area-inset-bottom, 0px) + 8px);
-      }
-      .dockHandle{
-        min-height:68px;
-        padding:12px 16px;
-      }
-      .dockTitle{font-size:18px}
+      .entry{font-size:18px;padding:14px 0}
+      .dock{left:10px;right:10px}
+      .dockHandle{min-height:72px;padding:12px 16px}
+      .dockTitle{font-size:17px}
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="title">V19.8.6 HARD LIVE ⚡</div>
+    <div class="title">V19.8.7 HARD LIVE ⚡</div>
 
     <div class="hero">
       <div class="heroInner">
@@ -430,14 +408,17 @@
         <div class="kicker">STATUS</div>
         <div id="healthStatus" class="bigVal ok">OK</div>
       </div>
+
       <div class="card">
         <div class="kicker">BUY POST</div>
         <div id="healthBuy" class="bigVal ok">OK</div>
       </div>
+
       <div class="card">
         <div class="kicker">SELL POST</div>
         <div id="healthSell" class="bigVal ok">OK</div>
       </div>
+
       <div class="card">
         <div class="kicker">CONF</div>
         <div id="confidence" class="bigVal mid">62%</div>
@@ -457,6 +438,7 @@
         <div class="kicker">AUTO ON</div>
         <div class="bigVal ice">AUTO ON</div>
       </div>
+
       <div class="card">
         <div class="kicker">AUTO OFF</div>
         <div class="bigVal">AUTO OFF</div>
@@ -466,6 +448,7 @@
         <div class="kicker">QUEUE</div>
         <div id="queueVal" class="bigVal">0</div>
       </div>
+
       <div class="card">
         <div class="kicker">PROCESSING</div>
         <div id="processingVal" class="bigVal">OFF</div>
@@ -475,6 +458,7 @@
         <div class="kicker">AUTO</div>
         <div id="autoVal" class="bigVal">OFF</div>
       </div>
+
       <div class="card">
         <div class="kicker">TRIGGER</div>
         <div id="triggerVal" class="bigVal">80</div>
@@ -579,10 +563,9 @@
         BLOCKED: 'BLOCKED',
         LOCKED: 'LOCKED',
         COOLDOWN: 'COOLDOWN',
-        SESSION_LIMIT: 'SESSION...',
-        SESSION: 'SESSION...'
+        SESSION_LIMIT: 'SESSION...'
       };
-      return map[raw] || (raw.length > 9 ? raw.slice(0, 7) + '…' : raw);
+      return map[raw] || (raw.length > 10 ? raw.slice(0, 7) + '...' : raw);
     }
 
     function guardCssClass(guard){
@@ -592,7 +575,7 @@
       if (raw === 'BLOCKED') return 'blocked';
       if (raw === 'LOCKED') return 'locked';
       if (raw === 'COOLDOWN') return 'cooldown';
-      if (raw === 'SESSION_LIMIT' || raw === 'SESSION') return 'session';
+      if (raw === 'SESSION_LIMIT') return 'session';
       return 'ready';
     }
 
@@ -658,32 +641,34 @@
       }
 
       setText('guardSub', reasonHint);
-      setText('pnl', Number(pnl).toFixed(2));
-      document.getElementById('pnl').innerHTML = `${Number(pnl).toFixed(2)}<small>Net PnL</small>`;
+
+      const pnlEl = document.getElementById('pnl');
+      if (pnlEl) {
+        pnlEl.innerHTML = `${Number(pnl).toFixed(2)}<small>Net PnL</small>`;
+      }
 
       setText('healthStatus', 'OK');
-
-      const buyHealth = document.getElementById('healthBuy');
-      const sellHealth = document.getElementById('healthSell');
+      const hs = document.getElementById('healthStatus');
+      if (hs) hs.className = 'bigVal ok';
 
       const buyOk = health.buyOk !== undefined ? health.buyOk : true;
       const sellOk = health.sellOk !== undefined ? health.sellOk : true;
 
-      if (buyHealth) {
-        buyHealth.textContent = buyOk ? 'OK' : 'FAIL';
-        buyHealth.className = 'bigVal ' + (buyOk ? 'ok' : 'bad');
-      }
-      if (sellHealth) {
-        sellHealth.textContent = sellOk ? 'OK' : 'FAIL';
-        sellHealth.className = 'bigVal ' + (sellOk ? 'ok' : 'bad');
-      }
+      const hb = document.getElementById('healthBuy');
+      const hsell = document.getElementById('healthSell');
 
-      const hs = document.getElementById('healthStatus');
-      if (hs) hs.className = 'bigVal ok';
+      if (hb) {
+        hb.textContent = buyOk ? 'OK' : 'FAIL';
+        hb.className = 'bigVal ' + (buyOk ? 'ok' : 'bad');
+      }
+      if (hsell) {
+        hsell.textContent = sellOk ? 'OK' : 'FAIL';
+        hsell.className = 'bigVal ' + (sellOk ? 'ok' : 'bad');
+      }
 
       setText('confidence', `${Math.round(conf)}%`);
-      const confidenceEl = document.getElementById('confidence');
-      if (confidenceEl) confidenceEl.className = 'bigVal mid';
+      const confEl = document.getElementById('confidence');
+      if (confEl) confEl.className = 'bigVal mid';
 
       setText('queueVal', String(safeNum(data?.queueLength, 0)));
       setText('processingVal', data?.processing ? 'ON' : 'OFF');
@@ -691,9 +676,9 @@
       setText('triggerVal', String(safeNum(data?.autoTrigger ?? 80, 80)));
 
       setText('scoreValue', String(Math.round(safeNum(data?.score ?? 82, 82))));
-      const bar = document.getElementById('scoreBar');
-      if (bar) {
-        bar.style.width = `${Math.max(0, Math.min(100, safeNum(data?.score ?? 82, 82)))}%`;
+      const scoreBar = document.getElementById('scoreBar');
+      if (scoreBar) {
+        scoreBar.style.width = `${Math.max(0, Math.min(100, safeNum(data?.score ?? 82, 82)))}%`;
       }
 
       setText('trendVal', safeNum(data?.trend ?? 72.3, 72.3).toFixed(1));
@@ -708,6 +693,7 @@
         logEl.innerHTML = data.log.map(entry => {
           const type = String(entry.type || '').toLowerCase();
           let cls = 'entry';
+
           if (type.includes('execut')) cls += ' exec';
           else if (type.includes('process')) cls += ' proc';
           else if (type.includes('queue')) cls += ' queue';
@@ -785,10 +771,6 @@
       }
     }
 
-    function toggleDock() {
-      document.body.classList.toggle('dock-open');
-    }
-
     async function manualSync() {
       try {
         await postJSON('/api/sync', {});
@@ -800,6 +782,10 @@
       } catch (e) {
         console.error(e);
       }
+    }
+
+    function toggleDock() {
+      document.body.classList.toggle('dock-open');
     }
 
     async function boot() {
