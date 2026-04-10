@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, "public");
 
 /* =========================
-   STATIC FRONTEND
+   STATIC
 ========================= */
 app.use(express.static(publicDir));
 
@@ -23,11 +23,36 @@ app.get("/", (req, res) => {
 ========================= */
 const CONFIG = {
   maxSessionTrades: 50,
-  dailyWinLimit: 20,
-  dailyLossLimit: -20,
   autoIntervalMs: 3000,
-  processDelayMs: 650
+  processDelayMs: 650,
+  winStep: 4,
+  lossStep: -4,
+  dailyLossLimit: -20,
+  dailyWinTarget: 20
 };
+
+/* =========================
+   HELPERS
+========================= */
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function localHms(date = new Date()) {
+  return date.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+}
+
+function getDayKey(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 /* =========================
    STATE
@@ -40,16 +65,19 @@ const state = {
   queue: [],
   autoEnabled: false,
   lastActionTs: 0,
+
   sessionTrades: 0,
   maxSessionTrades: CONFIG.maxSessionTrades,
-  dailyWinLimit: CONFIG.dailyWinLimit,
-  dailyLossLimit: CONFIG.dailyLossLimit,
   dayKey: getDayKey(),
+  dailyLossLimit: CONFIG.dailyLossLimit,
+  dailyWinTarget: CONFIG.dailyWinTarget,
+
   health: {
     status: true,
     buy: true,
     sell: true
   },
+
   factors: {
     trend: 72.3,
     volume: 65.5,
@@ -58,34 +86,78 @@ const state = {
     liquidity: 81.9,
     session: 68.0
   },
+
   log: []
 };
 
 /* =========================
-   UTILS
+   LOGGING
 ========================= */
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function getDayKey() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 function log(type, msg) {
   state.log.push({
     type,
     msg,
-    time: nowIso()
+    time: nowIso(),
+    localTime: localHms()
   });
 
-  if (state.log.length > 250) {
+  if (state.log.length > 300) {
     state.log.shift();
   }
+}
+
+/* =========================
+   DAY / RESET
+========================= */
+function fullResetRuntime() {
+  state.pnl = 0;
+  state.queue = [];
+  state.processing = false;
+  state.autoEnabled = false;
+  state.lastActionTs = 0;
+  state.sessionTrades = 0;
+  state.dayKey = getDayKey();
+
+  state.guard = "READY";
+  state.reasonHint = "System bereit.";
+
+  state.health = {
+    status: true,
+    buy: true,
+    sell: true
+  };
+}
+
+function softDayReset(reason = "Neuer Tag gestartet") {
+  state.pnl = 0;
+  state.queue = [];
+  state.processing = false;
+  state.sessionTrades = 0;
+  state.dayKey = getDayKey();
+
+  state.guard = "READY";
+  state.reasonHint = "System bereit.";
+
+  log("DAY", reason);
+}
+
+function ensureDayFresh() {
+  const today = getDayKey();
+  if (state.dayKey !== today) {
+    softDayReset("Day reset");
+  }
+}
+
+/* =========================
+   STATE RESPONSE
+========================= */
+function responseState() {
+  ensureDayFresh();
+
+  return {
+    ...state,
+    queueLength: state.queue.length
+  };
 }
 
 function setGuard(guard, reasonHint = "") {
@@ -93,162 +165,76 @@ function setGuard(guard, reasonHint = "") {
   if (reasonHint) state.reasonHint = reasonHint;
 }
 
-function responseState() {
-  return {
-    ...state,
-    queueLength: state.queue.length,
-    score: computeScore(),
-    confidence: computeConfidence()
-  };
+/* =========================
+   BUSINESS RULES
+========================= */
+function isDailyLossHit() {
+  return Number.isFinite(state.dailyLossLimit) && state.pnl <= state.dailyLossLimit;
 }
 
-function hardRuntimeReset({ keepLog = true } = {}) {
-  state.pnl = 0;
-  state.guard = "READY";
-  state.reasonHint = "System bereit.";
-  state.processing = false;
-  state.queue = [];
-  state.autoEnabled = false;
-  state.lastActionTs = 0;
-  state.sessionTrades = 0;
-  state.maxSessionTrades = CONFIG.maxSessionTrades;
-  state.dailyWinLimit = CONFIG.dailyWinLimit;
-  state.dailyLossLimit = CONFIG.dailyLossLimit;
-  state.dayKey = getDayKey();
+function isDailyWinTargetHit() {
+  return Number.isFinite(state.dailyWinTarget) && state.pnl >= state.dailyWinTarget;
+}
 
-  state.health = {
-    status: true,
-    buy: true,
-    sell: true
-  };
-
-  if (!keepLog) {
-    state.log = [];
+function hardStopReason() {
+  if (state.sessionTrades >= state.maxSessionTrades) {
+    return "SESSION_LIMIT";
   }
-}
-
-function softSessionResetForNewDay() {
-  state.pnl = 0;
-  state.guard = "READY";
-  state.reasonHint = "Neuer Tag gestartet.";
-  state.processing = false;
-  state.queue = [];
-  state.autoEnabled = false;
-  state.lastActionTs = 0;
-  state.sessionTrades = 0;
-  state.dayKey = getDayKey();
-
-  log("SYSTEM", "Neuer Tag erkannt - Session Reset");
-}
-
-function ensureFreshDay() {
-  const currentDay = getDayKey();
-  if (state.dayKey !== currentDay) {
-    softSessionResetForNewDay();
+  if (isDailyLossHit()) {
+    return "DAILY_LOSS_LIMIT";
   }
-}
-
-function computeScore() {
-  const f = state.factors;
-  const base = (
-    Number(f.trend || 0) +
-    Number(f.volume || 0) +
-    Number(f.structure || 0) +
-    Number(f.volatility || 0) +
-    Number(f.liquidity || 0) +
-    Number(f.session || 0)
-  ) / 6;
-
-  return Math.max(0, Math.min(100, Math.round(base)));
-}
-
-function computeConfidence() {
-  const f = state.factors;
-  const raw = (
-    (Number(f.trend || 0) * 0.20) +
-    (Number(f.volume || 0) * 0.15) +
-    (Number(f.structure || 0) * 0.20) +
-    (Number(f.volatility || 0) * 0.10) +
-    (Number(f.liquidity || 0) * 0.20) +
-    (Number(f.session || 0) * 0.15)
-  );
-
-  return Math.max(0, Math.min(100, Math.round(raw)));
-}
-
-function reachedSessionLimit() {
-  return state.sessionTrades >= state.maxSessionTrades;
-}
-
-function reachedDailyWinLimit() {
-  return state.pnl >= state.dailyWinLimit;
-}
-
-function reachedDailyLossLimit() {
-  return state.pnl <= state.dailyLossLimit;
-}
-
-function applyGuardFromState() {
-  if (reachedDailyWinLimit()) {
-    state.autoEnabled = false;
-    setGuard("SESSION_WIN", "Tagesziel erreicht.");
-    return;
+  if (isDailyWinTargetHit()) {
+    return "WIN_TARGET_REACHED";
   }
+  return null;
+}
 
-  if (reachedDailyLossLimit()) {
-    state.autoEnabled = false;
-    setGuard("SESSION_LOSS", "Tagesverlustlimit erreicht.");
-    return;
-  }
+function applyHardStopGuard() {
+  const stop = hardStopReason();
 
-  if (reachedSessionLimit()) {
+  if (stop === "SESSION_LIMIT") {
     state.autoEnabled = false;
     setGuard("SESSION_LIMIT", "Tageslimit erreicht.");
-    return;
+    return true;
   }
 
-  if (!state.health.status || !state.health.buy || !state.health.sell) {
-    setGuard("HEALTH_FAIL", "Health Check fehlgeschlagen.");
-    return;
+  if (stop === "DAILY_LOSS_LIMIT") {
+    state.autoEnabled = false;
+    setGuard("DAILY_LOSS_LIMIT", "Daily Loss Limit erreicht.");
+    return true;
   }
 
-  if (state.processing || state.queue.length > 0) {
-    setGuard("LOCKED", "Order läuft oder ist in Queue.");
-    return;
+  if (stop === "WIN_TARGET_REACHED") {
+    state.autoEnabled = false;
+    setGuard("WIN_TARGET_REACHED", "Win Target erreicht.");
+    return true;
   }
 
-  setGuard("READY", "System bereit.");
+  return false;
 }
 
-/* =========================
-   GUARDS
-========================= */
 function canTrade() {
-  ensureFreshDay();
+  ensureDayFresh();
 
+  if (applyHardStopGuard()) return [false, state.guard];
   if (state.processing) return [false, "PROCESSING"];
   if (state.queue.length > 0) return [false, "QUEUE_BUSY"];
   if (!state.health.status || !state.health.buy || !state.health.sell) return [false, "HEALTH_FAIL"];
-  if (reachedSessionLimit()) return [false, "SESSION_LIMIT"];
-  if (reachedDailyWinLimit()) return [false, "SESSION_WIN"];
-  if (reachedDailyLossLimit()) return [false, "SESSION_LOSS"];
-
   return [true, "OK"];
 }
 
 /* =========================
    QUEUE ENGINE
 ========================= */
-function enqueue(type) {
+function enqueue(type, source = "MANUAL") {
   const id = Date.now() + Math.floor(Math.random() * 1000);
 
-  state.queue.push({ id, type });
+  state.queue.push({ id, type, source });
   log("QUEUE", `Order ${id} queued (${type})`);
 
   processQueue().catch((err) => {
     console.error("Queue error:", err);
     state.processing = false;
-    state.autoEnabled = false;
     setGuard("FAIL", "Queue Fehler");
     log("SYSTEM", "Queue Fehler");
   });
@@ -272,25 +258,57 @@ async function processQueue() {
   log("EXECUTED", `Order ${job.id} ausgeführt (${job.type})`);
 
   state.processing = false;
-  applyGuardFromState();
 
-  if (state.queue.length > 0 && state.guard === "READY") {
+  if (applyHardStopGuard()) {
+    return;
+  }
+
+  if (state.queue.length > 0) {
+    setGuard("LOCKED", "Order läuft oder ist in Queue.");
     processQueue().catch((err) => {
       console.error("Queue chain error:", err);
       state.processing = false;
-      state.autoEnabled = false;
       setGuard("FAIL", "Queue Fehler");
       log("SYSTEM", "Queue Fehler");
     });
+    return;
   }
+
+  setGuard("READY", "System bereit.");
 }
 
 /* =========================
-   API
+   AUTO
+========================= */
+function tryAutoTrade() {
+  if (!state.autoEnabled) return;
+
+  ensureDayFresh();
+
+  if (applyHardStopGuard()) {
+    return;
+  }
+
+  const [ok, reason] = canTrade();
+  if (!ok) {
+    if (reason === "PROCESSING" || reason === "QUEUE_BUSY") {
+      setGuard("LOCKED", "Order läuft oder ist in Queue.");
+    }
+    return;
+  }
+
+  const type = Math.random() > 0.5 ? "BUY" : "SELL";
+  enqueue(type, "AUTO");
+  state.sessionTrades += 1;
+  setGuard("LOCKED", `${type} Auto gesendet`);
+}
+
+setInterval(tryAutoTrade, CONFIG.autoIntervalMs);
+
+/* =========================
+   ROUTES
 ========================= */
 app.get("/api/status", (req, res) => {
-  ensureFreshDay();
-  applyGuardFromState();
   res.json(responseState());
 });
 
@@ -302,17 +320,17 @@ app.post("/api/buy", (req, res) => {
       setGuard("LOCKED", "Order läuft oder ist in Queue.");
     } else if (reason === "SESSION_LIMIT") {
       setGuard("SESSION_LIMIT", "Tageslimit erreicht.");
-    } else if (reason === "SESSION_WIN") {
-      setGuard("SESSION_WIN", "Tagesziel erreicht.");
-    } else if (reason === "SESSION_LOSS") {
-      setGuard("SESSION_LOSS", "Tagesverlustlimit erreicht.");
+    } else if (reason === "DAILY_LOSS_LIMIT") {
+      setGuard("DAILY_LOSS_LIMIT", "Daily Loss Limit erreicht.");
+    } else if (reason === "WIN_TARGET_REACHED") {
+      setGuard("WIN_TARGET_REACHED", "Win Target erreicht.");
     } else {
       setGuard("FAIL", "Trade blockiert");
     }
     return res.json(responseState());
   }
 
-  enqueue("BUY");
+  enqueue("BUY", "MANUAL");
   state.sessionTrades += 1;
   setGuard("LOCKED", "BUY gesendet");
   res.json(responseState());
@@ -326,60 +344,70 @@ app.post("/api/sell", (req, res) => {
       setGuard("LOCKED", "Order läuft oder ist in Queue.");
     } else if (reason === "SESSION_LIMIT") {
       setGuard("SESSION_LIMIT", "Tageslimit erreicht.");
-    } else if (reason === "SESSION_WIN") {
-      setGuard("SESSION_WIN", "Tagesziel erreicht.");
-    } else if (reason === "SESSION_LOSS") {
-      setGuard("SESSION_LOSS", "Tagesverlustlimit erreicht.");
+    } else if (reason === "DAILY_LOSS_LIMIT") {
+      setGuard("DAILY_LOSS_LIMIT", "Daily Loss Limit erreicht.");
+    } else if (reason === "WIN_TARGET_REACHED") {
+      setGuard("WIN_TARGET_REACHED", "Win Target erreicht.");
     } else {
       setGuard("FAIL", "Trade blockiert");
     }
     return res.json(responseState());
   }
 
-  enqueue("SELL");
+  enqueue("SELL", "MANUAL");
   state.sessionTrades += 1;
   setGuard("LOCKED", "SELL gesendet");
   res.json(responseState());
 });
 
 app.post("/api/win", (req, res) => {
-  ensureFreshDay();
-  state.pnl += 4;
-  log("WIN", "WIN PnL +4");
-  applyGuardFromState();
+  ensureDayFresh();
+
+  state.pnl += CONFIG.winStep;
+  log("WIN", `WIN PnL +${CONFIG.winStep}`);
+
+  if (applyHardStopGuard()) {
+    return res.json(responseState());
+  }
+
+  if (state.processing || state.queue.length > 0) {
+    setGuard("LOCKED", "Order läuft oder ist in Queue.");
+  } else {
+    setGuard("READY", "Win verbucht");
+  }
+
   res.json(responseState());
 });
 
 app.post("/api/loss", (req, res) => {
-  ensureFreshDay();
-  state.pnl -= 4;
-  log("LOSS", "LOSS PnL -4");
-  applyGuardFromState();
+  ensureDayFresh();
+
+  state.pnl += CONFIG.lossStep;
+  log("LOSS", `LOSS PnL ${CONFIG.lossStep}`);
+
+  if (applyHardStopGuard()) {
+    return res.json(responseState());
+  }
+
+  if (state.processing || state.queue.length > 0) {
+    setGuard("LOCKED", "Order läuft oder ist in Queue.");
+  } else {
+    setGuard("READY", "Loss verbucht");
+  }
+
   res.json(responseState());
 });
 
 app.post("/api/reset", (req, res) => {
-  hardRuntimeReset({ keepLog: true });
+  fullResetRuntime();
   log("RESET", "System reset");
   res.json(responseState());
 });
 
 app.post("/api/auto/on", (req, res) => {
-  ensureFreshDay();
-  const [ok, reason] = canTrade();
+  ensureDayFresh();
 
-  if (!ok) {
-    if (reason === "SESSION_LIMIT") {
-      setGuard("SESSION_LIMIT", "Tageslimit erreicht.");
-    } else if (reason === "SESSION_WIN") {
-      setGuard("SESSION_WIN", "Tagesziel erreicht.");
-    } else if (reason === "SESSION_LOSS") {
-      setGuard("SESSION_LOSS", "Tagesverlustlimit erreicht.");
-    } else if (reason === "PROCESSING" || reason === "QUEUE_BUSY") {
-      setGuard("LOCKED", "Order läuft oder ist in Queue.");
-    } else {
-      setGuard("FAIL", "Auto blockiert");
-    }
+  if (applyHardStopGuard()) {
     return res.json(responseState());
   }
 
@@ -388,7 +416,10 @@ app.post("/api/auto/on", (req, res) => {
     log("AUTO", "Auto ON");
   }
 
-  applyGuardFromState();
+  if (!state.processing && state.queue.length === 0) {
+    setGuard("READY", "Auto aktiv");
+  }
+
   res.json(responseState());
 });
 
@@ -398,44 +429,44 @@ app.post("/api/auto/off", (req, res) => {
     log("AUTO", "Auto OFF");
   }
 
-  applyGuardFromState();
+  if (applyHardStopGuard()) {
+    return res.json(responseState());
+  }
+
+  if (state.processing || state.queue.length > 0) {
+    setGuard("LOCKED", "Order läuft oder ist in Queue.");
+  } else {
+    setGuard("READY", "Auto deaktiviert");
+  }
+
   res.json(responseState());
 });
 
 /* =========================
-   AUTO LOOP
+   OPTIONAL HEALTH TEST
 ========================= */
-setInterval(() => {
-  ensureFreshDay();
-
-  if (!state.autoEnabled) return;
-
-  const [ok, reason] = canTrade();
-  if (!ok) {
-    if (reason === "SESSION_LIMIT") {
-      state.autoEnabled = false;
-      setGuard("SESSION_LIMIT", "Tageslimit erreicht.");
-    } else if (reason === "SESSION_WIN") {
-      state.autoEnabled = false;
-      setGuard("SESSION_WIN", "Tagesziel erreicht.");
-    } else if (reason === "SESSION_LOSS") {
-      state.autoEnabled = false;
-      setGuard("SESSION_LOSS", "Tagesverlustlimit erreicht.");
-    }
-    return;
+app.post("/api/health/ok", (req, res) => {
+  state.health = { status: true, buy: true, sell: true };
+  log("SYSTEM", "Health OK");
+  if (!applyHardStopGuard()) {
+    setGuard("READY", "System bereit.");
   }
+  res.json(responseState());
+});
 
-  const type = Math.random() > 0.5 ? "BUY" : "SELL";
-  enqueue(type);
-  state.sessionTrades += 1;
-  setGuard("LOCKED", `${type} Auto gesendet`);
-}, CONFIG.autoIntervalMs);
+app.post("/api/health/fail", (req, res) => {
+  state.health = { status: false, buy: false, sell: false };
+  state.autoEnabled = false;
+  setGuard("HEALTH_FAIL", "Health Check fehlgeschlagen.");
+  log("SYSTEM", "Health FAIL");
+  res.json(responseState());
+});
 
 /* =========================
-   SERVER
+   START
 ========================= */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 V20.6 HARD LIVE running on port ${PORT}`);
+  console.log(`🚀 V20.7 HARD LIVE running on port ${PORT}`);
 });
