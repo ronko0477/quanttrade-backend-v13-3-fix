@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V19.9.5 HARD LIVE</title>
+  <title>V20.1 HARD LIVE</title>
   <style>
     :root{
       --bg:#02040a;
-      --bg2:#071127;
-      --panel:#242f79;
-      --panel2:#3f4dbc;
-      --panel3:#1b2459;
+      --panel:#252f79;
+      --panelDeep:#1a2256;
+      --panelHero1:#6473ea;
+      --panelHero2:#3a49b2;
       --line:rgba(255,255,255,.07);
       --text:#f5f7ff;
       --muted:#bec5df;
@@ -18,7 +18,7 @@
       --red:#dfb8b8;
       --yellow:#ddd08a;
       --cyan:#afd8ef;
-      --shadow:0 16px 40px rgba(0,0,0,.35);
+      --shadow:0 18px 42px rgba(0,0,0,.34);
     }
 
     *{box-sizing:border-box}
@@ -30,18 +30,22 @@
       color:var(--text);
       min-height:100vh;
       background:
-        radial-gradient(circle at 50% 12%, rgba(76,92,214,.10), transparent 28%),
-        radial-gradient(circle at 50% 52%, rgba(28,41,116,.08), transparent 34%),
-        linear-gradient(180deg,#02040a 0%,#020713 100%);
+        radial-gradient(circle at 50% 11%, rgba(87,103,232,.12), transparent 28%),
+        radial-gradient(circle at 50% 50%, rgba(20,33,105,.09), transparent 34%),
+        linear-gradient(180deg,#010309 0%,#020713 100%);
     }
 
     .wrap{
       width:min(100%,460px);
       margin:0 auto;
-      padding:14px 10px 28px;
+      padding:12px 10px 28px;
     }
 
     .title{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
       text-align:center;
       font-size:25px;
       font-weight:1000;
@@ -50,28 +54,46 @@
       text-shadow:0 2px 12px rgba(0,0,0,.34);
     }
 
+    .liveDot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:#8ef0ba;
+      box-shadow:0 0 0 0 rgba(142,240,186,.55);
+      animation:pulseDot 1.8s infinite;
+      flex:0 0 auto;
+    }
+
+    @keyframes pulseDot{
+      0%{box-shadow:0 0 0 0 rgba(142,240,186,.55)}
+      70%{box-shadow:0 0 0 10px rgba(142,240,186,0)}
+      100%{box-shadow:0 0 0 0 rgba(142,240,186,0)}
+    }
+
     .hero{
       position:relative;
       border-radius:26px;
       padding:12px;
-      background:linear-gradient(180deg, rgba(92,106,231,.92), rgba(61,74,184,.92));
+      background:linear-gradient(180deg, rgba(99,115,234,.95), rgba(58,73,178,.94));
       border:1px solid rgba(255,255,255,.08);
       box-shadow:var(--shadow);
       overflow:hidden;
     }
 
-    .hero:before{
+    .hero::before{
       content:"";
       position:absolute;
       inset:0;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), transparent 28%);
+      background:
+        radial-gradient(circle at 50% -10%, rgba(255,255,255,.10), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.05), transparent 28%);
       pointer-events:none;
     }
 
     .heroInner{
       position:relative;
       z-index:1;
-      min-height:230px;
+      min-height:228px;
       border-radius:22px;
       border:1px solid rgba(255,255,255,.08);
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
@@ -90,8 +112,8 @@
       overflow:hidden;
       text-overflow:ellipsis;
       line-height:.9;
-      letter-spacing:-1.6px;
-      font-size:80px;
+      letter-spacing:-1.8px;
+      font-size:78px;
       font-weight:1000;
     }
     .guard.ready{color:var(--green)}
@@ -101,14 +123,14 @@
 
     .heroHint{
       margin-top:8px;
-      min-height:21px;
+      min-height:22px;
       font-size:15px;
       font-weight:800;
       color:rgba(255,255,255,.72);
     }
 
     .pnl{
-      margin-top:10px;
+      margin-top:9px;
       font-size:78px;
       line-height:.94;
       letter-spacing:-2.2px;
@@ -120,6 +142,20 @@
       font-size:18px;
       font-weight:900;
       color:rgba(255,255,255,.76);
+    }
+
+    .heroMeta{
+      margin-top:12px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border-radius:999px;
+      padding:7px 12px;
+      background:rgba(11,17,48,.18);
+      border:1px solid rgba(255,255,255,.06);
+      font-size:12px;
+      font-weight:900;
+      color:rgba(255,255,255,.78);
     }
 
     .grid2{
@@ -176,7 +212,7 @@
       -webkit-appearance:none;
       font-family:inherit;
       cursor:pointer;
-      transition:transform .08s ease, opacity .15s ease, filter .15s ease;
+      transition:transform .08s ease, opacity .15s ease, filter .15s ease, box-shadow .18s ease;
     }
 
     button:active{transform:scale(.985)}
@@ -184,6 +220,7 @@
       opacity:.45;
       cursor:not-allowed;
       filter:grayscale(.2) brightness(.85);
+      box-shadow:none !important;
     }
 
     .actBtn{
@@ -194,6 +231,17 @@
       letter-spacing:.18px;
       color:#fff;
       box-shadow:0 8px 18px rgba(0,0,0,.15);
+    }
+
+    .actBtn.flash{
+      animation:btnFlash .34s ease;
+    }
+
+    @keyframes btnFlash{
+      0%{transform:scale(1)}
+      35%{transform:scale(.98)}
+      70%{transform:scale(1.015)}
+      100%{transform:scale(1)}
     }
 
     .buyBtn,.winBtn{
@@ -220,7 +268,7 @@
       gap:12px;
     }
 
-    .miniCard{
+    .miniCard, .miniBtn{
       min-height:90px;
       border-radius:22px;
       padding:14px 16px;
@@ -230,6 +278,7 @@
       display:flex;
       flex-direction:column;
       justify-content:center;
+      color:var(--text);
     }
 
     .miniTop{
@@ -246,6 +295,10 @@
       line-height:1;
       font-weight:1000;
       letter-spacing:-.35px;
+    }
+
+    .miniBtn.active{
+      box-shadow:var(--okGlow), 0 10px 24px rgba(0,0,0,.22);
     }
 
     .scoreCard{
@@ -340,17 +393,34 @@
       box-shadow:0 12px 26px rgba(0,0,0,.24);
     }
 
+    .logHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
     .logTitle{
       font-size:19px;
       font-weight:1000;
       line-height:1;
-      margin-bottom:10px;
       color:#f6f8ff;
       letter-spacing:.16px;
     }
 
+    .syncBadge{
+      font-size:11px;
+      font-weight:1000;
+      color:rgba(255,255,255,.72);
+      border-radius:999px;
+      padding:6px 10px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
     .logList{
-      max-height:340px;
+      max-height:360px;
       overflow:auto;
       padding-right:4px;
       scrollbar-width:thin;
@@ -388,7 +458,7 @@
       .cardVal{font-size:25px}
       .actBtn{min-height:58px;font-size:14px}
       .resetBtn{min-height:60px}
-      .miniCard{min-height:84px}
+      .miniCard,.miniBtn{min-height:84px}
       .miniBig{font-size:21px}
       .scoreVal{font-size:60px}
       .factor{min-height:80px}
@@ -398,7 +468,10 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="title">V19.9.5 HARD LIVE ⚡</div>
+    <div class="title">
+      <span>V20.1 HARD LIVE ⚡</span>
+      <span class="liveDot"></span>
+    </div>
 
     <section class="hero">
       <div class="heroInner">
@@ -406,6 +479,9 @@
         <div id="heroHint" class="heroHint">System bereit.</div>
         <div id="pnl" class="pnl">0</div>
         <div class="pnlSub">Net PnL</div>
+        <div class="heroMeta">
+          <span id="heroMetaText">LIVE</span>
+        </div>
       </div>
     </section>
 
@@ -437,6 +513,15 @@
     </section>
 
     <section class="miniGrid">
+      <button id="autoOnBtn" class="miniBtn">
+        <div class="miniTop">AUTO ON</div>
+        <div class="miniBig ice">AUTO ON</div>
+      </button>
+      <button id="autoOffBtn" class="miniBtn">
+        <div class="miniTop">AUTO OFF</div>
+        <div class="miniBig">AUTO OFF</div>
+      </button>
+
       <div class="miniCard">
         <div class="miniTop">QUEUE</div>
         <div id="queueVal" class="miniBig">0</div>
@@ -485,7 +570,10 @@
     </section>
 
     <section class="logCard">
-      <div class="logTitle">LOG</div>
+      <div class="logHead">
+        <div class="logTitle">LOG</div>
+        <div id="syncBadge" class="syncBadge">SYNC</div>
+      </div>
       <div id="logList" class="logList">
         <div class="logEntry">Keine Einträge.</div>
       </div>
@@ -501,6 +589,7 @@
       queueLength:0,
       confidence:62,
       score:82,
+      autoEnabled:false,
       health:{ status:true, buy:true, sell:true },
       factors:{
         trend:72.3,
@@ -518,6 +607,7 @@
     const els = {
       guard:$('guard'),
       heroHint:$('heroHint'),
+      heroMetaText:$('heroMetaText'),
       pnl:$('pnl'),
       healthStatus:$('healthStatus'),
       healthBuy:$('healthBuy'),
@@ -534,6 +624,9 @@
       liquidityVal:$('liquidityVal'),
       sessionVal:$('sessionVal'),
       logList:$('logList'),
+      syncBadge:$('syncBadge'),
+      autoOnBtn:$('autoOnBtn'),
+      autoOffBtn:$('autoOffBtn'),
       btnBuy:$('btnBuy'),
       btnSell:$('btnSell'),
       btnWin:$('btnWin'),
@@ -565,7 +658,7 @@
     function guardClass(raw){
       const g = String(raw || '').toUpperCase();
       if(g.includes('READY')) return 'ready';
-      if(g.includes('SESSION') || g.includes('WARN') || g.includes('COOL')) return 'block';
+      if(g.includes('SESSION')) return 'block';
       if(g.includes('BLOCK') || g.includes('LOCK') || g.includes('LOSS')) return 'fail';
       return 'warn';
     }
@@ -609,6 +702,7 @@
       s.queueLength = safeNum(api.queueLength, Array.isArray(api.queue) ? api.queue.length : 0);
       s.confidence = safeNum(api.confidence, 62);
       s.score = safeNum(api.score, api.aiScore ?? 82);
+      s.autoEnabled = !!api.autoEnabled;
 
       s.health = api.health || deriveHealth(s);
 
@@ -639,7 +733,6 @@
       if(!input) return '--:--:--';
 
       const str = String(input);
-
       if (/^\d{2}:\d{2}:\d{2}$/.test(str)) return str;
 
       const d = new Date(str);
@@ -659,9 +752,9 @@
         return;
       }
 
-      const html = log.slice(0,20).map(item=>{
+      const html = log.slice(0, 24).map(item=>{
         const type = String(item.type || '').toUpperCase();
-        const time = escapeHtml(formatLogTime(item.time || item.ts));
+        const time = escapeHtml(formatLogTime(item.localTime || item.time || item.ts));
         const msg = escapeHtml(item.msg || item.message || '-');
 
         let cls = 'logSystem';
@@ -676,6 +769,30 @@
       }).join('');
 
       els.logList.innerHTML = html;
+    }
+
+    function pulseButton(el){
+      el.classList.remove('flash');
+      void el.offsetWidth;
+      el.classList.add('flash');
+    }
+
+    function renderMeta(state){
+      const q = safeNum(state.queueLength, 0);
+      if (String(state.guard).toUpperCase().includes('SESSION')) {
+        els.heroMetaText.textContent = 'SESSION LIMIT';
+      } else if (state.processing || q > 0) {
+        els.heroMetaText.textContent = `QUEUE ${q}`;
+      } else if (state.autoEnabled) {
+        els.heroMetaText.textContent = 'AUTO ON';
+      } else {
+        els.heroMetaText.textContent = 'LIVE';
+      }
+    }
+
+    function renderAuto(state){
+      els.autoOnBtn.classList.toggle('active', !!state.autoEnabled);
+      els.autoOffBtn.classList.toggle('active', !state.autoEnabled);
     }
 
     function render(state){
@@ -703,6 +820,8 @@
       renderFactor(els.liquidityVal, state.factors.liquidity);
       renderFactor(els.sessionVal, state.factors.session);
 
+      renderMeta(state);
+      renderAuto(state);
       renderLog(state.log);
 
       const disableTrades = state.processing || !state.health.buy || !state.health.sell;
@@ -726,8 +845,9 @@
       return await res.json();
     }
 
-    async function performAction(url){
+    async function performAction(url, btn){
       try{
+        if (btn) pulseButton(btn);
         const data = await postJSON(url,{});
         render(normalizeState(data.status || data));
         if(url === '/api/reset'){
@@ -739,19 +859,25 @@
     }
 
     async function syncNow(){
+      els.syncBadge.textContent = 'SYNC...';
       try{
         const data = await getStatus();
         render(normalizeState(data));
+        els.syncBadge.textContent = 'SYNC OK';
       }catch(e){
         console.error(e);
+        els.syncBadge.textContent = 'SYNC FAIL';
       }
     }
 
-    els.btnBuy.onclick = () => performAction('/api/buy');
-    els.btnSell.onclick = () => performAction('/api/sell');
-    els.btnWin.onclick = () => performAction('/api/win');
-    els.btnLoss.onclick = () => performAction('/api/loss');
-    els.btnReset.onclick = () => performAction('/api/reset');
+    els.btnBuy.onclick = () => performAction('/api/buy', els.btnBuy);
+    els.btnSell.onclick = () => performAction('/api/sell', els.btnSell);
+    els.btnWin.onclick = () => performAction('/api/win', els.btnWin);
+    els.btnLoss.onclick = () => performAction('/api/loss', els.btnLoss);
+    els.btnReset.onclick = () => performAction('/api/reset', els.btnReset);
+
+    els.autoOnBtn.onclick = () => performAction('/api/auto/on', els.autoOnBtn);
+    els.autoOffBtn.onclick = () => performAction('/api/auto/off', els.autoOffBtn);
 
     render(fallbackState);
     syncNow();
