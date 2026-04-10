@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V20.4 HARD LIVE</title>
+  <title>V20.5 HARD LIVE</title>
   <style>
     :root{
       --bg:#02040a;
@@ -18,7 +18,6 @@
       --red:#dfb8b8;
       --yellow:#ddd08a;
       --cyan:#afd8ef;
-      --softBlue:#9eb7ff;
       --shadow:0 18px 42px rgba(0,0,0,.34);
       --okGlow:0 0 0 1px rgba(185,217,155,.22), 0 0 22px rgba(185,217,155,.10);
       --warnGlow:0 0 0 1px rgba(221,208,138,.18), 0 0 20px rgba(221,208,138,.08);
@@ -588,7 +587,7 @@
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V20.4 HARD LIVE ⚡</span>
+      <span>V20.5 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -706,141 +705,143 @@
 
   <script>
     const fallbackState = {
-      pnl:0,
-      guard:'READY',
-      reasonHint:'System bereit.',
-      processing:false,
-      queueLength:0,
-      confidence:62,
-      score:82,
-      autoEnabled:false,
-      health:{ status:true, buy:true, sell:true },
-      factors:{
-        trend:72.3,
-        volume:65.5,
-        structure:80.1,
-        volatility:51.2,
-        liquidity:81.9,
-        session:68.0
+      pnl: 0,
+      guard: "READY",
+      reasonHint: "System bereit.",
+      processing: false,
+      queueLength: 0,
+      confidence: 62,
+      score: 82,
+      autoEnabled: false,
+      health: {
+        status: true,
+        buy: true,
+        sell: true
       },
-      log:[]
+      factors: {
+        trend: 72.3,
+        volume: 65.5,
+        structure: 80.1,
+        volatility: 51.2,
+        liquidity: 81.9,
+        session: 68.0
+      },
+      log: []
     };
 
     const $ = id => document.getElementById(id);
 
     const els = {
-      guard:$('guard'),
-      heroHint:$('heroHint'),
-      heroMeta:$('heroMeta'),
-      heroMetaText:$('heroMetaText'),
-      pnl:$('pnl'),
-      healthStatus:$('healthStatus'),
-      healthBuy:$('healthBuy'),
-      healthSell:$('healthSell'),
-      confVal:$('confVal'),
-      queueVal:$('queueVal'),
-      processingVal:$('processingVal'),
-      queueCard:$('queueCard'),
-      processingCard:$('processingCard'),
-      scoreVal:$('scoreVal'),
-      scoreBar:$('scoreBar'),
-      trendVal:$('trendVal'),
-      volumeVal:$('volumeVal'),
-      structureVal:$('structureVal'),
-      volatilityVal:$('volatilityVal'),
-      liquidityVal:$('liquidityVal'),
-      sessionVal:$('sessionVal'),
-      logList:$('logList'),
-      syncBadge:$('syncBadge'),
-      autoToggleBtn:$('autoToggleBtn'),
-      toggleMain:$('toggleMain'),
-      toggleState:$('toggleState'),
-      btnBuy:$('btnBuy'),
-      btnSell:$('btnSell'),
-      btnWin:$('btnWin'),
-      btnLoss:$('btnLoss'),
-      btnReset:$('btnReset')
+      guard: $("guard"),
+      heroHint: $("heroHint"),
+      heroMeta: $("heroMeta"),
+      heroMetaText: $("heroMetaText"),
+      pnl: $("pnl"),
+      healthStatus: $("healthStatus"),
+      healthBuy: $("healthBuy"),
+      healthSell: $("healthSell"),
+      confVal: $("confVal"),
+      queueVal: $("queueVal"),
+      processingVal: $("processingVal"),
+      queueCard: $("queueCard"),
+      processingCard: $("processingCard"),
+      scoreVal: $("scoreVal"),
+      scoreBar: $("scoreBar"),
+      trendVal: $("trendVal"),
+      volumeVal: $("volumeVal"),
+      structureVal: $("structureVal"),
+      volatilityVal: $("volatilityVal"),
+      liquidityVal: $("liquidityVal"),
+      sessionVal: $("sessionVal"),
+      logList: $("logList"),
+      syncBadge: $("syncBadge"),
+      autoToggleBtn: $("autoToggleBtn"),
+      toggleMain: $("toggleMain"),
+      toggleState: $("toggleState"),
+      btnBuy: $("btnBuy"),
+      btnSell: $("btnSell"),
+      btnWin: $("btnWin"),
+      btnLoss: $("btnLoss"),
+      btnReset: $("btnReset")
     };
 
-    function safeNum(v, fb=0){
+    function safeNum(v, fb = 0){
       const n = Number(v);
       return Number.isFinite(n) ? n : fb;
     }
 
     function fmtPnL(v){
-      const n = safeNum(v,0);
-      return Number.isInteger(n) ? String(n) : n.toFixed(2);
+      const n = safeNum(v, 0);
+      if (Number.isInteger(n)) return String(n);
+      return n.toFixed(2);
     }
 
     function shortGuard(raw){
-      const g = String(raw || '').toUpperCase().trim();
-      if(g === 'READY' || g === 'SYSTEM_READY') return 'READY';
-      if(g.includes('SESSION')) return 'SESSION...';
-      if(g.includes('BLOCK') || g.includes('LOCK')) return 'LOCKED';
-      if(g.includes('COOL')) return 'COOL...';
-      if(g.includes('WARN')) return 'WARN...';
-      if(g.includes('FAIL')) return 'FAIL';
-      if(g.includes('LOSS')) return 'LOSS...';
-      return g || 'READY';
+      const g = String(raw || "").toUpperCase().trim();
+      if (g === "READY" || g === "SYSTEM_READY") return "READY";
+      if (g.includes("SESSION")) return "SESSION...";
+      if (g.includes("QUEUE")) return "LOCKED";
+      if (g.includes("PROCESS")) return "LOCKED";
+      if (g.includes("BLOCK") || g.includes("LOCK")) return "LOCKED";
+      if (g.includes("HEALTH")) return "FAIL";
+      if (g.includes("FAIL")) return "FAIL";
+      if (g.includes("LOSS")) return "LOSS...";
+      return g || "READY";
     }
 
     function guardClass(raw){
-      const g = String(raw || '').toUpperCase();
-      if(g.includes('READY')) return 'ready';
-      if(g.includes('SESSION')) return 'block';
-      if(g.includes('BLOCK') || g.includes('LOCK') || g.includes('FAIL') || g.includes('LOSS')) return 'fail';
-      return 'warn';
+      const g = String(raw || "").toUpperCase();
+      if (g.includes("READY")) return "ready";
+      if (g.includes("SESSION")) return "block";
+      if (g.includes("QUEUE") || g.includes("PROCESS")) return "warn";
+      if (g.includes("BLOCK") || g.includes("LOCK") || g.includes("FAIL") || g.includes("HEALTH") || g.includes("LOSS")) return "fail";
+      return "warn";
     }
 
-    function boolText(v){ return v ? 'OK' : 'FAIL'; }
-    function boolClass(v){ return v ? 'ok' : 'fail'; }
+    function boolText(v){ return v ? "OK" : "FAIL"; }
+    function boolClass(v){ return v ? "ok" : "fail"; }
 
     function factorClass(v){
       const n = safeNum(v);
-      if(n >= 75) return 'ok';
-      if(n >= 60) return 'mid';
-      return 'fail';
+      if (n >= 75) return "ok";
+      if (n >= 60) return "mid";
+      return "fail";
     }
 
     function escapeHtml(str){
       return String(str)
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;')
-        .replaceAll('"','&quot;')
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
-    }
-
-    function deriveHealth(state){
-      const g = String(state.guard || '').toUpperCase();
-      const tradable = g === 'READY' || g === 'SYSTEM_READY';
-      return {
-        status:true,
-        buy:tradable,
-        sell:tradable
-      };
     }
 
     function normalizeState(api){
       const s = JSON.parse(JSON.stringify(fallbackState));
 
       s.pnl = safeNum(api.pnl, 0);
-      s.guard = String(api.guard || api.reason || 'READY');
-      s.reasonHint = String(api.reasonHint || api.label || 'System bereit.');
+      s.guard = String(api.guard || "READY");
+      s.reasonHint = String(api.reasonHint || "System bereit.");
       s.processing = !!api.processing;
       s.queueLength = safeNum(api.queueLength, Array.isArray(api.queue) ? api.queue.length : 0);
       s.confidence = safeNum(api.confidence, 62);
-      s.score = safeNum(api.score, api.aiScore ?? 82);
+      s.score = safeNum(api.score, 82);
       s.autoEnabled = !!api.autoEnabled;
-      s.health = api.health || deriveHealth(s);
+
+      s.health = {
+        status: !!(api.health?.status ?? true),
+        buy: !!(api.health?.buy ?? true),
+        sell: !!(api.health?.sell ?? true)
+      };
 
       s.factors = {
-        trend: safeNum(api.trend, api.factors?.trend ?? 72.3),
-        volume: safeNum(api.volume, api.factors?.volume ?? 65.5),
-        structure: safeNum(api.structure, api.factors?.structure ?? 80.1),
-        volatility: safeNum(api.volatility, api.factors?.volatility ?? 51.2),
-        liquidity: safeNum(api.liquidity, api.factors?.liquidity ?? 81.9),
-        session: safeNum(api.session, api.factors?.session ?? 68.0)
+        trend: safeNum(api.factors?.trend, 72.3),
+        volume: safeNum(api.factors?.volume, 65.5),
+        structure: safeNum(api.factors?.structure, 80.1),
+        volatility: safeNum(api.factors?.volatility, 51.2),
+        liquidity: safeNum(api.factors?.liquidity, 81.9),
+        session: safeNum(api.factors?.session, 68.0)
       };
 
       s.log = Array.isArray(api.log) ? api.log.slice().reverse() : [];
@@ -848,20 +849,26 @@
     }
 
     function isSessionGuard(guard){
-      return String(guard || '').toUpperCase().includes('SESSION');
+      return String(guard || "").toUpperCase().includes("SESSION");
     }
 
     function isBlockedGuard(guard){
-      const g = String(guard || '').toUpperCase();
-      return g.includes('BLOCK') || g.includes('LOCK') || g.includes('FAIL');
+      const g = String(guard || "").toUpperCase();
+      return g.includes("BLOCK") || g.includes("LOCK") || g.includes("FAIL") || g.includes("HEALTH");
+    }
+
+    function isBusyGuard(guard){
+      const g = String(guard || "").toUpperCase();
+      return g.includes("QUEUE") || g.includes("PROCESS");
     }
 
     function isTradableState(state){
-      const g = String(state.guard || '').toUpperCase();
-      if(!(g === 'READY' || g === 'SYSTEM_READY')) return false;
-      if(state.processing) return false;
-      if(safeNum(state.queueLength,0) > 0) return false;
-      if(!state.health.buy || !state.health.sell) return false;
+      const g = String(state.guard || "").toUpperCase();
+      const guardReady = g === "READY" || g === "SYSTEM_READY";
+      if (!guardReady) return false;
+      if (state.processing) return false;
+      if (safeNum(state.queueLength, 0) > 0) return false;
+      if (!state.health.buy || !state.health.sell) return false;
       return true;
     }
 
@@ -876,126 +883,141 @@
     }
 
     function formatLogTime(input){
-      if(!input) return '--:--:--';
+      if (!input) return "--:--:--";
+
       const str = String(input).trim();
 
       if (/^\d{2}:\d{2}:\d{2}$/.test(str)) return str;
 
       const d = new Date(str);
       if (!Number.isNaN(d.getTime())) {
-        const hh = String(d.getHours()).padStart(2,'0');
-        const mm = String(d.getMinutes()).padStart(2,'0');
-        const ss = String(d.getSeconds()).padStart(2,'0');
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        const ss = String(d.getSeconds()).padStart(2, "0");
         return `${hh}:${mm}:${ss}`;
       }
 
       const match = str.match(/(\d{2}):(\d{2}):(\d{2})/);
       if (match) return `${match[1]}:${match[2]}:${match[3]}`;
 
-      return '--:--:--';
+      return "--:--:--";
+    }
+
+    function prettifyLogMessage(item){
+      const type = String(item.type || "").toUpperCase();
+      const raw = String(item.msg || item.message || "-");
+
+      if (type === "QUEUE") return raw.replace(/^BUY queued$/i, "BUY queued").replace(/^SELL queued$/i, "SELL queued");
+      if (type === "PROCESSING") return raw.replace(/^BUY processing$/i, "BUY processing").replace(/^SELL processing$/i, "SELL processing");
+      if (type === "EXECUTED") return raw.replace(/^BUY executed$/i, "BUY executed").replace(/^SELL executed$/i, "SELL executed");
+      if (type === "WIN") return raw;
+      if (type === "LOSS") return raw;
+      if (type === "RESET") return raw;
+      if (type === "AUTO") return raw;
+      return raw;
     }
 
     function renderLog(log){
-      if(!Array.isArray(log) || !log.length){
+      if (!Array.isArray(log) || !log.length) {
         els.logList.innerHTML = `<div class="logEntry">Keine Einträge.</div>`;
         return;
       }
 
-      const html = log.slice(0, 28).map(item=>{
-        const type = String(item.type || '').toUpperCase();
+      const html = log.slice(0, 28).map(item => {
+        const type = String(item.type || "").toUpperCase();
         const time = escapeHtml(formatLogTime(item.localTime || item.time || item.ts));
-        const msg = escapeHtml(item.msg || item.message || '-');
+        const msg = escapeHtml(prettifyLogMessage(item));
 
-        let cls = 'logSystem';
-        if(type.includes('QUEUE')) cls = 'logQueued';
-        else if(type.includes('PROCESS')) cls = 'logProcessing';
-        else if(type.includes('EXECUT')) cls = 'logExecuted';
-        else if(type.includes('WIN')) cls = 'logWin';
-        else if(type.includes('LOSS')) cls = 'logLoss';
-        else if(type.includes('RESET')) cls = 'logReset';
-        else if(type.includes('AUTO')) cls = 'logSystem';
-        else if(type.includes('SYNC')) cls = 'logSystem';
+        let cls = "logSystem";
+        if (type.includes("QUEUE")) cls = "logQueued";
+        else if (type.includes("PROCESS")) cls = "logProcessing";
+        else if (type.includes("EXECUT")) cls = "logExecuted";
+        else if (type.includes("WIN")) cls = "logWin";
+        else if (type.includes("LOSS")) cls = "logLoss";
+        else if (type.includes("RESET")) cls = "logReset";
+        else if (type.includes("AUTO")) cls = "logSystem";
 
         return `<div class="logEntry ${cls}">${time} - ${msg}</div>`;
-      }).join('');
+      }).join("");
 
       els.logList.innerHTML = html;
     }
 
     function pulseButton(el){
-      el.classList.remove('flash');
+      el.classList.remove("flash");
       void el.offsetWidth;
-      el.classList.add('flash');
+      el.classList.add("flash");
     }
 
     function renderMeta(state){
       const q = safeNum(state.queueLength, 0);
       const session = isSessionGuard(state.guard);
       const blocked = isBlockedGuard(state.guard);
+      const busy = isBusyGuard(state.guard) || state.processing || q > 0;
 
-      els.heroMeta.className = 'heroMeta';
+      els.heroMeta.className = "heroMeta";
 
       if (session) {
-        els.heroMeta.classList.add('block');
-        els.heroMetaText.textContent = 'SESSION LIMIT';
+        els.heroMeta.classList.add("block");
+        els.heroMetaText.textContent = "SESSION LIMIT";
       } else if (blocked) {
-        els.heroMeta.classList.add('block');
-        els.heroMetaText.textContent = 'BLOCKED';
-      } else if (state.processing || q > 0) {
-        els.heroMeta.classList.add('queue');
+        els.heroMeta.classList.add("block");
+        els.heroMetaText.textContent = "BLOCKED";
+      } else if (busy) {
+        els.heroMeta.classList.add("queue");
         els.heroMetaText.textContent = `QUEUE ${q}`;
       } else if (state.autoEnabled) {
-        els.heroMeta.classList.add('auto');
-        els.heroMetaText.textContent = 'AUTO ON';
+        els.heroMeta.classList.add("auto");
+        els.heroMetaText.textContent = "AUTO ON";
       } else {
-        els.heroMeta.classList.add('live');
-        els.heroMetaText.textContent = 'LIVE';
+        els.heroMeta.classList.add("live");
+        els.heroMetaText.textContent = "LIVE";
       }
     }
 
     function renderAuto(state){
       const active = !!state.autoEnabled;
-      els.autoToggleBtn.classList.toggle('active', active);
-      els.toggleMain.textContent = active ? 'AUTO ON' : 'AUTO OFF';
-      els.toggleState.textContent = active ? 'ON' : 'OFF';
+      els.autoToggleBtn.classList.toggle("active", active);
+      els.toggleMain.textContent = active ? "AUTO ON" : "AUTO OFF";
+      els.toggleState.textContent = active ? "ON" : "OFF";
     }
 
     function renderQueueProcessing(state){
-      const q = safeNum(state.queueLength,0);
+      const q = safeNum(state.queueLength, 0);
       els.queueVal.textContent = String(q);
-      els.processingVal.textContent = state.processing ? 'ON' : 'OFF';
+      els.processingVal.textContent = state.processing ? "ON" : "OFF";
 
-      els.queueCard.classList.toggle('queuePulse', q > 0);
-      els.processingCard.classList.toggle('processingPulse', !!state.processing);
+      els.queueCard.classList.toggle("queuePulse", q > 0);
+      els.processingCard.classList.toggle("processingPulse", !!state.processing);
     }
 
     function renderSync(status){
-      els.syncBadge.className = 'syncBadge';
-      if(status === 'pending'){
-        els.syncBadge.classList.add('pending');
-        els.syncBadge.textContent = 'SYNC...';
-      } else if(status === 'fail'){
-        els.syncBadge.classList.add('fail');
-        els.syncBadge.textContent = 'SYNC FAIL';
+      els.syncBadge.className = "syncBadge";
+      if (status === "pending") {
+        els.syncBadge.classList.add("pending");
+        els.syncBadge.textContent = "SYNC...";
+      } else if (status === "fail") {
+        els.syncBadge.classList.add("fail");
+        els.syncBadge.textContent = "SYNC FAIL";
       } else {
-        els.syncBadge.classList.add('ok');
-        els.syncBadge.textContent = 'SYNC OK';
+        els.syncBadge.classList.add("ok");
+        els.syncBadge.textContent = "SYNC OK";
       }
     }
 
     function render(state){
       els.guard.textContent = shortGuard(state.guard);
       els.guard.className = `guard ${guardClass(state.guard)}`;
-      els.heroHint.textContent = state.reasonHint || 'System bereit.';
+      els.heroHint.textContent = state.reasonHint || "System bereit.";
       els.pnl.textContent = fmtPnL(state.pnl);
 
       renderHealth(els.healthStatus, !!state.health.status);
       renderHealth(els.healthBuy, !!state.health.buy);
       renderHealth(els.healthSell, !!state.health.sell);
 
-      els.confVal.textContent = `${safeNum(state.confidence,62)}%`;
+      els.confVal.textContent = `${safeNum(state.confidence, 62)}%`;
 
-      const score = Math.max(0, Math.min(100, safeNum(state.score,82)));
+      const score = Math.max(0, Math.min(100, safeNum(state.score, 82)));
       els.scoreVal.textContent = String(Math.round(score));
       els.scoreBar.style.width = `${score}%`;
 
@@ -1014,41 +1036,43 @@
       const tradesAllowed = isTradableState(state);
       const guardIsSession = isSessionGuard(state.guard);
       const guardBlocked = isBlockedGuard(state.guard);
+      const queueBusy = safeNum(state.queueLength, 0) > 0;
 
       els.btnBuy.disabled = !tradesAllowed;
       els.btnSell.disabled = !tradesAllowed;
-      els.btnWin.disabled = guardIsSession || state.processing || safeNum(state.queueLength,0) > 0;
-      els.btnLoss.disabled = guardIsSession || state.processing || safeNum(state.queueLength,0) > 0;
+      els.btnWin.disabled = guardIsSession || state.processing || queueBusy;
+      els.btnLoss.disabled = guardIsSession || state.processing || queueBusy;
       els.btnReset.disabled = state.processing;
       els.autoToggleBtn.disabled = state.processing || guardBlocked;
     }
 
     async function getStatus(){
-      const res = await fetch('/api/status', { cache:'no-store' });
-      if(!res.ok) throw new Error('status failed');
+      const res = await fetch("/api/status", { cache: "no-store" });
+      if (!res.ok) throw new Error("status failed");
       return await res.json();
     }
 
-    async function postJSON(url, body={}){
+    async function postJSON(url, body = {}){
       const res = await fetch(url, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body:JSON.stringify(body)
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
       });
-      if(!res.ok) throw new Error(`${url} failed`);
+      if (!res.ok) throw new Error(`${url} failed`);
       return await res.json();
     }
 
     async function performAction(url, btn){
       try{
         if (btn) pulseButton(btn);
-        const data = await postJSON(url,{});
-        render(normalizeState(data.status || data));
-        if(url === '/api/reset'){
+        const data = await postJSON(url, {});
+        render(normalizeState(data.status || data || {}));
+        if (url === "/api/reset") {
           setTimeout(syncNow, 260);
         }
-      }catch(e){
+      } catch(e){
         console.error(e);
+        renderSync("fail");
       }
     }
 
@@ -1056,35 +1080,36 @@
       try{
         pulseButton(els.autoToggleBtn);
         const current = await getStatus();
-        const nextUrl = current.autoEnabled ? '/api/auto/off' : '/api/auto/on';
-        const data = await postJSON(nextUrl,{});
-        render(normalizeState(data.status || data));
-      }catch(e){
+        const nextUrl = current.autoEnabled ? "/api/auto/off" : "/api/auto/on";
+        const data = await postJSON(nextUrl, {});
+        render(normalizeState(data.status || data || {}));
+      } catch(e){
         console.error(e);
+        renderSync("fail");
       }
     }
 
     async function syncNow(){
-      renderSync('pending');
+      renderSync("pending");
       try{
         const data = await getStatus();
-        render(normalizeState(data));
-        renderSync('ok');
-      }catch(e){
+        render(normalizeState(data || {}));
+        renderSync("ok");
+      } catch(e){
         console.error(e);
-        renderSync('fail');
+        renderSync("fail");
       }
     }
 
-    els.btnBuy.onclick = () => performAction('/api/buy', els.btnBuy);
-    els.btnSell.onclick = () => performAction('/api/sell', els.btnSell);
-    els.btnWin.onclick = () => performAction('/api/win', els.btnWin);
-    els.btnLoss.onclick = () => performAction('/api/loss', els.btnLoss);
-    els.btnReset.onclick = () => performAction('/api/reset', els.btnReset);
+    els.btnBuy.onclick = () => performAction("/api/buy", els.btnBuy);
+    els.btnSell.onclick = () => performAction("/api/sell", els.btnSell);
+    els.btnWin.onclick = () => performAction("/api/win", els.btnWin);
+    els.btnLoss.onclick = () => performAction("/api/loss", els.btnLoss);
+    els.btnReset.onclick = () => performAction("/api/reset", els.btnReset);
     els.autoToggleBtn.onclick = toggleAuto;
 
     render(fallbackState);
-    renderSync('pending');
+    renderSync("pending");
     syncNow();
     setInterval(syncNow, 2200);
   </script>
