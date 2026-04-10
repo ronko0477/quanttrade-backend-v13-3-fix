@@ -1,7 +1,22 @@
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 app.use(express.json());
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const publicDir = path.join(__dirname, "public");
+
+/* =========================
+   STATIC FRONTEND
+========================= */
+app.use(express.static(publicDir));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicDir, "index.html"));
+});
 
 /* =========================
    STATE
@@ -144,13 +159,11 @@ async function processQueue() {
 }
 
 /* =========================
-   ROUTES
+   API
 ========================= */
 app.get("/api/status", (req, res) => {
   res.json(responseState());
 });
-
-/* ===== ACTIONS ===== */
 
 app.post("/api/buy", (req, res) => {
   const [ok, reason] = canTrade();
@@ -168,7 +181,6 @@ app.post("/api/buy", (req, res) => {
 
   enqueue("BUY");
   state.sessionTrades += 1;
-
   setGuard("LOCKED", "BUY gesendet");
   res.json(responseState());
 });
@@ -189,7 +201,6 @@ app.post("/api/sell", (req, res) => {
 
   enqueue("SELL");
   state.sessionTrades += 1;
-
   setGuard("LOCKED", "SELL gesendet");
   res.json(responseState());
 });
@@ -229,8 +240,6 @@ app.post("/api/reset", (req, res) => {
   log("RESET", "System reset");
   res.json(responseState());
 });
-
-/* ===== AUTO ===== */
 
 app.post("/api/auto/on", (req, res) => {
   if (!state.autoEnabled) {
@@ -274,5 +283,5 @@ setInterval(() => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 V20.5.1 HARD LIVE running on port ${PORT}`);
+  console.log(`🚀 V20.5.2 HARD LIVE running on port ${PORT}`);
 });
