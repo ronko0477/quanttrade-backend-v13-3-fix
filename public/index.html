@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V20.6 HARD LIVE</title>
+  <title>V20.7 HARD LIVE</title>
   <style>
     :root{
       --bg:#02040a;
@@ -15,12 +15,13 @@
       --line:rgba(255,255,255,.08);
       --lineSoft:rgba(255,255,255,.05);
       --text:#f4f7ff;
-      --muted:rgba(255,255,255,.70);
-      --muted2:rgba(255,255,255,.54);
+      --muted:rgba(255,255,255,.72);
+      --muted2:rgba(255,255,255,.56);
       --green:#b9d99b;
       --red:#dfb8b8;
       --yellow:#ddd08a;
       --cyan:#afd8ef;
+      --lock:#c7d4f3;
       --white:#ffffff;
       --shadow:0 18px 42px rgba(0,0,0,.34);
       --shadowSoft:0 10px 24px rgba(0,0,0,.22);
@@ -28,6 +29,7 @@
       --warnGlow:0 0 0 1px rgba(221,208,138,.18),0 0 20px rgba(221,208,138,.08);
       --dangerGlow:0 0 0 1px rgba(223,184,184,.18),0 0 18px rgba(223,184,184,.07);
       --blueGlow:0 0 0 1px rgba(175,216,239,.18),0 0 18px rgba(175,216,239,.08);
+      --lockGlow:0 0 0 1px rgba(199,212,243,.20),0 0 18px rgba(199,212,243,.08);
     }
 
     *{box-sizing:border-box}
@@ -102,7 +104,7 @@
     .heroInner{
       position:relative;
       z-index:1;
-      min-height:238px;
+      min-height:244px;
       border-radius:24px;
       border:1px solid rgba(255,255,255,.08);
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
@@ -126,9 +128,10 @@
       font-weight:1000;
     }
     .guard.ready{color:var(--green)}
-    .guard.warn{color:#bfd9ef}
+    .guard.warn{color:var(--cyan)}
     .guard.block{color:var(--yellow)}
     .guard.fail{color:#e2b4b4}
+    .guard.locked{color:var(--lock)}
 
     .heroHint{
       margin-top:9px;
@@ -144,10 +147,8 @@
       line-height:.94;
       letter-spacing:-2px;
       font-weight:1000;
+      color:var(--white);
     }
-
-    .pnl.positive{color:var(--white)}
-    .pnl.negative{color:var(--white)}
 
     .pnlSub{
       margin-top:5px;
@@ -184,6 +185,32 @@
     .heroMeta.queue{box-shadow:var(--warnGlow)}
     .heroMeta.block{box-shadow:var(--dangerGlow)}
     .heroMeta.day{box-shadow:var(--blueGlow)}
+    .heroMeta.locked{box-shadow:var(--lockGlow)}
+
+    .heroLimits{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:28px;
+    }
+
+    .limitBadge{
+      display:none;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:11px;
+      font-weight:1000;
+      color:rgba(255,255,255,.88);
+      background:rgba(12,18,50,.20);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .limitBadge.show{display:inline-flex}
+    .limitBadge.loss{box-shadow:var(--dangerGlow)}
+    .limitBadge.win{box-shadow:var(--warnGlow)}
 
     .grid2{
       margin-top:13px;
@@ -244,9 +271,9 @@
 
     button:active{transform:scale(.985)}
     button:disabled{
-      opacity:.42;
+      opacity:.40;
       cursor:not-allowed;
-      filter:grayscale(.2) brightness(.84);
+      filter:grayscale(.25) brightness(.84);
       box-shadow:none !important;
     }
 
@@ -558,6 +585,8 @@
       display:flex;
       align-items:center;
       gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
     }
 
     .dayBadge,.syncBadge{
@@ -572,11 +601,15 @@
       white-space:nowrap;
     }
 
+    .dayBadge.limit{box-shadow:var(--warnGlow)}
+    .dayBadge.loss{box-shadow:var(--dangerGlow)}
+    .dayBadge.target{box-shadow:var(--blueGlow)}
+
     .syncBadge.pending{color:var(--yellow);box-shadow:var(--warnGlow)}
     .syncBadge.fail{color:#f0cccc;box-shadow:var(--dangerGlow)}
 
     .logList{
-      max-height:340px;
+      max-height:300px;
       overflow:auto;
       padding-right:4px;
       scrollbar-width:thin;
@@ -621,13 +654,14 @@
       .scoreVal{font-size:56px}
       .factor{min-height:76px}
       .factorVal{font-size:21px}
+      .logList{max-height:280px}
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V20.6 HARD LIVE ⚡</span>
+      <span>V20.7 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -635,12 +669,18 @@
       <div class="heroInner">
         <div id="guard" class="guard ready">READY</div>
         <div id="heroHint" class="heroHint">System bereit.</div>
-        <div id="pnl" class="pnl positive">0</div>
+        <div id="pnl" class="pnl">0</div>
         <div class="pnlSub">Net PnL</div>
+
         <div class="heroMetaRow">
           <div id="heroMeta" class="heroMeta live">
             <span id="heroMetaText">LIVE</span>
           </div>
+        </div>
+
+        <div class="heroLimits">
+          <div id="lossLimitBadge" class="limitBadge loss">LOSS LIMIT --</div>
+          <div id="winTargetBadge" class="limitBadge win">WIN TARGET --</div>
         </div>
       </div>
     </section>
@@ -819,6 +859,8 @@
       dayKeyText: $("dayKeyText"),
       sessionFill: $("sessionFill"),
       dayBadge: $("dayBadge"),
+      lossLimitBadge: $("lossLimitBadge"),
+      winTargetBadge: $("winTargetBadge"),
       logList: $("logList"),
       syncBadge: $("syncBadge"),
       autoToggleBtn: $("autoToggleBtn"),
@@ -842,6 +884,13 @@
       return n.toFixed(2);
     }
 
+    function fmtLimit(v, prefix = ""){
+      if (v === null || v === undefined || v === "") return "--";
+      const n = Number(v);
+      if (!Number.isFinite(n)) return "--";
+      return `${prefix}${Number.isInteger(n) ? n : n.toFixed(2)}`;
+    }
+
     function shortGuard(raw){
       const g = String(raw || "").toUpperCase().trim();
       if (g === "READY" || g === "SYSTEM_READY") return "READY";
@@ -860,8 +909,9 @@
       const g = String(raw || "").toUpperCase();
       if (g.includes("READY")) return "ready";
       if (g.includes("SESSION") || g.includes("TARGET")) return "block";
-      if (g.includes("QUEUE") || g.includes("PROCESS")) return "warn";
-      if (g.includes("BLOCK") || g.includes("LOCK") || g.includes("FAIL") || g.includes("HEALTH") || g.includes("LOSS")) return "fail";
+      if (g.includes("QUEUE") || g.includes("PROCESS")) return "locked";
+      if (g.includes("BLOCK") || g.includes("LOCK")) return "locked";
+      if (g.includes("FAIL") || g.includes("HEALTH") || g.includes("LOSS")) return "fail";
       return "warn";
     }
 
@@ -983,16 +1033,23 @@
       return "--:--:--";
     }
 
+    function prettifyLog(item){
+      const msg = String(item.msg || item.message || "-");
+      return msg
+        .replace("wird verarbeitet", "processing")
+        .replace("ausgeführt", "executed");
+    }
+
     function renderLog(log){
       if (!Array.isArray(log) || !log.length) {
         els.logList.innerHTML = `<div class="logEntry">Keine Einträge.</div>`;
         return;
       }
 
-      const html = log.slice(0, 32).map(item => {
+      const html = log.slice(0, 26).map(item => {
         const type = String(item.type || "").toUpperCase();
         const time = escapeHtml(formatLogTime(item.localTime || item.time || item.ts));
-        const msg = escapeHtml(String(item.msg || item.message || "-"));
+        const msg = escapeHtml(prettifyLog(item));
 
         let cls = "logSystem";
         if (type.includes("QUEUE")) cls = "logQueued";
@@ -1020,24 +1077,25 @@
       const session = isSessionGuard(state.guard);
       const blocked = isBlockedGuard(state.guard);
       const busy = isBusyGuard(state.guard) || state.processing || q > 0;
+      const guard = String(state.guard || "").toUpperCase();
 
       els.heroMeta.className = "heroMeta";
 
       if (session) {
         els.heroMeta.classList.add("block");
         els.heroMetaText.textContent = "SESSION LIMIT";
-      } else if (String(state.guard).toUpperCase().includes("DAILY_LOSS")) {
+      } else if (guard.includes("DAILY_LOSS")) {
         els.heroMeta.classList.add("block");
         els.heroMetaText.textContent = "LOSS LIMIT";
-      } else if (String(state.guard).toUpperCase().includes("WIN_TARGET")) {
-        els.heroMeta.classList.add("block");
+      } else if (guard.includes("WIN_TARGET")) {
+        els.heroMeta.classList.add("day");
         els.heroMetaText.textContent = "WIN TARGET";
-      } else if (blocked) {
-        els.heroMeta.classList.add("block");
-        els.heroMetaText.textContent = "BLOCKED";
       } else if (busy) {
-        els.heroMeta.classList.add("queue");
+        els.heroMeta.classList.add("locked");
         els.heroMetaText.textContent = state.processing ? "PROCESSING" : `QUEUE ${q}`;
+      } else if (blocked) {
+        els.heroMeta.classList.add("locked");
+        els.heroMetaText.textContent = "BLOCKED";
       } else if (state.autoEnabled) {
         els.heroMeta.classList.add("auto");
         els.heroMetaText.textContent = "AUTO ON";
@@ -1089,14 +1147,38 @@
       els.dayKeyText.textContent = dk;
 
       const guard = String(state.guard || "").toUpperCase();
+      els.dayBadge.className = "dayBadge";
+
       if (guard.includes("SESSION")) {
+        els.dayBadge.classList.add("limit");
         els.dayBadge.textContent = "DAY LIMIT";
       } else if (guard.includes("DAILY_LOSS")) {
+        els.dayBadge.classList.add("loss");
         els.dayBadge.textContent = "LOSS LIMIT";
       } else if (guard.includes("WIN_TARGET")) {
+        els.dayBadge.classList.add("target");
         els.dayBadge.textContent = "WIN TARGET";
       } else {
         els.dayBadge.textContent = "DAY READY";
+      }
+    }
+
+    function renderLimits(state){
+      const loss = state.dailyLossLimit;
+      const win = state.dailyWinTarget;
+
+      if (loss !== null && loss !== undefined && loss !== "") {
+        els.lossLimitBadge.classList.add("show");
+        els.lossLimitBadge.textContent = `LOSS LIMIT ${fmtLimit(loss, "-")}`;
+      } else {
+        els.lossLimitBadge.classList.remove("show");
+      }
+
+      if (win !== null && win !== undefined && win !== "") {
+        els.winTargetBadge.classList.add("show");
+        els.winTargetBadge.textContent = `WIN TARGET ${fmtLimit(win, "+")}`;
+      } else {
+        els.winTargetBadge.classList.remove("show");
       }
     }
 
@@ -1107,7 +1189,6 @@
 
       const pnlNum = safeNum(state.pnl, 0);
       els.pnl.textContent = fmtPnL(pnlNum);
-      els.pnl.className = `pnl ${pnlNum < 0 ? "negative" : "positive"}`;
 
       renderHealth(els.healthStatus, !!state.health.status);
       renderHealth(els.healthBuy, !!state.health.buy);
@@ -1130,6 +1211,7 @@
       renderAuto(state);
       renderQueueProcessing(state);
       renderDayInfo(state);
+      renderLimits(state);
       renderLog(state.log);
 
       const tradesAllowed = isTradableState(state);
