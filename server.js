@@ -7,10 +7,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-/* =========================
-   V19.9.5 HARD LIVE SERVER
-   ========================= */
-
 const state = {
   pnl: 0,
   guard: 'READY',
@@ -33,12 +29,20 @@ const state = {
 
   sessionLimit: 3,
   autoEnabled: false,
-
+  version: 'V20.1',
   log: []
 };
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function nowTime() {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
 }
 
 function makeOrderId() {
@@ -49,11 +53,12 @@ function addLog(type, message) {
   state.log.push({
     type,
     time: nowIso(),
+    localTime: nowTime(),
     msg: message
   });
 
-  if (state.log.length > 80) {
-    state.log = state.log.slice(-80);
+  if (state.log.length > 100) {
+    state.log = state.log.slice(-100);
   }
 }
 
@@ -103,6 +108,7 @@ function statusPayload() {
   refreshGuard();
 
   return {
+    version: state.version,
     pnl: state.pnl,
     guard: state.guard,
     reason: state.reason,
@@ -114,6 +120,7 @@ function statusPayload() {
     score: state.score,
     factors: state.factors,
     autoEnabled: state.autoEnabled,
+    sessionLimit: state.sessionLimit,
     health: healthPayload(),
     log: state.log
   };
@@ -161,6 +168,15 @@ function placeOrder(side, res) {
     });
   }
 
+  if (state.processing) {
+    addLog('SYSTEM', `${side} blockiert: Verarbeitung läuft`);
+    return res.json({
+      ok: false,
+      error: 'PROCESSING',
+      status: statusPayload()
+    });
+  }
+
   const orderId = makeOrderId();
   const order = { id: orderId, side };
 
@@ -178,19 +194,13 @@ function placeOrder(side, res) {
   });
 }
 
-/* ===== UI ===== */
-
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-/* ===== STATUS ===== */
-
 app.get('/api/status', (req, res) => {
   res.json(statusPayload());
 });
-
-/* ===== TRADE ACTIONS ===== */
 
 app.post('/api/buy', (req, res) => {
   return placeOrder('BUY', res);
@@ -199,8 +209,6 @@ app.post('/api/buy', (req, res) => {
 app.post('/api/sell', (req, res) => {
   return placeOrder('SELL', res);
 });
-
-/* ===== MANUAL RESULT ACTIONS ===== */
 
 app.post('/api/win', (req, res) => {
   state.pnl += 4;
@@ -226,16 +234,17 @@ app.post('/api/loss', (req, res) => {
   });
 });
 
-/* ===== RESET ===== */
-
 app.post('/api/reset', (req, res) => {
   state.pnl = 0;
   state.processing = false;
   state.queue = [];
   state.currentOrderId = null;
+  state.guard = 'READY';
+  state.reason = 'SYSTEM_READY';
+  state.reasonHint = 'System bereit.';
 
-  refreshGuard();
   addLog('RESET', 'System reset');
+  refreshGuard();
 
   return res.json({
     ok: true,
@@ -243,8 +252,6 @@ app.post('/api/reset', (req, res) => {
     status: statusPayload()
   });
 });
-
-/* ===== OPTIONAL AUTO ===== */
 
 app.post('/api/auto/on', (req, res) => {
   state.autoEnabled = true;
@@ -266,8 +273,6 @@ app.post('/api/auto/off', (req, res) => {
   });
 });
 
-/* ===== OPTIONAL SYNC ===== */
-
 app.post('/api/sync', (req, res) => {
   addLog('SYNC', 'Sync OK');
 
@@ -278,5 +283,5 @@ app.post('/api/sync', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`V19.9.5 HARD LIVE running on port ${PORT}`);
+  console.log(`V20.1 HARD LIVE running on port ${PORT}`);
 });
