@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V20.1 HARD LIVE</title>
+  <title>V20.2 HARD LIVE</title>
   <style>
     :root{
       --bg:#02040a;
@@ -19,6 +19,7 @@
       --yellow:#ddd08a;
       --cyan:#afd8ef;
       --shadow:0 18px 42px rgba(0,0,0,.34);
+      --okGlow:0 0 0 1px rgba(185,217,155,.18), 0 0 14px rgba(185,217,155,.05);
     }
 
     *{box-sizing:border-box}
@@ -30,15 +31,15 @@
       color:var(--text);
       min-height:100vh;
       background:
-        radial-gradient(circle at 50% 11%, rgba(87,103,232,.12), transparent 28%),
-        radial-gradient(circle at 50% 50%, rgba(20,33,105,.09), transparent 34%),
+        radial-gradient(circle at 50% 11%, rgba(87,103,232,.10), transparent 28%),
+        radial-gradient(circle at 50% 50%, rgba(20,33,105,.08), transparent 34%),
         linear-gradient(180deg,#010309 0%,#020713 100%);
     }
 
     .wrap{
       width:min(100%,460px);
       margin:0 auto;
-      padding:12px 10px 28px;
+      padding:12px 10px 26px;
     }
 
     .title{
@@ -47,10 +48,10 @@
       justify-content:center;
       gap:10px;
       text-align:center;
-      font-size:25px;
+      font-size:24px;
       font-weight:1000;
-      letter-spacing:.35px;
-      margin:2px 0 14px;
+      letter-spacing:.32px;
+      margin:2px 0 13px;
       text-shadow:0 2px 12px rgba(0,0,0,.34);
     }
 
@@ -73,7 +74,7 @@
     .hero{
       position:relative;
       border-radius:26px;
-      padding:12px;
+      padding:11px;
       background:linear-gradient(180deg, rgba(99,115,234,.95), rgba(58,73,178,.94));
       border:1px solid rgba(255,255,255,.08);
       box-shadow:var(--shadow);
@@ -93,7 +94,7 @@
     .heroInner{
       position:relative;
       z-index:1;
-      min-height:228px;
+      min-height:222px;
       border-radius:22px;
       border:1px solid rgba(255,255,255,.08);
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
@@ -113,7 +114,7 @@
       text-overflow:ellipsis;
       line-height:.9;
       letter-spacing:-1.8px;
-      font-size:78px;
+      font-size:74px;
       font-weight:1000;
     }
     .guard.ready{color:var(--green)}
@@ -130,45 +131,45 @@
     }
 
     .pnl{
-      margin-top:9px;
-      font-size:78px;
+      margin-top:8px;
+      font-size:72px;
       line-height:.94;
-      letter-spacing:-2.2px;
+      letter-spacing:-2px;
       font-weight:1000;
     }
 
     .pnlSub{
       margin-top:4px;
-      font-size:18px;
+      font-size:17px;
       font-weight:900;
       color:rgba(255,255,255,.76);
     }
 
     .heroMeta{
-      margin-top:12px;
+      margin-top:11px;
       display:inline-flex;
       align-items:center;
       gap:8px;
       border-radius:999px;
-      padding:7px 12px;
+      padding:6px 11px;
       background:rgba(11,17,48,.18);
       border:1px solid rgba(255,255,255,.06);
-      font-size:12px;
+      font-size:11px;
       font-weight:900;
       color:rgba(255,255,255,.78);
     }
 
     .grid2{
-      margin-top:14px;
+      margin-top:13px;
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:12px;
+      gap:11px;
     }
 
     .card{
-      min-height:108px;
-      border-radius:22px;
-      padding:15px 18px;
+      min-height:102px;
+      border-radius:21px;
+      padding:14px 17px;
       background:linear-gradient(180deg, rgba(46,58,145,.98), rgba(29,39,101,.98));
       border:1px solid var(--line);
       box-shadow:0 10px 24px rgba(0,0,0,.22);
@@ -178,19 +179,19 @@
     }
 
     .cardLabel{
-      font-size:16px;
+      font-size:15px;
       font-weight:900;
-      color:rgba(255,255,255,.72);
+      color:rgba(255,255,255,.70);
       margin-bottom:8px;
       line-height:1;
-      letter-spacing:.15px;
+      letter-spacing:.14px;
     }
 
     .cardVal{
-      font-size:27px;
+      font-size:25px;
       line-height:1;
       font-weight:1000;
-      letter-spacing:-.45px;
+      letter-spacing:-.4px;
     }
 
     .ok{color:var(--green)}
@@ -199,10 +200,10 @@
     .ice{color:var(--cyan)}
 
     .actionGrid{
-      margin-top:12px;
+      margin-top:11px;
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:12px;
+      gap:11px;
     }
 
     button{
@@ -224,13 +225,13 @@
     }
 
     .actBtn{
-      min-height:62px;
-      border-radius:18px;
-      font-size:15px;
+      min-height:58px;
+      border-radius:17px;
+      font-size:14px;
       font-weight:1000;
-      letter-spacing:.18px;
+      letter-spacing:.16px;
       color:#fff;
-      box-shadow:0 8px 18px rgba(0,0,0,.15);
+      box-shadow:0 8px 18px rgba(0,0,0,.14);
     }
 
     .actBtn.flash{
@@ -256,25 +257,25 @@
 
     .resetBtn{
       grid-column:1 / -1;
-      min-height:64px;
+      min-height:60px;
       background:linear-gradient(90deg,#d7cf8d,#d9d18c);
       color:#fff;
     }
 
     .miniGrid{
-      margin-top:12px;
+      margin-top:11px;
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:12px;
+      gap:11px;
     }
 
     .miniCard, .miniBtn{
-      min-height:90px;
-      border-radius:22px;
-      padding:14px 16px;
-      background:linear-gradient(180deg, rgba(46,58,145,.98), rgba(29,39,101,.98));
-      border:1px solid var(--line);
-      box-shadow:0 10px 24px rgba(0,0,0,.22);
+      min-height:82px;
+      border-radius:20px;
+      padding:13px 15px;
+      background:linear-gradient(180deg, rgba(46,58,145,.96), rgba(29,39,101,.96));
+      border:1px solid rgba(255,255,255,.06);
+      box-shadow:0 9px 20px rgba(0,0,0,.20);
       display:flex;
       flex-direction:column;
       justify-content:center;
@@ -282,29 +283,30 @@
     }
 
     .miniTop{
-      font-size:12px;
+      font-size:11px;
       font-weight:1000;
-      color:rgba(255,255,255,.88);
-      margin-bottom:8px;
+      color:rgba(255,255,255,.78);
+      margin-bottom:7px;
       line-height:1;
-      letter-spacing:.15px;
+      letter-spacing:.14px;
     }
 
     .miniBig{
-      font-size:23px;
+      font-size:19px;
       line-height:1;
       font-weight:1000;
-      letter-spacing:-.35px;
+      letter-spacing:-.25px;
     }
 
     .miniBtn.active{
-      box-shadow:var(--okGlow), 0 10px 24px rgba(0,0,0,.22);
+      box-shadow:var(--okGlow), 0 9px 20px rgba(0,0,0,.20);
+      border-color:rgba(185,217,155,.15);
     }
 
     .scoreCard{
-      margin-top:12px;
+      margin-top:11px;
       border-radius:24px;
-      padding:16px;
+      padding:15px;
       background:linear-gradient(180deg, rgba(71,85,198,.94), rgba(50,63,158,.94));
       border:1px solid rgba(255,255,255,.07);
       box-shadow:var(--shadow);
@@ -319,15 +321,15 @@
     }
 
     .scoreTitle{
-      font-size:18px;
+      font-size:17px;
       font-weight:1000;
       line-height:1;
-      letter-spacing:.18px;
+      letter-spacing:.16px;
       color:#f6f8ff;
     }
 
     .scoreVal{
-      font-size:68px;
+      font-size:64px;
       line-height:.86;
       font-weight:1000;
       letter-spacing:-2px;
@@ -335,7 +337,7 @@
     }
 
     .barTrack{
-      height:16px;
+      height:15px;
       border-radius:999px;
       overflow:hidden;
       background:rgba(255,255,255,.13);
@@ -351,18 +353,18 @@
     }
 
     .factorGrid{
-      margin-top:12px;
+      margin-top:11px;
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:10px;
+      gap:9px;
     }
 
     .factor{
-      min-height:86px;
-      border-radius:20px;
-      padding:13px 14px;
-      background:rgba(26,36,108,.46);
-      border:1px solid rgba(255,255,255,.05);
+      min-height:80px;
+      border-radius:18px;
+      padding:12px 13px;
+      background:rgba(26,36,108,.42);
+      border:1px solid rgba(255,255,255,.045);
       display:flex;
       flex-direction:column;
       justify-content:center;
@@ -370,24 +372,24 @@
     }
 
     .factorTop{
-      font-size:13px;
+      font-size:12px;
       font-weight:900;
-      color:rgba(255,255,255,.68);
-      margin-bottom:8px;
+      color:rgba(255,255,255,.66);
+      margin-bottom:7px;
       line-height:1;
     }
 
     .factorVal{
-      font-size:24px;
+      font-size:22px;
       font-weight:1000;
-      letter-spacing:-.35px;
+      letter-spacing:-.3px;
       line-height:1;
     }
 
     .logCard{
-      margin-top:12px;
+      margin-top:11px;
       border-radius:24px;
-      padding:16px;
+      padding:15px;
       background:linear-gradient(180deg, rgba(42,54,137,.98), rgba(30,41,106,.98));
       border:1px solid rgba(255,255,255,.06);
       box-shadow:0 12px 26px rgba(0,0,0,.24);
@@ -402,11 +404,11 @@
     }
 
     .logTitle{
-      font-size:19px;
+      font-size:18px;
       font-weight:1000;
       line-height:1;
       color:#f6f8ff;
-      letter-spacing:.16px;
+      letter-spacing:.14px;
     }
 
     .syncBadge{
@@ -420,17 +422,17 @@
     }
 
     .logList{
-      max-height:360px;
+      max-height:340px;
       overflow:auto;
       padding-right:4px;
       scrollbar-width:thin;
     }
 
     .logEntry{
-      padding:11px 2px;
+      padding:10px 2px;
       border-bottom:1px solid rgba(255,255,255,.06);
       font-size:14px;
-      line-height:1.38;
+      line-height:1.36;
       word-break:break-word;
       color:rgba(243,246,255,.92);
     }
@@ -447,29 +449,29 @@
       .wrap{padding-left:10px;padding-right:10px}
       .title{font-size:22px;margin-bottom:12px}
       .hero{padding:10px}
-      .heroInner{min-height:210px}
-      .guard{font-size:68px}
+      .heroInner{min-height:206px}
+      .guard{font-size:66px}
       .heroHint{font-size:14px}
-      .pnl{font-size:68px}
+      .pnl{font-size:66px}
       .pnlSub{font-size:16px}
       .grid2,.actionGrid,.miniGrid{gap:10px}
-      .card{min-height:100px;padding:14px 16px}
-      .cardLabel{font-size:15px}
-      .cardVal{font-size:25px}
-      .actBtn{min-height:58px;font-size:14px}
-      .resetBtn{min-height:60px}
-      .miniCard,.miniBtn{min-height:84px}
-      .miniBig{font-size:21px}
-      .scoreVal{font-size:60px}
-      .factor{min-height:80px}
-      .factorVal{font-size:22px}
+      .card{min-height:98px;padding:14px 16px}
+      .cardLabel{font-size:14px}
+      .cardVal{font-size:24px}
+      .actBtn{min-height:56px;font-size:14px}
+      .resetBtn{min-height:58px}
+      .miniCard,.miniBtn{min-height:80px}
+      .miniBig{font-size:18px}
+      .scoreVal{font-size:56px}
+      .factor{min-height:76px}
+      .factorVal{font-size:21px}
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V20.1 HARD LIVE ⚡</span>
+      <span>V20.2 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
