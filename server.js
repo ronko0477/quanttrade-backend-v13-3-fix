@@ -28,7 +28,8 @@ const CONFIG = {
   winStep: 4,
   lossStep: -4,
   dailyLossLimit: -20,
-  dailyWinTarget: 20
+  dailyWinTarget: 20,
+  maxLogEntries: 300
 };
 
 /* =========================
@@ -61,6 +62,7 @@ const state = {
   pnl: 0,
   guard: "READY",
   reasonHint: "System bereit.",
+
   processing: false,
   queue: [],
   autoEnabled: false,
@@ -71,12 +73,16 @@ const state = {
   dayKey: getDayKey(),
   dailyLossLimit: CONFIG.dailyLossLimit,
   dailyWinTarget: CONFIG.dailyWinTarget,
+  lastResetType: "",
 
   health: {
     status: true,
     buy: true,
     sell: true
   },
+
+  confidence: 62,
+  score: 82,
 
   factors: {
     trend: 72.3,
@@ -93,34 +99,24 @@ const state = {
 /* =========================
    LOGGING
 ========================= */
-function log(type, msg) {
+function log(type, msg, extra = {}) {
   state.log.push({
     type,
     msg,
     time: nowIso(),
-    localTime: localHms()
+    localTime: localHms(),
+    ...extra
   });
 
-  if (state.log.length > 300) {
+  if (state.log.length > CONFIG.maxLogEntries) {
     state.log.shift();
   }
 }
 
 /* =========================
-   DAY / RESET
+   RESET / DAY
 ========================= */
-function fullResetRuntime() {
-  state.pnl = 0;
-  state.queue = [];
-  state.processing = false;
-  state.autoEnabled = false;
-  state.lastActionTs = 0;
-  state.sessionTrades = 0;
-  state.dayKey = getDayKey();
-
-  state.guard = "READY";
-  state.reasonHint = "System bereit.";
-
+function resetHealth() {
   state.health = {
     status: true,
     buy: true,
@@ -128,23 +124,57 @@ function fullResetRuntime() {
   };
 }
 
-function softDayReset(reason = "Neuer Tag gestartet") {
+function setReadyIfPossible(reason = "System bereit.") {
+  if (state.processing || state.queue.length > 0) {
+    state.guard = "LOCKED";
+    state.reasonHint = "Order läuft oder ist in Queue.";
+    return;
+  }
+
+  if (applyHardStopGuard()) return;
+
+  state.guard = "READY";
+  state.reasonHint = reason;
+}
+
+function fullResetRuntime(resetType = "MANUAL") {
   state.pnl = 0;
   state.queue = [];
   state.processing = false;
+  state.autoEnabled = false;
+  state.lastActionTs = 0;
   state.sessionTrades = 0;
   state.dayKey = getDayKey();
+  state.lastResetType = resetType;
+
+  resetHealth();
 
   state.guard = "READY";
   state.reasonHint = "System bereit.";
+}
 
-  log("DAY", reason);
+function softDayReset() {
+  state.pnl = 0;
+  state.queue = [];
+  state.processing = false;
+  state.autoEnabled = false;
+  state.lastActionTs = 0;
+  state.sessionTrades = 0;
+  state.dayKey = getDayKey();
+  state.lastResetType = "DAY";
+
+  resetHealth();
+
+  state.guard = "READY";
+  state.reasonHint = "Neuer Tag gestartet.";
+
+  log("DAY", "Day reset", { resetType: "DAY" });
 }
 
 function ensureDayFresh() {
   const today = getDayKey();
   if (state.dayKey !== today) {
-    softDayReset("Day reset");
+    softDayReset();
   }
 }
 
@@ -155,8 +185,28 @@ function responseState() {
   ensureDayFresh();
 
   return {
-    ...state,
-    queueLength: state.queue.length
+    pnl: state.pnl,
+    guard: state.guard,
+    reasonHint: state.reasonHint,
+
+    processing: state.processing,
+    queueLength: state.queue.length,
+
+    autoEnabled: state.autoEnabled,
+    sessionTrades: state.sessionTrades,
+    maxSessionTrades: state.maxSessionTrades,
+    dayKey: state.dayKey,
+    dailyLossLimit: state.dailyLossLimit,
+    dailyWinTarget: state.dailyWinTarget,
+    lastResetType: state.lastResetType,
+
+    confidence: state.confidence,
+    score: state.score,
+
+    health: { ...state.health },
+    factors: { ...state.factors },
+
+    log: [...state.log]
   };
 }
 
@@ -166,7 +216,7 @@ function setGuard(guard, reasonHint = "") {
 }
 
 /* =========================
-   BUSINESS RULES
+   RULES
 ========================= */
 function isDailyLossHit() {
   return Number.isFinite(state.dailyLossLimit) && state.pnl <= state.dailyLossLimit;
@@ -177,15 +227,9 @@ function isDailyWinTargetHit() {
 }
 
 function hardStopReason() {
-  if (state.sessionTrades >= state.maxSessionTrades) {
-    return "SESSION_LIMIT";
-  }
-  if (isDailyLossHit()) {
-    return "DAILY_LOSS_LIMIT";
-  }
-  if (isDailyWinTargetHit()) {
-    return "WIN_TARGET_REACHED";
-  }
+  if (state.sessionTrades >= state.maxSessionTrades) return "SESSION_LIMIT";
+  if (isDailyLossHit()) return "DAILY_LOSS_LIMIT";
+  if (isDailyWinTargetHit()) return "WIN_TARGET_REACHED";
   return null;
 }
 
@@ -220,7 +264,39 @@ function canTrade() {
   if (state.processing) return [false, "PROCESSING"];
   if (state.queue.length > 0) return [false, "QUEUE_BUSY"];
   if (!state.health.status || !state.health.buy || !state.health.sell) return [false, "HEALTH_FAIL"];
+
   return [true, "OK"];
+}
+
+/* =========================
+   SCORE / FACTORS
+========================= */
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function recalcDerivedState() {
+  const pnl = Number(state.pnl) || 0;
+
+  const pnlPenalty = Math.max(0, -pnl * 1.4);
+  const queuePenalty = state.queue.length > 0 ? 4 : 0;
+  const procPenalty = state.processing ? 3 : 0;
+  const sessionPenalty = (state.sessionTrades / Math.max(1, state.maxSessionTrades)) * 10;
+  const autoBoost = state.autoEnabled ? 2 : 0;
+
+  const scoreBase = 82 - pnlPenalty - queuePenalty - procPenalty - sessionPenalty + autoBoost;
+  state.score = Math.round(clamp(scoreBase, 0, 100));
+
+  state.confidence = Math.round(clamp(62 + (state.autoEnabled ? 10 : 0), 0, 100));
+
+  state.factors = {
+    trend: 72.3,
+    volume: 65.5,
+    structure: 80.1,
+    volatility: 51.2,
+    liquidity: 81.9,
+    session: clamp(68 - (state.sessionTrades / Math.max(1, state.maxSessionTrades)) * 18, 0, 100)
+  };
 }
 
 /* =========================
@@ -230,13 +306,17 @@ function enqueue(type, source = "MANUAL") {
   const id = Date.now() + Math.floor(Math.random() * 1000);
 
   state.queue.push({ id, type, source });
-  log("QUEUE", `Order ${id} queued (${type})`);
+  log("QUEUE", `Order ${id} queued (${type})`, { source });
+
+  recalcDerivedState();
 
   processQueue().catch((err) => {
     console.error("Queue error:", err);
     state.processing = false;
+    state.autoEnabled = false;
     setGuard("FAIL", "Queue Fehler");
     log("SYSTEM", "Queue Fehler");
+    recalcDerivedState();
   });
 
   return id;
@@ -250,16 +330,19 @@ async function processQueue() {
   state.processing = true;
   state.lastActionTs = Date.now();
 
-  setGuard("LOCKED", "Order läuft oder ist in Queue.");
-  log("PROCESSING", `Order ${job.id} wird verarbeitet (${job.type})`);
+  setGuard("LOCKED", `${job.type} ${job.source === "AUTO" ? "Auto gesendet" : "gesendet"}`);
+  log("PROCESSING", `Order ${job.id} wird verarbeitet (${job.type})`, { source: job.source });
+  recalcDerivedState();
 
   await new Promise((r) => setTimeout(r, CONFIG.processDelayMs));
 
-  log("EXECUTED", `Order ${job.id} ausgeführt (${job.type})`);
+  log("EXECUTED", `Order ${job.id} ausgeführt (${job.type})`, { source: job.source });
 
   state.processing = false;
+  recalcDerivedState();
 
   if (applyHardStopGuard()) {
+    recalcDerivedState();
     return;
   }
 
@@ -268,17 +351,20 @@ async function processQueue() {
     processQueue().catch((err) => {
       console.error("Queue chain error:", err);
       state.processing = false;
+      state.autoEnabled = false;
       setGuard("FAIL", "Queue Fehler");
       log("SYSTEM", "Queue Fehler");
+      recalcDerivedState();
     });
     return;
   }
 
-  setGuard("READY", "System bereit.");
+  setReadyIfPossible("System bereit.");
+  recalcDerivedState();
 }
 
 /* =========================
-   AUTO
+   AUTO LOOP
 ========================= */
 function tryAutoTrade() {
   if (!state.autoEnabled) return;
@@ -286,6 +372,7 @@ function tryAutoTrade() {
   ensureDayFresh();
 
   if (applyHardStopGuard()) {
+    recalcDerivedState();
     return;
   }
 
@@ -294,6 +381,7 @@ function tryAutoTrade() {
     if (reason === "PROCESSING" || reason === "QUEUE_BUSY") {
       setGuard("LOCKED", "Order läuft oder ist in Queue.");
     }
+    recalcDerivedState();
     return;
   }
 
@@ -301,14 +389,17 @@ function tryAutoTrade() {
   enqueue(type, "AUTO");
   state.sessionTrades += 1;
   setGuard("LOCKED", `${type} Auto gesendet`);
+  recalcDerivedState();
 }
 
 setInterval(tryAutoTrade, CONFIG.autoIntervalMs);
 
 /* =========================
-   ROUTES
+   API
 ========================= */
 app.get("/api/status", (req, res) => {
+  ensureDayFresh();
+  recalcDerivedState();
   res.json(responseState());
 });
 
@@ -327,12 +418,15 @@ app.post("/api/buy", (req, res) => {
     } else {
       setGuard("FAIL", "Trade blockiert");
     }
+    recalcDerivedState();
     return res.json(responseState());
   }
 
   enqueue("BUY", "MANUAL");
   state.sessionTrades += 1;
+  state.lastResetType = "";
   setGuard("LOCKED", "BUY gesendet");
+  recalcDerivedState();
   res.json(responseState());
 });
 
@@ -351,12 +445,15 @@ app.post("/api/sell", (req, res) => {
     } else {
       setGuard("FAIL", "Trade blockiert");
     }
+    recalcDerivedState();
     return res.json(responseState());
   }
 
   enqueue("SELL", "MANUAL");
   state.sessionTrades += 1;
+  state.lastResetType = "";
   setGuard("LOCKED", "SELL gesendet");
+  recalcDerivedState();
   res.json(responseState());
 });
 
@@ -364,18 +461,17 @@ app.post("/api/win", (req, res) => {
   ensureDayFresh();
 
   state.pnl += CONFIG.winStep;
+  state.lastResetType = "";
   log("WIN", `WIN PnL +${CONFIG.winStep}`);
+  recalcDerivedState();
 
   if (applyHardStopGuard()) {
+    recalcDerivedState();
     return res.json(responseState());
   }
 
-  if (state.processing || state.queue.length > 0) {
-    setGuard("LOCKED", "Order läuft oder ist in Queue.");
-  } else {
-    setGuard("READY", "Win verbucht");
-  }
-
+  setReadyIfPossible("Win verbucht");
+  recalcDerivedState();
   res.json(responseState());
 });
 
@@ -383,24 +479,24 @@ app.post("/api/loss", (req, res) => {
   ensureDayFresh();
 
   state.pnl += CONFIG.lossStep;
+  state.lastResetType = "";
   log("LOSS", `LOSS PnL ${CONFIG.lossStep}`);
+  recalcDerivedState();
 
   if (applyHardStopGuard()) {
+    recalcDerivedState();
     return res.json(responseState());
   }
 
-  if (state.processing || state.queue.length > 0) {
-    setGuard("LOCKED", "Order läuft oder ist in Queue.");
-  } else {
-    setGuard("READY", "Loss verbucht");
-  }
-
+  setReadyIfPossible("Loss verbucht");
+  recalcDerivedState();
   res.json(responseState());
 });
 
 app.post("/api/reset", (req, res) => {
-  fullResetRuntime();
-  log("RESET", "System reset");
+  fullResetRuntime("MANUAL");
+  log("RESET", "System reset", { resetType: "MANUAL" });
+  recalcDerivedState();
   res.json(responseState());
 });
 
@@ -408,37 +504,35 @@ app.post("/api/auto/on", (req, res) => {
   ensureDayFresh();
 
   if (applyHardStopGuard()) {
+    recalcDerivedState();
     return res.json(responseState());
   }
 
   if (!state.autoEnabled) {
     state.autoEnabled = true;
+    state.lastResetType = "";
     log("AUTO", "Auto ON");
   }
 
-  if (!state.processing && state.queue.length === 0) {
-    setGuard("READY", "Auto aktiv");
-  }
-
+  setReadyIfPossible("Auto aktiv");
+  recalcDerivedState();
   res.json(responseState());
 });
 
 app.post("/api/auto/off", (req, res) => {
   if (state.autoEnabled) {
     state.autoEnabled = false;
+    state.lastResetType = "";
     log("AUTO", "Auto OFF");
   }
 
   if (applyHardStopGuard()) {
+    recalcDerivedState();
     return res.json(responseState());
   }
 
-  if (state.processing || state.queue.length > 0) {
-    setGuard("LOCKED", "Order läuft oder ist in Queue.");
-  } else {
-    setGuard("READY", "Auto deaktiviert");
-  }
-
+  setReadyIfPossible("Auto deaktiviert");
+  recalcDerivedState();
   res.json(responseState());
 });
 
@@ -446,27 +540,31 @@ app.post("/api/auto/off", (req, res) => {
    OPTIONAL HEALTH TEST
 ========================= */
 app.post("/api/health/ok", (req, res) => {
-  state.health = { status: true, buy: true, sell: true };
+  resetHealth();
+  state.lastResetType = "";
   log("SYSTEM", "Health OK");
-  if (!applyHardStopGuard()) {
-    setGuard("READY", "System bereit.");
-  }
+  setReadyIfPossible("System bereit.");
+  recalcDerivedState();
   res.json(responseState());
 });
 
 app.post("/api/health/fail", (req, res) => {
   state.health = { status: false, buy: false, sell: false };
   state.autoEnabled = false;
+  state.lastResetType = "";
   setGuard("HEALTH_FAIL", "Health Check fehlgeschlagen.");
   log("SYSTEM", "Health FAIL");
+  recalcDerivedState();
   res.json(responseState());
 });
 
 /* =========================
    START
 ========================= */
+recalcDerivedState();
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 V20.7 HARD LIVE running on port ${PORT}`);
+  console.log(`🚀 V20.8 HARD LIVE running on port ${PORT}`);
 });
