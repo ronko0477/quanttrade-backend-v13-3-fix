@@ -1,7 +1,7 @@
 {
   "name": "quanttrade-backend-v13-3-fix-1",
   "version": "1.0.0",
-  "description": "Simple backend for quanttrade frontend",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
