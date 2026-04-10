@@ -3,23 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V20.5.1 HARD LIVE</title>
+  <title>V20.6 HARD LIVE</title>
   <style>
     :root{
       --bg:#02040a;
-      --panel:#252f79;
-      --panelHero1:#6675ee;
-      --panelHero2:#3a49b2;
-      --line:rgba(255,255,255,.07);
-      --text:#f5f7ff;
+      --bg2:#050914;
+      --panel:#29348a;
+      --panel2:#1d2666;
+      --hero1:#6f7df2;
+      --hero2:#4354c9;
+      --line:rgba(255,255,255,.08);
+      --lineSoft:rgba(255,255,255,.05);
+      --text:#f4f7ff;
+      --muted:rgba(255,255,255,.70);
+      --muted2:rgba(255,255,255,.54);
       --green:#b9d99b;
       --red:#dfb8b8;
       --yellow:#ddd08a;
       --cyan:#afd8ef;
+      --white:#ffffff;
       --shadow:0 18px 42px rgba(0,0,0,.34);
-      --okGlow:0 0 0 1px rgba(185,217,155,.22), 0 0 22px rgba(185,217,155,.10);
-      --warnGlow:0 0 0 1px rgba(221,208,138,.18), 0 0 20px rgba(221,208,138,.08);
-      --dangerGlow:0 0 0 1px rgba(223,184,184,.18), 0 0 18px rgba(223,184,184,.07);
+      --shadowSoft:0 10px 24px rgba(0,0,0,.22);
+      --okGlow:0 0 0 1px rgba(185,217,155,.22),0 0 22px rgba(185,217,155,.10);
+      --warnGlow:0 0 0 1px rgba(221,208,138,.18),0 0 20px rgba(221,208,138,.08);
+      --dangerGlow:0 0 0 1px rgba(223,184,184,.18),0 0 18px rgba(223,184,184,.07);
+      --blueGlow:0 0 0 1px rgba(175,216,239,.18),0 0 18px rgba(175,216,239,.08);
     }
 
     *{box-sizing:border-box}
@@ -27,19 +35,19 @@
     html{-webkit-text-size-adjust:100%}
 
     body{
+      min-height:100vh;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
       color:var(--text);
-      min-height:100vh;
       background:
-        radial-gradient(circle at 50% 12%, rgba(87,103,232,.10), transparent 28%),
-        radial-gradient(circle at 50% 52%, rgba(20,33,105,.08), transparent 34%),
-        linear-gradient(180deg,#010309 0%,#020713 100%);
+        radial-gradient(circle at 50% 10%, rgba(94,111,255,.11), transparent 28%),
+        radial-gradient(circle at 50% 50%, rgba(33,49,138,.10), transparent 38%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
     }
 
     .wrap{
       width:min(100%,460px);
       margin:0 auto;
-      padding:12px 10px 30px;
+      padding:12px 10px 34px;
     }
 
     .title{
@@ -47,11 +55,11 @@
       align-items:center;
       justify-content:center;
       gap:10px;
+      margin:2px 0 13px;
       text-align:center;
       font-size:24px;
       font-weight:1000;
-      letter-spacing:.32px;
-      margin:2px 0 13px;
+      letter-spacing:.3px;
       text-shadow:0 2px 12px rgba(0,0,0,.34);
     }
 
@@ -73,10 +81,10 @@
 
     .hero{
       position:relative;
-      border-radius:26px;
-      padding:11px;
-      background:linear-gradient(180deg, rgba(102,117,238,.96), rgba(58,73,178,.94));
-      border:1px solid rgba(255,255,255,.08);
+      border-radius:28px;
+      padding:12px;
+      background:linear-gradient(180deg, rgba(111,125,242,.96), rgba(67,84,201,.94));
+      border:1px solid rgba(255,255,255,.09);
       box-shadow:var(--shadow);
       overflow:hidden;
     }
@@ -86,7 +94,7 @@
       position:absolute;
       inset:0;
       background:
-        radial-gradient(circle at 50% -10%, rgba(255,255,255,.10), transparent 34%),
+        radial-gradient(circle at 50% -8%, rgba(255,255,255,.12), transparent 34%),
         linear-gradient(180deg, rgba(255,255,255,.05), transparent 28%);
       pointer-events:none;
     }
@@ -94,8 +102,8 @@
     .heroInner{
       position:relative;
       z-index:1;
-      min-height:226px;
-      border-radius:22px;
+      min-height:238px;
+      border-radius:24px;
       border:1px solid rgba(255,255,255,.08);
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
       display:flex;
@@ -103,7 +111,7 @@
       align-items:center;
       justify-content:center;
       text-align:center;
-      padding:20px 14px;
+      padding:22px 16px;
     }
 
     .guard{
@@ -114,7 +122,7 @@
       text-overflow:ellipsis;
       line-height:.9;
       letter-spacing:-1.8px;
-      font-size:74px;
+      font-size:78px;
       font-weight:1000;
     }
     .guard.ready{color:var(--green)}
@@ -123,11 +131,11 @@
     .guard.fail{color:#e2b4b4}
 
     .heroHint{
-      margin-top:8px;
+      margin-top:9px;
       min-height:22px;
       font-size:15px;
       font-weight:800;
-      color:rgba(255,255,255,.72);
+      color:var(--muted);
     }
 
     .pnl{
@@ -138,15 +146,18 @@
       font-weight:1000;
     }
 
+    .pnl.positive{color:var(--white)}
+    .pnl.negative{color:var(--white)}
+
     .pnlSub{
-      margin-top:4px;
+      margin-top:5px;
       font-size:17px;
       font-weight:900;
-      color:rgba(255,255,255,.76);
+      color:rgba(255,255,255,.78);
     }
 
     .heroMetaRow{
-      margin-top:12px;
+      margin-top:13px;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -158,19 +169,21 @@
       display:inline-flex;
       align-items:center;
       gap:8px;
+      min-height:38px;
       border-radius:999px;
-      padding:6px 11px;
+      padding:8px 13px;
       background:rgba(11,17,48,.20);
       border:1px solid rgba(255,255,255,.06);
-      font-size:11px;
-      font-weight:900;
-      color:rgba(255,255,255,.82);
+      font-size:12px;
+      font-weight:1000;
+      color:rgba(255,255,255,.84);
     }
 
     .heroMeta.live{box-shadow:none}
     .heroMeta.auto{box-shadow:var(--okGlow)}
     .heroMeta.queue{box-shadow:var(--warnGlow)}
     .heroMeta.block{box-shadow:var(--dangerGlow)}
+    .heroMeta.day{box-shadow:var(--blueGlow)}
 
     .grid2{
       margin-top:13px;
@@ -185,7 +198,7 @@
       padding:14px 17px;
       background:linear-gradient(180deg, rgba(46,58,145,.98), rgba(29,39,101,.98));
       border:1px solid var(--line);
-      box-shadow:0 10px 24px rgba(0,0,0,.22);
+      box-shadow:var(--shadowSoft);
       display:flex;
       flex-direction:column;
       justify-content:center;
@@ -231,9 +244,9 @@
 
     button:active{transform:scale(.985)}
     button:disabled{
-      opacity:.45;
+      opacity:.42;
       cursor:not-allowed;
-      filter:grayscale(.2) brightness(.86);
+      filter:grayscale(.2) brightness(.84);
       box-shadow:none !important;
     }
 
@@ -247,9 +260,7 @@
       box-shadow:0 8px 18px rgba(0,0,0,.14);
     }
 
-    .actBtn.flash{
-      animation:btnFlash .34s ease;
-    }
+    .actBtn.flash{animation:btnFlash .34s ease}
 
     @keyframes btnFlash{
       0%{transform:scale(1)}
@@ -273,7 +284,7 @@
       min-height:60px;
       background:linear-gradient(90deg,#d7cf8d,#d9d18c);
       color:#fff;
-      opacity:.90;
+      opacity:.92;
     }
 
     .miniGrid{
@@ -332,9 +343,7 @@
       100%{box-shadow:0 0 0 0 rgba(159,227,188,0)}
     }
 
-    .toggleTextWrap{
-      min-width:0;
-    }
+    .toggleTextWrap{min-width:0}
 
     .toggleTop{
       font-size:12px;
@@ -392,22 +401,17 @@
       letter-spacing:-.25px;
     }
 
-    .queuePulse .miniBig{
-      animation:miniPulse 1.2s infinite;
-    }
-
-    .processingPulse .miniBig{
-      animation:miniPulseBlue 1s infinite;
-    }
+    .queuePulse .miniBig{animation:miniPulse 1.2s infinite}
+    .processingPulse .miniBig{animation:miniPulseBlue 1s infinite}
 
     @keyframes miniPulse{
-      0%,100%{text-shadow:none; opacity:1}
-      50%{text-shadow:0 0 14px rgba(221,208,138,.32); opacity:.92}
+      0%,100%{text-shadow:none;opacity:1}
+      50%{text-shadow:0 0 14px rgba(221,208,138,.32);opacity:.92}
     }
 
     @keyframes miniPulseBlue{
-      0%,100%{text-shadow:none; opacity:1}
-      50%{text-shadow:0 0 14px rgba(175,216,239,.32); opacity:.92}
+      0%,100%{text-shadow:none;opacity:1}
+      50%{text-shadow:0 0 14px rgba(175,216,239,.32);opacity:.92}
     }
 
     .scoreCard{
@@ -493,6 +497,38 @@
       line-height:1;
     }
 
+    .sessionBarWrap{
+      margin-top:11px;
+      display:grid;
+      gap:8px;
+    }
+
+    .sessionTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      font-size:12px;
+      font-weight:1000;
+      color:rgba(255,255,255,.72);
+    }
+
+    .sessionTrack{
+      height:10px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.05);
+    }
+
+    .sessionFill{
+      width:0%;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,#93ddb5 0%, #d8d18c 72%, #dfb8b8 100%);
+      transition:width .25s ease;
+    }
+
     .logCard{
       margin-top:14px;
       border-radius:24px;
@@ -518,7 +554,13 @@
       letter-spacing:.14px;
     }
 
-    .syncBadge{
+    .logHeadRight{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .dayBadge,.syncBadge{
       font-size:11px;
       font-weight:1000;
       color:rgba(255,255,255,.72);
@@ -527,11 +569,11 @@
       background:rgba(255,255,255,.06);
       border:1px solid rgba(255,255,255,.06);
       transition:all .18s ease;
+      white-space:nowrap;
     }
 
-    .syncBadge.ok{color:rgba(255,255,255,.72)}
-    .syncBadge.pending{color:var(--yellow); box-shadow:var(--warnGlow)}
-    .syncBadge.fail{color:#f0cccc; box-shadow:var(--dangerGlow)}
+    .syncBadge.pending{color:var(--yellow);box-shadow:var(--warnGlow)}
+    .syncBadge.fail{color:#f0cccc;box-shadow:var(--dangerGlow)}
 
     .logList{
       max-height:340px;
@@ -561,8 +603,8 @@
       .wrap{padding-left:10px;padding-right:10px}
       .title{font-size:22px;margin-bottom:12px}
       .hero{padding:10px}
-      .heroInner{min-height:206px}
-      .guard{font-size:66px}
+      .heroInner{min-height:214px}
+      .guard{font-size:68px}
       .heroHint{font-size:14px}
       .pnl{font-size:66px}
       .pnlSub{font-size:16px}
@@ -585,7 +627,7 @@
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V20.5.1 HARD LIVE ⚡</span>
+      <span>V20.6 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -593,7 +635,7 @@
       <div class="heroInner">
         <div id="guard" class="guard ready">READY</div>
         <div id="heroHint" class="heroHint">System bereit.</div>
-        <div id="pnl" class="pnl">0</div>
+        <div id="pnl" class="pnl positive">0</div>
         <div class="pnlSub">Net PnL</div>
         <div class="heroMetaRow">
           <div id="heroMeta" class="heroMeta live">
@@ -658,6 +700,7 @@
         <div class="scoreTitle">AI SCORE</div>
         <div id="scoreVal" class="scoreVal">82</div>
       </div>
+
       <div class="barTrack">
         <div id="scoreBar" class="barFill"></div>
       </div>
@@ -688,12 +731,25 @@
           <div id="sessionVal" class="factorVal mid">68.0</div>
         </div>
       </div>
+
+      <div class="sessionBarWrap">
+        <div class="sessionTop">
+          <span id="sessionTradesText">Trades 0 / 50</span>
+          <span id="dayKeyText">Heute</span>
+        </div>
+        <div class="sessionTrack">
+          <div id="sessionFill" class="sessionFill"></div>
+        </div>
+      </div>
     </section>
 
     <section class="logCard">
       <div class="logHead">
         <div class="logTitle">LOG</div>
-        <div id="syncBadge" class="syncBadge ok">SYNC OK</div>
+        <div class="logHeadRight">
+          <div id="dayBadge" class="dayBadge">DAY READY</div>
+          <div id="syncBadge" class="syncBadge">SYNC OK</div>
+        </div>
       </div>
       <div id="logList" class="logList">
         <div class="logEntry">Keine Einträge.</div>
@@ -711,6 +767,11 @@
       confidence: 62,
       score: 82,
       autoEnabled: false,
+      sessionTrades: 0,
+      maxSessionTrades: 50,
+      dayKey: "",
+      dailyLossLimit: null,
+      dailyWinTarget: null,
       health: {
         status: true,
         buy: true,
@@ -754,6 +815,10 @@
       volatilityVal: $("volatilityVal"),
       liquidityVal: $("liquidityVal"),
       sessionVal: $("sessionVal"),
+      sessionTradesText: $("sessionTradesText"),
+      dayKeyText: $("dayKeyText"),
+      sessionFill: $("sessionFill"),
+      dayBadge: $("dayBadge"),
       logList: $("logList"),
       syncBadge: $("syncBadge"),
       autoToggleBtn: $("autoToggleBtn"),
@@ -781,19 +846,20 @@
       const g = String(raw || "").toUpperCase().trim();
       if (g === "READY" || g === "SYSTEM_READY") return "READY";
       if (g.includes("SESSION")) return "SESSION...";
+      if (g.includes("WIN_TARGET")) return "TARGET...";
+      if (g.includes("DAILY_LOSS")) return "LOSS...";
       if (g.includes("QUEUE")) return "LOCKED";
       if (g.includes("PROCESS")) return "LOCKED";
       if (g.includes("BLOCK") || g.includes("LOCK")) return "LOCKED";
       if (g.includes("HEALTH")) return "FAIL";
       if (g.includes("FAIL")) return "FAIL";
-      if (g.includes("LOSS")) return "LOSS...";
       return g || "READY";
     }
 
     function guardClass(raw){
       const g = String(raw || "").toUpperCase();
       if (g.includes("READY")) return "ready";
-      if (g.includes("SESSION")) return "block";
+      if (g.includes("SESSION") || g.includes("TARGET")) return "block";
       if (g.includes("QUEUE") || g.includes("PROCESS")) return "warn";
       if (g.includes("BLOCK") || g.includes("LOCK") || g.includes("FAIL") || g.includes("HEALTH") || g.includes("LOSS")) return "fail";
       return "warn";
@@ -827,9 +893,15 @@
       s.reasonHint = String(api.reasonHint ?? prev.reasonHint ?? "System bereit.");
       s.processing = typeof api.processing === "boolean" ? api.processing : prev.processing;
       s.queueLength = safeNum(api.queueLength, Array.isArray(api.queue) ? api.queue.length : prev.queueLength);
-      s.confidence = safeNum(api.confidence, prev.confidence ?? 62);
-      s.score = safeNum(api.score, prev.score ?? 82);
+      s.confidence = safeNum(api.confidence ?? api.conf ?? api.confidencePct, prev.confidence ?? 62);
+      s.score = safeNum(api.score ?? api.aiScore, prev.score ?? 82);
       s.autoEnabled = typeof api.autoEnabled === "boolean" ? api.autoEnabled : prev.autoEnabled;
+
+      s.sessionTrades = safeNum(api.sessionTrades, prev.sessionTrades ?? 0);
+      s.maxSessionTrades = safeNum(api.maxSessionTrades, prev.maxSessionTrades ?? 50);
+      s.dayKey = String(api.dayKey ?? prev.dayKey ?? "");
+      s.dailyLossLimit = api.dailyLossLimit ?? prev.dailyLossLimit ?? null;
+      s.dailyWinTarget = api.dailyWinTarget ?? prev.dailyWinTarget ?? null;
 
       s.health = {
         status: typeof api.health?.status === "boolean" ? api.health.status : prev.health.status,
@@ -858,7 +930,7 @@
 
     function isBlockedGuard(guard){
       const g = String(guard || "").toUpperCase();
-      return g.includes("BLOCK") || g.includes("LOCK") || g.includes("FAIL") || g.includes("HEALTH");
+      return g.includes("BLOCK") || g.includes("LOCK") || g.includes("FAIL") || g.includes("HEALTH") || g.includes("DAILY_LOSS") || g.includes("WIN_TARGET");
     }
 
     function isBusyGuard(guard){
@@ -868,8 +940,14 @@
 
     function isTradableState(state){
       const g = String(state.guard || "").toUpperCase();
-      const guardReady = g === "READY" || g === "SYSTEM_READY";
-      if (!guardReady) return false;
+      const hardBlocked =
+        g.includes("SESSION") ||
+        g.includes("DAILY_LOSS") ||
+        g.includes("WIN_TARGET") ||
+        g.includes("FAIL") ||
+        g.includes("HEALTH");
+
+      if (hardBlocked) return false;
       if (state.processing) return false;
       if (safeNum(state.queueLength, 0) > 0) return false;
       if (!state.health.buy || !state.health.sell) return false;
@@ -890,7 +968,6 @@
       if (!input) return "--:--:--";
 
       const str = String(input).trim();
-
       if (/^\d{2}:\d{2}:\d{2}$/.test(str)) return str;
 
       const d = new Date(str);
@@ -903,7 +980,6 @@
 
       const match = str.match(/(\d{2}):(\d{2}):(\d{2})/);
       if (match) return `${match[1]}:${match[2]}:${match[3]}`;
-
       return "--:--:--";
     }
 
@@ -913,7 +989,7 @@
         return;
       }
 
-      const html = log.slice(0, 28).map(item => {
+      const html = log.slice(0, 32).map(item => {
         const type = String(item.type || "").toUpperCase();
         const time = escapeHtml(formatLogTime(item.localTime || item.time || item.ts));
         const msg = escapeHtml(String(item.msg || item.message || "-"));
@@ -950,12 +1026,18 @@
       if (session) {
         els.heroMeta.classList.add("block");
         els.heroMetaText.textContent = "SESSION LIMIT";
+      } else if (String(state.guard).toUpperCase().includes("DAILY_LOSS")) {
+        els.heroMeta.classList.add("block");
+        els.heroMetaText.textContent = "LOSS LIMIT";
+      } else if (String(state.guard).toUpperCase().includes("WIN_TARGET")) {
+        els.heroMeta.classList.add("block");
+        els.heroMetaText.textContent = "WIN TARGET";
       } else if (blocked) {
         els.heroMeta.classList.add("block");
         els.heroMetaText.textContent = "BLOCKED";
       } else if (busy) {
         els.heroMeta.classList.add("queue");
-        els.heroMetaText.textContent = `QUEUE ${q}`;
+        els.heroMetaText.textContent = state.processing ? "PROCESSING" : `QUEUE ${q}`;
       } else if (state.autoEnabled) {
         els.heroMeta.classList.add("auto");
         els.heroMetaText.textContent = "AUTO ON";
@@ -990,8 +1072,31 @@
         els.syncBadge.classList.add("fail");
         els.syncBadge.textContent = "SYNC FAIL";
       } else {
-        els.syncBadge.classList.add("ok");
         els.syncBadge.textContent = "SYNC OK";
+      }
+    }
+
+    function renderDayInfo(state){
+      const trades = safeNum(state.sessionTrades, 0);
+      const maxTrades = Math.max(1, safeNum(state.maxSessionTrades, 50));
+      const pct = Math.max(0, Math.min(100, (trades / maxTrades) * 100));
+
+      els.sessionTradesText.textContent = `Trades ${trades} / ${maxTrades}`;
+      els.sessionFill.style.width = `${pct}%`;
+
+      let dk = state.dayKey || "Heute";
+      if (dk.length > 18) dk = dk.slice(0, 18);
+      els.dayKeyText.textContent = dk;
+
+      const guard = String(state.guard || "").toUpperCase();
+      if (guard.includes("SESSION")) {
+        els.dayBadge.textContent = "DAY LIMIT";
+      } else if (guard.includes("DAILY_LOSS")) {
+        els.dayBadge.textContent = "LOSS LIMIT";
+      } else if (guard.includes("WIN_TARGET")) {
+        els.dayBadge.textContent = "WIN TARGET";
+      } else {
+        els.dayBadge.textContent = "DAY READY";
       }
     }
 
@@ -999,7 +1104,10 @@
       els.guard.textContent = shortGuard(state.guard);
       els.guard.className = `guard ${guardClass(state.guard)}`;
       els.heroHint.textContent = state.reasonHint || "System bereit.";
-      els.pnl.textContent = fmtPnL(state.pnl);
+
+      const pnlNum = safeNum(state.pnl, 0);
+      els.pnl.textContent = fmtPnL(pnlNum);
+      els.pnl.className = `pnl ${pnlNum < 0 ? "negative" : "positive"}`;
 
       renderHealth(els.healthStatus, !!state.health.status);
       renderHealth(els.healthBuy, !!state.health.buy);
@@ -1021,11 +1129,12 @@
       renderMeta(state);
       renderAuto(state);
       renderQueueProcessing(state);
+      renderDayInfo(state);
       renderLog(state.log);
 
       const tradesAllowed = isTradableState(state);
       const guardIsSession = isSessionGuard(state.guard);
-      const guardBlocked = isBlockedGuard(state.guard);
+      const hardBlocked = isBlockedGuard(state.guard);
       const queueBusy = safeNum(state.queueLength, 0) > 0;
 
       els.btnBuy.disabled = !tradesAllowed;
@@ -1033,7 +1142,7 @@
       els.btnWin.disabled = guardIsSession || state.processing || queueBusy;
       els.btnLoss.disabled = guardIsSession || state.processing || queueBusy;
       els.btnReset.disabled = state.processing;
-      els.autoToggleBtn.disabled = state.processing || guardBlocked;
+      els.autoToggleBtn.disabled = state.processing || (hardBlocked && !state.autoEnabled);
     }
 
     async function getStatus(){
@@ -1044,9 +1153,9 @@
 
     async function postJSON(url, body = {}){
       const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify(body)
       });
       if (!res.ok) throw new Error(`${url} failed`);
       return await res.json();
@@ -1083,9 +1192,7 @@
     }
 
     async function syncNow(showPending = false){
-      if (showPending && !hasLoadedOnce) {
-        renderSync("pending");
-      }
+      if (showPending && !hasLoadedOnce) renderSync("pending");
 
       try{
         const data = await getStatus();
