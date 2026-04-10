@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V19.9 HARD LIVE</title>
+  <title>V19.9.1 HARD LIVE</title>
   <style>
     :root{
       --bg:#02040a;
-      --bg2:#06112a;
+      --bg2:#071127;
       --panel:#202a68;
       --panel2:#2d3887;
       --panel3:#1a2254;
@@ -21,7 +21,7 @@
       --cyan:#afd8ef;
       --shadow:0 16px 40px rgba(0,0,0,.34);
       --safeBottom:env(safe-area-inset-bottom,0px);
-      --dockPeek:90px;
+      --dockPeek:74px;
     }
 
     *{box-sizing:border-box}
@@ -32,22 +32,22 @@
       color:var(--text);
       min-height:100vh;
       background:
-        radial-gradient(circle at 50% 18%, rgba(71,92,210,.16), transparent 34%),
-        radial-gradient(circle at 50% 58%, rgba(34,54,146,.11), transparent 38%),
+        radial-gradient(circle at 50% 16%, rgba(66,85,196,.13), transparent 30%),
+        radial-gradient(circle at 50% 56%, rgba(31,46,122,.10), transparent 36%),
         linear-gradient(180deg,#02040a 0%,#030714 100%);
     }
 
     .wrap{
       width:min(100%,460px);
       margin:0 auto;
-      padding:16px 14px calc(var(--dockPeek) + var(--safeBottom) + 26px);
+      padding:16px 14px calc(var(--dockPeek) + var(--safeBottom) + 24px);
     }
 
     .title{
       text-align:center;
-      font-size:28px;
+      font-size:27px;
       font-weight:1000;
-      letter-spacing:.5px;
+      letter-spacing:.45px;
       margin:10px 0 18px;
       text-shadow:0 2px 10px rgba(0,0,0,.35);
     }
@@ -55,9 +55,9 @@
     .hero{
       position:relative;
       border-radius:28px;
-      padding:18px;
+      padding:16px;
       background:
-        linear-gradient(180deg, rgba(74,90,210,.92), rgba(48,61,154,.92));
+        linear-gradient(180deg, rgba(74,90,210,.90), rgba(48,61,154,.90));
       border:1px solid rgba(255,255,255,.07);
       box-shadow:var(--shadow);
       overflow:hidden;
@@ -74,7 +74,7 @@
     .heroInner{
       position:relative;
       z-index:1;
-      min-height:240px;
+      min-height:222px;
       border-radius:24px;
       border:1px solid rgba(255,255,255,.08);
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
@@ -93,8 +93,8 @@
       overflow:hidden;
       text-overflow:ellipsis;
       line-height:.9;
-      letter-spacing:-1.6px;
-      font-size:78px;
+      letter-spacing:-1.5px;
+      font-size:72px;
       font-weight:1000;
     }
     .guard.ready{color:var(--green)}
@@ -103,39 +103,39 @@
     .guard.fail{color:#e3b4b4}
 
     .heroHint{
-      margin-top:10px;
-      min-height:24px;
-      font-size:17px;
+      margin-top:8px;
+      min-height:22px;
+      font-size:15px;
       font-weight:800;
       color:rgba(255,255,255,.72);
     }
 
     .pnl{
-      margin-top:10px;
-      font-size:82px;
-      line-height:.94;
+      margin-top:8px;
+      font-size:74px;
+      line-height:.95;
       letter-spacing:-2px;
       font-weight:1000;
     }
 
     .pnlSub{
-      margin-top:5px;
-      font-size:18px;
+      margin-top:4px;
+      font-size:17px;
       font-weight:900;
       color:rgba(255,255,255,.72);
     }
 
     .grid2{
-      margin-top:14px;
+      margin-top:13px;
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:12px;
     }
 
     .card{
-      min-height:110px;
+      min-height:102px;
       border-radius:22px;
-      padding:16px 18px;
+      padding:15px 17px;
       background:linear-gradient(180deg, rgba(43,56,138,.98), rgba(28,39,98,.98));
       border:1px solid var(--line);
       box-shadow:0 10px 24px rgba(0,0,0,.22);
@@ -145,15 +145,15 @@
     }
 
     .cardLabel{
-      font-size:18px;
+      font-size:17px;
       font-weight:1000;
       color:rgba(255,255,255,.92);
-      margin-bottom:10px;
+      margin-bottom:9px;
       line-height:1;
     }
 
     .cardVal{
-      font-size:30px;
+      font-size:28px;
       line-height:1;
       font-weight:1000;
       letter-spacing:-.4px;
@@ -165,7 +165,7 @@
     .ice{color:var(--cyan)}
 
     .actionGrid{
-      margin-top:14px;
+      margin-top:13px;
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:12px;
@@ -184,11 +184,11 @@
     button:disabled{opacity:.58;cursor:not-allowed;filter:saturate(.88)}
 
     .actBtn{
-      min-height:72px;
-      border-radius:22px;
-      font-size:18px;
+      min-height:64px;
+      border-radius:20px;
+      font-size:16px;
       font-weight:1000;
-      letter-spacing:.2px;
+      letter-spacing:.18px;
       color:#fff;
       box-shadow:0 8px 18px rgba(0,0,0,.16);
     }
@@ -205,22 +205,22 @@
 
     .resetBtn{
       grid-column:1 / -1;
-      min-height:76px;
+      min-height:68px;
       background:linear-gradient(90deg,#d7cf8d,#d9d28f);
       color:#fffef5;
     }
 
     .miniGrid{
-      margin-top:14px;
+      margin-top:13px;
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:12px;
     }
 
     .miniCard{
-      min-height:102px;
+      min-height:92px;
       border-radius:22px;
-      padding:16px 18px;
+      padding:15px 17px;
       background:linear-gradient(180deg, rgba(43,56,138,.98), rgba(28,39,98,.98));
       border:1px solid var(--line);
       box-shadow:0 10px 24px rgba(0,0,0,.22);
@@ -230,25 +230,25 @@
     }
 
     .miniTop{
-      font-size:14px;
+      font-size:13px;
       font-weight:1000;
       color:rgba(255,255,255,.9);
-      margin-bottom:10px;
+      margin-bottom:9px;
       line-height:1;
     }
 
     .miniBig{
-      font-size:24px;
+      font-size:22px;
       line-height:1;
       font-weight:1000;
-      letter-spacing:-.4px;
+      letter-spacing:-.35px;
     }
 
     .miniBtn{
       text-align:left;
-      min-height:102px;
+      min-height:92px;
       border-radius:22px;
-      padding:16px 18px;
+      padding:15px 17px;
       background:linear-gradient(180deg, rgba(43,56,138,.98), rgba(28,39,98,.98));
       border:1px solid var(--line);
       box-shadow:0 10px 24px rgba(0,0,0,.22);
@@ -259,10 +259,10 @@
     }
 
     .scoreCard{
-      margin-top:14px;
+      margin-top:13px;
       border-radius:24px;
-      padding:18px;
-      background:linear-gradient(180deg, rgba(64,78,188,.95), rgba(43,56,143,.95));
+      padding:16px;
+      background:linear-gradient(180deg, rgba(64,78,188,.93), rgba(43,56,143,.93));
       border:1px solid rgba(255,255,255,.07);
       box-shadow:var(--shadow);
     }
@@ -271,17 +271,17 @@
       display:flex;
       justify-content:space-between;
       align-items:flex-end;
-      gap:12px;
+      gap:10px;
     }
 
     .scoreTitle{
-      font-size:22px;
+      font-size:19px;
       font-weight:1000;
       line-height:1;
     }
 
     .scoreVal{
-      font-size:78px;
+      font-size:66px;
       line-height:.86;
       font-weight:1000;
       letter-spacing:-2px;
@@ -289,8 +289,8 @@
     }
 
     .barTrack{
-      margin-top:12px;
-      height:18px;
+      margin-top:10px;
+      height:16px;
       border-radius:999px;
       overflow:hidden;
       background:rgba(255,255,255,.13);
@@ -306,17 +306,17 @@
     }
 
     .factorGrid{
-      margin-top:14px;
+      margin-top:12px;
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:12px;
+      gap:10px;
     }
 
     .factor{
-      min-height:94px;
-      border-radius:20px;
-      padding:14px 16px;
-      background:rgba(21,28,87,.5);
+      min-height:84px;
+      border-radius:18px;
+      padding:13px 15px;
+      background:rgba(21,28,87,.48);
       border:1px solid rgba(255,255,255,.05);
       display:flex;
       flex-direction:column;
@@ -325,7 +325,7 @@
     }
 
     .factorTop{
-      font-size:16px;
+      font-size:14px;
       font-weight:800;
       color:rgba(255,255,255,.68);
       margin-bottom:8px;
@@ -333,40 +333,40 @@
     }
 
     .factorVal{
-      font-size:28px;
+      font-size:24px;
       font-weight:1000;
-      letter-spacing:-.5px;
+      letter-spacing:-.35px;
       line-height:1;
     }
 
     .logCard{
-      margin-top:14px;
+      margin-top:13px;
       border-radius:24px;
-      padding:18px;
+      padding:16px;
       background:linear-gradient(180deg, rgba(42,54,137,.98), rgba(30,41,106,.98));
       border:1px solid rgba(255,255,255,.06);
       box-shadow:0 12px 26px rgba(0,0,0,.24);
     }
 
     .logTitle{
-      font-size:22px;
+      font-size:20px;
       font-weight:1000;
       line-height:1;
-      margin-bottom:12px;
+      margin-bottom:10px;
     }
 
     .logList{
-      max-height:340px;
+      max-height:320px;
       overflow:auto;
       padding-right:4px;
       scrollbar-width:thin;
     }
 
     .logEntry{
-      padding:12px 2px;
+      padding:11px 2px;
       border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:15px;
-      line-height:1.38;
+      font-size:14px;
+      line-height:1.36;
       word-break:break-word;
       color:rgba(243,246,255,.9);
     }
@@ -391,26 +391,28 @@
     .dockPanel{
       width:min(100%,460px);
       margin:0 auto;
-      background:linear-gradient(180deg, rgba(136,146,247,.98), rgba(112,123,231,.98));
+      background:linear-gradient(180deg, rgba(136,146,247,.97), rgba(112,123,231,.97));
       border:1px solid rgba(255,255,255,.16);
-      border-radius:28px;
-      box-shadow:0 20px 42px rgba(0,0,0,.38);
+      border-radius:24px;
+      box-shadow:0 18px 36px rgba(0,0,0,.36);
       overflow:hidden;
       pointer-events:auto;
+      backdrop-filter:blur(10px);
     }
 
     .dockHead{
-      padding:16px 18px 15px;
+      padding:13px 16px 12px;
       display:flex;
       align-items:center;
-      gap:14px;
+      gap:12px;
       cursor:pointer;
       user-select:none;
+      min-height:70px;
     }
 
     .dockGrip{
-      width:52px;
-      height:8px;
+      width:44px;
+      height:7px;
       border-radius:999px;
       background:rgba(255,255,255,.25);
       flex:0 0 auto;
@@ -422,14 +424,14 @@
     }
 
     .dockTitle{
-      font-size:20px;
+      font-size:17px;
       font-weight:1000;
       line-height:1;
     }
 
     .dockMeta{
-      margin-top:5px;
-      font-size:14px;
+      margin-top:4px;
+      font-size:12px;
       color:rgba(255,255,255,.82);
       white-space:nowrap;
       overflow:hidden;
@@ -437,7 +439,7 @@
     }
 
     .dockChevron{
-      font-size:26px;
+      font-size:22px;
       color:#fff;
       line-height:1;
       transition:transform .18s ease;
@@ -451,13 +453,13 @@
     .dockBody{
       max-height:0;
       overflow:hidden;
-      padding:0 18px;
+      padding:0 16px;
       transition:max-height .22s ease, padding .22s ease;
     }
 
     .dockPanel.open .dockBody{
-      max-height:240px;
-      padding:0 18px 18px;
+      max-height:220px;
+      padding:0 16px 16px;
     }
 
     .dockBtns{
@@ -466,9 +468,9 @@
     }
 
     .dockBtn{
-      min-height:68px;
-      border-radius:18px;
-      font-size:17px;
+      min-height:60px;
+      border-radius:16px;
+      font-size:16px;
       font-weight:1000;
       letter-spacing:.2px;
       color:#fff;
@@ -483,25 +485,26 @@
     @media (max-width:420px){
       .wrap{padding-left:12px;padding-right:12px}
       .title{font-size:24px}
-      .heroInner{min-height:220px}
-      .guard{font-size:68px}
-      .pnl{font-size:72px}
-      .card,.miniCard,.miniBtn{min-height:96px}
-      .cardLabel{font-size:17px}
-      .cardVal{font-size:28px}
-      .actBtn{min-height:68px;font-size:17px}
-      .resetBtn{min-height:72px}
-      .scoreVal{font-size:68px}
-      .factor{min-height:88px}
-      .factorVal{font-size:26px}
-      .dockTitle{font-size:18px}
-      .dockBtn{min-height:64px}
+      .heroInner{min-height:210px}
+      .guard{font-size:64px}
+      .pnl{font-size:66px}
+      .card,.miniCard,.miniBtn{min-height:88px}
+      .cardLabel{font-size:16px}
+      .cardVal{font-size:26px}
+      .actBtn{min-height:60px;font-size:15px}
+      .resetBtn{min-height:64px}
+      .scoreVal{font-size:58px}
+      .factor{min-height:78px}
+      .factorVal{font-size:22px}
+      .dockHead{min-height:66px}
+      .dockTitle{font-size:16px}
+      .dockBtn{min-height:56px}
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="title">V19.9 HARD LIVE ⚡</div>
+    <div class="title">V19.9.1 HARD LIVE ⚡</div>
 
     <section class="hero">
       <div class="heroInner">
@@ -534,8 +537,8 @@
     <section class="actionGrid">
       <button id="btnBuy" class="actBtn buyBtn">BUY</button>
       <button id="btnSell" class="actBtn sellBtn">SELL</button>
-      <button id="btnWin" class="actBtn actBtn winBtn">WIN</button>
-      <button id="btnLoss" class="actBtn actBtn lossBtn">LOSS</button>
+      <button id="btnWin" class="actBtn winBtn">WIN</button>
+      <button id="btnLoss" class="actBtn lossBtn">LOSS</button>
       <button id="btnReset" class="actBtn resetBtn">RESET</button>
     </section>
 
@@ -632,7 +635,7 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'v19_9_ui_state';
+    const STORAGE_KEY = 'v19_9_1_ui_state';
 
     const ui = {
       autoEnabled: false,
@@ -795,7 +798,6 @@
       };
 
       s.log = Array.isArray(api.log) ? api.log.slice().reverse() : [];
-
       return s;
     }
 
@@ -815,7 +817,7 @@
         return;
       }
 
-      const html = log.slice(0, 20).map(item => {
+      const html = log.slice(0,20).map(item=>{
         const type = String(item.type || '').toUpperCase();
         const time = escapeHtml(item.time || item.ts || '--:--:--');
         const msg = escapeHtml(item.msg || item.message || '-');
@@ -843,10 +845,8 @@
     }
 
     function render(state){
-      const gText = shortGuard(state.guard);
-      els.guard.textContent = gText;
+      els.guard.textContent = shortGuard(state.guard);
       els.guard.className = `guard ${guardClass(state.guard)}`;
-
       els.heroHint.textContent = state.reasonHint || 'System bereit.';
       els.pnl.textContent = fmtPnL(state.pnl);
 
