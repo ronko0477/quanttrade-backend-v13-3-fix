@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V20.7 HARD LIVE</title>
+  <title>V20.8 HARD LIVE</title>
   <style>
     :root{
       --bg:#02040a;
@@ -17,19 +17,28 @@
       --text:#f4f7ff;
       --muted:rgba(255,255,255,.72);
       --muted2:rgba(255,255,255,.56);
+
       --green:#b9d99b;
+      --greenStrong:#c9efb6;
       --red:#dfb8b8;
+      --redStrong:#efbcbc;
       --yellow:#ddd08a;
+      --yellowStrong:#eadb8c;
       --cyan:#afd8ef;
+      --cyanStrong:#c6e7f8;
       --lock:#c7d4f3;
       --white:#ffffff;
+
       --shadow:0 18px 42px rgba(0,0,0,.34);
       --shadowSoft:0 10px 24px rgba(0,0,0,.22);
+
       --okGlow:0 0 0 1px rgba(185,217,155,.22),0 0 22px rgba(185,217,155,.10);
       --warnGlow:0 0 0 1px rgba(221,208,138,.18),0 0 20px rgba(221,208,138,.08);
       --dangerGlow:0 0 0 1px rgba(223,184,184,.18),0 0 18px rgba(223,184,184,.07);
       --blueGlow:0 0 0 1px rgba(175,216,239,.18),0 0 18px rgba(175,216,239,.08);
       --lockGlow:0 0 0 1px rgba(199,212,243,.20),0 0 18px rgba(199,212,243,.08);
+      --pnlPlusGlow:0 0 18px rgba(185,217,155,.10);
+      --pnlMinusGlow:0 0 18px rgba(223,184,184,.10);
     }
 
     *{box-sizing:border-box}
@@ -104,7 +113,7 @@
     .heroInner{
       position:relative;
       z-index:1;
-      min-height:244px;
+      min-height:248px;
       border-radius:24px;
       border:1px solid rgba(255,255,255,.08);
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
@@ -130,7 +139,7 @@
     .guard.ready{color:var(--green)}
     .guard.warn{color:var(--cyan)}
     .guard.block{color:var(--yellow)}
-    .guard.fail{color:#e2b4b4}
+    .guard.fail{color:var(--redStrong)}
     .guard.locked{color:var(--lock)}
 
     .heroHint{
@@ -147,7 +156,20 @@
       line-height:.94;
       letter-spacing:-2px;
       font-weight:1000;
+      transition:color .18s ease, text-shadow .18s ease;
+    }
+
+    .pnl.neutral{
       color:var(--white);
+      text-shadow:none;
+    }
+    .pnl.positive{
+      color:#f6fff1;
+      text-shadow:var(--pnlPlusGlow);
+    }
+    .pnl.negative{
+      color:#fff3f3;
+      text-shadow:var(--pnlMinusGlow);
     }
 
     .pnlSub{
@@ -248,7 +270,7 @@
     }
 
     .ok{color:var(--green)}
-    .fail{color:#e2b1b1}
+    .fail{color:var(--redStrong)}
     .mid{color:var(--yellow)}
     .ice{color:var(--cyan)}
 
@@ -556,6 +578,30 @@
       transition:width .25s ease;
     }
 
+    .dayModeWrap{
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      min-height:24px;
+    }
+
+    .dayModeBadge{
+      display:none;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:11px;
+      font-weight:1000;
+      color:rgba(255,255,255,.86);
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .dayModeBadge.show{display:inline-flex}
+    .dayModeBadge.manual{box-shadow:var(--blueGlow)}
+    .dayModeBadge.day{box-shadow:var(--warnGlow)}
+
     .logCard{
       margin-top:14px;
       border-radius:24px;
@@ -604,6 +650,8 @@
     .dayBadge.limit{box-shadow:var(--warnGlow)}
     .dayBadge.loss{box-shadow:var(--dangerGlow)}
     .dayBadge.target{box-shadow:var(--blueGlow)}
+    .dayBadge.reset{box-shadow:var(--blueGlow)}
+    .dayBadge.dayreset{box-shadow:var(--warnGlow)}
 
     .syncBadge.pending{color:var(--yellow);box-shadow:var(--warnGlow)}
     .syncBadge.fail{color:#f0cccc;box-shadow:var(--dangerGlow)}
@@ -616,27 +664,30 @@
     }
 
     .logEntry{
-      padding:10px 2px;
+      padding:9px 2px;
       border-bottom:1px solid rgba(255,255,255,.06);
       font-size:14px;
-      line-height:1.36;
+      line-height:1.34;
       word-break:break-word;
       color:rgba(243,246,255,.92);
     }
     .logEntry:last-child{border-bottom:none}
+
     .logQueued{color:#dbe0f8}
     .logProcessing{color:#e4cf84}
     .logExecuted{color:#eef2ff}
     .logWin{color:var(--green)}
     .logLoss{color:#e3b1b1}
-    .logReset{color:#eef2ff}
+    .logReset{color:#b9d7ff}
+    .logDay{color:#e8d896}
     .logSystem{color:#d6ddf7}
+    .logAuto{color:#cfe7d4}
 
     @media (max-width:420px){
       .wrap{padding-left:10px;padding-right:10px}
       .title{font-size:22px;margin-bottom:12px}
       .hero{padding:10px}
-      .heroInner{min-height:214px}
+      .heroInner{min-height:216px}
       .guard{font-size:68px}
       .heroHint{font-size:14px}
       .pnl{font-size:66px}
@@ -661,7 +712,7 @@
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V20.7 HARD LIVE ⚡</span>
+      <span>V20.8 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -669,7 +720,7 @@
       <div class="heroInner">
         <div id="guard" class="guard ready">READY</div>
         <div id="heroHint" class="heroHint">System bereit.</div>
-        <div id="pnl" class="pnl">0</div>
+        <div id="pnl" class="pnl neutral">0</div>
         <div class="pnlSub">Net PnL</div>
 
         <div class="heroMetaRow">
@@ -781,6 +832,11 @@
           <div id="sessionFill" class="sessionFill"></div>
         </div>
       </div>
+
+      <div class="dayModeWrap">
+        <div id="manualResetBadge" class="dayModeBadge manual">MANUAL RESET</div>
+        <div id="dayResetBadge" class="dayModeBadge day">DAY RESET</div>
+      </div>
     </section>
 
     <section class="logCard">
@@ -812,6 +868,7 @@
       dayKey: "",
       dailyLossLimit: null,
       dailyWinTarget: null,
+      lastResetType: "",
       health: {
         status: true,
         buy: true,
@@ -861,6 +918,8 @@
       dayBadge: $("dayBadge"),
       lossLimitBadge: $("lossLimitBadge"),
       winTargetBadge: $("winTargetBadge"),
+      manualResetBadge: $("manualResetBadge"),
+      dayResetBadge: $("dayResetBadge"),
       logList: $("logList"),
       syncBadge: $("syncBadge"),
       autoToggleBtn: $("autoToggleBtn"),
@@ -952,6 +1011,7 @@
       s.dayKey = String(api.dayKey ?? prev.dayKey ?? "");
       s.dailyLossLimit = api.dailyLossLimit ?? prev.dailyLossLimit ?? null;
       s.dailyWinTarget = api.dailyWinTarget ?? prev.dailyWinTarget ?? null;
+      s.lastResetType = String(api.lastResetType ?? prev.lastResetType ?? "");
 
       s.health = {
         status: typeof api.health?.status === "boolean" ? api.health.status : prev.health.status,
@@ -1034,10 +1094,14 @@
     }
 
     function prettifyLog(item){
-      const msg = String(item.msg || item.message || "-");
-      return msg
+      const msg = String(item.msg || item.message || "-")
         .replace("wird verarbeitet", "processing")
         .replace("ausgeführt", "executed");
+
+      const resetType = String(item.resetType || "").toUpperCase();
+      if (msg === "System reset" && resetType === "DAY") return "Day reset";
+      if (msg === "System reset" && resetType === "MANUAL") return "Manual reset";
+      return msg;
     }
 
     function renderLog(log){
@@ -1057,8 +1121,9 @@
         else if (type.includes("EXECUT")) cls = "logExecuted";
         else if (type.includes("WIN")) cls = "logWin";
         else if (type.includes("LOSS")) cls = "logLoss";
+        else if (type.includes("DAY")) cls = "logDay";
         else if (type.includes("RESET")) cls = "logReset";
-        else if (type.includes("AUTO")) cls = "logSystem";
+        else if (type.includes("AUTO")) cls = "logAuto";
 
         return `<div class="logEntry ${cls}">${time} - ${msg}</div>`;
       }).join("");
@@ -1147,6 +1212,8 @@
       els.dayKeyText.textContent = dk;
 
       const guard = String(state.guard || "").toUpperCase();
+      const lastResetType = String(state.lastResetType || "").toUpperCase();
+
       els.dayBadge.className = "dayBadge";
 
       if (guard.includes("SESSION")) {
@@ -1158,6 +1225,12 @@
       } else if (guard.includes("WIN_TARGET")) {
         els.dayBadge.classList.add("target");
         els.dayBadge.textContent = "WIN TARGET";
+      } else if (lastResetType === "DAY") {
+        els.dayBadge.classList.add("dayreset");
+        els.dayBadge.textContent = "DAY RESET";
+      } else if (lastResetType === "MANUAL") {
+        els.dayBadge.classList.add("reset");
+        els.dayBadge.textContent = "MANUAL RESET";
       } else {
         els.dayBadge.textContent = "DAY READY";
       }
@@ -1169,7 +1242,7 @@
 
       if (loss !== null && loss !== undefined && loss !== "") {
         els.lossLimitBadge.classList.add("show");
-        els.lossLimitBadge.textContent = `LOSS LIMIT ${fmtLimit(loss, "-")}`;
+        els.lossLimitBadge.textContent = `LOSS LIMIT ${fmtLimit(loss, "")}`;
       } else {
         els.lossLimitBadge.classList.remove("show");
       }
@@ -1182,13 +1255,36 @@
       }
     }
 
+    function renderResetBadges(state){
+      const type = String(state.lastResetType || "").toUpperCase();
+
+      els.manualResetBadge.classList.remove("show");
+      els.dayResetBadge.classList.remove("show");
+
+      if (type === "MANUAL") {
+        els.manualResetBadge.classList.add("show");
+      } else if (type === "DAY") {
+        els.dayResetBadge.classList.add("show");
+      }
+    }
+
+    function renderPnl(state){
+      const pnlNum = safeNum(state.pnl, 0);
+      els.pnl.textContent = fmtPnL(pnlNum);
+
+      let pnlClass = "neutral";
+      if (pnlNum > 0) pnlClass = "positive";
+      if (pnlNum < 0) pnlClass = "negative";
+
+      els.pnl.className = `pnl ${pnlClass}`;
+    }
+
     function render(state){
       els.guard.textContent = shortGuard(state.guard);
       els.guard.className = `guard ${guardClass(state.guard)}`;
       els.heroHint.textContent = state.reasonHint || "System bereit.";
 
-      const pnlNum = safeNum(state.pnl, 0);
-      els.pnl.textContent = fmtPnL(pnlNum);
+      renderPnl(state);
 
       renderHealth(els.healthStatus, !!state.health.status);
       renderHealth(els.healthBuy, !!state.health.buy);
@@ -1212,6 +1308,7 @@
       renderQueueProcessing(state);
       renderDayInfo(state);
       renderLimits(state);
+      renderResetBadges(state);
       renderLog(state.log);
 
       const tradesAllowed = isTradableState(state);
