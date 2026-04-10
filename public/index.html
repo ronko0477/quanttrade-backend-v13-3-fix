@@ -1,975 +1,284 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V19.9.3 HARD LIVE</title>
-  <style>
-    :root{
-      --bg:#02040a;
-      --bg2:#071127;
-      --panel:#202a68;
-      --panel2:#2d3887;
-      --panel3:#1a2254;
-      --line:rgba(255,255,255,.08);
-      --lineSoft:rgba(255,255,255,.05);
-      --text:#f6f8ff;
-      --muted:#bcc4df;
-      --green:#b8db99;
-      --red:#dfc8c8;
-      --yellow:#ddd08a;
-      --cyan:#afd8ef;
-      --shadow:0 16px 40px rgba(0,0,0,.34);
-      --safeBottom:env(safe-area-inset-bottom,0px);
-      --dockPeek:64px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>V19.9.4 HARD LIVE</title>
 
-    *{box-sizing:border-box}
-    html,body{margin:0;padding:0}
-    html{-webkit-text-size-adjust:100%}
+<style>
+:root{
+  --bg:#01030a;
+  --panel:#1c255c;
+  --panel2:#28337f;
+  --line:rgba(255,255,255,.06);
+  --text:#f4f7ff;
+  --muted:#aeb7d6;
+  --green:#b9dc9e;
+  --red:#e2b6b6;
+  --yellow:#dcd089;
+  --cyan:#a8d5f0;
+  --safeBottom:env(safe-area-inset-bottom,0px);
+  --dockPeek:60px;
+}
 
-    body{
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-      color:var(--text);
-      min-height:100vh;
-      background:
-        radial-gradient(circle at 50% 14%, rgba(73,91,212,.12), transparent 28%),
-        radial-gradient(circle at 50% 52%, rgba(31,46,122,.08), transparent 34%),
-        linear-gradient(180deg,#010205 0%,#020612 100%);
-    }
+/* RESET */
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 50% 10%, rgba(70,90,220,.10), transparent 30%),
+    linear-gradient(180deg,#01030a,#020612);
+}
 
-    .wrap{
-      width:min(100%,460px);
-      margin:0 auto;
-      padding:12px 14px calc(var(--dockPeek) + var(--safeBottom) + 20px);
-    }
+/* LAYOUT */
+.wrap{
+  max-width:460px;
+  margin:auto;
+  padding:10px 12px calc(var(--dockPeek)+var(--safeBottom)+18px);
+}
 
-    .title{
-      text-align:center;
-      font-size:24px;
-      font-weight:1000;
-      letter-spacing:.3px;
-      margin:6px 0 14px;
-      text-shadow:0 2px 10px rgba(0,0,0,.35);
-    }
+/* TITLE */
+.title{
+  text-align:center;
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:.5px;
+  margin:6px 0 12px;
+}
 
-    .hero{
-      position:relative;
-      border-radius:28px;
-      padding:12px;
-      background:linear-gradient(180deg, rgba(74,90,210,.90), rgba(48,61,154,.90));
-      border:1px solid rgba(255,255,255,.07);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
+/* HERO */
+.hero{
+  border-radius:24px;
+  padding:10px;
+  background:linear-gradient(180deg,#4a5bd4,#313fa0);
+  border:1px solid var(--line);
+}
 
-    .hero:before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), transparent 26%);
-      pointer-events:none;
-    }
+.heroInner{
+  border-radius:20px;
+  padding:18px 12px;
+  text-align:center;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+}
 
-    .heroInner{
-      position:relative;
-      z-index:1;
-      min-height:182px;
-      border-radius:24px;
-      border:1px solid rgba(255,255,255,.08);
-      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      text-align:center;
-      padding:14px 12px;
-    }
+.guard{
+  font-size:54px;
+  font-weight:900;
+  letter-spacing:-1px;
+}
+.guard.ready{color:var(--green)}
+.guard.block{color:var(--yellow)}
+.guard.fail{color:var(--red)}
 
-    .guard{
-      margin:0;
-      max-width:100%;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      line-height:.9;
-      letter-spacing:-1.4px;
-      font-size:60px;
-      font-weight:1000;
-    }
-    .guard.ready{color:var(--green)}
-    .guard.warn{color:#c0daf0}
-    .guard.block{color:#e7d78d}
-    .guard.fail{color:#e3b4b4}
+.heroHint{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:4px;
+}
 
-    .heroHint{
-      margin-top:7px;
-      min-height:20px;
-      font-size:13px;
-      font-weight:800;
-      color:rgba(255,255,255,.72);
-    }
+.pnl{
+  font-size:52px;
+  font-weight:900;
+  margin-top:6px;
+}
+.pnlSub{
+  font-size:13px;
+  color:var(--muted);
+}
 
-    .pnl{
-      margin-top:7px;
-      font-size:58px;
-      line-height:.95;
-      letter-spacing:-2px;
-      font-weight:1000;
-    }
+/* GRID */
+.grid2{
+  margin-top:8px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
 
-    .pnlSub{
-      margin-top:3px;
-      font-size:15px;
-      font-weight:900;
-      color:rgba(255,255,255,.72);
-    }
+.card{
+  border-radius:18px;
+  padding:12px;
+  background:linear-gradient(180deg,#2b388a,#1c2663);
+}
 
-    .grid2{
-      margin-top:10px;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
+.cardLabel{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+.cardVal{
+  font-size:22px;
+  font-weight:900;
+}
 
-    .card{
-      min-height:88px;
-      border-radius:22px;
-      padding:13px 16px;
-      background:linear-gradient(180deg, rgba(43,56,138,.98), rgba(28,39,98,.98));
-      border:1px solid var(--line);
-      box-shadow:0 10px 24px rgba(0,0,0,.22);
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-    }
+/* BUTTONS */
+.actionGrid{
+  margin-top:8px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
 
-    .cardLabel{
-      font-size:15px;
-      font-weight:1000;
-      color:rgba(255,255,255,.92);
-      margin-bottom:7px;
-      line-height:1;
-    }
+button{
+  border:none;
+  border-radius:16px;
+  font-weight:900;
+  font-size:14px;
+  min-height:52px;
+}
 
-    .cardVal{
-      font-size:25px;
-      line-height:1;
-      font-weight:1000;
-      letter-spacing:-.35px;
-    }
+.buy{background:#a8d192;color:#fff}
+.sell{background:#d8c4c4}
+.win{background:#a8d192}
+.loss{background:#d8c4c4}
+.reset{
+  grid-column:1/-1;
+  background:#d8cf8a;
+}
 
-    .ok{color:var(--green)}
-    .fail{color:#e2b1b1}
-    .mid{color:var(--yellow)}
-    .ice{color:var(--cyan)}
+/* MINI */
+.miniGrid{
+  margin-top:8px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
 
-    .actionGrid{
-      margin-top:10px;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
+.mini{
+  background:#202a6e;
+  border-radius:16px;
+  padding:10px;
+}
+.miniTop{
+  font-size:11px;
+  color:var(--muted);
+}
+.miniVal{
+  font-size:18px;
+  font-weight:900;
+}
 
-    button{
-      border:none;
-      outline:none;
-      appearance:none;
-      -webkit-appearance:none;
-      font-family:inherit;
-      cursor:pointer;
-      transition:transform .08s ease, opacity .15s ease, filter .15s ease;
-    }
-    button:active{transform:scale(.985)}
-    button:disabled{
-      opacity:.45;
-      cursor:not-allowed;
-      filter:grayscale(.2) brightness(.85);
-    }
+/* SCORE */
+.score{
+  margin-top:8px;
+  padding:12px;
+  border-radius:20px;
+  background:linear-gradient(180deg,#4050b8,#2d3c97);
+}
 
-    .actBtn{
-      min-height:56px;
-      border-radius:18px;
-      font-size:14px;
-      font-weight:1000;
-      letter-spacing:.15px;
-      color:#fff;
-      box-shadow:0 8px 18px rgba(0,0,0,.16);
-    }
+.scoreHead{
+  display:flex;
+  justify-content:space-between;
+}
 
-    .buyBtn,.winBtn{
-      background:linear-gradient(90deg,#b9dca3,#a8d192);
-      color:#fbfdff;
-    }
+.scoreVal{
+  font-size:48px;
+  font-weight:900;
+}
 
-    .sellBtn,.lossBtn{
-      background:linear-gradient(90deg,#ddc9c9,#d4c0c0);
-      color:#fbfdff;
-    }
+.bar{
+  height:12px;
+  border-radius:10px;
+  margin-top:6px;
+  background:#ffffff22;
+}
+.fill{
+  height:100%;
+  border-radius:10px;
+  background:linear-gradient(90deg,#e6b7b3,#b7db98,#a9d8ef);
+}
 
-    .resetBtn{
-      grid-column:1 / -1;
-      min-height:60px;
-      background:linear-gradient(90deg,#d7cf8d,#d9d28f);
-      color:#fffef5;
-    }
+/* LOG */
+.log{
+  margin-top:8px;
+  padding:12px;
+  border-radius:20px;
+  background:#202a6e;
+  font-size:13px;
+}
 
-    .miniGrid{
-      margin-top:10px;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
+/* DOCK */
+.dock{
+  position:fixed;
+  left:12px;
+  right:12px;
+  bottom:calc(var(--safeBottom)+6px);
+}
 
-    .miniCard{
-      min-height:80px;
-      border-radius:22px;
-      padding:13px 16px;
-      background:linear-gradient(180deg, rgba(43,56,138,.98), rgba(28,39,98,.98));
-      border:1px solid var(--line);
-      box-shadow:0 10px 24px rgba(0,0,0,.22);
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-    }
+.dockPanel{
+  border-radius:20px;
+  background:linear-gradient(180deg,#8c96f7,#6c75e2);
+  overflow:hidden;
+}
 
-    .miniTop{
-      font-size:11px;
-      font-weight:1000;
-      color:rgba(255,255,255,.9);
-      margin-bottom:7px;
-      line-height:1;
-    }
+.dockHead{
+  padding:10px;
+  font-size:14px;
+}
 
-    .miniBig{
-      font-size:20px;
-      line-height:1;
-      font-weight:1000;
-      letter-spacing:-.35px;
-    }
+.dockBody{
+  padding:10px;
+}
 
-    .miniBtn{
-      text-align:left;
-      min-height:80px;
-      border-radius:22px;
-      padding:13px 16px;
-      background:linear-gradient(180deg, rgba(43,56,138,.98), rgba(28,39,98,.98));
-      border:1px solid var(--line);
-      box-shadow:0 10px 24px rgba(0,0,0,.22);
-      color:var(--text);
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-    }
-
-    .scoreCard{
-      margin-top:10px;
-      border-radius:24px;
-      padding:15px;
-      background:linear-gradient(180deg, rgba(64,78,188,.93), rgba(43,56,143,.93));
-      border:1px solid rgba(255,255,255,.07);
-      box-shadow:var(--shadow);
-    }
-
-    .scoreHead{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      gap:10px;
-    }
-
-    .scoreTitle{
-      font-size:17px;
-      font-weight:1000;
-      line-height:1;
-    }
-
-    .scoreVal{
-      font-size:54px;
-      line-height:.86;
-      font-weight:1000;
-      letter-spacing:-2px;
-      color:var(--cyan);
-    }
-
-    .barTrack{
-      margin-top:10px;
-      height:15px;
-      border-radius:999px;
-      overflow:hidden;
-      background:rgba(255,255,255,.13);
-      border:1px solid rgba(255,255,255,.05);
-    }
-
-    .barFill{
-      width:0%;
-      height:100%;
-      border-radius:999px;
-      background:linear-gradient(90deg,#e6b7b3 0%,#dbd389 28%,#b7db98 58%,#a9d8ef 100%);
-      transition:width .22s ease;
-    }
-
-    .factorGrid{
-      margin-top:11px;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:9px;
-    }
-
-    .factor{
-      min-height:74px;
-      border-radius:18px;
-      padding:11px 13px;
-      background:rgba(21,28,87,.48);
-      border:1px solid rgba(255,255,255,.05);
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
-    }
-
-    .factorTop{
-      font-size:12px;
-      font-weight:800;
-      color:rgba(255,255,255,.68);
-      margin-bottom:7px;
-      line-height:1;
-    }
-
-    .factorVal{
-      font-size:20px;
-      font-weight:1000;
-      letter-spacing:-.3px;
-      line-height:1;
-    }
-
-    .logCard{
-      margin-top:10px;
-      border-radius:24px;
-      padding:15px;
-      background:linear-gradient(180deg, rgba(42,54,137,.98), rgba(30,41,106,.98));
-      border:1px solid rgba(255,255,255,.06);
-      box-shadow:0 12px 26px rgba(0,0,0,.24);
-    }
-
-    .logTitle{
-      font-size:18px;
-      font-weight:1000;
-      line-height:1;
-      margin-bottom:10px;
-    }
-
-    .logList{
-      max-height:320px;
-      overflow:auto;
-      padding-right:4px;
-      scrollbar-width:thin;
-    }
-
-    .logEntry{
-      padding:10px 2px;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:14px;
-      line-height:1.36;
-      word-break:break-word;
-      color:rgba(243,246,255,.9);
-    }
-    .logEntry:last-child{border-bottom:none}
-    .logQueued{color:#dbe0f8}
-    .logProcessing{color:#e4cf84}
-    .logExecuted{color:#eef2ff}
-    .logWin{color:var(--green)}
-    .logLoss{color:#e3b1b1}
-    .logReset{color:#eef2ff}
-    .logSystem{color:#d6ddf7}
-
-    .dock{
-      position:fixed;
-      left:14px;
-      right:14px;
-      bottom:calc(var(--safeBottom) + 6px);
-      z-index:80;
-      pointer-events:none;
-    }
-
-    .dockPanel{
-      width:min(100%,460px);
-      margin:0 auto;
-      background:linear-gradient(180deg, rgba(136,146,247,.97), rgba(112,123,231,.97));
-      border:1px solid rgba(255,255,255,.16);
-      border-radius:24px;
-      box-shadow:0 18px 36px rgba(0,0,0,.36);
-      overflow:hidden;
-      pointer-events:auto;
-      backdrop-filter:blur(10px);
-    }
-
-    .dockHead{
-      padding:12px 16px 11px;
-      display:flex;
-      align-items:center;
-      gap:12px;
-      cursor:pointer;
-      user-select:none;
-      min-height:64px;
-    }
-
-    .dockGrip{
-      width:44px;
-      height:7px;
-      border-radius:999px;
-      background:rgba(255,255,255,.25);
-      flex:0 0 auto;
-    }
-
-    .dockTexts{
-      min-width:0;
-      flex:1;
-    }
-
-    .dockTitle{
-      font-size:16px;
-      font-weight:1000;
-      line-height:1;
-    }
-
-    .dockMeta{
-      margin-top:4px;
-      font-size:12px;
-      color:rgba(255,255,255,.82);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    .dockChevron{
-      font-size:22px;
-      color:#fff;
-      line-height:1;
-      transition:transform .18s ease;
-      flex:0 0 auto;
-    }
-
-    .dockPanel.open .dockChevron{
-      transform:rotate(180deg);
-    }
-
-    .dockBody{
-      max-height:0;
-      overflow:hidden;
-      padding:0 16px;
-      transition:max-height .22s ease, padding .22s ease;
-    }
-
-    .dockPanel.open .dockBody{
-      max-height:220px;
-      padding:0 16px 16px;
-    }
-
-    .dockBtns{
-      display:grid;
-      gap:10px;
-    }
-
-    .dockBtn{
-      min-height:54px;
-      border-radius:16px;
-      font-size:15px;
-      font-weight:1000;
-      letter-spacing:.2px;
-      color:#fff;
-      box-shadow:0 8px 18px rgba(0,0,0,.14);
-    }
-
-    .dockSync{
-      background:linear-gradient(90deg,#9ba9eb,#8a98e0);
-      color:#fbfdff;
-    }
-
-    @media (max-width:420px){
-      .wrap{padding-left:12px;padding-right:12px}
-      .title{font-size:23px;margin:6px 0 12px}
-      .hero{padding:11px}
-      .heroInner{min-height:174px}
-      .guard{font-size:56px}
-      .heroHint{font-size:13px}
-      .pnl{font-size:54px}
-      .card,.miniCard,.miniBtn{min-height:78px}
-      .cardLabel{font-size:14px}
-      .cardVal{font-size:24px}
-      .actBtn{min-height:54px;font-size:14px}
-      .resetBtn{min-height:58px}
-      .scoreVal{font-size:50px}
-      .factor{min-height:72px}
-      .factorVal{font-size:19px}
-      .dockHead{min-height:62px}
-      .dockTitle{font-size:16px}
-      .dockBtn{min-height:52px}
-    }
-  </style>
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="title">V19.9.3 HARD LIVE ⚡</div>
+<div class="wrap">
 
-    <section class="hero">
-      <div class="heroInner">
-        <div id="guard" class="guard ready">READY</div>
-        <div id="heroHint" class="heroHint">System bereit.</div>
-        <div id="pnl" class="pnl">0</div>
-        <div class="pnlSub">Net PnL</div>
-      </div>
-    </section>
+<div class="title">V19.9.4 HARD LIVE ⚡</div>
 
-    <section class="grid2">
-      <div class="card">
-        <div class="cardLabel">STATUS</div>
-        <div id="healthStatus" class="cardVal ok">OK</div>
-      </div>
-      <div class="card">
-        <div class="cardLabel">BUY POST</div>
-        <div id="healthBuy" class="cardVal ok">OK</div>
-      </div>
-      <div class="card">
-        <div class="cardLabel">SELL POST</div>
-        <div id="healthSell" class="cardVal ok">OK</div>
-      </div>
-      <div class="card">
-        <div class="cardLabel">CONF</div>
-        <div id="confVal" class="cardVal mid">62%</div>
-      </div>
-    </section>
-
-    <section class="actionGrid">
-      <button id="btnBuy" class="actBtn buyBtn">BUY</button>
-      <button id="btnSell" class="actBtn sellBtn">SELL</button>
-      <button id="btnWin" class="actBtn winBtn">WIN</button>
-      <button id="btnLoss" class="actBtn lossBtn">LOSS</button>
-      <button id="btnReset" class="actBtn resetBtn">RESET</button>
-    </section>
-
-    <section class="miniGrid">
-      <button id="autoOnBtn" class="miniBtn">
-        <div class="miniTop">AUTO ON</div>
-        <div class="miniBig ice">AUTO ON</div>
-      </button>
-      <button id="autoOffBtn" class="miniBtn">
-        <div class="miniTop">AUTO OFF</div>
-        <div class="miniBig">AUTO OFF</div>
-      </button>
-
-      <div class="miniCard">
-        <div class="miniTop">QUEUE</div>
-        <div id="queueVal" class="miniBig">0</div>
-      </div>
-      <div class="miniCard">
-        <div class="miniTop">PROCESSING</div>
-        <div id="processingVal" class="miniBig">OFF</div>
-      </div>
-
-      <div class="miniCard">
-        <div class="miniTop">AUTO</div>
-        <div id="autoStateVal" class="miniBig">OFF</div>
-      </div>
-      <div class="miniCard">
-        <div class="miniTop">TRIGGER</div>
-        <div id="triggerVal" class="miniBig">80</div>
-      </div>
-    </section>
-
-    <section class="scoreCard">
-      <div class="scoreHead">
-        <div class="scoreTitle">AI SCORE</div>
-        <div id="scoreVal" class="scoreVal">82</div>
-      </div>
-      <div class="barTrack"><div id="scoreBar" class="barFill"></div></div>
-
-      <div class="factorGrid">
-        <div class="factor">
-          <div class="factorTop">Trend</div>
-          <div id="trendVal" class="factorVal mid">72.3</div>
-        </div>
-        <div class="factor">
-          <div class="factorTop">Volume</div>
-          <div id="volumeVal" class="factorVal mid">65.5</div>
-        </div>
-        <div class="factor">
-          <div class="factorTop">Structure</div>
-          <div id="structureVal" class="factorVal ok">80.1</div>
-        </div>
-        <div class="factor">
-          <div class="factorTop">Volatility</div>
-          <div id="volatilityVal" class="factorVal fail">51.2</div>
-        </div>
-        <div class="factor">
-          <div class="factorTop">Liquidity</div>
-          <div id="liquidityVal" class="factorVal ok">81.9</div>
-        </div>
-        <div class="factor">
-          <div class="factorTop">Session</div>
-          <div id="sessionVal" class="factorVal mid">68.0</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="logCard">
-      <div class="logTitle">LOG</div>
-      <div id="logList" class="logList">
-        <div class="logEntry">Keine Einträge.</div>
-      </div>
-    </section>
+<div class="hero">
+  <div class="heroInner">
+    <div class="guard ready">READY</div>
+    <div class="heroHint">System bereit.</div>
+    <div class="pnl">0</div>
+    <div class="pnlSub">Net PnL</div>
   </div>
+</div>
 
-  <div class="dock">
-    <div id="dockPanel" class="dockPanel">
-      <div id="dockHead" class="dockHead">
-        <div class="dockGrip"></div>
-        <div class="dockTexts">
-          <div class="dockTitle">Quick Dock</div>
-          <div id="dockMeta" class="dockMeta">auto off • queue 0</div>
-        </div>
-        <div class="dockChevron">⌃</div>
-      </div>
-      <div class="dockBody">
-        <div class="dockBtns">
-          <button id="dockBuy" class="dockBtn buyBtn">BUY</button>
-          <button id="dockSell" class="dockBtn sellBtn">SELL</button>
-          <button id="dockSync" class="dockBtn dockSync">SYNC</button>
-        </div>
-      </div>
+<div class="grid2">
+  <div class="card"><div class="cardLabel">STATUS</div><div class="cardVal">OK</div></div>
+  <div class="card"><div class="cardLabel">BUY POST</div><div class="cardVal">OK</div></div>
+  <div class="card"><div class="cardLabel">SELL POST</div><div class="cardVal">OK</div></div>
+  <div class="card"><div class="cardLabel">CONF</div><div class="cardVal">62%</div></div>
+</div>
+
+<div class="actionGrid">
+  <button class="buy">BUY</button>
+  <button class="sell">SELL</button>
+  <button class="win">WIN</button>
+  <button class="loss">LOSS</button>
+  <button class="reset">RESET</button>
+</div>
+
+<div class="miniGrid">
+  <div class="mini"><div class="miniTop">QUEUE</div><div class="miniVal">0</div></div>
+  <div class="mini"><div class="miniTop">PROCESSING</div><div class="miniVal">OFF</div></div>
+</div>
+
+<div class="score">
+  <div class="scoreHead">
+    <div>AI SCORE</div>
+    <div class="scoreVal">82</div>
+  </div>
+  <div class="bar"><div class="fill" style="width:82%"></div></div>
+</div>
+
+<div class="log">Keine Einträge.</div>
+
+</div>
+
+<div class="dock">
+  <div class="dockPanel">
+    <div class="dockHead">Quick Dock</div>
+    <div class="dockBody">
+      <button class="buy">BUY</button>
+      <button class="sell">SELL</button>
     </div>
   </div>
+</div>
 
-  <script>
-    const STORAGE_KEY = 'v19_9_3_ui_state';
-
-    const ui = {
-      autoEnabled: false,
-      dockOpen: false,
-      trigger: 80
-    };
-
-    function loadUI(){
-      try{
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if(!raw) return;
-        Object.assign(ui, JSON.parse(raw) || {});
-      }catch(e){}
-    }
-
-    function saveUI(){
-      try{
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(ui));
-      }catch(e){}
-    }
-
-    loadUI();
-
-    const $ = id => document.getElementById(id);
-
-    const els = {
-      guard:$('guard'),
-      heroHint:$('heroHint'),
-      pnl:$('pnl'),
-      healthStatus:$('healthStatus'),
-      healthBuy:$('healthBuy'),
-      healthSell:$('healthSell'),
-      confVal:$('confVal'),
-      queueVal:$('queueVal'),
-      processingVal:$('processingVal'),
-      autoStateVal:$('autoStateVal'),
-      triggerVal:$('triggerVal'),
-      scoreVal:$('scoreVal'),
-      scoreBar:$('scoreBar'),
-      trendVal:$('trendVal'),
-      volumeVal:$('volumeVal'),
-      structureVal:$('structureVal'),
-      volatilityVal:$('volatilityVal'),
-      liquidityVal:$('liquidityVal'),
-      sessionVal:$('sessionVal'),
-      logList:$('logList'),
-      dockMeta:$('dockMeta'),
-      dockPanel:$('dockPanel'),
-      dockHead:$('dockHead'),
-      autoOnBtn:$('autoOnBtn'),
-      autoOffBtn:$('autoOffBtn'),
-      btnBuy:$('btnBuy'),
-      btnSell:$('btnSell'),
-      btnWin:$('btnWin'),
-      btnLoss:$('btnLoss'),
-      btnReset:$('btnReset'),
-      dockBuy:$('dockBuy'),
-      dockSell:$('dockSell'),
-      dockSync:$('dockSync')
-    };
-
-    const fallbackState = {
-      pnl:0,
-      guard:'READY',
-      reasonHint:'System bereit.',
-      processing:false,
-      queueLength:0,
-      confidence:62,
-      score:82,
-      health:{ status:true, buy:true, sell:true },
-      factors:{
-        trend:72.3,
-        volume:65.5,
-        structure:80.1,
-        volatility:51.2,
-        liquidity:81.9,
-        session:68.0
-      },
-      log:[]
-    };
-
-    function safeNum(v, fb=0){
-      const n = Number(v);
-      return Number.isFinite(n) ? n : fb;
-    }
-
-    function fmtPnL(v){
-      const n = safeNum(v,0);
-      return Number.isInteger(n) ? String(n) : n.toFixed(2);
-    }
-
-    function shortGuard(raw){
-      const g = String(raw || '').toUpperCase().trim();
-      if(g === 'READY' || g === 'SYSTEM_READY') return 'READY';
-      if(g.includes('SESSION')) return 'SESSION...';
-      if(g.includes('BLOCK') || g.includes('LOCK')) return 'LOCKED';
-      if(g.includes('COOL')) return 'COOL...';
-      if(g.includes('WARN')) return 'WARN...';
-      if(g.includes('LOSS')) return 'LOSS...';
-      return g || 'READY';
-    }
-
-    function guardClass(raw){
-      const g = String(raw || '').toUpperCase();
-      if(g.includes('READY')) return 'ready';
-      if(g.includes('SESSION') || g.includes('WARN') || g.includes('COOL')) return 'block';
-      if(g.includes('BLOCK') || g.includes('LOCK') || g.includes('LOSS')) return 'fail';
-      return 'warn';
-    }
-
-    function boolText(v){ return v ? 'OK' : 'FAIL'; }
-    function boolClass(v){ return v ? 'ok' : 'fail'; }
-
-    function factorClass(v){
-      const n = safeNum(v);
-      if(n >= 75) return 'ok';
-      if(n >= 60) return 'mid';
-      return 'fail';
-    }
-
-    function escapeHtml(str){
-      return String(str)
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;')
-        .replaceAll('"','&quot;')
-        .replaceAll("'","&#039;");
-    }
-
-    function deriveHealth(state){
-      const g = String(state.guard || '').toUpperCase();
-      const tradable = g === 'READY' || g === 'SYSTEM_READY';
-      return {
-        status:true,
-        buy:tradable,
-        sell:tradable
-      };
-    }
-
-    function normalizeState(api){
-      const s = JSON.parse(JSON.stringify(fallbackState));
-
-      s.pnl = safeNum(api.pnl, 0);
-      s.guard = String(api.guard || api.reason || 'READY');
-      s.reasonHint = String(api.reasonHint || api.label || 'System bereit.');
-      s.processing = !!api.processing;
-      s.queueLength = safeNum(api.queueLength, Array.isArray(api.queue) ? api.queue.length : 0);
-      s.confidence = safeNum(api.confidence, 62);
-      s.score = safeNum(api.score, api.aiScore ?? 82);
-
-      s.health = api.health || deriveHealth(s);
-
-      s.factors = {
-        trend: safeNum(api.trend, api.factors?.trend ?? 72.3),
-        volume: safeNum(api.volume, api.factors?.volume ?? 65.5),
-        structure: safeNum(api.structure, api.factors?.structure ?? 80.1),
-        volatility: safeNum(api.volatility, api.factors?.volatility ?? 51.2),
-        liquidity: safeNum(api.liquidity, api.factors?.liquidity ?? 81.9),
-        session: safeNum(api.session, api.factors?.session ?? 68.0)
-      };
-
-      s.log = Array.isArray(api.log) ? api.log.slice().reverse() : [];
-      return s;
-    }
-
-    function renderHealth(el, ok){
-      el.textContent = boolText(ok);
-      el.className = `cardVal ${boolClass(ok)}`;
-    }
-
-    function renderFactor(el, value){
-      el.textContent = safeNum(value).toFixed(1);
-      el.className = `factorVal ${factorClass(value)}`;
-    }
-
-    function formatLogTime(input){
-      if(!input) return '--:--:--';
-
-      const str = String(input);
-
-      if (/^\d{2}:\d{2}:\d{2}$/.test(str)) return str;
-
-      const d = new Date(str);
-      if (!Number.isNaN(d.getTime())) {
-        const hh = String(d.getHours()).padStart(2,'0');
-        const mm = String(d.getMinutes()).padStart(2,'0');
-        const ss = String(d.getSeconds()).padStart(2,'0');
-        return `${hh}:${mm}:${ss}`;
-      }
-
-      return str;
-    }
-
-    function renderLog(log){
-      if(!Array.isArray(log) || !log.length){
-        els.logList.innerHTML = `<div class="logEntry">Keine Einträge.</div>`;
-        return;
-      }
-
-      const html = log.slice(0,20).map(item=>{
-        const type = String(item.type || '').toUpperCase();
-        const time = escapeHtml(formatLogTime(item.time || item.ts));
-        const msg = escapeHtml(item.msg || item.message || '-');
-
-        let cls = 'logSystem';
-        if(type.includes('QUEUE')) cls = 'logQueued';
-        else if(type.includes('PROCESS')) cls = 'logProcessing';
-        else if(type.includes('EXECUT')) cls = 'logExecuted';
-        else if(type.includes('WIN')) cls = 'logWin';
-        else if(type.includes('LOSS')) cls = 'logLoss';
-        else if(type.includes('RESET')) cls = 'logReset';
-
-        return `<div class="logEntry ${cls}">${time} - ${msg}</div>`;
-      }).join('');
-
-      els.logList.innerHTML = html;
-    }
-
-    function applyUI(){
-      els.autoStateVal.textContent = ui.autoEnabled ? 'ON' : 'OFF';
-      els.triggerVal.textContent = String(ui.trigger);
-      els.dockMeta.textContent = `auto ${ui.autoEnabled ? 'on' : 'off'} • queue ${els.queueVal.textContent || '0'}`;
-      els.dockPanel.classList.toggle('open', !!ui.dockOpen);
-      saveUI();
-    }
-
-    function render(state){
-      els.guard.textContent = shortGuard(state.guard);
-      els.guard.className = `guard ${guardClass(state.guard)}`;
-      els.heroHint.textContent = state.reasonHint || 'System bereit.';
-      els.pnl.textContent = fmtPnL(state.pnl);
-
-      renderHealth(els.healthStatus, !!state.health.status);
-      renderHealth(els.healthBuy, !!state.health.buy);
-      renderHealth(els.healthSell, !!state.health.sell);
-
-      els.confVal.textContent = `${safeNum(state.confidence,62)}%`;
-      els.queueVal.textContent = String(safeNum(state.queueLength,0));
-      els.processingVal.textContent = state.processing ? 'ON' : 'OFF';
-
-      const score = Math.max(0, Math.min(100, safeNum(state.score,82)));
-      els.scoreVal.textContent = String(Math.round(score));
-      els.scoreBar.style.width = `${score}%`;
-
-      renderFactor(els.trendVal, state.factors.trend);
-      renderFactor(els.volumeVal, state.factors.volume);
-      renderFactor(els.structureVal, state.factors.structure);
-      renderFactor(els.volatilityVal, state.factors.volatility);
-      renderFactor(els.liquidityVal, state.factors.liquidity);
-      renderFactor(els.sessionVal, state.factors.session);
-
-      renderLog(state.log);
-
-      const disableTrades = state.processing || !state.health.buy || !state.health.sell;
-      els.btnBuy.disabled = disableTrades;
-      els.btnSell.disabled = disableTrades;
-      els.dockBuy.disabled = disableTrades;
-      els.dockSell.disabled = disableTrades;
-
-      applyUI();
-    }
-
-    async function getStatus(){
-      const res = await fetch('/api/status', { cache:'no-store' });
-      if(!res.ok) throw new Error('status failed');
-      return await res.json();
-    }
-
-    async function postJSON(url, body={}){
-      const res = await fetch(url, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body:JSON.stringify(body)
-      });
-      if(!res.ok) throw new Error(`${url} failed`);
-      return await res.json();
-    }
-
-    async function performAction(url){
-      try{
-        const data = await postJSON(url,{});
-        render(normalizeState(data.status || data));
-        if(url === '/api/reset'){
-          setTimeout(syncNow, 260);
-        }
-      }catch(e){
-        console.error(e);
-      }
-    }
-
-    async function syncNow(){
-      try{
-        const data = await getStatus();
-        render(normalizeState(data));
-      }catch(e){
-        console.error(e);
-      }
-    }
-
-    els.btnBuy.onclick = () => performAction('/api/buy');
-    els.btnSell.onclick = () => performAction('/api/sell');
-    els.btnWin.onclick = () => performAction('/api/win');
-    els.btnLoss.onclick = () => performAction('/api/loss');
-    els.btnReset.onclick = () => performAction('/api/reset');
-
-    els.dockBuy.onclick = () => performAction('/api/buy');
-    els.dockSell.onclick = () => performAction('/api/sell');
-    els.dockSync.onclick = () => syncNow();
-
-    els.autoOnBtn.onclick = () => {
-      ui.autoEnabled = true;
-      applyUI();
-    };
-
-    els.autoOffBtn.onclick = () => {
-      ui.autoEnabled = false;
-      applyUI();
-    };
-
-    els.dockHead.onclick = () => {
-      ui.dockOpen = !ui.dockOpen;
-      applyUI();
-    };
-
-    render(fallbackState);
-    applyUI();
-    syncNow();
-    setInterval(syncNow, 2200);
-  </script>
 </body>
 </html>
