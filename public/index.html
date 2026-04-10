@@ -3,17 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V20.5 HARD LIVE</title>
+  <title>V20.5.1 HARD LIVE</title>
   <style>
     :root{
       --bg:#02040a;
       --panel:#252f79;
-      --panelDeep:#1a2256;
       --panelHero1:#6675ee;
       --panelHero2:#3a49b2;
       --line:rgba(255,255,255,.07);
       --text:#f5f7ff;
-      --muted:#bec5df;
       --green:#b9d99b;
       --red:#dfb8b8;
       --yellow:#ddd08a;
@@ -587,7 +585,7 @@
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V20.5 HARD LIVE ⚡</span>
+      <span>V20.5.1 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -729,6 +727,9 @@
       log: []
     };
 
+    let currentState = JSON.parse(JSON.stringify(fallbackState));
+    let hasLoadedOnce = false;
+
     const $ = id => document.getElementById(id);
 
     const els = {
@@ -818,33 +819,36 @@
     }
 
     function normalizeState(api){
-      const s = JSON.parse(JSON.stringify(fallbackState));
+      const prev = currentState || fallbackState;
+      const s = JSON.parse(JSON.stringify(prev));
 
-      s.pnl = safeNum(api.pnl, 0);
-      s.guard = String(api.guard || "READY");
-      s.reasonHint = String(api.reasonHint || "System bereit.");
-      s.processing = !!api.processing;
-      s.queueLength = safeNum(api.queueLength, Array.isArray(api.queue) ? api.queue.length : 0);
-      s.confidence = safeNum(api.confidence, 62);
-      s.score = safeNum(api.score, 82);
-      s.autoEnabled = !!api.autoEnabled;
+      s.pnl = safeNum(api.pnl, prev.pnl);
+      s.guard = String(api.guard ?? prev.guard ?? "READY");
+      s.reasonHint = String(api.reasonHint ?? prev.reasonHint ?? "System bereit.");
+      s.processing = typeof api.processing === "boolean" ? api.processing : prev.processing;
+      s.queueLength = safeNum(api.queueLength, Array.isArray(api.queue) ? api.queue.length : prev.queueLength);
+      s.confidence = safeNum(api.confidence, prev.confidence ?? 62);
+      s.score = safeNum(api.score, prev.score ?? 82);
+      s.autoEnabled = typeof api.autoEnabled === "boolean" ? api.autoEnabled : prev.autoEnabled;
 
       s.health = {
-        status: !!(api.health?.status ?? true),
-        buy: !!(api.health?.buy ?? true),
-        sell: !!(api.health?.sell ?? true)
+        status: typeof api.health?.status === "boolean" ? api.health.status : prev.health.status,
+        buy: typeof api.health?.buy === "boolean" ? api.health.buy : prev.health.buy,
+        sell: typeof api.health?.sell === "boolean" ? api.health.sell : prev.health.sell
       };
 
       s.factors = {
-        trend: safeNum(api.factors?.trend, 72.3),
-        volume: safeNum(api.factors?.volume, 65.5),
-        structure: safeNum(api.factors?.structure, 80.1),
-        volatility: safeNum(api.factors?.volatility, 51.2),
-        liquidity: safeNum(api.factors?.liquidity, 81.9),
-        session: safeNum(api.factors?.session, 68.0)
+        trend: safeNum(api.factors?.trend, prev.factors.trend),
+        volume: safeNum(api.factors?.volume, prev.factors.volume),
+        structure: safeNum(api.factors?.structure, prev.factors.structure),
+        volatility: safeNum(api.factors?.volatility, prev.factors.volatility),
+        liquidity: safeNum(api.factors?.liquidity, prev.factors.liquidity),
+        session: safeNum(api.factors?.session, prev.factors.session)
       };
 
-      s.log = Array.isArray(api.log) ? api.log.slice().reverse() : [];
+      s.log = Array.isArray(api.log) ? api.log.slice().reverse() : prev.log;
+
+      currentState = s;
       return s;
     }
 
@@ -903,20 +907,6 @@
       return "--:--:--";
     }
 
-    function prettifyLogMessage(item){
-      const type = String(item.type || "").toUpperCase();
-      const raw = String(item.msg || item.message || "-");
-
-      if (type === "QUEUE") return raw.replace(/^BUY queued$/i, "BUY queued").replace(/^SELL queued$/i, "SELL queued");
-      if (type === "PROCESSING") return raw.replace(/^BUY processing$/i, "BUY processing").replace(/^SELL processing$/i, "SELL processing");
-      if (type === "EXECUTED") return raw.replace(/^BUY executed$/i, "BUY executed").replace(/^SELL executed$/i, "SELL executed");
-      if (type === "WIN") return raw;
-      if (type === "LOSS") return raw;
-      if (type === "RESET") return raw;
-      if (type === "AUTO") return raw;
-      return raw;
-    }
-
     function renderLog(log){
       if (!Array.isArray(log) || !log.length) {
         els.logList.innerHTML = `<div class="logEntry">Keine Einträge.</div>`;
@@ -926,7 +916,7 @@
       const html = log.slice(0, 28).map(item => {
         const type = String(item.type || "").toUpperCase();
         const time = escapeHtml(formatLogTime(item.localTime || item.time || item.ts));
-        const msg = escapeHtml(prettifyLogMessage(item));
+        const msg = escapeHtml(String(item.msg || item.message || "-"));
 
         let cls = "logSystem";
         if (type.includes("QUEUE")) cls = "logQueued";
@@ -1067,8 +1057,10 @@
         if (btn) pulseButton(btn);
         const data = await postJSON(url, {});
         render(normalizeState(data.status || data || {}));
+        renderSync("ok");
+
         if (url === "/api/reset") {
-          setTimeout(syncNow, 260);
+          setTimeout(() => syncNow(false), 260);
         }
       } catch(e){
         console.error(e);
@@ -1083,18 +1075,23 @@
         const nextUrl = current.autoEnabled ? "/api/auto/off" : "/api/auto/on";
         const data = await postJSON(nextUrl, {});
         render(normalizeState(data.status || data || {}));
+        renderSync("ok");
       } catch(e){
         console.error(e);
         renderSync("fail");
       }
     }
 
-    async function syncNow(){
-      renderSync("pending");
+    async function syncNow(showPending = false){
+      if (showPending && !hasLoadedOnce) {
+        renderSync("pending");
+      }
+
       try{
         const data = await getStatus();
         render(normalizeState(data || {}));
         renderSync("ok");
+        hasLoadedOnce = true;
       } catch(e){
         console.error(e);
         renderSync("fail");
@@ -1108,10 +1105,10 @@
     els.btnReset.onclick = () => performAction("/api/reset", els.btnReset);
     els.autoToggleBtn.onclick = toggleAuto;
 
-    render(fallbackState);
-    renderSync("pending");
-    syncNow();
-    setInterval(syncNow, 2200);
+    render(currentState);
+    renderSync("ok");
+    syncNow(true);
+    setInterval(() => syncNow(false), 2200);
   </script>
 </body>
 </html>
