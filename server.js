@@ -25,6 +25,7 @@ const CONFIG = {
   maxSessionTrades: 50,
   autoIntervalMs: 3000,
   processDelayMs: 650,
+  actionCooldownMs: 1200,
   winStep: 4,
   lossStep: -4,
   dailyLossLimit: -20,
@@ -35,6 +36,10 @@ const CONFIG = {
 /* =========================
    HELPERS
 ========================= */
+function nowMs() {
+  return Date.now();
+}
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -55,6 +60,10 @@ function getDayKey(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
 /* =========================
    STATE
 ========================= */
@@ -67,6 +76,8 @@ const state = {
   queue: [],
   autoEnabled: false,
   lastActionTs: 0,
+
+  cooldownUntil: 0,
 
   sessionTrades: 0,
   maxSessionTrades: CONFIG.maxSessionTrades,
@@ -124,14 +135,36 @@ function resetHealth() {
   };
 }
 
+function clearCooldown() {
+  state.cooldownUntil = 0;
+}
+
+function startCooldown(ms = CONFIG.actionCooldownMs) {
+  state.cooldownUntil = nowMs() + ms;
+}
+
+function getCooldownMsLeft() {
+  return Math.max(0, state.cooldownUntil - nowMs());
+}
+
+function isCooldownActive() {
+  return getCooldownMsLeft() > 0;
+}
+
 function setReadyIfPossible(reason = "System bereit.") {
+  if (applyHardStopGuard()) return;
+
   if (state.processing || state.queue.length > 0) {
     state.guard = "LOCKED";
     state.reasonHint = "Order läuft oder ist in Queue.";
     return;
   }
 
-  if (applyHardStopGuard()) return;
+  if (isCooldownActive()) {
+    state.guard = "COOLDOWN";
+    state.reasonHint = "Kurze Schutzpause aktiv.";
+    return;
+  }
 
   state.guard = "READY";
   state.reasonHint = reason;
@@ -147,6 +180,7 @@ function fullResetRuntime(resetType = "MANUAL") {
   state.dayKey = getDayKey();
   state.lastResetType = resetType;
 
+  clearCooldown();
   resetHealth();
 
   state.guard = "READY";
@@ -163,6 +197,7 @@ function softDayReset() {
   state.dayKey = getDayKey();
   state.lastResetType = "DAY";
 
+  clearCooldown();
   resetHealth();
 
   state.guard = "READY";
@@ -199,6 +234,9 @@ function responseState() {
     dailyLossLimit: state.dailyLossLimit,
     dailyWinTarget: state.dailyWinTarget,
     lastResetType: state.lastResetType,
+
+    cooldownActive: isCooldownActive(),
+    cooldownMsLeft: getCooldownMsLeft(),
 
     confidence: state.confidence,
     score: state.score,
@@ -238,18 +276,21 @@ function applyHardStopGuard() {
 
   if (stop === "SESSION_LIMIT") {
     state.autoEnabled = false;
+    clearCooldown();
     setGuard("SESSION_LIMIT", "Tageslimit erreicht.");
     return true;
   }
 
   if (stop === "DAILY_LOSS_LIMIT") {
     state.autoEnabled = false;
+    clearCooldown();
     setGuard("DAILY_LOSS_LIMIT", "Daily Loss Limit erreicht.");
     return true;
   }
 
   if (stop === "WIN_TARGET_REACHED") {
     state.autoEnabled = false;
+    clearCooldown();
     setGuard("WIN_TARGET_REACHED", "Win Target erreicht.");
     return true;
   }
@@ -261,6 +302,7 @@ function canTrade() {
   ensureDayFresh();
 
   if (applyHardStopGuard()) return [false, state.guard];
+  if (isCooldownActive()) return [false, "COOLDOWN"];
   if (state.processing) return [false, "PROCESSING"];
   if (state.queue.length > 0) return [false, "QUEUE_BUSY"];
   if (!state.health.status || !state.health.buy || !state.health.sell) return [false, "HEALTH_FAIL"];
@@ -271,20 +313,17 @@ function canTrade() {
 /* =========================
    SCORE / FACTORS
 ========================= */
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
-
 function recalcDerivedState() {
   const pnl = Number(state.pnl) || 0;
 
   const pnlPenalty = Math.max(0, -pnl * 1.4);
   const queuePenalty = state.queue.length > 0 ? 4 : 0;
   const procPenalty = state.processing ? 3 : 0;
+  const cooldownPenalty = isCooldownActive() ? 2 : 0;
   const sessionPenalty = (state.sessionTrades / Math.max(1, state.maxSessionTrades)) * 10;
   const autoBoost = state.autoEnabled ? 2 : 0;
 
-  const scoreBase = 82 - pnlPenalty - queuePenalty - procPenalty - sessionPenalty + autoBoost;
+  const scoreBase = 82 - pnlPenalty - queuePenalty - procPenalty - cooldownPenalty - sessionPenalty + autoBoost;
   state.score = Math.round(clamp(scoreBase, 0, 100));
 
   state.confidence = Math.round(clamp(62 + (state.autoEnabled ? 10 : 0), 0, 100));
@@ -306,14 +345,16 @@ function enqueue(type, source = "MANUAL") {
   const id = Date.now() + Math.floor(Math.random() * 1000);
 
   state.queue.push({ id, type, source });
-  log("QUEUE", `Order ${id} queued (${type})`, { source });
+  state.lastActionTs = nowMs();
 
+  log("QUEUE", `Order ${id} queued (${type})`, { source });
   recalcDerivedState();
 
   processQueue().catch((err) => {
     console.error("Queue error:", err);
     state.processing = false;
     state.autoEnabled = false;
+    clearCooldown();
     setGuard("FAIL", "Queue Fehler");
     log("SYSTEM", "Queue Fehler");
     recalcDerivedState();
@@ -328,7 +369,7 @@ async function processQueue() {
 
   const job = state.queue.shift();
   state.processing = true;
-  state.lastActionTs = Date.now();
+  state.lastActionTs = nowMs();
 
   setGuard("LOCKED", `${job.type} ${job.source === "AUTO" ? "Auto gesendet" : "gesendet"}`);
   log("PROCESSING", `Order ${job.id} wird verarbeitet (${job.type})`, { source: job.source });
@@ -339,6 +380,8 @@ async function processQueue() {
   log("EXECUTED", `Order ${job.id} ausgeführt (${job.type})`, { source: job.source });
 
   state.processing = false;
+  startCooldown(CONFIG.actionCooldownMs);
+  log("COOLDOWN", "Cooldown aktiv", { cooldownMs: CONFIG.actionCooldownMs });
   recalcDerivedState();
 
   if (applyHardStopGuard()) {
@@ -352,6 +395,7 @@ async function processQueue() {
       console.error("Queue chain error:", err);
       state.processing = false;
       state.autoEnabled = false;
+      clearCooldown();
       setGuard("FAIL", "Queue Fehler");
       log("SYSTEM", "Queue Fehler");
       recalcDerivedState();
@@ -380,6 +424,8 @@ function tryAutoTrade() {
   if (!ok) {
     if (reason === "PROCESSING" || reason === "QUEUE_BUSY") {
       setGuard("LOCKED", "Order läuft oder ist in Queue.");
+    } else if (reason === "COOLDOWN") {
+      setGuard("COOLDOWN", "Kurze Schutzpause aktiv.");
     }
     recalcDerivedState();
     return;
@@ -388,6 +434,7 @@ function tryAutoTrade() {
   const type = Math.random() > 0.5 ? "BUY" : "SELL";
   enqueue(type, "AUTO");
   state.sessionTrades += 1;
+  state.lastResetType = "";
   setGuard("LOCKED", `${type} Auto gesendet`);
   recalcDerivedState();
 }
@@ -399,6 +446,16 @@ setInterval(tryAutoTrade, CONFIG.autoIntervalMs);
 ========================= */
 app.get("/api/status", (req, res) => {
   ensureDayFresh();
+
+  if (!state.processing && !state.queue.length && !applyHardStopGuard()) {
+    if (isCooldownActive()) {
+      setGuard("COOLDOWN", "Kurze Schutzpause aktiv.");
+    } else if (state.guard === "COOLDOWN" && getCooldownMsLeft() <= 0) {
+      log("COOLDOWN", "Cooldown Ende");
+      setReadyIfPossible("System bereit.");
+    }
+  }
+
   recalcDerivedState();
   res.json(responseState());
 });
@@ -409,6 +466,8 @@ app.post("/api/buy", (req, res) => {
   if (!ok) {
     if (reason === "PROCESSING" || reason === "QUEUE_BUSY") {
       setGuard("LOCKED", "Order läuft oder ist in Queue.");
+    } else if (reason === "COOLDOWN") {
+      setGuard("COOLDOWN", "Kurze Schutzpause aktiv.");
     } else if (reason === "SESSION_LIMIT") {
       setGuard("SESSION_LIMIT", "Tageslimit erreicht.");
     } else if (reason === "DAILY_LOSS_LIMIT") {
@@ -436,6 +495,8 @@ app.post("/api/sell", (req, res) => {
   if (!ok) {
     if (reason === "PROCESSING" || reason === "QUEUE_BUSY") {
       setGuard("LOCKED", "Order läuft oder ist in Queue.");
+    } else if (reason === "COOLDOWN") {
+      setGuard("COOLDOWN", "Kurze Schutzpause aktiv.");
     } else if (reason === "SESSION_LIMIT") {
       setGuard("SESSION_LIMIT", "Tageslimit erreicht.");
     } else if (reason === "DAILY_LOSS_LIMIT") {
@@ -460,6 +521,21 @@ app.post("/api/sell", (req, res) => {
 app.post("/api/win", (req, res) => {
   ensureDayFresh();
 
+  if (applyHardStopGuard()) {
+    recalcDerivedState();
+    return res.json(responseState());
+  }
+
+  if (state.processing || state.queue.length > 0 || isCooldownActive()) {
+    if (isCooldownActive()) {
+      setGuard("COOLDOWN", "Kurze Schutzpause aktiv.");
+    } else {
+      setGuard("LOCKED", "Order läuft oder ist in Queue.");
+    }
+    recalcDerivedState();
+    return res.json(responseState());
+  }
+
   state.pnl += CONFIG.winStep;
   state.lastResetType = "";
   log("WIN", `WIN PnL +${CONFIG.winStep}`);
@@ -477,6 +553,21 @@ app.post("/api/win", (req, res) => {
 
 app.post("/api/loss", (req, res) => {
   ensureDayFresh();
+
+  if (applyHardStopGuard()) {
+    recalcDerivedState();
+    return res.json(responseState());
+  }
+
+  if (state.processing || state.queue.length > 0 || isCooldownActive()) {
+    if (isCooldownActive()) {
+      setGuard("COOLDOWN", "Kurze Schutzpause aktiv.");
+    } else {
+      setGuard("LOCKED", "Order läuft oder ist in Queue.");
+    }
+    recalcDerivedState();
+    return res.json(responseState());
+  }
 
   state.pnl += CONFIG.lossStep;
   state.lastResetType = "";
@@ -552,6 +643,7 @@ app.post("/api/health/fail", (req, res) => {
   state.health = { status: false, buy: false, sell: false };
   state.autoEnabled = false;
   state.lastResetType = "";
+  clearCooldown();
   setGuard("HEALTH_FAIL", "Health Check fehlgeschlagen.");
   log("SYSTEM", "Health FAIL");
   recalcDerivedState();
@@ -566,5 +658,5 @@ recalcDerivedState();
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 V20.8 HARD LIVE running on port ${PORT}`);
+  console.log(`🚀 V20.9 HARD LIVE running on port ${PORT}`);
 });
