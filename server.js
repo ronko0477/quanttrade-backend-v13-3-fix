@@ -30,7 +30,7 @@ const CONFIG = {
   lossStep: -4,
   dailyLossLimit: -20,
   dailyWinTarget: 20,
-  maxLogEntries: 250
+  maxLogEntries: 300
 };
 
 /* =========================
@@ -106,24 +106,25 @@ const state = {
     session: 68.0
   },
 
-  logs: []
+  log: []
 };
 
 /* =========================
    LOGGING
 ========================= */
-function addLog(text, kind = "system", extra = {}) {
-  state.logs.push({
+function addLog(type, msg, extra = {}) {
+  state.log.push({
     id: nowMs() + Math.floor(Math.random() * 1000),
-    kind,
-    text,
+    type,
+    msg,
+    text: msg,
     time: nowIso(),
     localTime: localHms(),
     ...extra
   });
 
-  if (state.logs.length > CONFIG.maxLogEntries) {
-    state.logs.shift();
+  if (state.log.length > CONFIG.maxLogEntries) {
+    state.log.shift();
   }
 }
 
@@ -147,7 +148,7 @@ function isCooldownActive() {
 }
 
 /* =========================
-   DAY / RESET
+   RESET / DAY
 ========================= */
 function resetHealth() {
   state.health = {
@@ -192,7 +193,7 @@ function softDayReset() {
   state.lastResetType = "DAY";
 
   resetHealth();
-  addLog("Day reset", "day", { resetType: "DAY" });
+  addLog("DAY", "Day reset", { resetType: "DAY" });
 }
 
 function ensureDayFresh() {
@@ -315,8 +316,22 @@ function recalcDerivedState() {
 }
 
 /* =========================
-   API FORMAT
+   RESPONSE
 ========================= */
+function humanStatus() {
+  const g = String(state.guard || "").toUpperCase();
+
+  if (g === "READY") return "READY";
+  if (g.includes("SESSION")) return "SESSION";
+  if (g.includes("DAILY_LOSS")) return "LOSS LIMIT";
+  if (g.includes("WIN_TARGET")) return "TARGET";
+  if (g.includes("COOLDOWN")) return "LOCKED";
+  if (g.includes("PROCESS") || g.includes("QUEUE")) return "LOCKED";
+  if (g.includes("LOCK")) return "LOCKED";
+  if (g.includes("FAIL") || g.includes("HEALTH")) return "FAIL";
+  return "READY";
+}
+
 function responseState() {
   ensureDayFresh();
 
@@ -353,27 +368,11 @@ function responseState() {
 
     cooldownActive: isCooldownActive(),
     cooldownMsLeft: getCooldownMsLeft(),
-    cooldown: Math.ceil(getCooldownMsLeft() / 1000),
 
     health: { ...state.health },
 
-    logs: state.logs.map((x) => `${x.localTime} - ${x.text}`),
-    log: [...state.logs]
+    log: [...state.log]
   };
-}
-
-function humanStatus() {
-  const g = String(state.guard || "").toUpperCase();
-
-  if (g === "READY") return "READY";
-  if (g.includes("SESSION")) return "SESSION";
-  if (g.includes("DAILY_LOSS")) return "LOSS LIMIT";
-  if (g.includes("WIN_TARGET")) return "TARGET";
-  if (g.includes("COOLDOWN")) return "LOCKED";
-  if (g.includes("PROCESS") || g.includes("QUEUE")) return "LOCKED";
-  if (g.includes("LOCK")) return "LOCKED";
-  if (g.includes("FAIL") || g.includes("HEALTH")) return "FAIL";
-  return "READY";
 }
 
 /* =========================
@@ -383,7 +382,7 @@ function enqueue(type, source = "MANUAL") {
   const id = nowMs() + Math.floor(Math.random() * 1000);
   state.queue.push({ id, type, source });
 
-  addLog(`Order ${id} queued (${type})`, "queue", { source, orderId: id, side: type });
+  addLog("QUEUE", `Order ${id} queued (${type})`, { source, orderId: id, side: type });
   recalcDerivedState();
 
   processQueue().catch((err) => {
@@ -392,7 +391,7 @@ function enqueue(type, source = "MANUAL") {
     state.autoEnabled = false;
     clearCooldown();
     setGuard("FAIL", "Queue Fehler");
-    addLog("Queue Fehler", "system");
+    addLog("SYSTEM", "Queue Fehler");
     recalcDerivedState();
   });
 
@@ -407,7 +406,7 @@ async function processQueue() {
   state.processing = true;
 
   setGuard("LOCKED", `${job.type} ${job.source === "AUTO" ? "Auto gesendet" : "gesendet"}`);
-  addLog(`Order ${job.id} wird verarbeitet (${job.type})`, "processing", {
+  addLog("PROCESSING", `Order ${job.id} wird verarbeitet (${job.type})`, {
     source: job.source,
     orderId: job.id,
     side: job.type
@@ -416,7 +415,7 @@ async function processQueue() {
 
   await new Promise((resolve) => setTimeout(resolve, CONFIG.processDelayMs));
 
-  addLog(`Order ${job.id} ausgeführt (${job.type})`, "executed", {
+  addLog("EXECUTED", `Order ${job.id} ausgeführt (${job.type})`, {
     source: job.source,
     orderId: job.id,
     side: job.type
@@ -424,7 +423,7 @@ async function processQueue() {
 
   state.processing = false;
   startCooldown(CONFIG.actionCooldownMs);
-  addLog("Cooldown aktiv", "cooldown", { cooldownMs: CONFIG.actionCooldownMs });
+  addLog("COOLDOWN", "Cooldown aktiv", { cooldownMs: CONFIG.actionCooldownMs });
   recalcDerivedState();
 
   if (applyHardStopGuard()) {
@@ -440,7 +439,7 @@ async function processQueue() {
       state.autoEnabled = false;
       clearCooldown();
       setGuard("FAIL", "Queue Fehler");
-      addLog("Queue Fehler", "system");
+      addLog("SYSTEM", "Queue Fehler");
       recalcDerivedState();
     });
     return;
@@ -496,7 +495,7 @@ function refreshRuntimeFlags() {
   ensureDayFresh();
 
   if (!state.processing && state.queue.length === 0 && state.guard === "COOLDOWN" && !isCooldownActive()) {
-    addLog("Cooldown Ende", "cooldown");
+    addLog("COOLDOWN", "Cooldown Ende");
     setReadyIfPossible("System bereit.");
   }
 
@@ -594,14 +593,13 @@ app.post("/api/win", (req, res) => {
     } else {
       setGuard("LOCKED", "Order läuft oder ist in Queue.");
     }
-
     recalcDerivedState();
     return res.json(responseState());
   }
 
   state.pnl += CONFIG.winStep;
   state.lastResetType = "";
-  addLog(`WIN PnL +${formatNumber(CONFIG.winStep)}`, "win");
+  addLog("WIN", `WIN PnL +${formatNumber(CONFIG.winStep)}`);
   recalcDerivedState();
 
   if (applyHardStopGuard()) {
@@ -628,14 +626,13 @@ app.post("/api/loss", (req, res) => {
     } else {
       setGuard("LOCKED", "Order läuft oder ist in Queue.");
     }
-
     recalcDerivedState();
     return res.json(responseState());
   }
 
   state.pnl += CONFIG.lossStep;
   state.lastResetType = "";
-  addLog(`LOSS PnL ${formatNumber(CONFIG.lossStep)}`, "loss");
+  addLog("LOSS", `LOSS PnL ${formatNumber(CONFIG.lossStep)}`);
   recalcDerivedState();
 
   if (applyHardStopGuard()) {
@@ -650,7 +647,7 @@ app.post("/api/loss", (req, res) => {
 
 app.post("/api/reset", (req, res) => {
   fullResetRuntime("MANUAL");
-  addLog("Manual reset", "reset", { resetType: "MANUAL" });
+  addLog("RESET", "Manual reset", { resetType: "MANUAL" });
   recalcDerivedState();
   res.json(responseState());
 });
@@ -666,7 +663,7 @@ app.post("/api/auto/on", (req, res) => {
   if (!state.autoEnabled) {
     state.autoEnabled = true;
     state.lastResetType = "";
-    addLog("Auto EIN", "auto");
+    addLog("AUTO", "Auto EIN");
   }
 
   setReadyIfPossible("Auto aktiv");
@@ -678,7 +675,7 @@ app.post("/api/auto/off", (req, res) => {
   if (state.autoEnabled) {
     state.autoEnabled = false;
     state.lastResetType = "";
-    addLog("Auto AUS", "auto");
+    addLog("AUTO", "Auto AUS");
   }
 
   if (applyHardStopGuard()) {
@@ -691,11 +688,11 @@ app.post("/api/auto/off", (req, res) => {
   res.json(responseState());
 });
 
-/* fallback for your V21 html toggle */
+/* Toggle endpoint for V21.1 hybrid html */
 app.post("/api/auto", (req, res) => {
   state.autoEnabled = !state.autoEnabled;
   state.lastResetType = "";
-  addLog(state.autoEnabled ? "Auto EIN" : "Auto AUS", "auto");
+  addLog("AUTO", state.autoEnabled ? "Auto EIN" : "Auto AUS");
 
   if (applyHardStopGuard()) {
     recalcDerivedState();
@@ -708,12 +705,12 @@ app.post("/api/auto", (req, res) => {
 });
 
 /* =========================
-   OPTIONAL HEALTH TEST
+   OPTIONAL HEALTH
 ========================= */
 app.post("/api/health/ok", (req, res) => {
   resetHealth();
   state.lastResetType = "";
-  addLog("Health OK", "system");
+  addLog("SYSTEM", "Health OK");
   setReadyIfPossible("System bereit.");
   recalcDerivedState();
   res.json(responseState());
@@ -725,7 +722,7 @@ app.post("/api/health/fail", (req, res) => {
   state.lastResetType = "";
   clearCooldown();
   setGuard("HEALTH_FAIL", "Health Check fehlgeschlagen.");
-  addLog("Health FAIL", "system");
+  addLog("SYSTEM", "Health FAIL");
   recalcDerivedState();
   res.json(responseState());
 });
@@ -738,5 +735,5 @@ recalcDerivedState();
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 V21.0 HARD LIVE running on port ${PORT}`);
+  console.log(`🚀 V21.1 HYBRID FULL PRO running on port ${PORT}`);
 });
