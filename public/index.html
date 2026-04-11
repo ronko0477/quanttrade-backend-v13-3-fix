@@ -3,33 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V21.1 HARD LIVE</title>
+  <title>V21.2 HARD LIVE</title>
 
   <style>
     :root{
-      --bg:#02040a;
-      --bg2:#050914;
-      --hero1:#6f7df2;
-      --hero2:#4354c9;
-      --line:rgba(255,255,255,.08);
-      --text:#f4f7ff;
-      --muted:rgba(255,255,255,.72);
+      --bg:#030611;
+      --bg2:#071022;
+      --hero1:#6f7ef3;
+      --hero2:#4455c9;
 
-      --green:#b9d99b;
-      --red:#dfb8b8;
+      --card1:#313ea0;
+      --card2:#232f7f;
+
+      --text:#f6f8ff;
+      --muted:rgba(255,255,255,.72);
+      --line:rgba(255,255,255,.08);
+
+      --green:#b8d99d;
+      --red:#ddb7b7;
       --yellow:#ddd08a;
-      --cyan:#afd8ef;
-      --lock:#c7d4f3;
+      --cyan:#b4d9ee;
+      --lock:#c6d2f1;
       --white:#ffffff;
 
       --shadow:0 18px 42px rgba(0,0,0,.34);
       --shadowSoft:0 10px 24px rgba(0,0,0,.22);
 
-      --okGlow:0 0 0 1px rgba(185,217,155,.22),0 0 22px rgba(185,217,155,.10);
+      --okGlow:0 0 0 1px rgba(184,217,157,.22),0 0 22px rgba(184,217,157,.10);
       --warnGlow:0 0 0 1px rgba(221,208,138,.18),0 0 20px rgba(221,208,138,.08);
-      --dangerGlow:0 0 0 1px rgba(223,184,184,.18),0 0 18px rgba(223,184,184,.07);
-      --blueGlow:0 0 0 1px rgba(175,216,239,.18),0 0 18px rgba(175,216,239,.08);
-      --lockGlow:0 0 0 1px rgba(199,212,243,.20),0 0 18px rgba(199,212,243,.08);
+      --dangerGlow:0 0 0 1px rgba(221,183,183,.18),0 0 18px rgba(221,183,183,.07);
+      --blueGlow:0 0 0 1px rgba(180,217,238,.18),0 0 18px rgba(180,217,238,.08);
+      --lockGlow:0 0 0 1px rgba(198,210,241,.20),0 0 18px rgba(198,210,241,.08);
     }
 
     *{box-sizing:border-box}
@@ -41,15 +45,15 @@
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at 50% 10%, rgba(94,111,255,.11), transparent 28%),
-        radial-gradient(circle at 50% 50%, rgba(33,49,138,.10), transparent 38%),
+        radial-gradient(circle at 50% 8%, rgba(104,120,255,.11), transparent 26%),
+        radial-gradient(circle at 50% 45%, rgba(45,61,159,.10), transparent 40%),
         linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
     }
 
     .wrap{
       width:min(100%,460px);
       margin:0 auto;
-      padding:12px 10px 34px;
+      padding:12px 10px 36px;
     }
 
     .title{
@@ -61,32 +65,32 @@
       text-align:center;
       font-size:24px;
       font-weight:1000;
-      letter-spacing:.3px;
+      letter-spacing:.25px;
       text-shadow:0 2px 12px rgba(0,0,0,.34);
     }
 
     .liveDot{
-      width:10px;
-      height:10px;
+      width:11px;
+      height:11px;
       border-radius:999px;
-      background:#8ef0ba;
-      box-shadow:0 0 0 0 rgba(142,240,186,.55);
+      background:#94e0b7;
+      box-shadow:0 0 0 0 rgba(148,224,183,.55);
       animation:pulseDot 1.8s infinite;
       flex:0 0 auto;
     }
 
     @keyframes pulseDot{
-      0%{box-shadow:0 0 0 0 rgba(142,240,186,.55)}
-      70%{box-shadow:0 0 0 10px rgba(142,240,186,0)}
-      100%{box-shadow:0 0 0 0 rgba(142,240,186,0)}
+      0%{box-shadow:0 0 0 0 rgba(148,224,183,.55)}
+      70%{box-shadow:0 0 0 10px rgba(148,224,183,0)}
+      100%{box-shadow:0 0 0 0 rgba(148,224,183,0)}
     }
 
     .hero{
       position:relative;
       border-radius:28px;
       padding:12px;
-      background:linear-gradient(180deg, rgba(111,125,242,.96), rgba(67,84,201,.94));
-      border:1px solid rgba(255,255,255,.09);
+      background:linear-gradient(180deg, rgba(111,126,243,.97), rgba(68,85,201,.95));
+      border:1px solid rgba(255,255,255,.08);
       box-shadow:var(--shadow);
       overflow:hidden;
     }
@@ -104,10 +108,10 @@
     .heroInner{
       position:relative;
       z-index:1;
-      min-height:252px;
+      min-height:256px;
       border-radius:24px;
       border:1px solid rgba(255,255,255,.08);
-      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.012));
       display:flex;
       flex-direction:column;
       align-items:center;
@@ -123,8 +127,8 @@
       overflow:hidden;
       text-overflow:ellipsis;
       line-height:.9;
-      letter-spacing:-1.8px;
-      font-size:78px;
+      letter-spacing:-1.9px;
+      font-size:80px;
       font-weight:1000;
     }
     .guard.ready{color:var(--green)}
@@ -134,15 +138,15 @@
     .guard.locked{color:var(--lock)}
 
     .heroHint{
-      margin-top:9px;
+      margin-top:10px;
       min-height:22px;
       font-size:15px;
-      font-weight:800;
+      font-weight:850;
       color:var(--muted);
     }
 
     .pnl{
-      margin-top:8px;
+      margin-top:10px;
       font-size:72px;
       line-height:.94;
       letter-spacing:-2px;
@@ -150,14 +154,14 @@
       transition:color .18s ease, text-shadow .18s ease;
     }
     .pnl.neutral{color:var(--white)}
-    .pnl.positive{color:#f4fff0;text-shadow:0 0 18px rgba(185,217,155,.14)}
-    .pnl.negative{color:#fff2f2;text-shadow:0 0 18px rgba(223,184,184,.14)}
+    .pnl.positive{color:#f7fff3;text-shadow:0 0 18px rgba(184,217,157,.14)}
+    .pnl.negative{color:#fff2f2;text-shadow:0 0 18px rgba(221,183,183,.14)}
 
     .pnlSub{
       margin-top:5px;
       font-size:17px;
-      font-weight:900;
-      color:rgba(255,255,255,.78);
+      font-weight:950;
+      color:rgba(255,255,255,.80);
     }
 
     .heroMetaRow{
@@ -173,18 +177,18 @@
       display:inline-flex;
       align-items:center;
       gap:8px;
-      min-height:38px;
+      min-height:40px;
       border-radius:999px;
-      padding:8px 13px;
+      padding:8px 14px;
       background:rgba(11,17,48,.20);
       border:1px solid rgba(255,255,255,.06);
       font-size:12px;
       font-weight:1000;
-      color:rgba(255,255,255,.84);
+      color:rgba(255,255,255,.86);
       transition:all .16s ease;
+      letter-spacing:.2px;
     }
 
-    .heroMeta.live{box-shadow:none}
     .heroMeta.auto{box-shadow:var(--okGlow)}
     .heroMeta.queue{box-shadow:var(--warnGlow)}
     .heroMeta.block{box-shadow:var(--dangerGlow)}
@@ -204,14 +208,14 @@
     .limitBadge{
       display:none;
       border-radius:999px;
-      padding:6px 10px;
+      padding:6px 11px;
       font-size:11px;
       font-weight:1000;
       color:rgba(255,255,255,.88);
       background:rgba(12,18,50,.20);
       border:1px solid rgba(255,255,255,.06);
+      letter-spacing:.2px;
     }
-
     .limitBadge.show{display:inline-flex}
     .limitBadge.loss{box-shadow:var(--dangerGlow)}
     .limitBadge.win{box-shadow:var(--warnGlow)}
@@ -227,7 +231,7 @@
       min-height:102px;
       border-radius:21px;
       padding:14px 17px;
-      background:linear-gradient(180deg, rgba(46,58,145,.98), rgba(29,39,101,.98));
+      background:linear-gradient(180deg, rgba(49,62,160,.98), rgba(35,47,127,.98));
       border:1px solid rgba(255,255,255,.08);
       box-shadow:var(--shadowSoft);
       display:flex;
@@ -270,12 +274,12 @@
       -webkit-appearance:none;
       font-family:inherit;
       cursor:pointer;
-      transition:transform .08s ease, opacity .15s ease, filter .15s ease, box-shadow .18s ease, border-color .18s ease;
+      transition:transform .08s ease, opacity .15s ease, filter .15s ease, box-shadow .18s ease;
     }
 
     button:active{transform:scale(.985)}
     button:disabled{
-      opacity:.40;
+      opacity:.38;
       cursor:not-allowed;
       filter:grayscale(.25) brightness(.84);
       box-shadow:none !important;
@@ -321,7 +325,7 @@
       min-height:76px;
       border-radius:20px;
       padding:14px 16px;
-      background:linear-gradient(180deg, rgba(46,58,145,.97), rgba(29,39,101,.97));
+      background:linear-gradient(180deg, rgba(49,62,160,.97), rgba(35,47,127,.97));
       border:1px solid rgba(255,255,255,.06);
       box-shadow:0 9px 20px rgba(0,0,0,.20);
       color:var(--text);
@@ -333,7 +337,7 @@
     }
 
     .toggleBtn.active{
-      border-color:rgba(185,217,155,.34);
+      border-color:rgba(184,217,157,.34);
       box-shadow:var(--okGlow), 0 9px 20px rgba(0,0,0,.20);
     }
 
@@ -355,7 +359,6 @@
 
     .toggleBtn.active .toggleDot{
       background:#9fe3bc;
-      box-shadow:0 0 0 0 rgba(159,227,188,.42);
       animation:togglePulse 1.8s infinite;
     }
 
@@ -389,7 +392,7 @@
       font-weight:1000;
       color:rgba(255,255,255,.80);
       border-radius:999px;
-      padding:7px 10px;
+      padding:7px 11px;
       background:rgba(255,255,255,.06);
       border:1px solid rgba(255,255,255,.06);
       white-space:nowrap;
@@ -399,7 +402,7 @@
       min-height:82px;
       border-radius:20px;
       padding:13px 15px;
-      background:linear-gradient(180deg, rgba(46,58,145,.96), rgba(29,39,101,.96));
+      background:linear-gradient(180deg, rgba(49,62,160,.96), rgba(35,47,127,.96));
       border:1px solid rgba(255,255,255,.06);
       box-shadow:0 9px 20px rgba(0,0,0,.20);
       display:flex;
@@ -427,7 +430,7 @@
       margin-top:11px;
       border-radius:24px;
       padding:15px;
-      background:linear-gradient(180deg, rgba(71,85,198,.94), rgba(50,63,158,.94));
+      background:linear-gradient(180deg, rgba(77,93,210,.95), rgba(56,71,177,.95));
       border:1px solid rgba(255,255,255,.07);
       box-shadow:var(--shadow);
     }
@@ -488,7 +491,6 @@
       display:flex;
       flex-direction:column;
       justify-content:center;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
     }
 
     .factorTop{
@@ -519,7 +521,7 @@
       gap:10px;
       font-size:12px;
       font-weight:1000;
-      color:rgba(255,255,255,.72);
+      color:rgba(255,255,255,.75);
     }
 
     .sessionTrack{
@@ -615,7 +617,7 @@
     .badgePill.ok{box-shadow:var(--okGlow)}
 
     .logList{
-      max-height:300px;
+      max-height:320px;
       overflow:auto;
       padding-right:4px;
       scrollbar-width:thin;
@@ -646,7 +648,7 @@
       .wrap{padding-left:10px;padding-right:10px}
       .title{font-size:22px;margin-bottom:12px}
       .hero{padding:10px}
-      .heroInner{min-height:218px}
+      .heroInner{min-height:220px}
       .guard{font-size:68px}
       .heroHint{font-size:14px}
       .pnl{font-size:66px}
@@ -655,7 +657,7 @@
       .card{min-height:98px;padding:14px 16px}
       .cardLabel{font-size:14px}
       .cardVal{font-size:24px}
-      .actBtn{min-height:56px;font-size:14px}
+      .actBtn{min-height:56px}
       .resetBtn{min-height:58px}
       .toggleBtn{min-height:72px}
       .toggleMain{font-size:20px}
@@ -671,7 +673,7 @@
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V21.1 HARD LIVE ⚡</span>
+      <span>V21.2 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -683,13 +685,13 @@
         <div class="pnlSub">Net PnL</div>
 
         <div class="heroMetaRow">
-          <div id="heroMeta" class="heroMeta live">
+          <div id="heroMeta" class="heroMeta">
             <span id="heroMetaText">LIVE</span>
           </div>
         </div>
 
         <div class="heroLimits">
-          <div id="lossLimitBadge" class="limitBadge loss">LOSS LIMIT --20</div>
+          <div id="lossLimitBadge" class="limitBadge loss">LOSS LIMIT -20</div>
           <div id="winTargetBadge" class="limitBadge win">WIN TARGET +20</div>
         </div>
       </div>
@@ -803,7 +805,7 @@
       <div class="logHead">
         <div class="logTitle">LOG</div>
         <div class="logHeadRight">
-          <div id="dayBadge" class="badgePill">DAY READY</div>
+          <div id="dayBadge" class="badgePill ok">DAY READY</div>
           <div id="syncBadge" class="badgePill ok">SYNC OK</div>
         </div>
       </div>
@@ -846,7 +848,6 @@
       syncBadge: $("syncBadge"),
       lossLimitBadge: $("lossLimitBadge"),
       winTargetBadge: $("winTargetBadge"),
-      toggleDot: $("toggleDot"),
       autoToggleBtn: $("autoToggleBtn"),
       toggleMain: $("toggleMain"),
       toggleState: $("toggleState"),
@@ -956,7 +957,6 @@
         els.heroMeta.classList.add("auto");
         els.heroMetaText.textContent = "AUTO ON";
       } else {
-        els.heroMeta.classList.add("live");
         els.heroMetaText.textContent = "LIVE";
       }
     }
@@ -1023,8 +1023,8 @@
         return;
       }
 
-      const rows = [...log].reverse().slice(0, 24).map(item => {
-        const type = String(item.type || item.kind || "").toUpperCase();
+      const rows = [...log].reverse().slice(0, 28).map(item => {
+        const type = String(item.type || "").toUpperCase();
         const time = item.localTime || "--:--:--";
         const msg = item.msg || item.text || "-";
 
@@ -1052,7 +1052,6 @@
       const cooldown = !!data.cooldownActive;
       const sessionBlock = guard.includes("SESSION") || guard.includes("DAILY_LOSS") || guard.includes("WIN_TARGET");
       const healthFail = guard.includes("HEALTH") || guard.includes("FAIL");
-
       const tradeBlocked = sessionBlock || healthFail || processing || queueBusy || cooldown;
 
       els.btnBuy.disabled = tradeBlocked;
@@ -1162,7 +1161,7 @@
     els.autoToggleBtn.onclick = () => action("/api/auto");
 
     sync();
-    setInterval(sync, 1200);
+    setInterval(sync, 1000);
   </script>
 </body>
 </html>
