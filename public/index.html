@@ -1,321 +1,1168 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>V21.0 HARD LIVE</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>V21.1 HARD LIVE</title>
 
-<style>
-:root{
-  --bg:#0b0f2a;
-  --card:#1c245a;
-  --card2:#2a3380;
-  --text:#f4f7ff;
-  --muted:rgba(255,255,255,.65);
+  <style>
+    :root{
+      --bg:#02040a;
+      --bg2:#050914;
+      --hero1:#6f7df2;
+      --hero2:#4354c9;
+      --line:rgba(255,255,255,.08);
+      --text:#f4f7ff;
+      --muted:rgba(255,255,255,.72);
 
-  --green:#a6ffb2;
-  --red:#ffb3b3;
-  --yellow:#ffe28a;
+      --green:#b9d99b;
+      --red:#dfb8b8;
+      --yellow:#ddd08a;
+      --cyan:#afd8ef;
+      --lock:#c7d4f3;
+      --white:#ffffff;
 
-  --shadow:0 20px 50px rgba(0,0,0,.4);
-}
+      --shadow:0 18px 42px rgba(0,0,0,.34);
+      --shadowSoft:0 10px 24px rgba(0,0,0,.22);
 
-{box-sizing:border-box;font-family:system-ui;margin:0;padding:0}
+      --okGlow:0 0 0 1px rgba(185,217,155,.22),0 0 22px rgba(185,217,155,.10);
+      --warnGlow:0 0 0 1px rgba(221,208,138,.18),0 0 20px rgba(221,208,138,.08);
+      --dangerGlow:0 0 0 1px rgba(223,184,184,.18),0 0 18px rgba(223,184,184,.07);
+      --blueGlow:0 0 0 1px rgba(175,216,239,.18),0 0 18px rgba(175,216,239,.08);
+      --lockGlow:0 0 0 1px rgba(199,212,243,.20),0 0 18px rgba(199,212,243,.08);
+    }
 
-body{
-  background:linear-gradient(180deg,#060913,#0b0f2a);
-  color:var(--text);
-  padding:14px;
-}
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    html{-webkit-text-size-adjust:100%}
 
-/ HEADER /
-.header{
-  text-align:center;
-  font-weight:700;
-  margin-bottom:12px;
-  letter-spacing:1px;
-}
+    body{
+      min-height:100vh;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 50% 10%, rgba(94,111,255,.11), transparent 28%),
+        radial-gradient(circle at 50% 50%, rgba(33,49,138,.10), transparent 38%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+    }
 
-/ HERO /
-.hero{
-  background:linear-gradient(180deg,#4e5ecf,#6e7dff);
-  border-radius:26px;
-  padding:22px;
-  text-align:center;
-  box-shadow:var(--shadow);
-}
+    .wrap{
+      width:min(100%,460px);
+      margin:0 auto;
+      padding:12px 10px 34px;
+    }
 
-.hero h1{
-  font-size:48px;
-  margin-bottom:6px;
-}
+    .title{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      margin:2px 0 13px;
+      text-align:center;
+      font-size:24px;
+      font-weight:1000;
+      letter-spacing:.3px;
+      text-shadow:0 2px 12px rgba(0,0,0,.34);
+    }
 
-.hero .sub{
-  font-size:14px;
-  opacity:.8;
-}
+    .liveDot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:#8ef0ba;
+      box-shadow:0 0 0 0 rgba(142,240,186,.55);
+      animation:pulseDot 1.8s infinite;
+      flex:0 0 auto;
+    }
 
-.pnl{
-  font-size:46px;
-  margin:10px 0;
-  font-weight:800;
-}
+    @keyframes pulseDot{
+      0%{box-shadow:0 0 0 0 rgba(142,240,186,.55)}
+      70%{box-shadow:0 0 0 10px rgba(142,240,186,0)}
+      100%{box-shadow:0 0 0 0 rgba(142,240,186,0)}
+    }
 
-.badge{
-  display:inline-block;
-  padding:6px 14px;
-  border-radius:999px;
-  background:rgba(0,0,0,.2);
-  font-size:12px;
-  margin-top:6px;
-}
+    .hero{
+      position:relative;
+      border-radius:28px;
+      padding:12px;
+      background:linear-gradient(180deg, rgba(111,125,242,.96), rgba(67,84,201,.94));
+      border:1px solid rgba(255,255,255,.09);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
 
-.limits{
-  margin-top:10px;
-  display:flex;
-  justify-content:center;
-  gap:10px;
-}
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 50% -8%, rgba(255,255,255,.12), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.05), transparent 28%);
+      pointer-events:none;
+    }
 
-.limit{
-  font-size:12px;
-  padding:6px 10px;
-  border-radius:999px;
-  background:rgba(0,0,0,.2);
-}
+    .heroInner{
+      position:relative;
+      z-index:1;
+      min-height:252px;
+      border-radius:24px;
+      border:1px solid rgba(255,255,255,.08);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:22px 16px;
+    }
 
-/ GRID /
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  margin-top:14px;
-}
+    .guard{
+      margin:0;
+      max-width:100%;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      line-height:.9;
+      letter-spacing:-1.8px;
+      font-size:78px;
+      font-weight:1000;
+    }
+    .guard.ready{color:var(--green)}
+    .guard.warn{color:var(--cyan)}
+    .guard.block{color:var(--yellow)}
+    .guard.fail{color:var(--red)}
+    .guard.locked{color:var(--lock)}
 
-.card{
-  background:linear-gradient(180deg,#2a3380,#1c245a);
-  padding:16px;
-  border-radius:18px;
-  text-align:center;
-  box-shadow:var(--shadow);
-}
+    .heroHint{
+      margin-top:9px;
+      min-height:22px;
+      font-size:15px;
+      font-weight:800;
+      color:var(--muted);
+    }
 
-.card h3{
-  font-size:13px;
-  color:var(--muted);
-}
+    .pnl{
+      margin-top:8px;
+      font-size:72px;
+      line-height:.94;
+      letter-spacing:-2px;
+      font-weight:1000;
+      transition:color .18s ease, text-shadow .18s ease;
+    }
+    .pnl.neutral{color:var(--white)}
+    .pnl.positive{color:#f4fff0;text-shadow:0 0 18px rgba(185,217,155,.14)}
+    .pnl.negative{color:#fff2f2;text-shadow:0 0 18px rgba(223,184,184,.14)}
 
-.card .value{
-  font-size:22px;
-  margin-top:6px;
-  font-weight:700;
-}
+    .pnlSub{
+      margin-top:5px;
+      font-size:17px;
+      font-weight:900;
+      color:rgba(255,255,255,.78);
+    }
 
-/ BUTTONS /
-.actions{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  margin-top:14px;
-}
+    .heroMetaRow{
+      margin-top:13px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
 
-button{
-  border:none;
-  border-radius:18px;
-  padding:16px;
-  font-weight:700;
-  font-size:14px;
-}
+    .heroMeta{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      min-height:38px;
+      border-radius:999px;
+      padding:8px 13px;
+      background:rgba(11,17,48,.20);
+      border:1px solid rgba(255,255,255,.06);
+      font-size:12px;
+      font-weight:1000;
+      color:rgba(255,255,255,.84);
+      transition:all .16s ease;
+    }
 
-.buy{background:linear-gradient(90deg,#a6ffb2,#d6ffd8)}
-.sell{background:linear-gradient(90deg,#ffb3b3,#ffd6d6)}
-.win{background:linear-gradient(90deg,#a6ffb2,#d6ffd8)}
-.loss{background:linear-gradient(90deg,#ffb3b3,#ffd6d6)}
+    .heroMeta.live{box-shadow:none}
+    .heroMeta.auto{box-shadow:var(--okGlow)}
+    .heroMeta.queue{box-shadow:var(--warnGlow)}
+    .heroMeta.block{box-shadow:var(--dangerGlow)}
+    .heroMeta.day{box-shadow:var(--blueGlow)}
+    .heroMeta.locked{box-shadow:var(--lockGlow)}
 
-.reset{
-  grid-column:1/3;
-  background:linear-gradient(90deg,#ffe28a,#fff2b5);
-}
+    .heroLimits{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:28px;
+    }
 
-/ AUTO /
-.auto{
-  margin-top:14px;
-  padding:16px;
-  border-radius:18px;
-  background:linear-gradient(180deg,#2a3380,#1c245a);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
+    .limitBadge{
+      display:none;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:11px;
+      font-weight:1000;
+      color:rgba(255,255,255,.88);
+      background:rgba(12,18,50,.20);
+      border:1px solid rgba(255,255,255,.06);
+    }
 
-.toggle{
-  padding:8px 16px;
-  border-radius:999px;
-  background:rgba(255,255,255,.15);
-}
+    .limitBadge.show{display:inline-flex}
+    .limitBadge.loss{box-shadow:var(--dangerGlow)}
+    .limitBadge.win{box-shadow:var(--warnGlow)}
 
-/ SCORE /
-.score{
-  margin-top:14px;
-  padding:18px;
-  border-radius:22px;
-  background:linear-gradient(180deg,#4e5ecf,#6e7dff);
-}
+    .grid2{
+      margin-top:13px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:11px;
+    }
 
-.bar{
-  height:10px;
-  border-radius:10px;
-  background:linear-gradient(90deg,#ffe28a,#a6ffb2);
-  margin:10px 0;
-}
+    .card{
+      min-height:102px;
+      border-radius:21px;
+      padding:14px 17px;
+      background:linear-gradient(180deg, rgba(46,58,145,.98), rgba(29,39,101,.98));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:var(--shadowSoft);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
 
-.subgrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-top:10px;
-}
+    .cardLabel{
+      font-size:15px;
+      font-weight:900;
+      color:rgba(255,255,255,.70);
+      margin-bottom:8px;
+      line-height:1;
+      letter-spacing:.14px;
+    }
 
-.subbox{
-  background:rgba(0,0,0,.2);
-  padding:10px;
-  border-radius:12px;
-  text-align:center;
-}
+    .cardVal{
+      font-size:25px;
+      line-height:1;
+      font-weight:1000;
+      letter-spacing:-.4px;
+    }
 
-.cooldown{
-  margin-top:10px;
-  font-size:12px;
-  opacity:.8;
-}
+    .ok{color:var(--green)}
+    .fail{color:var(--red)}
+    .mid{color:var(--yellow)}
+    .ice{color:var(--cyan)}
 
-/ LOG */
-.log{
-  margin-top:14px;
-  padding:14px;
-  border-radius:18px;
-  background:linear-gradient(180deg,#2a3380,#1c245a);
-}
+    .actionGrid{
+      margin-top:11px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:11px;
+    }
 
-.log h3{
-  margin-bottom:8px;
-}
+    button{
+      border:none;
+      outline:none;
+      appearance:none;
+      -webkit-appearance:none;
+      font-family:inherit;
+      cursor:pointer;
+      transition:transform .08s ease, opacity .15s ease, filter .15s ease, box-shadow .18s ease, border-color .18s ease;
+    }
 
-.log-entry{
-  font-size:12px;
-  margin-bottom:6px;
-  opacity:.9;
-}
-</style>
+    button:active{transform:scale(.985)}
+    button:disabled{
+      opacity:.40;
+      cursor:not-allowed;
+      filter:grayscale(.25) brightness(.84);
+      box-shadow:none !important;
+    }
+
+    .actBtn{
+      min-height:58px;
+      border-radius:17px;
+      font-size:14px;
+      font-weight:1000;
+      letter-spacing:.16px;
+      color:#fff;
+      box-shadow:0 8px 18px rgba(0,0,0,.14);
+    }
+
+    .buyBtn,.winBtn{
+      background:linear-gradient(90deg,#b9dca3,#a7d08f);
+      color:#fff;
+    }
+
+    .sellBtn,.lossBtn{
+      background:linear-gradient(90deg,#d9bcbc,#cfaeae);
+      color:#fff;
+    }
+
+    .resetBtn{
+      grid-column:1 / -1;
+      min-height:60px;
+      background:linear-gradient(90deg,#d7cf8d,#d9d18c);
+      color:#fff;
+      opacity:.92;
+    }
+
+    .miniGrid{
+      margin-top:11px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:11px;
+    }
+
+    .toggleBtn{
+      grid-column:1 / -1;
+      min-height:76px;
+      border-radius:20px;
+      padding:14px 16px;
+      background:linear-gradient(180deg, rgba(46,58,145,.97), rgba(29,39,101,.97));
+      border:1px solid rgba(255,255,255,.06);
+      box-shadow:0 9px 20px rgba(0,0,0,.20);
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      text-align:left;
+    }
+
+    .toggleBtn.active{
+      border-color:rgba(185,217,155,.34);
+      box-shadow:var(--okGlow), 0 9px 20px rgba(0,0,0,.20);
+    }
+
+    .toggleLeft{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+
+    .toggleDot{
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.22);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+      flex:0 0 auto;
+    }
+
+    .toggleBtn.active .toggleDot{
+      background:#9fe3bc;
+      box-shadow:0 0 0 0 rgba(159,227,188,.42);
+      animation:togglePulse 1.8s infinite;
+    }
+
+    @keyframes togglePulse{
+      0%{box-shadow:0 0 0 0 rgba(159,227,188,.42)}
+      70%{box-shadow:0 0 0 8px rgba(159,227,188,0)}
+      100%{box-shadow:0 0 0 0 rgba(159,227,188,0)}
+    }
+
+    .toggleTextWrap{min-width:0}
+
+    .toggleTop{
+      font-size:12px;
+      font-weight:1000;
+      color:rgba(255,255,255,.70);
+      line-height:1;
+      margin-bottom:6px;
+      letter-spacing:.14px;
+    }
+
+    .toggleMain{
+      font-size:22px;
+      line-height:1;
+      font-weight:1000;
+      letter-spacing:-.25px;
+      color:#eef4ff;
+    }
+
+    .toggleState{
+      font-size:13px;
+      font-weight:1000;
+      color:rgba(255,255,255,.80);
+      border-radius:999px;
+      padding:7px 10px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.06);
+      white-space:nowrap;
+    }
+
+    .miniCard{
+      min-height:82px;
+      border-radius:20px;
+      padding:13px 15px;
+      background:linear-gradient(180deg, rgba(46,58,145,.96), rgba(29,39,101,.96));
+      border:1px solid rgba(255,255,255,.06);
+      box-shadow:0 9px 20px rgba(0,0,0,.20);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+
+    .miniTop{
+      font-size:11px;
+      font-weight:1000;
+      color:rgba(255,255,255,.78);
+      margin-bottom:7px;
+      line-height:1;
+      letter-spacing:.14px;
+    }
+
+    .miniBig{
+      font-size:19px;
+      line-height:1;
+      font-weight:1000;
+      letter-spacing:-.25px;
+    }
+
+    .scoreCard{
+      margin-top:11px;
+      border-radius:24px;
+      padding:15px;
+      background:linear-gradient(180deg, rgba(71,85,198,.94), rgba(50,63,158,.94));
+      border:1px solid rgba(255,255,255,.07);
+      box-shadow:var(--shadow);
+    }
+
+    .scoreHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:10px;
+      margin-bottom:8px;
+    }
+
+    .scoreTitle{
+      font-size:17px;
+      font-weight:1000;
+      line-height:1;
+      letter-spacing:.16px;
+      color:#f6f8ff;
+    }
+
+    .scoreVal{
+      font-size:64px;
+      line-height:.86;
+      font-weight:1000;
+      letter-spacing:-2px;
+      color:var(--cyan);
+    }
+
+    .barTrack{
+      height:15px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.13);
+      border:1px solid rgba(255,255,255,.05);
+    }
+
+    .barFill{
+      width:0%;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,#e6b7b3 0%,#dbd389 30%,#b7db98 60%,#a9d8ef 100%);
+      transition:width .25s ease;
+    }
+
+    .factorGrid{
+      margin-top:11px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+    }
+
+    .factor{
+      min-height:80px;
+      border-radius:18px;
+      padding:12px 13px;
+      background:rgba(26,36,108,.42);
+      border:1px solid rgba(255,255,255,.045);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
+    }
+
+    .factorTop{
+      font-size:12px;
+      font-weight:900;
+      color:rgba(255,255,255,.66);
+      margin-bottom:7px;
+      line-height:1;
+    }
+
+    .factorVal{
+      font-size:22px;
+      font-weight:1000;
+      letter-spacing:-.3px;
+      line-height:1;
+    }
+
+    .sessionBarWrap{
+      margin-top:11px;
+      display:grid;
+      gap:8px;
+    }
+
+    .sessionTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      font-size:12px;
+      font-weight:1000;
+      color:rgba(255,255,255,.72);
+    }
+
+    .sessionTrack{
+      height:10px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.05);
+    }
+
+    .sessionFill{
+      width:0%;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,#93ddb5 0%, #d8d18c 72%, #dfb8b8 100%);
+      transition:width .25s ease;
+    }
+
+    .sessionBadges{
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      min-height:26px;
+    }
+
+    .tinyBadge{
+      display:none;
+      border-radius:999px;
+      padding:6px 11px;
+      font-size:11px;
+      font-weight:1000;
+      color:rgba(255,255,255,.86);
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .tinyBadge.show{display:inline-flex}
+    .tinyBadge.day{box-shadow:var(--warnGlow)}
+    .tinyBadge.cool{box-shadow:var(--lockGlow)}
+    .tinyBadge.manual{box-shadow:var(--blueGlow)}
+
+    .logCard{
+      margin-top:14px;
+      border-radius:24px;
+      padding:15px;
+      background:linear-gradient(180deg, rgba(42,54,137,.98), rgba(30,41,106,.98));
+      border:1px solid rgba(255,255,255,.06);
+      box-shadow:0 12px 26px rgba(0,0,0,.24);
+    }
+
+    .logHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .logTitle{
+      font-size:18px;
+      font-weight:1000;
+      line-height:1;
+      color:#f6f8ff;
+      letter-spacing:.14px;
+    }
+
+    .logHeadRight{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .badgePill{
+      font-size:11px;
+      font-weight:1000;
+      color:rgba(255,255,255,.72);
+      border-radius:999px;
+      padding:6px 10px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.06);
+      transition:all .18s ease;
+      white-space:nowrap;
+    }
+
+    .badgePill.warn{box-shadow:var(--warnGlow)}
+    .badgePill.blue{box-shadow:var(--blueGlow)}
+    .badgePill.lock{box-shadow:var(--lockGlow)}
+    .badgePill.fail{box-shadow:var(--dangerGlow)}
+    .badgePill.ok{box-shadow:var(--okGlow)}
+
+    .logList{
+      max-height:300px;
+      overflow:auto;
+      padding-right:4px;
+      scrollbar-width:thin;
+    }
+
+    .logEntry{
+      padding:9px 2px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:14px;
+      line-height:1.34;
+      word-break:break-word;
+      color:rgba(243,246,255,.92);
+    }
+    .logEntry:last-child{border-bottom:none}
+
+    .logQueued{color:#dbe0f8}
+    .logProcessing{color:#e4cf84}
+    .logExecuted{color:#eef2ff}
+    .logWin{color:var(--green)}
+    .logLoss{color:var(--red)}
+    .logReset{color:#b9d7ff}
+    .logDay{color:#e8d896}
+    .logSystem{color:#d6ddf7}
+    .logAuto{color:#cfe7d4}
+    .logCooldown{color:#c7d4f3}
+
+    @media (max-width:420px){
+      .wrap{padding-left:10px;padding-right:10px}
+      .title{font-size:22px;margin-bottom:12px}
+      .hero{padding:10px}
+      .heroInner{min-height:218px}
+      .guard{font-size:68px}
+      .heroHint{font-size:14px}
+      .pnl{font-size:66px}
+      .pnlSub{font-size:16px}
+      .grid2,.actionGrid,.miniGrid{gap:10px}
+      .card{min-height:98px;padding:14px 16px}
+      .cardLabel{font-size:14px}
+      .cardVal{font-size:24px}
+      .actBtn{min-height:56px;font-size:14px}
+      .resetBtn{min-height:58px}
+      .toggleBtn{min-height:72px}
+      .toggleMain{font-size:20px}
+      .miniCard{min-height:80px}
+      .miniBig{font-size:18px}
+      .scoreVal{font-size:56px}
+      .factor{min-height:76px}
+      .factorVal{font-size:21px}
+      .logList{max-height:280px}
+    }
+  </style>
 </head>
-
 <body>
+  <div class="wrap">
+    <div class="title">
+      <span>V21.1 HARD LIVE ⚡</span>
+      <span class="liveDot"></span>
+    </div>
 
-<div class="header">V21.0 HARD LIVE ⚡ 🟢</div>
+    <section class="hero">
+      <div class="heroInner">
+        <div id="guard" class="guard ready">READY</div>
+        <div id="heroHint" class="heroHint">System bereit.</div>
+        <div id="pnl" class="pnl neutral">0</div>
+        <div class="pnlSub">Net PnL</div>
 
-<div class="hero">
-  <h1 id="status">READY</h1>
-  <div class="sub" id="sub">System bereit.</div>
-  <div class="pnl" id="pnl">0</div>
-  <div>Net PnL</div>
-  <div class="badge" id="mode">LIVE</div>
+        <div class="heroMetaRow">
+          <div id="heroMeta" class="heroMeta live">
+            <span id="heroMetaText">LIVE</span>
+          </div>
+        </div>
 
-  <div class="limits">
-    <div class="limit">LOSS LIMIT -20</div>
-    <div class="limit">WIN TARGET +20</div>
+        <div class="heroLimits">
+          <div id="lossLimitBadge" class="limitBadge loss">LOSS LIMIT --20</div>
+          <div id="winTargetBadge" class="limitBadge win">WIN TARGET +20</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid2">
+      <div class="card">
+        <div class="cardLabel">STATUS</div>
+        <div id="healthStatus" class="cardVal ok">OK</div>
+      </div>
+      <div class="card">
+        <div class="cardLabel">BUY POST</div>
+        <div id="healthBuy" class="cardVal ok">OK</div>
+      </div>
+      <div class="card">
+        <div class="cardLabel">SELL POST</div>
+        <div id="healthSell" class="cardVal ok">OK</div>
+      </div>
+      <div class="card">
+        <div class="cardLabel">CONF</div>
+        <div id="confVal" class="cardVal mid">62%</div>
+      </div>
+    </section>
+
+    <section class="actionGrid">
+      <button id="btnBuy" class="actBtn buyBtn">BUY</button>
+      <button id="btnSell" class="actBtn sellBtn">SELL</button>
+      <button id="btnWin" class="actBtn winBtn">WIN</button>
+      <button id="btnLoss" class="actBtn lossBtn">LOSS</button>
+      <button id="btnReset" class="actBtn resetBtn">RESET</button>
+    </section>
+
+    <section class="miniGrid">
+      <button id="autoToggleBtn" class="toggleBtn">
+        <div class="toggleLeft">
+          <div id="toggleDot" class="toggleDot"></div>
+          <div class="toggleTextWrap">
+            <div class="toggleTop">AUTO MODE</div>
+            <div id="toggleMain" class="toggleMain">AUTO OFF</div>
+          </div>
+        </div>
+        <div id="toggleState" class="toggleState">OFF</div>
+      </button>
+
+      <div class="miniCard">
+        <div class="miniTop">QUEUE</div>
+        <div id="queueVal" class="miniBig">0</div>
+      </div>
+
+      <div class="miniCard">
+        <div class="miniTop">PROCESSING</div>
+        <div id="processingVal" class="miniBig">OFF</div>
+      </div>
+    </section>
+
+    <section class="scoreCard">
+      <div class="scoreHead">
+        <div class="scoreTitle">AI SCORE</div>
+        <div id="scoreVal" class="scoreVal">82</div>
+      </div>
+
+      <div class="barTrack">
+        <div id="scoreBar" class="barFill"></div>
+      </div>
+
+      <div class="factorGrid">
+        <div class="factor">
+          <div class="factorTop">Trend</div>
+          <div id="trendVal" class="factorVal mid">72.3</div>
+        </div>
+        <div class="factor">
+          <div class="factorTop">Volume</div>
+          <div id="volumeVal" class="factorVal mid">65.5</div>
+        </div>
+        <div class="factor">
+          <div class="factorTop">Structure</div>
+          <div id="structureVal" class="factorVal ok">80.1</div>
+        </div>
+        <div class="factor">
+          <div class="factorTop">Volatility</div>
+          <div id="volatilityVal" class="factorVal fail">51.2</div>
+        </div>
+        <div class="factor">
+          <div class="factorTop">Liquidity</div>
+          <div id="liquidityVal" class="factorVal ok">81.9</div>
+        </div>
+        <div class="factor">
+          <div class="factorTop">Session</div>
+          <div id="sessionVal" class="factorVal mid">68.0</div>
+        </div>
+      </div>
+
+      <div class="sessionBarWrap">
+        <div class="sessionTop">
+          <span id="sessionTradesText">Trades 0 / 50</span>
+          <span id="dayKeyText">Heute</span>
+        </div>
+        <div class="sessionTrack">
+          <div id="sessionFill" class="sessionFill"></div>
+        </div>
+      </div>
+
+      <div class="sessionBadges">
+        <div id="cooldownInline" class="tinyBadge cool">COOLDOWN 1s</div>
+        <div id="manualResetInline" class="tinyBadge manual">MANUAL RESET</div>
+        <div id="dayResetInline" class="tinyBadge day">DAY RESET</div>
+      </div>
+    </section>
+
+    <section class="logCard">
+      <div class="logHead">
+        <div class="logTitle">LOG</div>
+        <div class="logHeadRight">
+          <div id="dayBadge" class="badgePill">DAY READY</div>
+          <div id="syncBadge" class="badgePill ok">SYNC OK</div>
+        </div>
+      </div>
+      <div id="logList" class="logList">
+        <div class="logEntry">Keine Einträge.</div>
+      </div>
+    </section>
   </div>
-</div>
 
-<div class="grid">
-  <div class="card"><h3>STATUS</h3><div class="value" id="health">OK</div></div>
-  <div class="card"><h3>BUY POST</h3><div class="value">OK</div></div>
-  <div class="card"><h3>SELL POST</h3><div class="value">OK</div></div>
-  <div class="card"><h3>CONF</h3><div class="value" id="conf">0%</div></div>
-</div>
+  <script>
+    const $ = (id) => document.getElementById(id);
 
-<div class="actions">
-  <button class="buy" onclick="send('buy')">BUY</button>
-  <button class="sell" onclick="send('sell')">SELL</button>
-  <button class="win" onclick="send('win')">WIN</button>
-  <button class="loss" onclick="send('loss')">LOSS</button>
-  <button class="reset" onclick="send('reset')">RESET</button>
-</div>
+    const els = {
+      guard: $("guard"),
+      heroHint: $("heroHint"),
+      heroMeta: $("heroMeta"),
+      heroMetaText: $("heroMetaText"),
+      pnl: $("pnl"),
+      healthStatus: $("healthStatus"),
+      healthBuy: $("healthBuy"),
+      healthSell: $("healthSell"),
+      confVal: $("confVal"),
+      queueVal: $("queueVal"),
+      processingVal: $("processingVal"),
+      scoreVal: $("scoreVal"),
+      scoreBar: $("scoreBar"),
+      trendVal: $("trendVal"),
+      volumeVal: $("volumeVal"),
+      structureVal: $("structureVal"),
+      volatilityVal: $("volatilityVal"),
+      liquidityVal: $("liquidityVal"),
+      sessionVal: $("sessionVal"),
+      sessionTradesText: $("sessionTradesText"),
+      dayKeyText: $("dayKeyText"),
+      sessionFill: $("sessionFill"),
+      cooldownInline: $("cooldownInline"),
+      manualResetInline: $("manualResetInline"),
+      dayResetInline: $("dayResetInline"),
+      dayBadge: $("dayBadge"),
+      syncBadge: $("syncBadge"),
+      lossLimitBadge: $("lossLimitBadge"),
+      winTargetBadge: $("winTargetBadge"),
+      toggleDot: $("toggleDot"),
+      autoToggleBtn: $("autoToggleBtn"),
+      toggleMain: $("toggleMain"),
+      toggleState: $("toggleState"),
+      btnBuy: $("btnBuy"),
+      btnSell: $("btnSell"),
+      btnWin: $("btnWin"),
+      btnLoss: $("btnLoss"),
+      btnReset: $("btnReset"),
+      logList: $("logList")
+    };
 
-<div class="auto">
-  <div>AUTO MODE</div>
-  <div class="toggle" onclick="toggleAuto()" id="autoBtn">OFF</div>
-</div>
+    let syncBusy = false;
 
-<div class="score">
-  <div style="display:flex;justify-content:space-between;">
-    <div>AI SCORE</div>
-    <div id="scoreVal">0</div>
-  </div>
-  <div class="bar"></div>
+    function n(v, fb = 0){
+      const x = Number(v);
+      return Number.isFinite(x) ? x : fb;
+    }
 
-  <div class="subgrid">
-    <div class="subbox">Trend<br><b id="trend">0</b></div>
-    <div class="subbox">Volume<br><b id="volume">0</b></div>
-    <div class="subbox">Structure<br><b id="structure">0</b></div>
-    <div class="subbox">Volatility<br><b id="vol">0</b></div>
-    <div class="subbox">Liquidity<br><b id="liq">0</b></div>
-    <div class="subbox">Session<br><b id="session">0</b></div>
-  </div>
+    function fmtPnL(v){
+      const x = n(v, 0);
+      if (Number.isInteger(x)) return String(x);
+      return x.toFixed(2);
+    }
 
-  <div class="cooldown" id="cooldown"></div>
-</div>
+    function fmtSec(ms){
+      return `${Math.max(0, Math.ceil(n(ms, 0) / 1000))}s`;
+    }
 
-<div class="log">
-  <h3>LOG</h3>
-  <div id="log"></div>
-</div>
+    function guardText(g){
+      const s = String(g || "").toUpperCase();
+      if (s === "READY") return "READY";
+      if (s.includes("SESSION")) return "SESSION...";
+      if (s.includes("WIN_TARGET")) return "TARGET...";
+      if (s.includes("DAILY_LOSS")) return "LOSS...";
+      if (s.includes("COOLDOWN")) return "LOCKED";
+      if (s.includes("LOCK") || s.includes("QUEUE") || s.includes("PROCESS")) return "LOCKED";
+      if (s.includes("HEALTH") || s.includes("FAIL")) return "FAIL";
+      return s || "READY";
+    }
 
-<script>
-let auto=false;
+    function guardClass(g){
+      const s = String(g || "").toUpperCase();
+      if (s === "READY") return "ready";
+      if (s.includes("SESSION") || s.includes("WIN_TARGET")) return "block";
+      if (s.includes("DAILY_LOSS")) return "fail";
+      if (s.includes("COOLDOWN") || s.includes("LOCK") || s.includes("QUEUE") || s.includes("PROCESS")) return "locked";
+      if (s.includes("HEALTH") || s.includes("FAIL")) return "fail";
+      return "warn";
+    }
 
-function toggleAuto(){
-  auto=!auto;
-  document.getElementById("autoBtn").innerText = auto ? "ON" : "OFF";
-  fetch('/api/auto',{method:'POST'});
-}
+    function factorClass(v){
+      const x = n(v, 0);
+      if (x >= 75) return "ok";
+      if (x >= 60) return "mid";
+      return "fail";
+    }
 
-function send(type){
-  fetch('/api/'+type,{method:'POST'});
-}
+    function setHealth(el, ok){
+      el.textContent = ok ? "OK" : "FAIL";
+      el.className = `cardVal ${ok ? "ok" : "fail"}`;
+    }
 
-async function load(){
-  const res = await fetch('/api/state');
-  const d = await res.json();
+    function setFactor(el, value){
+      el.textContent = n(value).toFixed(1);
+      el.className = `factorVal ${factorClass(value)}`;
+    }
 
-  document.getElementById("pnl").innerText = d.pnl;
-  document.getElementById("status").innerText = d.status;
-  document.getElementById("sub").innerText = d.message;
-  document.getElementById("conf").innerText = d.conf+"%";
-  document.getElementById("scoreVal").innerText = d.score;
+    function setSync(state){
+      els.syncBadge.className = "badgePill";
+      if (state === "pending"){
+        els.syncBadge.classList.add("warn");
+        els.syncBadge.textContent = "SYNC...";
+      } else if (state === "fail"){
+        els.syncBadge.classList.add("fail");
+        els.syncBadge.textContent = "SYNC FAIL";
+      } else {
+        els.syncBadge.classList.add("ok");
+        els.syncBadge.textContent = "SYNC OK";
+      }
+    }
 
-  document.getElementById("trend").innerText = d.trend;
-  document.getElementById("volume").innerText = d.volume;
-  document.getElementById("structure").innerText = d.structure;
-  document.getElementById("vol").innerText = d.volatility;
-  document.getElementById("liq").innerText = d.liquidity;
-  document.getElementById("session").innerText = d.session;
+    function metaFromState(data){
+      const guard = String(data.guard || "").toUpperCase();
+      const queueLen = n(data.queueLength, 0);
 
-  document.getElementById("cooldown").innerText =
-    d.cooldown ? "Cooldown aktiv ("+d.cooldown+"s)" : "";
+      els.heroMeta.className = "heroMeta";
 
-  const log = document.getElementById("log");
-  log.innerHTML = "";
-  d.logs.slice(-10).reverse().forEach(l=>{
-    const div=document.createElement("div");
-    div.className="log-entry";
-    div.innerText=l;
-    log.appendChild(div);
-  });
-}
+      if (guard.includes("SESSION")) {
+        els.heroMeta.classList.add("block");
+        els.heroMetaText.textContent = "SESSION LIMIT";
+      } else if (guard.includes("DAILY_LOSS")) {
+        els.heroMeta.classList.add("block");
+        els.heroMetaText.textContent = "LOSS LIMIT";
+      } else if (guard.includes("WIN_TARGET")) {
+        els.heroMeta.classList.add("day");
+        els.heroMetaText.textContent = "WIN TARGET";
+      } else if (data.cooldownActive) {
+        els.heroMeta.classList.add("locked");
+        els.heroMetaText.textContent = `COOLDOWN ${fmtSec(data.cooldownMsLeft)}`;
+      } else if (data.processing) {
+        els.heroMeta.classList.add("locked");
+        els.heroMetaText.textContent = "PROCESSING";
+      } else if (queueLen > 0) {
+        els.heroMeta.classList.add("queue");
+        els.heroMetaText.textContent = `QUEUE ${queueLen}`;
+      } else if (data.autoEnabled) {
+        els.heroMeta.classList.add("auto");
+        els.heroMetaText.textContent = "AUTO ON";
+      } else {
+        els.heroMeta.classList.add("live");
+        els.heroMetaText.textContent = "LIVE";
+      }
+    }
 
-setInterval(load,1000);
-load();
-</script>
+    function badgesFromState(data){
+      if (data.dailyLossLimit !== null && data.dailyLossLimit !== undefined) {
+        els.lossLimitBadge.classList.add("show");
+        els.lossLimitBadge.textContent = `LOSS LIMIT ${data.dailyLossLimit}`;
+      } else {
+        els.lossLimitBadge.classList.remove("show");
+      }
 
+      if (data.dailyWinTarget !== null && data.dailyWinTarget !== undefined) {
+        const wt = Number(data.dailyWinTarget);
+        els.winTargetBadge.classList.add("show");
+        els.winTargetBadge.textContent = `WIN TARGET ${wt > 0 ? "+" : ""}${wt}`;
+      } else {
+        els.winTargetBadge.classList.remove("show");
+      }
+
+      els.cooldownInline.classList.remove("show");
+      els.manualResetInline.classList.remove("show");
+      els.dayResetInline.classList.remove("show");
+
+      if (data.cooldownActive) {
+        els.cooldownInline.classList.add("show");
+        els.cooldownInline.textContent = `COOLDOWN ${fmtSec(data.cooldownMsLeft)}`;
+      }
+
+      const resetType = String(data.lastResetType || "").toUpperCase();
+      if (resetType === "MANUAL") els.manualResetInline.classList.add("show");
+      if (resetType === "DAY") els.dayResetInline.classList.add("show");
+
+      els.dayBadge.className = "badgePill";
+      const guard = String(data.guard || "").toUpperCase();
+
+      if (guard.includes("SESSION")) {
+        els.dayBadge.classList.add("warn");
+        els.dayBadge.textContent = "DAY LIMIT";
+      } else if (guard.includes("DAILY_LOSS")) {
+        els.dayBadge.classList.add("fail");
+        els.dayBadge.textContent = "LOSS LIMIT";
+      } else if (guard.includes("WIN_TARGET")) {
+        els.dayBadge.classList.add("blue");
+        els.dayBadge.textContent = "WIN TARGET";
+      } else if (data.cooldownActive) {
+        els.dayBadge.classList.add("lock");
+        els.dayBadge.textContent = `COOLDOWN ${fmtSec(data.cooldownMsLeft)}`;
+      } else if (resetType === "DAY") {
+        els.dayBadge.classList.add("warn");
+        els.dayBadge.textContent = "DAY RESET";
+      } else if (resetType === "MANUAL") {
+        els.dayBadge.classList.add("blue");
+        els.dayBadge.textContent = "MANUAL RESET";
+      } else {
+        els.dayBadge.classList.add("ok");
+        els.dayBadge.textContent = "DAY READY";
+      }
+    }
+
+    function renderLog(log){
+      if (!Array.isArray(log) || !log.length) {
+        els.logList.innerHTML = `<div class="logEntry">Keine Einträge.</div>`;
+        return;
+      }
+
+      const rows = [...log].reverse().slice(0, 24).map(item => {
+        const type = String(item.type || item.kind || "").toUpperCase();
+        const time = item.localTime || "--:--:--";
+        const msg = item.msg || item.text || "-";
+
+        let cls = "logSystem";
+        if (type.includes("QUEUE")) cls = "logQueued";
+        else if (type.includes("PROCESS")) cls = "logProcessing";
+        else if (type.includes("EXECUT")) cls = "logExecuted";
+        else if (type.includes("WIN")) cls = "logWin";
+        else if (type.includes("LOSS")) cls = "logLoss";
+        else if (type.includes("RESET")) cls = "logReset";
+        else if (type.includes("DAY")) cls = "logDay";
+        else if (type.includes("AUTO")) cls = "logAuto";
+        else if (type.includes("COOLDOWN")) cls = "logCooldown";
+
+        return `<div class="logEntry ${cls}">${time} - ${msg}</div>`;
+      }).join("");
+
+      els.logList.innerHTML = rows;
+    }
+
+    function lockButtons(data){
+      const guard = String(data.guard || "").toUpperCase();
+      const queueBusy = n(data.queueLength, 0) > 0;
+      const processing = !!data.processing;
+      const cooldown = !!data.cooldownActive;
+      const sessionBlock = guard.includes("SESSION") || guard.includes("DAILY_LOSS") || guard.includes("WIN_TARGET");
+      const healthFail = guard.includes("HEALTH") || guard.includes("FAIL");
+
+      const tradeBlocked = sessionBlock || healthFail || processing || queueBusy || cooldown;
+
+      els.btnBuy.disabled = tradeBlocked;
+      els.btnSell.disabled = tradeBlocked;
+      els.btnWin.disabled = sessionBlock || processing || queueBusy || cooldown;
+      els.btnLoss.disabled = sessionBlock || processing || queueBusy || cooldown;
+      els.btnReset.disabled = processing;
+      els.autoToggleBtn.disabled = processing;
+    }
+
+    function render(data){
+      els.guard.textContent = guardText(data.guard || data.status || "READY");
+      els.guard.className = `guard ${guardClass(data.guard || data.status || "READY")}`;
+
+      els.heroHint.textContent = data.reasonHint || data.message || "System bereit.";
+
+      const pnlNum = n(data.pnl, 0);
+      els.pnl.textContent = fmtPnL(pnlNum);
+      els.pnl.className = `pnl ${pnlNum > 0 ? "positive" : pnlNum < 0 ? "negative" : "neutral"}`;
+
+      setHealth(els.healthStatus, !!(data.health?.status ?? true));
+      setHealth(els.healthBuy, !!(data.health?.buy ?? true));
+      setHealth(els.healthSell, !!(data.health?.sell ?? true));
+
+      els.confVal.textContent = `${n(data.confidence ?? data.conf, 62)}%`;
+
+      const autoOn = !!data.autoEnabled;
+      els.autoToggleBtn.classList.toggle("active", autoOn);
+      els.toggleMain.textContent = autoOn ? "AUTO ON" : "AUTO OFF";
+      els.toggleState.textContent = autoOn ? "ON" : "OFF";
+
+      els.queueVal.textContent = String(n(data.queueLength, 0));
+      els.processingVal.textContent = data.processing ? "ON" : "OFF";
+
+      const score = n(data.score, 82);
+      els.scoreVal.textContent = String(Math.round(score));
+      els.scoreBar.style.width = `${Math.max(0, Math.min(100, score))}%`;
+
+      setFactor(els.trendVal, data.factors?.trend ?? data.trend ?? 72.3);
+      setFactor(els.volumeVal, data.factors?.volume ?? data.volume ?? 65.5);
+      setFactor(els.structureVal, data.factors?.structure ?? data.structure ?? 80.1);
+      setFactor(els.volatilityVal, data.factors?.volatility ?? data.volatility ?? 51.2);
+      setFactor(els.liquidityVal, data.factors?.liquidity ?? data.liquidity ?? 81.9);
+      setFactor(els.sessionVal, data.factors?.session ?? data.session ?? 68);
+
+      const sessionTrades = n(data.sessionTrades, 0);
+      const maxTrades = Math.max(1, n(data.maxSessionTrades, 50));
+      els.sessionTradesText.textContent = `Trades ${sessionTrades} / ${maxTrades}`;
+      els.dayKeyText.textContent = data.dayKey || "Heute";
+      els.sessionFill.style.width = `${(sessionTrades / maxTrades) * 100}%`;
+
+      metaFromState(data);
+      badgesFromState(data);
+      renderLog(data.log || []);
+      lockButtons(data);
+    }
+
+    async function getState(){
+      const res = await fetch("/api/status", { cache: "no-store" });
+      if (!res.ok) throw new Error("status failed");
+      return res.json();
+    }
+
+    async function post(url){
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}"
+      });
+      if (!res.ok) throw new Error("post failed");
+      return res.json();
+    }
+
+    async function sync(){
+      if (syncBusy) return;
+      syncBusy = true;
+      try{
+        setSync("pending");
+        const data = await getState();
+        render(data);
+        setSync("ok");
+      } catch(e){
+        console.error(e);
+        setSync("fail");
+      } finally {
+        syncBusy = false;
+      }
+    }
+
+    async function action(url){
+      try{
+        setSync("pending");
+        const data = await post(url);
+        render(data);
+        setSync("ok");
+      } catch(e){
+        console.error(e);
+        setSync("fail");
+      }
+    }
+
+    els.btnBuy.onclick = () => action("/api/buy");
+    els.btnSell.onclick = () => action("/api/sell");
+    els.btnWin.onclick = () => action("/api/win");
+    els.btnLoss.onclick = () => action("/api/loss");
+    els.btnReset.onclick = () => action("/api/reset");
+    els.autoToggleBtn.onclick = () => action("/api/auto");
+
+    sync();
+    setInterval(sync, 1200);
+  </script>
 </body>
 </html>
