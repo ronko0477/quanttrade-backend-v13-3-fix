@@ -30,7 +30,7 @@ const CONFIG = {
   lossStep: -4,
   dailyLossLimit: -20,
   dailyWinTarget: 20,
-  maxLogEntries: 300
+  maxLogEntries: 320
 };
 
 /* =========================
@@ -193,7 +193,7 @@ function softDayReset() {
   state.lastResetType = "DAY";
 
   resetHealth();
-  addLog("DAY", "Day reset", { resetType: "DAY" });
+  addLog("DAY", "Tagesreset ausgeführt", { resetType: "DAY" });
 }
 
 function ensureDayFresh() {
@@ -382,7 +382,12 @@ function enqueue(type, source = "MANUAL") {
   const id = nowMs() + Math.floor(Math.random() * 1000);
   state.queue.push({ id, type, source });
 
-  addLog("QUEUE", `Order ${id} queued (${type})`, { source, orderId: id, side: type });
+  addLog("QUEUE", `Order ${id} queued (${type})`, {
+    source,
+    orderId: id,
+    side: type
+  });
+
   recalcDerivedState();
 
   processQueue().catch((err) => {
@@ -411,6 +416,7 @@ async function processQueue() {
     orderId: job.id,
     side: job.type
   });
+
   recalcDerivedState();
 
   await new Promise((resolve) => setTimeout(resolve, CONFIG.processDelayMs));
@@ -424,6 +430,7 @@ async function processQueue() {
   state.processing = false;
   startCooldown(CONFIG.actionCooldownMs);
   addLog("COOLDOWN", "Cooldown aktiv", { cooldownMs: CONFIG.actionCooldownMs });
+
   recalcDerivedState();
 
   if (applyHardStopGuard()) {
@@ -593,6 +600,7 @@ app.post("/api/win", (req, res) => {
     } else {
       setGuard("LOCKED", "Order läuft oder ist in Queue.");
     }
+
     recalcDerivedState();
     return res.json(responseState());
   }
@@ -626,6 +634,7 @@ app.post("/api/loss", (req, res) => {
     } else {
       setGuard("LOCKED", "Order läuft oder ist in Queue.");
     }
+
     recalcDerivedState();
     return res.json(responseState());
   }
@@ -688,7 +697,7 @@ app.post("/api/auto/off", (req, res) => {
   res.json(responseState());
 });
 
-/* Toggle endpoint for V21.1 hybrid html */
+/* Toggle endpoint for V21.2 html */
 app.post("/api/auto", (req, res) => {
   state.autoEnabled = !state.autoEnabled;
   state.lastResetType = "";
@@ -735,5 +744,5 @@ recalcDerivedState();
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 V21.1 HYBRID FULL PRO running on port ${PORT}`);
+  console.log(`🚀 V21.2 POLISH running on port ${PORT}`);
 });
