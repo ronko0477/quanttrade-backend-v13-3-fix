@@ -74,11 +74,7 @@ function clamp(n, min, max) {
 }
 
 function formatNumber(n) {
-  return Number.isInteger(n) ? String(n) : n.toFixed(2);
-}
-
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return Number.isInteger(n) ? String(n) : Number(n).toFixed(2);
 }
 
 /* =========================
@@ -129,6 +125,57 @@ const state = {
 
   log: []
 };
+
+/* =========================
+   TEXT / PRETTY
+========================= */
+function prettyReason(reason) {
+  const map = {
+    trend_up: "Trend Up",
+    trend_weak: "Trend Weak",
+    structure_strong: "Structure Strong",
+    structure_soft: "Structure Soft",
+    volume_ok: "Volume OK",
+    volume_low: "Volume Low",
+    liquidity_ok: "Liquidity OK",
+    liquidity_thin: "Liquidity Thin",
+    volatility_high: "Volatility High",
+    volatility_mid: "Volatility Mid",
+    volatility_stable: "Volatility Stable",
+    session_good: "Session Good",
+    session_soft: "Session Soft",
+    loss_caution: "Loss Caution",
+    profit_buffer: "Profit Buffer",
+    session_soft_slowdown: "Session Slowdown",
+    session_hard_slowdown: "Session Tight",
+    low_edge_or_confidence: "Low Confidence"
+  };
+  return map[reason] || String(reason || "").replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function signalText(sig) {
+  const s = String(sig || "").toUpperCase();
+  if (s === "BUY") return "BUY";
+  if (s === "SELL") return "SELL";
+  return "HOLD";
+}
+
+function aiSummaryLine() {
+  const signal = signalText(state.ai.signal);
+  const reasons = Array.isArray(state.ai.reasons)
+    ? state.ai.reasons.slice(0, 3).map(prettyReason)
+    : [];
+
+  if (signal === "HOLD") {
+    return reasons.length
+      ? `AI Hold · ${reasons.join(" · ")}`
+      : "AI Hold · Kein klares Signal";
+  }
+
+  return reasons.length
+    ? `AI ${signal} · ${reasons.join(" · ")}`
+    : `AI ${signal}`;
+}
 
 /* =========================
    LOGGING
@@ -472,28 +519,6 @@ function decideTradeSignal() {
   state.confidence = confidence;
 }
 
-function aiReasonText() {
-  const ai = state.ai;
-
-  if (ai.signal === "BUY") {
-    return `AI BUY · ${ai.reasons.slice(0, 3).join(" · ")}`;
-  }
-
-  if (ai.signal === "SELL") {
-    return `AI SELL · ${ai.reasons.slice(0, 3).join(" · ")}`;
-  }
-
-  if (ai.sideBias === "BUY") {
-    return "AI HOLD · BUY Bias";
-  }
-
-  if (ai.sideBias === "SELL") {
-    return "AI HOLD · SELL Bias";
-  }
-
-  return "AI HOLD · kein klares Signal";
-}
-
 /* =========================
    SCORE / DERIVED
 ========================= */
@@ -507,7 +532,11 @@ function recalcDerivedState() {
   const pnlPenalty = Math.max(0, -pnl * 1.4);
 
   state.score = Math.round(
-    clamp(82 - pnlPenalty - queuePenalty - processingPenalty - cooldownPenalty - sessionPenalty + aiBoost, 0, 100)
+    clamp(
+      82 - pnlPenalty - queuePenalty - processingPenalty - cooldownPenalty - sessionPenalty + aiBoost,
+      0,
+      100
+    )
   );
 }
 
@@ -560,6 +589,7 @@ function responseState() {
     aiBuyEdge: state.ai.buyEdge,
     aiSellEdge: state.ai.sellEdge,
     aiReasons: [...state.ai.reasons],
+    aiSummary: aiSummaryLine(),
 
     sessionTrades: state.sessionTrades,
     maxSessionTrades: state.maxSessionTrades,
@@ -612,7 +642,7 @@ async function processQueue() {
   const job = state.queue.shift();
   state.processing = true;
 
-  setGuard("LOCKED", `${job.type} ${job.source === "AUTO" ? "AI gesendet" : "gesendet"}`);
+  setGuard("LOCKED", `${job.type} ${job.source === "AUTO" ? "Auto gesendet" : "gesendet"}`);
   addLog("PROCESSING", `Order ${job.id} wird verarbeitet (${job.type})`, {
     source: job.source,
     orderId: job.id,
@@ -689,8 +719,8 @@ function tryAutoTrade() {
   decideTradeSignal();
 
   if (state.ai.signal === "HOLD") {
-    addLog("AUTO", `AI HOLD (${state.ai.reasons.slice(0, 3).join(", ")})`);
-    setReadyIfPossible(aiReasonText());
+    addLog("AUTO", aiSummaryLine());
+    setReadyIfPossible("AI wartet auf klares Signal.");
     recalcDerivedState();
     return;
   }
@@ -698,11 +728,8 @@ function tryAutoTrade() {
   enqueue(state.ai.signal, "AUTO");
   state.sessionTrades += 1;
   state.lastResetType = "";
-  setGuard("LOCKED", `${state.ai.signal} AI gesendet`);
-  addLog(
-    "AUTO",
-    `AI Signal ${state.ai.signal} | ${state.ai.reasons.slice(0, 3).join(", ")}`
-  );
+  setGuard("LOCKED", `${state.ai.signal} Auto gesendet`);
+  addLog("AUTO", aiSummaryLine());
   recalcDerivedState();
 }
 
@@ -716,11 +743,15 @@ function refreshRuntimeFlags() {
 
   if (!state.processing && state.queue.length === 0 && state.guard === "COOLDOWN" && !isCooldownActive()) {
     addLog("COOLDOWN", "Cooldown Ende");
-    setReadyIfPossible(aiReasonText());
+    setReadyIfPossible("System bereit.");
   }
 
   if (!state.processing && state.queue.length === 0 && !isCooldownActive()) {
-    setReadyIfPossible(state.autoEnabled ? aiReasonText() : state.reasonHint || "System bereit.");
+    if (state.autoEnabled) {
+      setReadyIfPossible("AI Auto aktiv");
+    } else {
+      setReadyIfPossible(state.reasonHint || "System bereit.");
+    }
   }
 
   decideTradeSignal();
@@ -896,7 +927,7 @@ app.post("/api/auto/on", (req, res) => {
     state.lastResetType = "";
     updateMarketFactors();
     decideTradeSignal();
-    addLog("AUTO", `AI Auto EIN | ${state.ai.signal} | ${state.ai.reasons.slice(0, 2).join(", ")}`);
+    addLog("AUTO", "AI Auto EIN");
   }
 
   setReadyIfPossible("AI Auto aktiv");
@@ -928,12 +959,7 @@ app.post("/api/auto", (req, res) => {
   updateMarketFactors();
   decideTradeSignal();
 
-  addLog(
-    "AUTO",
-    state.autoEnabled
-      ? `AI Auto EIN | ${state.ai.signal} | ${state.ai.reasons.slice(0, 2).join(", ")}`
-      : "AI Auto AUS"
-  );
+  addLog("AUTO", state.autoEnabled ? "AI Auto EIN" : "AI Auto AUS");
 
   if (applyHardStopGuard()) {
     recalcDerivedState();
@@ -945,7 +971,6 @@ app.post("/api/auto", (req, res) => {
   res.json(responseState());
 });
 
-/* Optional health */
 app.post("/api/health/ok", (req, res) => {
   resetHealth();
   state.lastResetType = "";
@@ -976,5 +1001,5 @@ recalcDerivedState();
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 V22.0 AI CORE running on port ${PORT}`);
+  console.log(`🚀 V22.2 POLISH running on port ${PORT}`);
 });
