@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V22.4 HARD LIVE</title>
+  <title>V22.5 HARD LIVE</title>
 
   <style>
     :root{
@@ -709,6 +709,7 @@
     .tinyBadge.manual{box-shadow:var(--blueGlow)}
     .tinyBadge.ai{box-shadow:var(--okGlow)}
     .tinyBadge.pause{box-shadow:var(--lockGlow)}
+    .tinyBadge.neutral{box-shadow:var(--blueGlow)}
 
     .logCard{
       margin-top:14px;
@@ -821,7 +822,7 @@
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V22.4 HARD LIVE ⚡</span>
+      <span>V22.5 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -984,8 +985,9 @@
         <div id="cooldownInline" class="tinyBadge cool">COOLDOWN 1s</div>
         <div id="manualResetInline" class="tinyBadge manual">MANUAL RESET</div>
         <div id="dayResetInline" class="tinyBadge day">DAY RESET</div>
-        <div id="aiSignalInline" class="tinyBadge ai">AI HOLD</div>
+        <div id="aiSignalInline" class="tinyBadge ai">AI BUY</div>
         <div id="aiPauseInline" class="tinyBadge pause">AI PAUSED</div>
+        <div id="aiReadyInline" class="tinyBadge neutral">AI READY</div>
       </div>
     </section>
 
@@ -1035,6 +1037,7 @@
       dayResetInline: $("dayResetInline"),
       aiSignalInline: $("aiSignalInline"),
       aiPauseInline: $("aiPauseInline"),
+      aiReadyInline: $("aiReadyInline"),
       dayBadge: $("dayBadge"),
       syncBadge: $("syncBadge"),
       lossLimitBadge: $("lossLimitBadge"),
@@ -1058,6 +1061,7 @@
     };
 
     let syncBusy = false;
+    let lastData = null;
 
     function n(v, fb = 0){
       const x = Number(v);
@@ -1096,6 +1100,11 @@
       return hasAny(data.guard, ["LOCK", "QUEUE", "PROCESS", "COOLDOWN"]);
     }
 
+    function isNeutralResetState(data){
+      const resetType = upper(data.lastResetType || "");
+      return resetType === "MANUAL" || resetType === "DAY";
+    }
+
     function guardText(g){
       const s = upper(g);
       if (s === "READY") return "READY";
@@ -1131,6 +1140,7 @@
       if (s === "SELL") return "sig-sell";
       if (s === "HOLD") return "sig-hold";
       if (s === "PAUSED") return "sig-paused";
+      if (s === "READY") return "sig-neutral";
       return "sig-neutral";
     }
 
@@ -1178,7 +1188,8 @@
         session_soft_slowdown: "Session Slowdown",
         session_hard_slowdown: "Session Tight",
         low_edge_or_confidence: "Low Confidence",
-        ai_paused: "AI Paused"
+        ai_paused: "AI Paused",
+        ai_ready: "AI Ready"
       };
       return map[reason] || String(reason || "").replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
     }
@@ -1200,7 +1211,9 @@
         .replaceAll("session_soft", "Session Soft")
         .replaceAll("session_soft_slowdown", "Session Slowdown")
         .replaceAll("session_hard_slowdown", "Session Tight")
-        .replaceAll("low_edge_or_confidence", "Low Confidence");
+        .replaceAll("low_edge_or_confidence", "Low Confidence")
+        .replaceAll("ai_paused", "AI Paused")
+        .replaceAll("ai_ready", "AI Ready");
     }
 
     function uniquePrettyReasons(reasons){
@@ -1208,15 +1221,16 @@
       const seen = new Set();
       const out = [];
 
-      const raw = reasons.map(prettifyReason);
-      const hasTight = raw.includes("Session Tight");
+      const pretty = reasons.map(prettifyReason);
+      const hasTight = pretty.includes("Session Tight");
+      const hasPaused = pretty.includes("AI Paused");
 
-      for (const pretty of raw) {
-        if (hasTight && pretty === "Session Soft") continue;
-        if (!seen.has(pretty)) {
-          seen.add(pretty);
-          out.push(pretty);
-        }
+      for (const nice of pretty) {
+        if (hasTight && nice === "Session Soft") continue;
+        if (hasPaused && nice === "AI Ready") continue;
+        if (seen.has(nice)) continue;
+        seen.add(nice);
+        out.push(nice);
       }
 
       return out;
@@ -1225,6 +1239,7 @@
     function buildHeroAiLine(data){
       const hardBlocked = isHardBlocked(data);
       const sessionBlocked = isSessionBlocked(data);
+      const resetNeutral = isNeutralResetState(data);
 
       if (sessionBlocked) {
         return "AI pausiert wegen Tageslimit";
@@ -1246,6 +1261,10 @@
         return `Order in Queue · ${n(data.queueLength, 0)} wartend`;
       }
 
+      if (resetNeutral && !data.autoEnabled) {
+        return "AI Ready · Warte auf frisches Signal";
+      }
+
       const rawSummary = cleanSummaryText(data.aiSummary || "").trim();
       if (rawSummary) return rawSummary;
 
@@ -1254,6 +1273,10 @@
 
       if (signal === "HOLD") {
         return reasons.length ? `AI Hold · ${reasons.join(" · ")}` : "AI Hold · Kein klares Signal";
+      }
+
+      if (signal === "READY") {
+        return "AI Ready · Warte auf frisches Signal";
       }
 
       return reasons.length ? `AI ${signal} · ${reasons.join(" · ")}` : `AI ${signal}`;
@@ -1313,6 +1336,7 @@
       els.dayResetInline.classList.remove("show");
       els.aiSignalInline.classList.remove("show");
       els.aiPauseInline.classList.remove("show");
+      els.aiReadyInline.classList.remove("show");
 
       if (data.cooldownActive) {
         els.cooldownInline.classList.add("show");
@@ -1326,6 +1350,9 @@
       if (isSessionBlocked(data)) {
         els.aiPauseInline.classList.add("show");
         els.aiPauseInline.textContent = "AI PAUSED";
+      } else if (resetType === "MANUAL" || resetType === "DAY") {
+        els.aiReadyInline.classList.add("show");
+        els.aiReadyInline.textContent = "AI READY";
       } else {
         const sig = upper(data.aiSignal || "HOLD");
         els.aiSignalInline.classList.add("show");
@@ -1363,8 +1390,11 @@
       let pretty = uniquePrettyReasons(reasons);
 
       if (isSessionBlocked(data)) {
-        pretty = pretty.filter(x => x !== "Session Soft" && x !== "Session Tight");
-        pretty.unshift("AI Paused");
+        pretty = ["AI Paused"];
+      }
+
+      if (isNeutralResetState(data) && !data.autoEnabled && !data.cooldownActive && !data.processing && !n(data.queueLength, 0)) {
+        pretty = ["AI Ready"];
       }
 
       if (!pretty.length) {
@@ -1425,8 +1455,19 @@
 
     function renderAI(data){
       const sessionBlocked = isSessionBlocked(data);
-      const signal = sessionBlocked ? "PAUSED" : upper(data.aiSignal || "HOLD");
-      const bias = sessionBlocked ? "PAUSED" : upper(data.aiBias || "NEUTRAL");
+      const resetNeutral = isNeutralResetState(data) && !data.autoEnabled && !data.cooldownActive && !data.processing && !n(data.queueLength, 0);
+
+      let signal = upper(data.aiSignal || "HOLD");
+      let bias = upper(data.aiBias || "NEUTRAL");
+
+      if (sessionBlocked) {
+        signal = "PAUSED";
+        bias = "PAUSED";
+      } else if (resetNeutral) {
+        signal = "READY";
+        bias = "READY";
+      }
+
       const conf = n(data.confidence ?? data.conf, 62);
 
       els.aiSignalVal.textContent = signal;
@@ -1446,6 +1487,8 @@
     }
 
     function render(data){
+      lastData = data;
+
       els.guard.textContent = guardText(data.guard || data.status || "READY");
       els.guard.className = `guard ${guardClass(data.guard || data.status || "READY")}`;
 
@@ -1461,11 +1504,11 @@
 
       els.confVal.textContent = `${n(data.confidence ?? data.conf, 62)}%`;
 
-      const autoOn = !!data.autoEnabled;
       const sessionBlock = isSessionBlocked(data);
-      els.autoToggleBtn.classList.toggle("active", autoOn && !sessionBlock);
-      els.toggleMain.textContent = sessionBlock ? "AUTO OFF" : (autoOn ? "AUTO ON" : "AUTO OFF");
-      els.toggleState.textContent = sessionBlock ? "OFF" : (autoOn ? "ON" : "OFF");
+      const stableAutoOn = !!data.autoEnabled && !sessionBlock;
+      els.autoToggleBtn.classList.toggle("active", stableAutoOn);
+      els.toggleMain.textContent = sessionBlock ? "AUTO OFF" : (stableAutoOn ? "AUTO ON" : "AUTO OFF");
+      els.toggleState.textContent = sessionBlock ? "OFF" : (stableAutoOn ? "ON" : "OFF");
 
       els.queueVal.textContent = String(n(data.queueLength, 0));
       els.processingVal.textContent = data.processing ? "ON" : "OFF";
@@ -1521,6 +1564,7 @@
       } catch(e){
         console.error(e);
         setSync("fail");
+        if (lastData) render(lastData);
       } finally {
         syncBusy = false;
       }
