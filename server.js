@@ -85,6 +85,11 @@ function upper(value) {
   return String(value || "").toUpperCase();
 }
 
+function n(value, fallback = 0) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
 /* =========================
    STATE
 ========================= */
@@ -212,6 +217,17 @@ function isSessionBlocked() {
   );
 }
 
+function isAiHardPaused() {
+  const g = upper(state.guard);
+  return (
+    g.includes("SESSION_LIMIT") ||
+    g.includes("DAILY_LOSS_LIMIT") ||
+    g.includes("WIN_TARGET_REACHED") ||
+    g.includes("HEALTH_FAIL") ||
+    g.includes("FAIL")
+  );
+}
+
 function isHardBlocked() {
   const g = upper(state.guard);
   return (
@@ -236,7 +252,7 @@ function clearNeutralAiWindow() {
 }
 
 function aiSummaryLine() {
-  if (isSessionBlocked()) {
+  if (isSessionBlocked() || isAiHardPaused()) {
     return "AI pausiert wegen Tageslimit";
   }
 
@@ -342,6 +358,7 @@ function fullResetRuntime(resetType = "MANUAL") {
     sellEdge: 0,
     reasons: ["ai_ready"]
   };
+
   state.lastAiSummary = "AI Ready · Warte auf frisches Signal";
 }
 
@@ -437,6 +454,10 @@ function applyHardStopGuard() {
 function setReadyIfPossible(reason = "System bereit.") {
   if (applyHardStopGuard()) return;
 
+  if (isAiHardPaused()) {
+    return;
+  }
+
   if (!state.health.status || !state.health.buy || !state.health.sell) {
     setGuard("HEALTH_FAIL", "Health Check fehlgeschlagen.");
     return;
@@ -523,7 +544,7 @@ function computeDynamicConfidence() {
 }
 
 function decideTradeSignal() {
-  if (isSessionBlocked()) {
+  if (isSessionBlocked() || isAiHardPaused()) {
     state.ai = {
       signal: "PAUSED",
       sideBias: "PAUSED",
@@ -531,12 +552,16 @@ function decideTradeSignal() {
       sellEdge: Number(state.ai.sellEdge || 0),
       reasons: ["ai_paused"]
     };
-    state.confidence = Math.max(0, Math.round(n(state.confidence, 0)));
     state.lastAiSummary = "AI pausiert wegen Tageslimit";
     return;
   }
 
-  if (isNeutralAiWindowActive() && !state.autoEnabled && !state.processing && state.queue.length === 0) {
+  if (
+    isNeutralAiWindowActive() &&
+    !state.autoEnabled &&
+    !state.processing &&
+    state.queue.length === 0
+  ) {
     state.ai = {
       signal: "READY",
       sideBias: "READY",
@@ -702,7 +727,12 @@ function responseState() {
   ensureDayFresh();
 
   const sessionBlocked = isSessionBlocked();
-  const neutralAi = isNeutralAiWindowActive() && !state.autoEnabled && !state.processing && state.queue.length === 0;
+  const hardPaused = isAiHardPaused();
+  const neutralAi =
+    isNeutralAiWindowActive() &&
+    !state.autoEnabled &&
+    !state.processing &&
+    state.queue.length === 0;
 
   let aiSignal = state.ai.signal;
   let aiBias = state.ai.sideBias;
@@ -711,7 +741,7 @@ function responseState() {
   let aiSellEdge = state.ai.sellEdge;
   let aiSummary = state.lastAiSummary || aiSummaryLine();
 
-  if (sessionBlocked) {
+  if (sessionBlocked || hardPaused) {
     aiSignal = "PAUSED";
     aiBias = "PAUSED";
     aiReasons = ["ai_paused"];
@@ -735,7 +765,7 @@ function responseState() {
 
     processing: state.processing,
     queueLength: state.queue.length,
-    autoEnabled: sessionBlocked ? false : state.autoEnabled,
+    autoEnabled: sessionBlocked || hardPaused ? false : state.autoEnabled,
 
     confidence: state.confidence,
     conf: state.confidence,
@@ -866,7 +896,8 @@ function tryAutoTrade() {
 
   ensureDayFresh();
 
-  if (applyHardStopGuard()) {
+  if (applyHardStopGuard() || isAiHardPaused()) {
+    state.autoEnabled = false;
     recalcDerivedState();
     return;
   }
@@ -887,7 +918,7 @@ function tryAutoTrade() {
   updateMarketFactors();
   decideTradeSignal();
 
-  if (state.ai.signal === "HOLD" || state.ai.signal === "READY") {
+  if (state.ai.signal === "HOLD" || state.ai.signal === "READY" || state.ai.signal === "PAUSED") {
     addLog("AUTO", aiSummaryLine());
     setReadyIfPossible("AI Auto aktiv");
     recalcDerivedState();
@@ -910,13 +941,19 @@ setInterval(tryAutoTrade, CONFIG.autoIntervalMs);
 function refreshRuntimeFlags() {
   ensureDayFresh();
 
+  if (applyHardStopGuard()) {
+    decideTradeSignal();
+    recalcDerivedState();
+    return;
+  }
+
   if (!state.processing && state.queue.length === 0 && state.guard === "COOLDOWN" && !isCooldownActive()) {
     addLog("COOLDOWN", "Cooldown Ende");
     setReadyIfPossible(state.autoEnabled ? "AI Auto aktiv" : "System bereit.");
   }
 
   if (!state.processing && state.queue.length === 0 && !isCooldownActive()) {
-    if (state.autoEnabled && !isSessionBlocked()) {
+    if (state.autoEnabled && !isSessionBlocked() && !isAiHardPaused()) {
       setReadyIfPossible("AI Auto aktiv");
     } else if (isNeutralAiWindowActive()) {
       setReadyIfPossible("System bereit.");
@@ -1092,7 +1129,7 @@ app.post("/api/reset", (req, res) => {
 app.post("/api/auto/on", (req, res) => {
   ensureDayFresh();
 
-  if (applyHardStopGuard()) {
+  if (applyHardStopGuard() || isAiHardPaused()) {
     recalcDerivedState();
     return res.json(responseState());
   }
@@ -1119,7 +1156,7 @@ app.post("/api/auto/off", (req, res) => {
     addLog("AUTO", "AI Auto AUS");
   }
 
-  if (applyHardStopGuard()) {
+  if (applyHardStopGuard() || isAiHardPaused()) {
     recalcDerivedState();
     return res.json(responseState());
   }
@@ -1134,7 +1171,7 @@ app.post("/api/auto/off", (req, res) => {
 app.post("/api/auto", (req, res) => {
   ensureDayFresh();
 
-  if (applyHardStopGuard()) {
+  if (applyHardStopGuard() || isAiHardPaused()) {
     recalcDerivedState();
     return res.json(responseState());
   }
@@ -1153,7 +1190,7 @@ app.post("/api/auto", (req, res) => {
 
   addLog("AUTO", state.autoEnabled ? "AI Auto EIN" : "AI Auto AUS");
 
-  if (applyHardStopGuard()) {
+  if (applyHardStopGuard() || isAiHardPaused()) {
     recalcDerivedState();
     return res.json(responseState());
   }
@@ -1194,5 +1231,5 @@ recalcDerivedState();
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 V22.5 FINAL POLISH running on port ${PORT}`);
+  console.log(`🚀 V22.5.1 HARD LIVE running on port ${PORT}`);
 });
