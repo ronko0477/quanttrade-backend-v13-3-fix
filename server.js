@@ -77,6 +77,10 @@ function formatNumber(n) {
   return Number.isInteger(n) ? String(n) : Number(n).toFixed(2);
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /* =========================
    STATE
 ========================= */
@@ -150,7 +154,10 @@ function prettyReason(reason) {
     session_hard_slowdown: "Session Tight",
     low_edge_or_confidence: "Low Confidence"
   };
-  return map[reason] || String(reason || "").replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+
+  return map[reason] || String(reason || "")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function signalText(sig) {
@@ -651,7 +658,7 @@ async function processQueue() {
 
   recalcDerivedState();
 
-  await new Promise((resolve) => setTimeout(resolve, CONFIG.processDelayMs));
+  await sleep(CONFIG.processDelayMs);
 
   addLog("EXECUTED", `Order ${job.id} ausgeführt (${job.type})`, {
     source: job.source,
@@ -1001,5 +1008,5 @@ recalcDerivedState();
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 V22.2 POLISH running on port ${PORT}`);
+  console.log(`🚀 V22.3 FINAL POLISH running on port ${PORT}`);
 });
