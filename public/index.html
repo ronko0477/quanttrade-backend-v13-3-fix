@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V22.2 HARD LIVE</title>
+  <title>V22.3 HARD LIVE</title>
 
   <style>
     :root{
       --bg:#030611;
       --bg2:#071022;
-      --hero1:#7483f6;
-      --hero2:#4958ce;
+
+      --hero1:#7987f7;
+      --hero2:#4f5fd3;
 
       --card1:#313ea0;
       --card2:#232f7f;
@@ -89,7 +90,7 @@
       position:relative;
       border-radius:28px;
       padding:12px;
-      background:linear-gradient(180deg, rgba(116,131,246,.98), rgba(73,88,206,.95));
+      background:linear-gradient(180deg, rgba(121,135,247,.98), rgba(79,95,211,.96));
       border:1px solid rgba(255,255,255,.08);
       box-shadow:var(--shadow);
       overflow:hidden;
@@ -108,7 +109,7 @@
     .heroInner{
       position:relative;
       z-index:1;
-      min-height:292px;
+      min-height:294px;
       border-radius:24px;
       border:1px solid rgba(255,255,255,.08);
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.012));
@@ -128,8 +129,9 @@
       text-overflow:ellipsis;
       line-height:.9;
       letter-spacing:-1.9px;
-      font-size:80px;
+      font-size:82px;
       font-weight:1000;
+      text-shadow:0 8px 20px rgba(0,0,0,.12);
     }
     .guard.ready{color:var(--green)}
     .guard.warn{color:var(--cyan)}
@@ -142,7 +144,7 @@
       min-height:22px;
       font-size:15px;
       font-weight:850;
-      color:var(--muted);
+      color:rgba(255,255,255,.80);
     }
 
     .heroAiLine{
@@ -150,7 +152,7 @@
       min-height:22px;
       font-size:13px;
       font-weight:900;
-      color:rgba(255,255,255,.82);
+      color:rgba(255,255,255,.84);
       line-height:1.35;
       letter-spacing:.05px;
       max-width:100%;
@@ -159,9 +161,13 @@
       text-overflow:ellipsis;
     }
 
+    .heroAiLine:empty{
+      display:none;
+    }
+
     .pnl{
-      margin-top:10px;
-      font-size:72px;
+      margin-top:12px;
+      font-size:74px;
       line-height:.94;
       letter-spacing:-2px;
       font-weight:1000;
@@ -175,7 +181,7 @@
       margin-top:5px;
       font-size:17px;
       font-weight:950;
-      color:rgba(255,255,255,.80);
+      color:rgba(255,255,255,.82);
     }
 
     .heroMetaRow{
@@ -191,14 +197,14 @@
       display:inline-flex;
       align-items:center;
       gap:8px;
-      min-height:40px;
+      min-height:42px;
       border-radius:999px;
-      padding:8px 14px;
+      padding:8px 15px;
       background:rgba(11,17,48,.20);
       border:1px solid rgba(255,255,255,.06);
       font-size:12px;
       font-weight:1000;
-      color:rgba(255,255,255,.86);
+      color:rgba(255,255,255,.88);
       transition:all .16s ease;
       letter-spacing:.2px;
       box-shadow:var(--blueGlow);
@@ -787,7 +793,7 @@
       .wrap{padding-left:10px;padding-right:10px}
       .title{font-size:22px;margin-bottom:12px}
       .hero{padding:10px}
-      .heroInner{min-height:256px}
+      .heroInner{min-height:258px}
       .guard{font-size:68px}
       .heroHint{font-size:14px}
       .heroAiLine{font-size:12px}
@@ -815,7 +821,7 @@
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V22.2 HARD LIVE ⚡</span>
+      <span>V22.3 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -1151,10 +1157,31 @@
       return map[reason] || String(reason || "").replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
     }
 
-    function aiSummary(data){
+    function cleanSummaryLine(summary, data){
+      const raw = String(summary || "").trim();
+      if (raw) {
+        return raw
+          .replaceAll("trend_up", "Trend Up")
+          .replaceAll("trend_weak", "Trend Weak")
+          .replaceAll("structure_strong", "Structure Strong")
+          .replaceAll("structure_soft", "Structure Soft")
+          .replaceAll("volume_ok", "Volume OK")
+          .replaceAll("volume_low", "Volume Low")
+          .replaceAll("liquidity_ok", "Liquidity OK")
+          .replaceAll("liquidity_thin", "Liquidity Thin")
+          .replaceAll("volatility_mid", "Volatility Mid")
+          .replaceAll("volatility_high", "Volatility High")
+          .replaceAll("volatility_stable", "Volatility Stable")
+          .replaceAll("session_good", "Session Good")
+          .replaceAll("session_soft", "Session Soft");
+      }
+
       const signal = String(data.aiSignal || "HOLD").toUpperCase();
       const reasons = Array.isArray(data.aiReasons) ? data.aiReasons.slice(0, 3).map(prettifyReason) : [];
-      if (signal === "HOLD") return reasons.length ? `AI Hold · ${reasons.join(" · ")}` : "AI Hold · Kein klares Signal";
+
+      if (signal === "HOLD") {
+        return reasons.length ? `AI Hold · ${reasons.join(" · ")}` : "AI Hold · Kein klares Signal";
+      }
       return reasons.length ? `AI ${signal} · ${reasons.join(" · ")}` : `AI ${signal}`;
     }
 
@@ -1274,19 +1301,20 @@
         const time = item.localTime || "--:--:--";
         let msg = item.msg || item.text || "-";
 
-        if (msg.includes("trend_up")) msg = msg.replaceAll("trend_up", "Trend Up");
-        if (msg.includes("trend_weak")) msg = msg.replaceAll("trend_weak", "Trend Weak");
-        if (msg.includes("structure_strong")) msg = msg.replaceAll("structure_strong", "Structure Strong");
-        if (msg.includes("structure_soft")) msg = msg.replaceAll("structure_soft", "Structure Soft");
-        if (msg.includes("volume_ok")) msg = msg.replaceAll("volume_ok", "Volume OK");
-        if (msg.includes("volume_low")) msg = msg.replaceAll("volume_low", "Volume Low");
-        if (msg.includes("liquidity_ok")) msg = msg.replaceAll("liquidity_ok", "Liquidity OK");
-        if (msg.includes("liquidity_thin")) msg = msg.replaceAll("liquidity_thin", "Liquidity Thin");
-        if (msg.includes("volatility_mid")) msg = msg.replaceAll("volatility_mid", "Volatility Mid");
-        if (msg.includes("volatility_high")) msg = msg.replaceAll("volatility_high", "Volatility High");
-        if (msg.includes("volatility_stable")) msg = msg.replaceAll("volatility_stable", "Volatility Stable");
-        if (msg.includes("session_good")) msg = msg.replaceAll("session_good", "Session Good");
-        if (msg.includes("session_soft")) msg = msg.replaceAll("session_soft", "Session Soft");
+        msg = msg
+          .replaceAll("trend_up", "Trend Up")
+          .replaceAll("trend_weak", "Trend Weak")
+          .replaceAll("structure_strong", "Structure Strong")
+          .replaceAll("structure_soft", "Structure Soft")
+          .replaceAll("volume_ok", "Volume OK")
+          .replaceAll("volume_low", "Volume Low")
+          .replaceAll("liquidity_ok", "Liquidity OK")
+          .replaceAll("liquidity_thin", "Liquidity Thin")
+          .replaceAll("volatility_mid", "Volatility Mid")
+          .replaceAll("volatility_high", "Volatility High")
+          .replaceAll("volatility_stable", "Volatility Stable")
+          .replaceAll("session_good", "Session Good")
+          .replaceAll("session_soft", "Session Soft");
 
         let cls = "logSystem";
         if (type.includes("QUEUE")) cls = "logQueued";
@@ -1339,7 +1367,7 @@
       els.aiConfBig.textContent = `${conf}%`;
       els.aiConfBar.style.width = `${Math.max(0, Math.min(100, conf))}%`;
 
-      els.heroAiLine.textContent = aiSummary(data);
+      els.heroAiLine.textContent = cleanSummaryLine(data.aiSummary, data);
       renderReasons(data.aiReasons || []);
     }
 
