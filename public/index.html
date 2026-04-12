@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V22.1 HARD LIVE AI UI</title>
+  <title>V22.2 HARD LIVE</title>
 
   <style>
     :root{
       --bg:#030611;
       --bg2:#071022;
-      --hero1:#6f7ef3;
-      --hero2:#4455c9;
+      --hero1:#7483f6;
+      --hero2:#4958ce;
 
       --card1:#313ea0;
       --card2:#232f7f;
@@ -89,7 +89,7 @@
       position:relative;
       border-radius:28px;
       padding:12px;
-      background:linear-gradient(180deg, rgba(111,126,243,.97), rgba(68,85,201,.95));
+      background:linear-gradient(180deg, rgba(116,131,246,.98), rgba(73,88,206,.95));
       border:1px solid rgba(255,255,255,.08);
       box-shadow:var(--shadow);
       overflow:hidden;
@@ -108,7 +108,7 @@
     .heroInner{
       position:relative;
       z-index:1;
-      min-height:288px;
+      min-height:292px;
       border-radius:24px;
       border:1px solid rgba(255,255,255,.08);
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.012));
@@ -138,11 +138,25 @@
     .guard.locked{color:var(--lock)}
 
     .heroHint{
-      margin-top:10px;
+      margin-top:11px;
       min-height:22px;
       font-size:15px;
       font-weight:850;
       color:var(--muted);
+    }
+
+    .heroAiLine{
+      margin-top:8px;
+      min-height:22px;
+      font-size:13px;
+      font-weight:900;
+      color:rgba(255,255,255,.82);
+      line-height:1.35;
+      letter-spacing:.05px;
+      max-width:100%;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     .pnl{
@@ -187,6 +201,7 @@
       color:rgba(255,255,255,.86);
       transition:all .16s ease;
       letter-spacing:.2px;
+      box-shadow:var(--blueGlow);
     }
 
     .heroMeta.auto{box-shadow:var(--okGlow)}
@@ -222,7 +237,7 @@
 
     .aiPanel{
       width:100%;
-      margin-top:12px;
+      margin-top:13px;
       display:grid;
       gap:9px;
     }
@@ -250,6 +265,7 @@
       margin-bottom:8px;
       letter-spacing:.14px;
       line-height:1;
+      text-transform:uppercase;
     }
 
     .aiSignalVal{
@@ -315,7 +331,7 @@
     }
 
     .aiReasons{
-      min-height:56px;
+      min-height:58px;
       border-radius:18px;
       padding:11px 12px;
       background:rgba(18,24,72,.18);
@@ -330,15 +346,16 @@
     .reasonChip{
       display:inline-flex;
       align-items:center;
-      min-height:28px;
+      min-height:29px;
       border-radius:999px;
-      padding:6px 10px;
+      padding:6px 11px;
       font-size:11px;
       font-weight:1000;
       color:rgba(255,255,255,.88);
       background:rgba(255,255,255,.06);
       border:1px solid rgba(255,255,255,.06);
       letter-spacing:.12px;
+      white-space:nowrap;
     }
 
     .grid2{
@@ -770,9 +787,10 @@
       .wrap{padding-left:10px;padding-right:10px}
       .title{font-size:22px;margin-bottom:12px}
       .hero{padding:10px}
-      .heroInner{min-height:250px}
+      .heroInner{min-height:256px}
       .guard{font-size:68px}
       .heroHint{font-size:14px}
+      .heroAiLine{font-size:12px}
       .pnl{font-size:66px}
       .pnlSub{font-size:16px}
       .aiTop{grid-template-columns:1fr}
@@ -797,7 +815,7 @@
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V22.1 HARD LIVE ⚡</span>
+      <span>V22.2 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -805,6 +823,8 @@
       <div class="heroInner">
         <div id="guard" class="guard ready">READY</div>
         <div id="heroHint" class="heroHint">System bereit.</div>
+        <div id="heroAiLine" class="heroAiLine"></div>
+
         <div id="pnl" class="pnl neutral">0</div>
         <div class="pnlSub">Net PnL</div>
 
@@ -822,13 +842,13 @@
         <div class="aiPanel">
           <div class="aiTop">
             <div class="aiCard">
-              <div class="aiLabel">AI SIGNAL</div>
+              <div class="aiLabel">AI Signal</div>
               <div id="aiSignalVal" class="aiSignalVal sig-hold">HOLD</div>
             </div>
 
             <div class="aiCard aiConfWrap">
               <div class="aiConfHead">
-                <div class="aiLabel" style="margin:0">AI CONF</div>
+                <div class="aiLabel" style="margin:0">AI Confidence</div>
                 <div id="aiConfBig" class="aiConfBig">62%</div>
               </div>
               <div class="miniTrack">
@@ -839,15 +859,15 @@
 
           <div class="aiMid">
             <div class="aiCard">
-              <div class="aiLabel">BIAS</div>
+              <div class="aiLabel">Bias</div>
               <div id="aiBiasVal" class="edgeVal sig-neutral">NEUTRAL</div>
             </div>
             <div class="aiCard">
-              <div class="aiLabel">BUY EDGE</div>
+              <div class="aiLabel">Buy Edge</div>
               <div id="aiBuyEdgeVal" class="edgeVal sig-buy">0.0</div>
             </div>
             <div class="aiCard">
-              <div class="aiLabel">SELL EDGE</div>
+              <div class="aiLabel">Sell Edge</div>
               <div id="aiSellEdgeVal" class="edgeVal sig-sell">0.0</div>
             </div>
           </div>
@@ -982,6 +1002,7 @@
     const els = {
       guard: $("guard"),
       heroHint: $("heroHint"),
+      heroAiLine: $("heroAiLine"),
       heroMeta: $("heroMeta"),
       heroMetaText: $("heroMetaText"),
       pnl: $("pnl"),
@@ -1106,6 +1127,37 @@
       }
     }
 
+    function prettifyReason(reason){
+      const map = {
+        trend_up: "Trend Up",
+        trend_weak: "Trend Weak",
+        structure_strong: "Structure Strong",
+        structure_soft: "Structure Soft",
+        volume_ok: "Volume OK",
+        volume_low: "Volume Low",
+        liquidity_ok: "Liquidity OK",
+        liquidity_thin: "Liquidity Thin",
+        volatility_high: "Volatility High",
+        volatility_mid: "Volatility Mid",
+        volatility_stable: "Volatility Stable",
+        session_good: "Session Good",
+        session_soft: "Session Soft",
+        loss_caution: "Loss Caution",
+        profit_buffer: "Profit Buffer",
+        session_soft_slowdown: "Session Slowdown",
+        session_hard_slowdown: "Session Tight",
+        low_edge_or_confidence: "Low Confidence"
+      };
+      return map[reason] || String(reason || "").replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function aiSummary(data){
+      const signal = String(data.aiSignal || "HOLD").toUpperCase();
+      const reasons = Array.isArray(data.aiReasons) ? data.aiReasons.slice(0, 3).map(prettifyReason) : [];
+      if (signal === "HOLD") return reasons.length ? `AI Hold · ${reasons.join(" · ")}` : "AI Hold · Kein klares Signal";
+      return reasons.length ? `AI ${signal} · ${reasons.join(" · ")}` : `AI ${signal}`;
+    }
+
     function metaFromState(data){
       const guard = String(data.guard || "").toUpperCase();
       const queueLen = n(data.queueLength, 0);
@@ -1134,6 +1186,7 @@
         els.heroMeta.classList.add("auto");
         els.heroMetaText.textContent = "AI AUTO ON";
       } else {
+        els.heroMeta.classList.add("day");
         els.heroMetaText.textContent = "LIVE";
       }
     }
@@ -1201,13 +1254,12 @@
 
     function renderReasons(reasons){
       if (!Array.isArray(reasons) || !reasons.length) {
-        els.aiReasons.innerHTML = `<span class="reasonChip">startup</span>`;
+        els.aiReasons.innerHTML = `<span class="reasonChip">Startup</span>`;
         return;
       }
 
       els.aiReasons.innerHTML = reasons.slice(0, 8).map(r => {
-        const label = String(r).replaceAll("_", " ");
-        return `<span class="reasonChip">${label}</span>`;
+        return `<span class="reasonChip">${prettifyReason(r)}</span>`;
       }).join("");
     }
 
@@ -1220,7 +1272,21 @@
       const rows = [...log].reverse().slice(0, 28).map(item => {
         const type = String(item.type || "").toUpperCase();
         const time = item.localTime || "--:--:--";
-        const msg = item.msg || item.text || "-";
+        let msg = item.msg || item.text || "-";
+
+        if (msg.includes("trend_up")) msg = msg.replaceAll("trend_up", "Trend Up");
+        if (msg.includes("trend_weak")) msg = msg.replaceAll("trend_weak", "Trend Weak");
+        if (msg.includes("structure_strong")) msg = msg.replaceAll("structure_strong", "Structure Strong");
+        if (msg.includes("structure_soft")) msg = msg.replaceAll("structure_soft", "Structure Soft");
+        if (msg.includes("volume_ok")) msg = msg.replaceAll("volume_ok", "Volume OK");
+        if (msg.includes("volume_low")) msg = msg.replaceAll("volume_low", "Volume Low");
+        if (msg.includes("liquidity_ok")) msg = msg.replaceAll("liquidity_ok", "Liquidity OK");
+        if (msg.includes("liquidity_thin")) msg = msg.replaceAll("liquidity_thin", "Liquidity Thin");
+        if (msg.includes("volatility_mid")) msg = msg.replaceAll("volatility_mid", "Volatility Mid");
+        if (msg.includes("volatility_high")) msg = msg.replaceAll("volatility_high", "Volatility High");
+        if (msg.includes("volatility_stable")) msg = msg.replaceAll("volatility_stable", "Volatility Stable");
+        if (msg.includes("session_good")) msg = msg.replaceAll("session_good", "Session Good");
+        if (msg.includes("session_soft")) msg = msg.replaceAll("session_soft", "Session Soft");
 
         let cls = "logSystem";
         if (type.includes("QUEUE")) cls = "logQueued";
@@ -1273,6 +1339,7 @@
       els.aiConfBig.textContent = `${conf}%`;
       els.aiConfBar.style.width = `${Math.max(0, Math.min(100, conf))}%`;
 
+      els.heroAiLine.textContent = aiSummary(data);
       renderReasons(data.aiReasons || []);
     }
 
