@@ -81,6 +81,10 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function upper(value) {
+  return String(value || "").toUpperCase();
+}
+
 /* =========================
    STATE
 ========================= */
@@ -127,7 +131,8 @@ const state = {
     reasons: ["startup"]
   },
 
-  log: []
+  log: [],
+  lastAiSummary: ""
 };
 
 /* =========================
@@ -152,7 +157,8 @@ function prettyReason(reason) {
     profit_buffer: "Profit Buffer",
     session_soft_slowdown: "Session Slowdown",
     session_hard_slowdown: "Session Tight",
-    low_edge_or_confidence: "Low Confidence"
+    low_edge_or_confidence: "Low Confidence",
+    ai_paused: "AI Paused"
   };
 
   return map[reason] || String(reason || "")
@@ -160,18 +166,66 @@ function prettyReason(reason) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function signalText(sig) {
-  const s = String(sig || "").toUpperCase();
+function dedupeReasons(reasons) {
+  const raw = Array.isArray(reasons) ? reasons.map((r) => String(r || "")) : [];
+  const pretty = raw.map(prettyReason);
+
+  const hasTight = pretty.includes("Session Tight");
+  const seen = new Set();
+  const out = [];
+
+  for (let i = 0; i < raw.length; i += 1) {
+    const value = raw[i];
+    const nice = pretty[i];
+
+    if (hasTight && nice === "Session Soft") continue;
+    if (seen.has(nice)) continue;
+
+    seen.add(nice);
+    out.push(value);
+  }
+
+  return out;
+}
+
+function prettySignal(signal) {
+  const s = upper(signal);
   if (s === "BUY") return "BUY";
   if (s === "SELL") return "SELL";
+  if (s === "PAUSED") return "PAUSED";
   return "HOLD";
 }
 
+function isSessionBlocked() {
+  return (
+    state.sessionTrades >= state.maxSessionTrades ||
+    (Number.isFinite(state.dailyLossLimit) && state.pnl <= state.dailyLossLimit) ||
+    (Number.isFinite(state.dailyWinTarget) && state.pnl >= state.dailyWinTarget)
+  );
+}
+
+function isHardBlocked() {
+  const g = upper(state.guard);
+  return (
+    g.includes("SESSION") ||
+    g.includes("DAILY_LOSS") ||
+    g.includes("WIN_TARGET") ||
+    g.includes("HEALTH") ||
+    g.includes("FAIL")
+  );
+}
+
 function aiSummaryLine() {
-  const signal = signalText(state.ai.signal);
-  const reasons = Array.isArray(state.ai.reasons)
-    ? state.ai.reasons.slice(0, 3).map(prettyReason)
-    : [];
+  if (isSessionBlocked()) {
+    return "AI pausiert wegen Tageslimit";
+  }
+
+  if (isHardBlocked()) {
+    return "AI pausiert";
+  }
+
+  const signal = prettySignal(state.ai.signal);
+  const reasons = dedupeReasons(state.ai.reasons).slice(0, 3).map(prettyReason);
 
   if (signal === "HOLD") {
     return reasons.length
@@ -418,7 +472,7 @@ function computeDynamicConfidence() {
 
 function decideTradeSignal() {
   const f = state.factors;
-  const reasons = [];
+  let reasons = [];
 
   let buyEdge = 0;
   let sellEdge = 0;
@@ -515,6 +569,8 @@ function decideTradeSignal() {
     reasons.push("low_edge_or_confidence");
   }
 
+  reasons = dedupeReasons(reasons);
+
   state.ai = {
     signal,
     sideBias,
@@ -524,6 +580,7 @@ function decideTradeSignal() {
   };
 
   state.confidence = confidence;
+  state.lastAiSummary = aiSummaryLine();
 }
 
 /* =========================
@@ -551,7 +608,7 @@ function recalcDerivedState() {
    RESPONSE
 ========================= */
 function humanStatus() {
-  const g = String(state.guard || "").toUpperCase();
+  const g = upper(state.guard);
 
   if (g === "READY") return "READY";
   if (g.includes("SESSION")) return "SESSION";
@@ -567,6 +624,11 @@ function humanStatus() {
 function responseState() {
   ensureDayFresh();
 
+  const sessionBlocked = isSessionBlocked();
+  const aiSignal = sessionBlocked ? "PAUSED" : state.ai.signal;
+  const aiBias = sessionBlocked ? "PAUSED" : state.ai.sideBias;
+  const aiSummary = sessionBlocked ? "AI pausiert wegen Tageslimit" : aiSummaryLine();
+
   return {
     pnl: state.pnl,
     status: humanStatus(),
@@ -577,7 +639,7 @@ function responseState() {
 
     processing: state.processing,
     queueLength: state.queue.length,
-    autoEnabled: state.autoEnabled,
+    autoEnabled: sessionBlocked ? false : state.autoEnabled,
 
     confidence: state.confidence,
     conf: state.confidence,
@@ -591,12 +653,12 @@ function responseState() {
     session: state.factors.session,
     factors: { ...state.factors },
 
-    aiSignal: state.ai.signal,
-    aiBias: state.ai.sideBias,
+    aiSignal,
+    aiBias,
     aiBuyEdge: state.ai.buyEdge,
     aiSellEdge: state.ai.sellEdge,
-    aiReasons: [...state.ai.reasons],
-    aiSummary: aiSummaryLine(),
+    aiReasons: sessionBlocked ? ["ai_paused"] : [...state.ai.reasons],
+    aiSummary,
 
     sessionTrades: state.sessionTrades,
     maxSessionTrades: state.maxSessionTrades,
@@ -754,13 +816,14 @@ function refreshRuntimeFlags() {
   }
 
   if (!state.processing && state.queue.length === 0 && !isCooldownActive()) {
-    if (state.autoEnabled) {
+    if (state.autoEnabled && !isSessionBlocked()) {
       setReadyIfPossible("AI Auto aktiv");
     } else {
       setReadyIfPossible(state.reasonHint || "System bereit.");
     }
   }
 
+  updateMarketFactors();
   decideTradeSignal();
   recalcDerivedState();
 }
@@ -960,6 +1023,13 @@ app.post("/api/auto/off", (req, res) => {
 });
 
 app.post("/api/auto", (req, res) => {
+  ensureDayFresh();
+
+  if (applyHardStopGuard()) {
+    recalcDerivedState();
+    return res.json(responseState());
+  }
+
   state.autoEnabled = !state.autoEnabled;
   state.lastResetType = "";
 
@@ -1008,5 +1078,5 @@ recalcDerivedState();
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 V22.3 FINAL POLISH running on port ${PORT}`);
+  console.log(`🚀 V22.4 LOGIC POLISH running on port ${PORT}`);
 });
