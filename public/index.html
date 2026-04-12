@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V21.2 HARD LIVE</title>
+  <title>V22.1 HARD LIVE AI UI</title>
 
   <style>
     :root{
@@ -53,7 +53,7 @@
     .wrap{
       width:min(100%,460px);
       margin:0 auto;
-      padding:12px 10px 36px;
+      padding:12px 10px 38px;
     }
 
     .title{
@@ -108,7 +108,7 @@
     .heroInner{
       position:relative;
       z-index:1;
-      min-height:256px;
+      min-height:288px;
       border-radius:24px;
       border:1px solid rgba(255,255,255,.08);
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.012));
@@ -117,7 +117,7 @@
       align-items:center;
       justify-content:center;
       text-align:center;
-      padding:22px 16px;
+      padding:22px 16px 18px;
     }
 
     .guard{
@@ -219,6 +219,127 @@
     .limitBadge.show{display:inline-flex}
     .limitBadge.loss{box-shadow:var(--dangerGlow)}
     .limitBadge.win{box-shadow:var(--warnGlow)}
+
+    .aiPanel{
+      width:100%;
+      margin-top:12px;
+      display:grid;
+      gap:9px;
+    }
+
+    .aiTop{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:9px;
+    }
+
+    .aiCard{
+      min-height:74px;
+      border-radius:18px;
+      padding:12px 13px;
+      background:rgba(18,24,72,.18);
+      border:1px solid rgba(255,255,255,.06);
+      text-align:left;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
+    }
+
+    .aiLabel{
+      font-size:11px;
+      font-weight:1000;
+      color:rgba(255,255,255,.68);
+      margin-bottom:8px;
+      letter-spacing:.14px;
+      line-height:1;
+    }
+
+    .aiSignalVal{
+      font-size:27px;
+      font-weight:1000;
+      line-height:1;
+      letter-spacing:-.4px;
+    }
+
+    .sig-buy{color:var(--green)}
+    .sig-sell{color:var(--red)}
+    .sig-hold{color:var(--yellow)}
+    .sig-neutral{color:var(--cyan)}
+
+    .aiConfWrap{
+      display:grid;
+      gap:8px;
+      align-content:center;
+    }
+
+    .aiConfHead{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .aiConfBig{
+      font-size:31px;
+      font-weight:1000;
+      line-height:.9;
+      letter-spacing:-1px;
+      color:var(--cyan);
+    }
+
+    .miniTrack{
+      height:10px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.05);
+    }
+
+    .miniFill{
+      width:0%;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,#e6b7b3 0%,#dbd389 30%,#b7db98 60%,#a9d8ef 100%);
+      transition:width .25s ease;
+    }
+
+    .aiMid{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:9px;
+    }
+
+    .edgeVal{
+      font-size:23px;
+      font-weight:1000;
+      line-height:1;
+      letter-spacing:-.4px;
+    }
+
+    .aiReasons{
+      min-height:56px;
+      border-radius:18px;
+      padding:11px 12px;
+      background:rgba(18,24,72,.18);
+      border:1px solid rgba(255,255,255,.06);
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      align-content:flex-start;
+      justify-content:center;
+    }
+
+    .reasonChip{
+      display:inline-flex;
+      align-items:center;
+      min-height:28px;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:11px;
+      font-weight:1000;
+      color:rgba(255,255,255,.88);
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.06);
+      letter-spacing:.12px;
+    }
 
     .grid2{
       margin-top:13px;
@@ -564,6 +685,7 @@
     .tinyBadge.day{box-shadow:var(--warnGlow)}
     .tinyBadge.cool{box-shadow:var(--lockGlow)}
     .tinyBadge.manual{box-shadow:var(--blueGlow)}
+    .tinyBadge.ai{box-shadow:var(--okGlow)}
 
     .logCard{
       margin-top:14px;
@@ -648,11 +770,13 @@
       .wrap{padding-left:10px;padding-right:10px}
       .title{font-size:22px;margin-bottom:12px}
       .hero{padding:10px}
-      .heroInner{min-height:220px}
+      .heroInner{min-height:250px}
       .guard{font-size:68px}
       .heroHint{font-size:14px}
       .pnl{font-size:66px}
       .pnlSub{font-size:16px}
+      .aiTop{grid-template-columns:1fr}
+      .aiMid{grid-template-columns:1fr 1fr 1fr}
       .grid2,.actionGrid,.miniGrid{gap:10px}
       .card{min-height:98px;padding:14px 16px}
       .cardLabel{font-size:14px}
@@ -673,7 +797,7 @@
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V21.2 HARD LIVE ⚡</span>
+      <span>V22.1 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -693,6 +817,42 @@
         <div class="heroLimits">
           <div id="lossLimitBadge" class="limitBadge loss">LOSS LIMIT -20</div>
           <div id="winTargetBadge" class="limitBadge win">WIN TARGET +20</div>
+        </div>
+
+        <div class="aiPanel">
+          <div class="aiTop">
+            <div class="aiCard">
+              <div class="aiLabel">AI SIGNAL</div>
+              <div id="aiSignalVal" class="aiSignalVal sig-hold">HOLD</div>
+            </div>
+
+            <div class="aiCard aiConfWrap">
+              <div class="aiConfHead">
+                <div class="aiLabel" style="margin:0">AI CONF</div>
+                <div id="aiConfBig" class="aiConfBig">62%</div>
+              </div>
+              <div class="miniTrack">
+                <div id="aiConfBar" class="miniFill"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="aiMid">
+            <div class="aiCard">
+              <div class="aiLabel">BIAS</div>
+              <div id="aiBiasVal" class="edgeVal sig-neutral">NEUTRAL</div>
+            </div>
+            <div class="aiCard">
+              <div class="aiLabel">BUY EDGE</div>
+              <div id="aiBuyEdgeVal" class="edgeVal sig-buy">0.0</div>
+            </div>
+            <div class="aiCard">
+              <div class="aiLabel">SELL EDGE</div>
+              <div id="aiSellEdgeVal" class="edgeVal sig-sell">0.0</div>
+            </div>
+          </div>
+
+          <div id="aiReasons" class="aiReasons"></div>
         </div>
       </div>
     </section>
@@ -798,6 +958,7 @@
         <div id="cooldownInline" class="tinyBadge cool">COOLDOWN 1s</div>
         <div id="manualResetInline" class="tinyBadge manual">MANUAL RESET</div>
         <div id="dayResetInline" class="tinyBadge day">DAY RESET</div>
+        <div id="aiSignalInline" class="tinyBadge ai">AI HOLD</div>
       </div>
     </section>
 
@@ -844,6 +1005,7 @@
       cooldownInline: $("cooldownInline"),
       manualResetInline: $("manualResetInline"),
       dayResetInline: $("dayResetInline"),
+      aiSignalInline: $("aiSignalInline"),
       dayBadge: $("dayBadge"),
       syncBadge: $("syncBadge"),
       lossLimitBadge: $("lossLimitBadge"),
@@ -856,6 +1018,13 @@
       btnWin: $("btnWin"),
       btnLoss: $("btnLoss"),
       btnReset: $("btnReset"),
+      aiSignalVal: $("aiSignalVal"),
+      aiBiasVal: $("aiBiasVal"),
+      aiBuyEdgeVal: $("aiBuyEdgeVal"),
+      aiSellEdgeVal: $("aiSellEdgeVal"),
+      aiConfBig: $("aiConfBig"),
+      aiConfBar: $("aiConfBar"),
+      aiReasons: $("aiReasons"),
       logList: $("logList")
     };
 
@@ -903,6 +1072,14 @@
       if (x >= 75) return "ok";
       if (x >= 60) return "mid";
       return "fail";
+    }
+
+    function signalClass(sig){
+      const s = String(sig || "").toUpperCase();
+      if (s === "BUY") return "sig-buy";
+      if (s === "SELL") return "sig-sell";
+      if (s === "HOLD") return "sig-hold";
+      return "sig-neutral";
     }
 
     function setHealth(el, ok){
@@ -955,7 +1132,7 @@
         els.heroMetaText.textContent = `QUEUE ${queueLen}`;
       } else if (data.autoEnabled) {
         els.heroMeta.classList.add("auto");
-        els.heroMetaText.textContent = "AUTO ON";
+        els.heroMetaText.textContent = "AI AUTO ON";
       } else {
         els.heroMetaText.textContent = "LIVE";
       }
@@ -980,6 +1157,7 @@
       els.cooldownInline.classList.remove("show");
       els.manualResetInline.classList.remove("show");
       els.dayResetInline.classList.remove("show");
+      els.aiSignalInline.classList.remove("show");
 
       if (data.cooldownActive) {
         els.cooldownInline.classList.add("show");
@@ -989,6 +1167,10 @@
       const resetType = String(data.lastResetType || "").toUpperCase();
       if (resetType === "MANUAL") els.manualResetInline.classList.add("show");
       if (resetType === "DAY") els.dayResetInline.classList.add("show");
+
+      const sig = String(data.aiSignal || "HOLD").toUpperCase();
+      els.aiSignalInline.classList.add("show");
+      els.aiSignalInline.textContent = `AI ${sig}`;
 
       els.dayBadge.className = "badgePill";
       const guard = String(data.guard || "").toUpperCase();
@@ -1015,6 +1197,18 @@
         els.dayBadge.classList.add("ok");
         els.dayBadge.textContent = "DAY READY";
       }
+    }
+
+    function renderReasons(reasons){
+      if (!Array.isArray(reasons) || !reasons.length) {
+        els.aiReasons.innerHTML = `<span class="reasonChip">startup</span>`;
+        return;
+      }
+
+      els.aiReasons.innerHTML = reasons.slice(0, 8).map(r => {
+        const label = String(r).replaceAll("_", " ");
+        return `<span class="reasonChip">${label}</span>`;
+      }).join("");
     }
 
     function renderLog(log){
@@ -1062,6 +1256,26 @@
       els.autoToggleBtn.disabled = processing;
     }
 
+    function renderAI(data){
+      const signal = String(data.aiSignal || "HOLD").toUpperCase();
+      const bias = String(data.aiBias || "NEUTRAL").toUpperCase();
+      const conf = n(data.confidence ?? data.conf, 62);
+
+      els.aiSignalVal.textContent = signal;
+      els.aiSignalVal.className = `aiSignalVal ${signalClass(signal)}`;
+
+      els.aiBiasVal.textContent = bias;
+      els.aiBiasVal.className = `edgeVal ${signalClass(bias)}`;
+
+      els.aiBuyEdgeVal.textContent = n(data.aiBuyEdge, 0).toFixed(1);
+      els.aiSellEdgeVal.textContent = n(data.aiSellEdge, 0).toFixed(1);
+
+      els.aiConfBig.textContent = `${conf}%`;
+      els.aiConfBar.style.width = `${Math.max(0, Math.min(100, conf))}%`;
+
+      renderReasons(data.aiReasons || []);
+    }
+
     function render(data){
       els.guard.textContent = guardText(data.guard || data.status || "READY");
       els.guard.className = `guard ${guardClass(data.guard || data.status || "READY")}`;
@@ -1103,6 +1317,7 @@
       els.dayKeyText.textContent = data.dayKey || "Heute";
       els.sessionFill.style.width = `${(sessionTrades / maxTrades) * 100}%`;
 
+      renderAI(data);
       metaFromState(data);
       badgesFromState(data);
       renderLog(data.log || []);
