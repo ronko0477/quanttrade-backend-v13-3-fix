@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V22.3 HARD LIVE</title>
+  <title>V22.4 HARD LIVE</title>
 
   <style>
     :root{
@@ -161,9 +161,7 @@
       text-overflow:ellipsis;
     }
 
-    .heroAiLine:empty{
-      display:none;
-    }
+    .heroAiLine:empty{display:none}
 
     .pnl{
       margin-top:12px;
@@ -285,6 +283,7 @@
     .sig-sell{color:var(--red)}
     .sig-hold{color:var(--yellow)}
     .sig-neutral{color:var(--cyan)}
+    .sig-paused{color:var(--lock)}
 
     .aiConfWrap{
       display:grid;
@@ -709,6 +708,7 @@
     .tinyBadge.cool{box-shadow:var(--lockGlow)}
     .tinyBadge.manual{box-shadow:var(--blueGlow)}
     .tinyBadge.ai{box-shadow:var(--okGlow)}
+    .tinyBadge.pause{box-shadow:var(--lockGlow)}
 
     .logCard{
       margin-top:14px;
@@ -821,7 +821,7 @@
 <body>
   <div class="wrap">
     <div class="title">
-      <span>V22.3 HARD LIVE ⚡</span>
+      <span>V22.4 HARD LIVE ⚡</span>
       <span class="liveDot"></span>
     </div>
 
@@ -985,6 +985,7 @@
         <div id="manualResetInline" class="tinyBadge manual">MANUAL RESET</div>
         <div id="dayResetInline" class="tinyBadge day">DAY RESET</div>
         <div id="aiSignalInline" class="tinyBadge ai">AI HOLD</div>
+        <div id="aiPauseInline" class="tinyBadge pause">AI PAUSED</div>
       </div>
     </section>
 
@@ -1033,6 +1034,7 @@
       manualResetInline: $("manualResetInline"),
       dayResetInline: $("dayResetInline"),
       aiSignalInline: $("aiSignalInline"),
+      aiPauseInline: $("aiPauseInline"),
       dayBadge: $("dayBadge"),
       syncBadge: $("syncBadge"),
       lossLimitBadge: $("lossLimitBadge"),
@@ -1072,8 +1074,30 @@
       return `${Math.max(0, Math.ceil(n(ms, 0) / 1000))}s`;
     }
 
+    function upper(value){
+      return String(value || "").toUpperCase();
+    }
+
+    function hasAny(source, arr){
+      const s = upper(source);
+      return arr.some(x => s.includes(x));
+    }
+
+    function isHardBlocked(data){
+      const guard = upper(data.guard);
+      return hasAny(guard, ["SESSION", "DAILY_LOSS", "WIN_TARGET", "HEALTH_FAIL", "FAIL"]);
+    }
+
+    function isSessionBlocked(data){
+      return hasAny(data.guard, ["SESSION", "DAILY_LOSS", "WIN_TARGET"]);
+    }
+
+    function isLockedState(data){
+      return hasAny(data.guard, ["LOCK", "QUEUE", "PROCESS", "COOLDOWN"]);
+    }
+
     function guardText(g){
-      const s = String(g || "").toUpperCase();
+      const s = upper(g);
       if (s === "READY") return "READY";
       if (s.includes("SESSION")) return "SESSION...";
       if (s.includes("WIN_TARGET")) return "TARGET...";
@@ -1085,7 +1109,7 @@
     }
 
     function guardClass(g){
-      const s = String(g || "").toUpperCase();
+      const s = upper(g);
       if (s === "READY") return "ready";
       if (s.includes("SESSION") || s.includes("WIN_TARGET")) return "block";
       if (s.includes("DAILY_LOSS")) return "fail";
@@ -1102,10 +1126,11 @@
     }
 
     function signalClass(sig){
-      const s = String(sig || "").toUpperCase();
+      const s = upper(sig);
       if (s === "BUY") return "sig-buy";
       if (s === "SELL") return "sig-sell";
       if (s === "HOLD") return "sig-hold";
+      if (s === "PAUSED") return "sig-paused";
       return "sig-neutral";
     }
 
@@ -1152,41 +1177,90 @@
         profit_buffer: "Profit Buffer",
         session_soft_slowdown: "Session Slowdown",
         session_hard_slowdown: "Session Tight",
-        low_edge_or_confidence: "Low Confidence"
+        low_edge_or_confidence: "Low Confidence",
+        ai_paused: "AI Paused"
       };
       return map[reason] || String(reason || "").replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
     }
 
-    function cleanSummaryLine(summary, data){
-      const raw = String(summary || "").trim();
-      if (raw) {
-        return raw
-          .replaceAll("trend_up", "Trend Up")
-          .replaceAll("trend_weak", "Trend Weak")
-          .replaceAll("structure_strong", "Structure Strong")
-          .replaceAll("structure_soft", "Structure Soft")
-          .replaceAll("volume_ok", "Volume OK")
-          .replaceAll("volume_low", "Volume Low")
-          .replaceAll("liquidity_ok", "Liquidity OK")
-          .replaceAll("liquidity_thin", "Liquidity Thin")
-          .replaceAll("volatility_mid", "Volatility Mid")
-          .replaceAll("volatility_high", "Volatility High")
-          .replaceAll("volatility_stable", "Volatility Stable")
-          .replaceAll("session_good", "Session Good")
-          .replaceAll("session_soft", "Session Soft");
+    function cleanSummaryText(text){
+      return String(text || "")
+        .replaceAll("trend_up", "Trend Up")
+        .replaceAll("trend_weak", "Trend Weak")
+        .replaceAll("structure_strong", "Structure Strong")
+        .replaceAll("structure_soft", "Structure Soft")
+        .replaceAll("volume_ok", "Volume OK")
+        .replaceAll("volume_low", "Volume Low")
+        .replaceAll("liquidity_ok", "Liquidity OK")
+        .replaceAll("liquidity_thin", "Liquidity Thin")
+        .replaceAll("volatility_mid", "Volatility Mid")
+        .replaceAll("volatility_high", "Volatility High")
+        .replaceAll("volatility_stable", "Volatility Stable")
+        .replaceAll("session_good", "Session Good")
+        .replaceAll("session_soft", "Session Soft")
+        .replaceAll("session_soft_slowdown", "Session Slowdown")
+        .replaceAll("session_hard_slowdown", "Session Tight")
+        .replaceAll("low_edge_or_confidence", "Low Confidence");
+    }
+
+    function uniquePrettyReasons(reasons){
+      if (!Array.isArray(reasons)) return [];
+      const seen = new Set();
+      const out = [];
+
+      const raw = reasons.map(prettifyReason);
+      const hasTight = raw.includes("Session Tight");
+
+      for (const pretty of raw) {
+        if (hasTight && pretty === "Session Soft") continue;
+        if (!seen.has(pretty)) {
+          seen.add(pretty);
+          out.push(pretty);
+        }
       }
 
-      const signal = String(data.aiSignal || "HOLD").toUpperCase();
-      const reasons = Array.isArray(data.aiReasons) ? data.aiReasons.slice(0, 3).map(prettifyReason) : [];
+      return out;
+    }
+
+    function buildHeroAiLine(data){
+      const hardBlocked = isHardBlocked(data);
+      const sessionBlocked = isSessionBlocked(data);
+
+      if (sessionBlocked) {
+        return "AI pausiert wegen Tageslimit";
+      }
+
+      if (hardBlocked) {
+        return "AI pausiert";
+      }
+
+      if (data.cooldownActive) {
+        return `Cooldown aktiv · ${fmtSec(data.cooldownMsLeft)} verbleibend`;
+      }
+
+      if (data.processing) {
+        return "Order wird verarbeitet";
+      }
+
+      if (n(data.queueLength, 0) > 0) {
+        return `Order in Queue · ${n(data.queueLength, 0)} wartend`;
+      }
+
+      const rawSummary = cleanSummaryText(data.aiSummary || "").trim();
+      if (rawSummary) return rawSummary;
+
+      const signal = upper(data.aiSignal || "HOLD");
+      const reasons = uniquePrettyReasons(data.aiReasons).slice(0, 3);
 
       if (signal === "HOLD") {
         return reasons.length ? `AI Hold · ${reasons.join(" · ")}` : "AI Hold · Kein klares Signal";
       }
+
       return reasons.length ? `AI ${signal} · ${reasons.join(" · ")}` : `AI ${signal}`;
     }
 
     function metaFromState(data){
-      const guard = String(data.guard || "").toUpperCase();
+      const guard = upper(data.guard || "");
       const queueLen = n(data.queueLength, 0);
 
       els.heroMeta.className = "heroMeta";
@@ -1238,22 +1312,28 @@
       els.manualResetInline.classList.remove("show");
       els.dayResetInline.classList.remove("show");
       els.aiSignalInline.classList.remove("show");
+      els.aiPauseInline.classList.remove("show");
 
       if (data.cooldownActive) {
         els.cooldownInline.classList.add("show");
         els.cooldownInline.textContent = `COOLDOWN ${fmtSec(data.cooldownMsLeft)}`;
       }
 
-      const resetType = String(data.lastResetType || "").toUpperCase();
+      const resetType = upper(data.lastResetType || "");
       if (resetType === "MANUAL") els.manualResetInline.classList.add("show");
       if (resetType === "DAY") els.dayResetInline.classList.add("show");
 
-      const sig = String(data.aiSignal || "HOLD").toUpperCase();
-      els.aiSignalInline.classList.add("show");
-      els.aiSignalInline.textContent = `AI ${sig}`;
+      if (isSessionBlocked(data)) {
+        els.aiPauseInline.classList.add("show");
+        els.aiPauseInline.textContent = "AI PAUSED";
+      } else {
+        const sig = upper(data.aiSignal || "HOLD");
+        els.aiSignalInline.classList.add("show");
+        els.aiSignalInline.textContent = `AI ${sig}`;
+      }
 
       els.dayBadge.className = "badgePill";
-      const guard = String(data.guard || "").toUpperCase();
+      const guard = upper(data.guard || "");
 
       if (guard.includes("SESSION")) {
         els.dayBadge.classList.add("warn");
@@ -1279,14 +1359,21 @@
       }
     }
 
-    function renderReasons(reasons){
-      if (!Array.isArray(reasons) || !reasons.length) {
+    function renderReasons(reasons, data){
+      let pretty = uniquePrettyReasons(reasons);
+
+      if (isSessionBlocked(data)) {
+        pretty = pretty.filter(x => x !== "Session Soft" && x !== "Session Tight");
+        pretty.unshift("AI Paused");
+      }
+
+      if (!pretty.length) {
         els.aiReasons.innerHTML = `<span class="reasonChip">Startup</span>`;
         return;
       }
 
-      els.aiReasons.innerHTML = reasons.slice(0, 8).map(r => {
-        return `<span class="reasonChip">${prettifyReason(r)}</span>`;
+      els.aiReasons.innerHTML = pretty.slice(0, 8).map(r => {
+        return `<span class="reasonChip">${r}</span>`;
       }).join("");
     }
 
@@ -1297,24 +1384,11 @@
       }
 
       const rows = [...log].reverse().slice(0, 28).map(item => {
-        const type = String(item.type || "").toUpperCase();
+        const type = upper(item.type || "");
         const time = item.localTime || "--:--:--";
         let msg = item.msg || item.text || "-";
 
-        msg = msg
-          .replaceAll("trend_up", "Trend Up")
-          .replaceAll("trend_weak", "Trend Weak")
-          .replaceAll("structure_strong", "Structure Strong")
-          .replaceAll("structure_soft", "Structure Soft")
-          .replaceAll("volume_ok", "Volume OK")
-          .replaceAll("volume_low", "Volume Low")
-          .replaceAll("liquidity_ok", "Liquidity OK")
-          .replaceAll("liquidity_thin", "Liquidity Thin")
-          .replaceAll("volatility_mid", "Volatility Mid")
-          .replaceAll("volatility_high", "Volatility High")
-          .replaceAll("volatility_stable", "Volatility Stable")
-          .replaceAll("session_good", "Session Good")
-          .replaceAll("session_soft", "Session Soft");
+        msg = cleanSummaryText(msg);
 
         let cls = "logSystem";
         if (type.includes("QUEUE")) cls = "logQueued";
@@ -1334,12 +1408,11 @@
     }
 
     function lockButtons(data){
-      const guard = String(data.guard || "").toUpperCase();
       const queueBusy = n(data.queueLength, 0) > 0;
       const processing = !!data.processing;
       const cooldown = !!data.cooldownActive;
-      const sessionBlock = guard.includes("SESSION") || guard.includes("DAILY_LOSS") || guard.includes("WIN_TARGET");
-      const healthFail = guard.includes("HEALTH") || guard.includes("FAIL");
+      const sessionBlock = isSessionBlocked(data);
+      const healthFail = hasAny(data.guard, ["HEALTH", "FAIL"]);
       const tradeBlocked = sessionBlock || healthFail || processing || queueBusy || cooldown;
 
       els.btnBuy.disabled = tradeBlocked;
@@ -1347,12 +1420,13 @@
       els.btnWin.disabled = sessionBlock || processing || queueBusy || cooldown;
       els.btnLoss.disabled = sessionBlock || processing || queueBusy || cooldown;
       els.btnReset.disabled = processing;
-      els.autoToggleBtn.disabled = processing;
+      els.autoToggleBtn.disabled = processing || sessionBlock;
     }
 
     function renderAI(data){
-      const signal = String(data.aiSignal || "HOLD").toUpperCase();
-      const bias = String(data.aiBias || "NEUTRAL").toUpperCase();
+      const sessionBlocked = isSessionBlocked(data);
+      const signal = sessionBlocked ? "PAUSED" : upper(data.aiSignal || "HOLD");
+      const bias = sessionBlocked ? "PAUSED" : upper(data.aiBias || "NEUTRAL");
       const conf = n(data.confidence ?? data.conf, 62);
 
       els.aiSignalVal.textContent = signal;
@@ -1367,8 +1441,8 @@
       els.aiConfBig.textContent = `${conf}%`;
       els.aiConfBar.style.width = `${Math.max(0, Math.min(100, conf))}%`;
 
-      els.heroAiLine.textContent = cleanSummaryLine(data.aiSummary, data);
-      renderReasons(data.aiReasons || []);
+      els.heroAiLine.textContent = buildHeroAiLine(data);
+      renderReasons(data.aiReasons || [], data);
     }
 
     function render(data){
@@ -1388,9 +1462,10 @@
       els.confVal.textContent = `${n(data.confidence ?? data.conf, 62)}%`;
 
       const autoOn = !!data.autoEnabled;
-      els.autoToggleBtn.classList.toggle("active", autoOn);
-      els.toggleMain.textContent = autoOn ? "AUTO ON" : "AUTO OFF";
-      els.toggleState.textContent = autoOn ? "ON" : "OFF";
+      const sessionBlock = isSessionBlocked(data);
+      els.autoToggleBtn.classList.toggle("active", autoOn && !sessionBlock);
+      els.toggleMain.textContent = sessionBlock ? "AUTO OFF" : (autoOn ? "AUTO ON" : "AUTO OFF");
+      els.toggleState.textContent = sessionBlock ? "OFF" : (autoOn ? "ON" : "OFF");
 
       els.queueVal.textContent = String(n(data.queueLength, 0));
       els.processingVal.textContent = data.processing ? "ON" : "OFF";
