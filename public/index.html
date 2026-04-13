@@ -127,14 +127,15 @@
       margin:0;
       font-size:17px;
       font-weight:800;
-      color:rgba(255,255,255,.9);
+      color:rgba(255,255,255,.92);
     }
 
     .hero-sub2{
       margin:0;
       font-size:15px;
-      font-weight:800;
-      color:rgba(255,255,255,.9);
+      font-weight:900;
+      color:rgba(255,255,255,.92);
+      min-height:18px;
     }
 
     .hero-reason{
@@ -143,10 +144,11 @@
       font-weight:900;
       color:rgba(255,255,255,.87);
       text-wrap:balance;
+      min-height:17px;
     }
 
     .hero-pnl{
-      margin:4px 0 0;
+      margin:6px 0 0;
       font-size:90px;
       line-height:1;
       font-weight:1000;
@@ -259,6 +261,14 @@
     }
 
     .mini-value.white{
+      color:#eef2ff;
+    }
+
+    .mini-value.hold{
+      color:var(--yellow);
+    }
+
+    .mini-value.paused{
       color:#eef2ff;
     }
 
@@ -672,7 +682,7 @@
       .panel-title{font-size:18px}
       .panel-score{font-size:72px}
       .score-bar{height:16px}
-      .factor{min-height:104px; padding:14px 15px}
+      .factor{min-height:96px; padding:14px 15px}
       .factor-name{font-size:14px}
       .factor-value{font-size:25px}
       .session-row{font-size:15px}
@@ -680,20 +690,6 @@
       .log-title{font-size:19px}
       .badge{font-size:12px; padding:8px 13px}
       .log-item{font-size:14px}
-    }
-
-    @media (max-width:520px){
-      .hero-title{font-size:60px}
-      .hero-pnl{font-size:68px}
-      .hero-ai-top{grid-template-columns:1fr 1fr}
-      .hero-ai-mid{grid-template-columns:1fr 1fr 1fr}
-      .mini{min-height:74px}
-      .mini-value{font-size:20px}
-      .conf-big{font-size:22px}
-      .grid-2{gap:12px}
-      .actions{gap:12px}
-      .factors{gap:12px}
-      .factor{min-height:96px}
     }
   </style>
 </head>
@@ -708,8 +704,8 @@
       <div class="hero-inner">
         <h1 class="hero-title" id="heroTitle">READY</h1>
         <p class="hero-sub" id="heroSub">System bereit.</p>
-        <p class="hero-sub2" id="heroSub2">AI Auto aktiv</p>
-        <p class="hero-reason" id="heroReason">AI Hold · Trend Up · Structure Strong · Volume OK</p>
+        <p class="hero-sub2" id="heroSub2"></p>
+        <p class="hero-reason" id="heroReason">AI Hold · Structure Strong · Volume OK</p>
 
         <div class="hero-pnl" id="heroPnl">0</div>
         <p class="hero-label">Net PnL</p>
@@ -725,13 +721,13 @@
           <div class="hero-ai-top">
             <div class="mini">
               <div class="mini-label">AI SIGNAL</div>
-              <div class="mini-value" id="aiSignalValue">HOLD</div>
+              <div class="mini-value hold" id="aiSignalValue">HOLD</div>
             </div>
 
             <div class="mini conf-wrap">
               <div class="conf-row">
                 <div class="mini-label">AI CONFIDENCE</div>
-                <div class="conf-big" id="aiConfValue">43%</div>
+                <div class="conf-big" id="aiConfValue">37%</div>
               </div>
               <div class="bar"><span id="aiConfBar"></span></div>
             </div>
@@ -745,20 +741,22 @@
 
             <div class="mini">
               <div class="mini-label">BUY EDGE</div>
-              <div class="mini-value" id="aiBuyEdgeValue">37.7</div>
+              <div class="mini-value" id="aiBuyEdgeValue">24.7</div>
             </div>
 
             <div class="mini">
               <div class="mini-label">SELL EDGE</div>
-              <div class="mini-value soft" id="aiSellEdgeValue">-7.9</div>
+              <div class="mini-value soft" id="aiSellEdgeValue">2.2</div>
             </div>
           </div>
 
           <div class="reason-box" id="reasonBox">
-            <div class="reason-pill">Trend Up</div>
             <div class="reason-pill">Structure Strong</div>
             <div class="reason-pill">Volume OK</div>
             <div class="reason-pill">Liquidity OK</div>
+            <div class="reason-pill">Volatility Mid</div>
+            <div class="reason-pill">Session Good</div>
+            <div class="reason-pill">Low Confidence</div>
           </div>
         </div>
       </div>
@@ -779,7 +777,7 @@
       </div>
       <div class="card stat-card">
         <p class="stat-title">CONF</p>
-        <p class="stat-value" id="confValue">62%</p>
+        <p class="stat-value" id="confValue">38%</p>
       </div>
     </section>
 
@@ -793,13 +791,13 @@
 
     <section class="card toggle-card" id="autoCard">
       <div class="toggle-left">
-        <div class="toggle-dot" id="toggleDot"></div>
+        <div class="toggle-dot on" id="toggleDot"></div>
         <div class="toggle-text">
           <div class="toggle-label">AUTO MODE</div>
-          <div class="toggle-value" id="autoValue">AUTO OFF</div>
+          <div class="toggle-value" id="autoValue">AUTO ON</div>
         </div>
       </div>
-      <div class="toggle-switch" id="autoSwitch">OFF</div>
+      <div class="toggle-switch" id="autoSwitch">ON</div>
     </section>
 
     <section class="grid-2">
@@ -883,8 +881,6 @@
       heroReason: $("heroReason"),
       heroPnl: $("heroPnl"),
       heroStatusPill: $("heroStatusPill"),
-      lossLimitPill: $("lossLimitPill"),
-      winTargetPill: $("winTargetPill"),
 
       aiSignalValue: $("aiSignalValue"),
       aiConfValue: $("aiConfValue"),
@@ -905,10 +901,10 @@
       lossBtn: $("lossBtn"),
       resetBtn: $("resetBtn"),
 
-      autoCard: $("autoCard"),
       toggleDot: $("toggleDot"),
       autoValue: $("autoValue"),
       autoSwitch: $("autoSwitch"),
+      autoCard: $("autoCard"),
 
       queueValue: $("queueValue"),
       processingValue: $("processingValue"),
@@ -937,34 +933,9 @@
       return Number.isInteger(n) ? String(n) : n.toFixed(1);
     }
 
-    function titleFromState(s){
-      if (s.guard === "SESSION_LIMIT") return "SESSION...";
-      if (s.guard === "WIN_TARGET") return "TARGET...";
-      if (s.guard === "DAILY_LOSS") return "LOSS...";
-      if (s.processing || s.queueLength > 0) return "LOCKED";
-      if (s.cooldownActive) return "LOCKED";
-      return "READY";
-    }
-
-    function subtitle2FromState(s){
-      if (s.guard === "SESSION_LIMIT") return "AI pausiert wegen Tageslimit";
-      if (s.guard === "WIN_TARGET") return "AI pausiert wegen Win Target";
-      if (s.guard === "DAILY_LOSS") return "AI pausiert wegen Loss Limit";
-      if (s.guard === "HEALTH_FAIL") return "Health Check fehlgeschlagen";
-      if (s.autoEnabled) return "AI Auto aktiv";
-      return s.message || s.reasonHint || "System bereit.";
-    }
-
-    function pillFromState(s){
-      if (s.guard === "SESSION_LIMIT") return "SESSION LIMIT";
-      if (s.guard === "WIN_TARGET") return "WIN TARGET";
-      if (s.guard === "DAILY_LOSS") return "LOSS LIMIT";
-      if (s.guard === "HEALTH_FAIL") return "HEALTH FAIL";
-      if (s.processing) return "PROCESSING";
-      if (s.queueLength > 0) return "BLOCKED";
-      if (s.cooldownActive) return `COOLDOWN ${Math.max(1, Math.ceil((s.cooldownMsLeft || 0)/1000))}s`;
-      if (s.autoEnabled) return "AI AUTO ON";
-      return "LIVE";
+    function scorePct(v){
+      const n = Math.round(Number(v || 0));
+      return Math.max(0, Math.min(100, n));
     }
 
     function humanReason(reason){
@@ -988,6 +959,58 @@
         ai_ready: "AI Ready"
       };
       return map[reason] || String(reason || "").replaceAll("_", " ");
+    }
+
+    function buildReasonText(s){
+      const parts = [];
+      if (s.aiSignal) parts.push(`AI ${s.aiSignal}`);
+      if (Array.isArray(s.aiReasons)) {
+        for (const r of s.aiReasons) {
+          if (r === "low_confidence") continue;
+          parts.push(humanReason(r));
+        }
+      }
+      return parts.join(" · ");
+    }
+
+    function buildSubLine(s){
+      if (s.guard === "SESSION_LIMIT") return "Tageslimit erreicht.";
+      if (s.guard === "WIN_TARGET") return "Win Target erreicht.";
+      if (s.guard === "DAILY_LOSS") return "Loss Limit erreicht.";
+      if (s.guard === "HEALTH_FAIL") return "Health Check fehlgeschlagen.";
+      if (s.processing) return "Order wird verarbeitet";
+      if (s.queueLength > 0) return "Order in Queue";
+      if (s.cooldownActive) return "Kurze Schutzpause aktiv.";
+      return s.message || "System bereit.";
+    }
+
+    function buildSubLine2(s){
+      if (s.guard === "SESSION_LIMIT") return "AI pausiert wegen Tageslimit";
+      if (s.guard === "WIN_TARGET") return "AI pausiert wegen Win Target";
+      if (s.guard === "DAILY_LOSS") return "AI pausiert wegen Loss Limit";
+      if (s.processing && s.lastActionLabel) return `${s.lastActionLabel} wird verarbeitet`;
+      if (s.autoEnabled) return "AI Auto aktiv";
+      return "";
+    }
+
+    function buildHeroTitle(s){
+      if (s.guard === "SESSION_LIMIT") return "SESSION...";
+      if (s.guard === "WIN_TARGET") return "TARGET...";
+      if (s.guard === "DAILY_LOSS") return "LOSS...";
+      if (s.processing || s.queueLength > 0 || s.cooldownActive) return "LOCKED";
+      return "READY";
+    }
+
+    function buildHeroPill(s){
+      if (s.guard === "SESSION_LIMIT") return "SESSION LIMIT";
+      if (s.guard === "WIN_TARGET") return "WIN TARGET";
+      if (s.guard === "DAILY_LOSS") return "LOSS LIMIT";
+      if (s.guard === "HEALTH_FAIL") return "HEALTH FAIL";
+      if (s.processing) return "PROCESSING";
+      if (s.queueLength > 0) return "BLOCKED";
+      if (s.cooldownActive) return `COOLDOWN ${Math.max(1, Math.ceil((s.cooldownMsLeft || 0)/1000))}s`;
+      if (s.autoEnabled) return "AI AUTO ON";
+      return "LIVE";
     }
 
     function renderReasonPills(reasons){
@@ -1019,13 +1042,17 @@
       }
 
       const last = [...log].slice(-10).reverse();
-      els.logList.innerHTML = last.map(item => {
-        return `
-          <div class="log-item">
-            <span class="log-time">${item.localTime}</span> - ${item.msg}
-          </div>
-        `;
-      }).join("");
+      els.logList.innerHTML = last.map(item => `
+        <div class="log-item">
+          <span class="log-time">${item.localTime}</span> - ${item.msg}
+        </div>
+      `).join("");
+    }
+
+    function setSignalStyles(signal){
+      els.aiSignalValue.className = "mini-value";
+      if (signal === "HOLD") els.aiSignalValue.classList.add("hold");
+      if (signal === "PAUSED") els.aiSignalValue.classList.add("paused");
     }
 
     function applyDisabledState(s){
@@ -1046,27 +1073,48 @@
     }
 
     function render(s){
-      els.heroTitle.textContent = titleFromState(s);
-      els.heroSub.textContent = s.message || s.reasonHint || "System bereit.";
-      els.heroSub2.textContent = subtitle2FromState(s);
-      els.heroReason.textContent = s.aiSummary || "AI bereit";
-      els.heroPnl.textContent = fmt1(s.pnl);
-      els.heroStatusPill.textContent = pillFromState(s);
+      const heroTitle = buildHeroTitle(s);
+      const heroSub = buildSubLine(s);
+      const heroSub2 = buildSubLine2(s);
+      const heroReason = buildReasonText(s);
 
-      els.aiSignalValue.textContent = s.aiSignal || "READY";
-      els.aiConfValue.textContent = `${Math.round(Number(s.confidence || s.conf || 0))}%`;
-      els.aiConfBar.style.width = `${Math.round(Number(s.confidence || s.conf || 0))}%`;
-      els.aiBiasValue.textContent = s.aiBias || "NEUTRAL";
+      els.heroTitle.textContent = heroTitle;
+      els.heroSub.textContent = heroSub;
+      els.heroSub2.textContent = heroSub2;
+      els.heroSub2.style.display = heroSub2 ? "block" : "none";
+      els.heroReason.textContent = heroReason || "";
+      els.heroReason.style.display = heroReason ? "block" : "none";
+      els.heroPnl.textContent = fmt1(s.pnl);
+      els.heroStatusPill.textContent = buildHeroPill(s);
+
+      const signal = (s.guard === "SESSION_LIMIT" || s.guard === "WIN_TARGET" || s.guard === "DAILY_LOSS")
+        ? "PAUSED"
+        : (s.aiSignal || "READY");
+
+      els.aiSignalValue.textContent = signal;
+      setSignalStyles(signal);
+
+      const conf = Math.round(Number(s.confidence ?? s.conf ?? 0));
+      els.aiConfValue.textContent = `${conf}%`;
+      els.aiConfBar.style.width = `${Math.max(0, Math.min(100, conf))}%`;
+
+      els.aiBiasValue.textContent = (s.guard === "SESSION_LIMIT" || s.guard === "WIN_TARGET" || s.guard === "DAILY_LOSS")
+        ? "PAUSED"
+        : (s.aiBias || "NEUTRAL");
+
       els.aiBuyEdgeValue.textContent = fmt1(s.aiBuyEdge);
       els.aiSellEdgeValue.textContent = fmt1(s.aiSellEdge);
 
-      renderReasonPills(s.aiReasons || []);
-      renderBelowPills(s);
+      renderReasonPills(
+        (s.guard === "SESSION_LIMIT" || s.guard === "WIN_TARGET" || s.guard === "DAILY_LOSS")
+          ? ["ai_paused"]
+          : (s.aiReasons || [])
+      );
 
       els.statusValue.textContent = s.health?.status ? "OK" : "FAIL";
       els.buyPostValue.textContent = s.health?.buy ? "OK" : "FAIL";
       els.sellPostValue.textContent = s.health?.sell ? "OK" : "FAIL";
-      els.confValue.textContent = `${Math.round(Number(s.confidence || s.conf || 0))}%`;
+      els.confValue.textContent = `${conf}%`;
 
       els.autoValue.textContent = s.autoEnabled ? "AUTO ON" : "AUTO OFF";
       els.autoSwitch.textContent = s.autoEnabled ? "ON" : "OFF";
@@ -1076,7 +1124,7 @@
       els.processingValue.textContent = s.processing ? "ON" : "OFF";
 
       els.scoreValue.textContent = Math.round(Number(s.score || 0));
-      els.scoreBar.style.width = `${Math.round(Number(s.score || 0))}%`;
+      els.scoreBar.style.width = `${scorePct(s.score)}%`;
 
       els.trendValue.textContent = fmt1(s.trend);
       els.volumeValue.textContent = fmt1(s.volume);
@@ -1085,10 +1133,11 @@
       els.liquidityValue.textContent = fmt1(s.liquidity);
       els.sessionValue.textContent = fmt1(s.session);
 
-      els.tradesValue.textContent = `Trades ${s.sessionTrades || 0} / ${s.maxSessionTrades || 50}`;
+      const maxTrades = Number(s.maxSessionTrades || 50);
+      const trades = Number(s.sessionTrades || 0);
+      els.tradesValue.textContent = `Trades ${trades} / ${maxTrades}`;
       els.dayValue.textContent = s.dayKey || "-";
-      const tradePct = ((Number(s.sessionTrades || 0) / Number(s.maxSessionTrades || 50)) * 100);
-      els.tradeBar.style.width = `${Math.max(0, Math.min(100, tradePct))}%`;
+      els.tradeBar.style.width = `${Math.max(0, Math.min(100, (trades / maxTrades) * 100))}%`;
 
       if (s.guard === "SESSION_LIMIT") els.dayBadge.textContent = "DAY LIMIT";
       else if (s.guard === "WIN_TARGET") els.dayBadge.textContent = "WIN TARGET";
@@ -1097,6 +1146,7 @@
 
       els.syncBadge.textContent = s.health?.status ? "SYNC OK" : "SYNC FAIL";
 
+      renderBelowPills(s);
       renderLog(s.log);
       applyDisabledState(s);
     }
