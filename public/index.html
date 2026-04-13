@@ -2,841 +2,758 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>V22.6 HARD LIVE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V22.7.2 HARD LIVE</title>
   <style>
     :root{
-      --bg:#040816;
-      --bg2:#081022;
+      --bg:#020617;
+      --bg2:#0a1230;
+      --panel:#5663e9;
+      --panel2:#4a56d8;
+      --panelDark:#3843bc;
+      --line:rgba(255,255,255,.10);
+      --lineSoft:rgba(255,255,255,.06);
+      --text:#f8fbff;
+      --muted:rgba(245,248,255,.78);
 
-      --hero1:#9aa6ff;
-      --hero2:#7482ff;
+      --green:#c2dd8d;
+      --red:#efc8c8;
+      --yellow:#e8df9e;
+      --cyan:#bfdfe6;
 
-      --card1:#4f61ee;
-      --card2:#3947bb;
-
-      --line:rgba(255,255,255,.08);
-      --text:#f4f7ff;
-      --muted:rgba(255,255,255,.78);
-
-      --green:#b9d99b;
-      --red:#e8cfcf;
-      --yellow:#e4d89a;
-      --cyan:#badbe6;
-      --soft:#f0d4c8;
-
-      --shadow:0 18px 42px rgba(0,0,0,.34);
-      --shadowSoft:0 10px 24px rgba(0,0,0,.22);
+      --glow:0 0 0 1px rgba(255,255,255,.06), 0 14px 34px rgba(23,31,92,.34);
+      --softGlow:0 8px 22px rgba(78,90,220,.20);
+      --heroGlow:0 14px 38px rgba(132,145,255,.20);
 
       --radius:28px;
-      --radiusSm:20px;
-      --radiusXs:16px;
+      --radiusLg:34px;
+      --radiusSm:18px;
 
-      --maxw:760px;
+      --font:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     }
 
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
     body{
-      min-height:100vh;
+      font-family:var(--font);
       color:var(--text);
-      font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background:
-        radial-gradient(circle at top, rgba(124,139,255,.14), transparent 28%),
-        linear-gradient(180deg, #091122 0%, #030713 42%, #02040d 100%);
+        radial-gradient(1200px 700px at 50% -10%, rgba(137,148,255,.16), transparent 55%),
+        radial-gradient(900px 500px at 50% 0%, rgba(95,108,255,.12), transparent 60%),
+        linear-gradient(180deg, #11182f 0%, #040814 18%, #020617 44%, #01040d 100%);
+      min-height:100vh;
+      padding:24px 16px 44px;
     }
 
     .wrap{
-      width:100%;
-      max-width:var(--maxw);
+      width:min(100%, 760px);
       margin:0 auto;
-      padding:18px 14px 36px;
     }
 
     .topbar{
       display:flex;
-      align-items:center;
       justify-content:center;
-      gap:12px;
-      margin:4px 0 14px;
+      align-items:center;
+      gap:14px;
+      margin:6px 0 18px;
     }
 
-    .version{
-      font-size:24px;
-      font-weight:1000;
+    .title{
+      font-weight:900;
+      font-size:clamp(22px,4.8vw,38px);
+      letter-spacing:.02em;
       text-transform:uppercase;
-      letter-spacing:.3px;
-      text-shadow:0 4px 14px rgba(0,0,0,.35);
+      text-shadow:0 4px 18px rgba(0,0,0,.35);
     }
 
-    .bolt{ color:#ffd15c; }
-
-    .live-dot{
-      width:16px;
-      height:16px;
-      border-radius:50%;
-      background:#9fe0a7;
-      box-shadow:
-        0 0 0 8px rgba(159,224,167,.12),
-        0 0 18px rgba(159,224,167,.40);
+    .dotWrap{
+      width:40px;
+      height:40px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      background:rgba(146,255,173,.10);
+      box-shadow:0 0 0 1px rgba(255,255,255,.05), 0 0 22px rgba(146,255,173,.22);
       flex:0 0 auto;
     }
 
-    .card{
-      background:linear-gradient(180deg, rgba(82,95,235,.96), rgba(59,71,187,.96));
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      backdrop-filter:blur(8px);
+    .dot{
+      width:22px;
+      height:22px;
+      border-radius:50%;
+      background:#a6dca5;
+      box-shadow:0 0 18px rgba(166,220,165,.55);
     }
 
     .hero{
       position:relative;
+      background:linear-gradient(180deg, rgba(160,170,255,.92), rgba(120,132,239,.90));
+      border-radius:40px;
+      box-shadow:var(--heroGlow), inset 0 0 0 1px rgba(255,255,255,.10);
+      padding:22px 18px 20px;
       overflow:hidden;
-      padding:14px;
-      border-radius:34px;
-      background:
-        linear-gradient(180deg, rgba(157,169,255,.97), rgba(101,114,247,.96));
-      box-shadow:
-        0 24px 46px rgba(0,0,0,.34),
-        inset 0 1px 0 rgba(255,255,255,.18);
     }
 
     .hero::before{
       content:"";
       position:absolute;
-      inset:16px;
-      border-radius:28px;
-      border:1px solid rgba(255,255,255,.08);
+      inset:18px;
+      border-radius:30px;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
       pointer-events:none;
     }
 
-    .hero-inner{
-      position:relative;
-      z-index:1;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
+    .heroTitle{
       text-align:center;
-      gap:6px;
-      padding:8px 8px 10px;
-    }
-
-    .hero-title{
-      margin:0;
-      font-size:64px;
-      line-height:.9;
-      letter-spacing:-2px;
+      font-size:clamp(68px,15vw,126px);
+      line-height:.92;
+      margin:6px 0 10px;
       font-weight:1000;
       color:var(--green);
-      text-shadow:0 10px 24px rgba(0,0,0,.16);
+      letter-spacing:-.04em;
+      text-shadow:0 8px 30px rgba(0,0,0,.18);
     }
 
-    .hero-sub{
-      margin:0;
-      min-height:18px;
-      font-size:14px;
+    .heroSub, .heroSub2, .heroReason{
+      text-align:center;
       font-weight:900;
-      color:rgba(255,255,255,.92);
+      line-height:1.14;
     }
 
-    .hero-sub2{
-      margin:0;
-      min-height:16px;
-      font-size:13px;
-      font-weight:900;
+    .heroSub{
+      font-size:clamp(18px,4vw,24px);
+      margin-top:2px;
+    }
+
+    .heroSub2{
+      font-size:clamp(16px,3.3vw,20px);
+      margin-top:10px;
+      color:rgba(255,255,255,.96);
+    }
+
+    .heroReason{
+      font-size:clamp(14px,2.8vw,17px);
+      margin-top:10px;
       color:rgba(255,255,255,.90);
     }
 
-    .hero-sub2.hidden,
-    .hero-reason.hidden{
-      display:none;
-    }
-
-    .hero-reason{
-      margin:0;
-      min-height:15px;
-      font-size:11px;
-      font-weight:900;
-      color:rgba(255,255,255,.84);
-      line-height:1.35;
-      max-width:92%;
-      text-wrap:balance;
-    }
-
-    .hero-pnl{
-      margin:6px 0 0;
-      font-size:74px;
+    .heroPnl{
+      text-align:center;
+      margin-top:18px;
+      font-weight:1000;
+      font-size:clamp(74px,15vw,118px);
       line-height:1;
-      font-weight:1000;
-      letter-spacing:-2px;
-      color:#fff;
     }
 
-    .hero-label{
-      margin:0;
-      font-size:17px;
+    .heroPnlLabel{
+      text-align:center;
+      margin-top:8px;
+      font-size:clamp(18px,4vw,24px);
       font-weight:900;
-      color:rgba(255,255,255,.92);
     }
 
-    .hero-status-pill{
-      margin-top:4px;
-      min-width:116px;
-      height:48px;
-      padding:0 18px;
-      border-radius:999px;
+    .pillRow{
       display:flex;
-      align-items:center;
+      gap:12px;
       justify-content:center;
-      font-size:15px;
-      font-weight:1000;
-      color:#eef2ff;
-      background:linear-gradient(180deg, rgba(75,88,217,.86), rgba(59,69,177,.92));
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.12),
-        0 10px 22px rgba(0,0,0,.18);
+      flex-wrap:wrap;
+      margin-top:14px;
     }
 
-    .hero-limits{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:8px;
-      width:100%;
-      max-width:360px;
-      margin-top:4px;
-    }
-
-    .limit-pill{
-      height:38px;
+    .pill{
+      min-height:52px;
+      padding:0 22px;
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:center;
       text-align:center;
-      font-size:13px;
       font-weight:1000;
-      color:#f2f5ff;
-      background:linear-gradient(180deg, rgba(84,95,214,.80), rgba(65,76,188,.88));
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.10);
+      font-size:clamp(15px,3.2vw,18px);
+      letter-spacing:.01em;
+      color:#fff;
+      background:linear-gradient(180deg, rgba(78,92,221,.92), rgba(63,75,195,.96));
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.08),
+        0 10px 24px rgba(44,56,161,.28);
     }
 
-    .hero-ai{
-      width:100%;
-      margin-top:8px;
-      padding:10px;
-      border-radius:22px;
-      background:linear-gradient(180deg, rgba(86,99,226,.46), rgba(69,79,190,.50));
-      border:1px solid rgba(255,255,255,.05);
-      display:grid;
-      gap:10px;
+    .pill.secondary{
+      min-height:44px;
+      font-size:clamp(14px,3vw,17px);
+      padding:0 18px;
     }
 
-    .hero-ai-top{
+    .aiPanel{
+      margin-top:18px;
+      padding:18px 14px 16px;
+      border-radius:26px;
+      background:linear-gradient(180deg, rgba(76,88,214,.92), rgba(66,77,197,.96));
+      box-shadow:var(--softGlow), inset 0 0 0 1px rgba(255,255,255,.06);
+    }
+
+    .grid2{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:10px;
+      gap:12px;
     }
 
-    .hero-ai-mid{
+    .grid3{
       display:grid;
-      grid-template-columns:1fr 1fr 1fr;
-      gap:10px;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-top:12px;
     }
 
-    .mini{
-      min-height:74px;
-      padding:10px 11px;
-      border-radius:18px;
-      background:linear-gradient(180deg, rgba(67,79,203,.88), rgba(58,69,176,.94));
-      border:1px solid rgba(255,255,255,.05);
-      box-shadow:var(--shadowSoft);
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
+    .card{
+      background:linear-gradient(180deg, rgba(60,72,188,.96), rgba(53,63,171,.98));
+      border-radius:24px;
+      padding:16px 18px;
+      box-shadow:var(--glow);
+      min-height:116px;
     }
 
-    .mini-label{
-      font-size:11px;
-      line-height:1.05;
+    .miniCard{
+      background:linear-gradient(180deg, rgba(60,72,188,.96), rgba(53,63,171,.98));
+      border-radius:22px;
+      padding:16px 18px;
+      box-shadow:var(--glow);
+      min-height:102px;
+    }
+
+    .label{
+      font-size:clamp(14px,2.9vw,16px);
       font-weight:900;
+      color:rgba(255,255,255,.82);
       text-transform:uppercase;
-      color:rgba(255,255,255,.84);
-      letter-spacing:.4px;
+      line-height:1.05;
+      letter-spacing:.02em;
     }
 
-    .mini-value{
-      font-size:20px;
+    .value{
+      margin-top:12px;
+      font-size:clamp(36px,7vw,56px);
       line-height:1;
       font-weight:1000;
       color:var(--green);
     }
 
-    .mini-value.white{ color:#eef2ff; }
-    .mini-value.soft{ color:var(--soft); }
-    .mini-value.hold{ color:var(--yellow); }
-    .mini-value.paused{ color:#eef2ff; }
-
-    .conf-wrap{
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-      gap:8px;
+    .value.small{
+      font-size:clamp(25px,5.4vw,40px);
     }
 
-    .conf-row{
+    .value.red{ color:#f1c9c9; }
+    .value.yellow{ color:var(--yellow); }
+    .value.cyan{ color:var(--cyan); }
+
+    .confTop{
       display:flex;
-      align-items:flex-end;
+      align-items:flex-start;
       justify-content:space-between;
-      gap:8px;
+      gap:10px;
     }
 
-    .conf-big{
-      font-size:25px;
-      line-height:1;
+    .confPct{
+      font-size:clamp(36px,8vw,58px);
+      line-height:.9;
       font-weight:1000;
       color:var(--cyan);
+      white-space:nowrap;
     }
 
     .bar{
       width:100%;
-      height:12px;
+      height:16px;
       border-radius:999px;
-      background:rgba(184,198,255,.22);
+      background:rgba(255,255,255,.10);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
       overflow:hidden;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+      margin-top:10px;
     }
 
-    .bar > span{
-      display:block;
-      width:0%;
+    .fill{
       height:100%;
+      width:0%;
       border-radius:999px;
-      background:linear-gradient(90deg,#efc2b0 0%, #c9df9b 50%, #abd7ea 100%);
+      background:linear-gradient(90deg, #f0c8b4 0%, #c9dc91 52%, #b7dae0 100%);
     }
 
-    .reason-box{
-      border-radius:18px;
-      background:linear-gradient(180deg, rgba(76,89,210,.50), rgba(60,72,183,.58));
-      border:1px solid rgba(255,255,255,.04);
-      padding:10px;
+    .tagWrap{
+      margin-top:14px;
       display:flex;
+      gap:10px;
       flex-wrap:wrap;
-      gap:8px;
       justify-content:center;
     }
 
-    .reason-pill{
-      padding:7px 12px;
+    .tag{
+      min-height:42px;
+      padding:0 18px;
       border-radius:999px;
-      font-size:11px;
-      font-weight:900;
-      color:rgba(255,255,255,.88);
-      background:linear-gradient(180deg, rgba(102,113,231,.68), rgba(78,89,201,.76));
-      border:1px solid rgba(255,255,255,.09);
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
-      white-space:nowrap;
-    }
-
-    .grid-2{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      margin-top:16px;
-    }
-
-    .stat-card{
-      min-height:120px;
-      padding:14px 15px;
       display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-    }
-
-    .stat-title{
-      margin:0;
-      font-size:14px;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(180deg, rgba(86,101,230,.66), rgba(75,88,197,.70));
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+      color:rgba(255,255,255,.92);
+      font-size:clamp(13px,2.6vw,16px);
       font-weight:900;
-      text-transform:uppercase;
-      color:rgba(255,255,255,.76);
-      letter-spacing:.5px;
+      text-align:center;
     }
 
-    .stat-value{
-      margin:0;
-      font-size:28px;
-      line-height:1;
-      font-weight:1000;
-      color:var(--green);
-    }
-
-    .stat-value.white{
-      color:#eef2ff;
-    }
-
-    .actions{
+    .section{
       margin-top:16px;
+    }
+
+    .statusGrid, .buttonGrid, .queueGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:14px;
     }
 
-    .btn{
-      min-height:72px;
+    .statusBox, .queueBox, .aiScoreBox, .logBox, .actionBtn, .resetBtn, .autoBox{
+      border-radius:28px;
+      box-shadow:var(--glow);
+    }
+
+    .statusBox, .queueBox{
+      min-height:124px;
+      padding:18px 20px;
+      background:linear-gradient(180deg, rgba(63,76,202,.98), rgba(52,63,174,.98));
+    }
+
+    .statusBox .label,
+    .queueBox .label{
+      font-size:clamp(16px,3vw,18px);
+    }
+
+    .statusBox .value,
+    .queueBox .value{
+      font-size:clamp(30px,6vw,46px);
+      margin-top:18px;
+    }
+
+    .buttonGrid{
+      margin-top:14px;
+    }
+
+    .actionBtn{
+      min-height:92px;
       border:none;
-      outline:none;
       cursor:pointer;
-      border-radius:20px;
-      font-size:18px;
+      font-family:inherit;
+      font-size:clamp(22px,5.5vw,34px);
       font-weight:1000;
+      letter-spacing:.02em;
       color:#fff;
-      box-shadow:var(--shadowSoft);
-      border:1px solid rgba(255,255,255,.10);
-      transition:transform .08s ease, opacity .15s ease;
     }
 
-    .btn:active{transform:scale(.985)}
-    .btn:disabled{opacity:.42; cursor:not-allowed}
-
-    .buy{background:linear-gradient(90deg,#b8d9a0,#b7d99c)}
-    .sell{background:linear-gradient(90deg,#dec7c7,#e4d1d1)}
-    .win{background:linear-gradient(90deg,#b6d89e,#bde0a8)}
-    .loss{background:linear-gradient(90deg,#dcc4c4,#e5d4d4)}
-    .reset{
-      background:linear-gradient(90deg,#d3cd9a,#c5c28d);
-      grid-column:1 / -1;
-      min-height:78px;
+    .buyBtn, .winBtn{
+      background:linear-gradient(90deg, #bddaa4 0%, #b4d396 100%);
+      color:#ffffff;
     }
 
-    .toggle-card{
-      margin-top:16px;
-      min-height:98px;
-      padding:14px 16px;
+    .sellBtn, .lossBtn{
+      background:linear-gradient(90deg, #e6d3d3 0%, #e8d8d8 100%);
+      color:#ffffff;
+    }
+
+    .resetBtn{
+      width:100%;
+      min-height:96px;
+      border:none;
+      cursor:pointer;
+      margin-top:14px;
+      font-family:inherit;
+      font-size:clamp(24px,5.8vw,34px);
+      font-weight:1000;
+      letter-spacing:.02em;
+      color:#ffffff;
+      background:linear-gradient(90deg, #d3cf9b 0%, #cbc68f 100%);
+    }
+
+    .actionBtn:disabled,
+    .resetBtn:disabled{
+      opacity:.42;
+      cursor:not-allowed;
+      filter:saturate(.7);
+    }
+
+    .autoBox{
+      margin-top:14px;
+      padding:18px 20px;
+      min-height:112px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:14px;
-      border-radius:28px;
+      gap:16px;
+      background:linear-gradient(180deg, rgba(63,76,202,.98), rgba(52,63,174,.98));
+      position:relative;
+      overflow:hidden;
     }
 
-    .toggle-left{
+    .autoLeft{
       display:flex;
       align-items:center;
       gap:14px;
       min-width:0;
     }
 
-    .toggle-dot{
-      width:22px;
-      height:22px;
+    .autoDot{
+      width:24px;
+      height:24px;
       border-radius:50%;
-      background:#7980b5;
-      box-shadow:0 0 0 8px rgba(255,255,255,.04);
+      background:rgba(255,255,255,.25);
+      box-shadow:0 0 0 1px rgba(255,255,255,.08);
       flex:0 0 auto;
     }
 
-    .toggle-dot.on{
-      background:#a9dbab;
-      box-shadow:0 0 0 8px rgba(169,219,171,.12);
+    .autoDot.on{
+      background:#a6dca5;
+      box-shadow:0 0 18px rgba(166,220,165,.45);
     }
 
-    .toggle-text{
-      display:flex;
-      flex-direction:column;
-      min-width:0;
+    .autoText .label{
+      font-size:clamp(16px,2.8vw,18px);
     }
 
-    .toggle-label{
-      font-size:14px;
-      font-weight:900;
-      text-transform:uppercase;
-      color:rgba(255,255,255,.77);
-      letter-spacing:.4px;
-    }
-
-    .toggle-value{
-      font-size:22px;
-      line-height:1.05;
+    .autoText .big{
+      margin-top:4px;
+      font-size:clamp(30px,6vw,46px);
       font-weight:1000;
+      line-height:1;
     }
 
-    .toggle-switch{
-      min-width:92px;
-      height:56px;
+    .toggle{
+      min-width:140px;
+      min-height:74px;
+      border:none;
+      cursor:pointer;
       border-radius:999px;
-      padding:0 18px;
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      font-size:18px;
+      background:linear-gradient(180deg, rgba(88,99,208,.78), rgba(70,80,184,.82));
+      color:#fff;
+      font-family:inherit;
+      font-size:clamp(24px,5vw,32px);
       font-weight:1000;
-      background:linear-gradient(180deg, rgba(90,101,214,.52), rgba(73,84,190,.62));
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
     }
 
-    .panel{
+    .aiScoreBox{
       margin-top:16px;
-      padding:16px;
-      border-radius:28px;
+      padding:18px 18px 16px;
+      background:linear-gradient(180deg, rgba(79,92,223,.98), rgba(67,79,201,.98));
     }
 
-    .panel-head{
+    .scoreHead{
       display:flex;
-      align-items:flex-end;
       justify-content:space-between;
-      gap:14px;
-      margin-bottom:14px;
+      align-items:flex-end;
+      gap:10px;
     }
 
-    .panel-title{
-      margin:0;
-      font-size:18px;
+    .scoreTitle{
+      font-size:clamp(22px,5vw,32px);
       font-weight:1000;
-      text-transform:uppercase;
-      letter-spacing:.4px;
+      line-height:1;
     }
 
-    .panel-score{
-      margin:0;
-      font-size:68px;
-      line-height:.9;
+    .scoreBig{
+      font-size:clamp(68px,14vw,108px);
+      line-height:.82;
       font-weight:1000;
-      letter-spacing:-2px;
       color:var(--cyan);
     }
 
-    .score-bar{
-      width:100%;
-      height:15px;
-      border-radius:999px;
-      background:rgba(175,190,255,.22);
-      overflow:hidden;
-      margin-bottom:16px;
-    }
-
-    .score-bar > span{
-      display:block;
-      width:0%;
-      height:100%;
-      border-radius:999px;
-      background:linear-gradient(90deg,#efc2b0 0%, #d0df9d 50%, #abd8ea 100%);
-    }
-
-    .factors{
+    .metrics{
+      margin-top:14px;
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:14px;
     }
 
-    .factor{
-      min-height:92px;
-      border-radius:22px;
-      padding:13px 14px;
-      background:linear-gradient(180deg, rgba(63,74,190,.92), rgba(54,66,170,.94));
-      border:1px solid rgba(255,255,255,.04);
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
+    .metric{
+      min-height:128px;
+      border-radius:24px;
+      padding:18px 18px;
+      background:linear-gradient(180deg, rgba(58,70,182,.96), rgba(52,63,172,.98));
+      box-shadow:var(--glow);
     }
 
-    .factor-name{
-      margin:0;
-      font-size:14px;
+    .metric .name{
+      font-size:clamp(15px,2.9vw,18px);
+      color:rgba(255,255,255,.82);
       font-weight:800;
-      color:rgba(255,255,255,.78);
     }
 
-    .factor-value{
-      margin:0;
-      font-size:23px;
+    .metric .num{
+      margin-top:18px;
+      font-size:clamp(34px,7vw,56px);
       line-height:1;
       font-weight:1000;
       color:var(--yellow);
     }
 
-    .session-row{
-      margin-top:16px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      font-size:14px;
-      font-weight:900;
-      color:rgba(255,255,255,.85);
-    }
-
-    .trade-bar{
-      width:100%;
-      height:13px;
-      border-radius:999px;
-      background:rgba(176,191,255,.18);
-      overflow:hidden;
-      margin-top:10px;
-    }
-
-    .trade-bar > span{
-      display:block;
-      width:0%;
-      height:100%;
-      border-radius:999px;
-      background:linear-gradient(90deg,#b7dea0 0%, #e0d996 70%, #efc8b8 100%);
-    }
-
-    .below-pills{
+    .tradesRow{
       margin-top:14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      font-weight:900;
+      color:rgba(255,255,255,.94);
+      font-size:clamp(16px,3.2vw,20px);
+    }
+
+    .miniPills{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
+      margin-top:12px;
     }
 
-    .below-pill{
-      padding:8px 13px;
+    .miniPill{
+      min-height:40px;
+      padding:0 16px;
       border-radius:999px;
-      font-size:12px;
-      font-weight:1000;
-      color:#eaf0ff;
-      background:linear-gradient(180deg, rgba(88,98,212,.58), rgba(73,83,190,.72));
-      border:1px solid rgba(255,255,255,.10);
-    }
-
-    .log-card{
-      margin-top:18px;
-      padding:18px 18px 14px;
-      border-radius:28px;
-    }
-
-    .log-head{
       display:flex;
       align-items:center;
+      justify-content:center;
+      font-size:clamp(13px,2.8vw,16px);
+      font-weight:900;
+      background:linear-gradient(180deg, rgba(86,101,230,.66), rgba(75,88,197,.70));
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+    }
+
+    .logBox{
+      margin-top:16px;
+      padding:18px 18px 8px;
+      background:linear-gradient(180deg, rgba(63,76,202,.98), rgba(52,63,174,.98));
+    }
+
+    .logHead{
+      display:flex;
       justify-content:space-between;
-      gap:10px;
-      margin-bottom:14px;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:8px;
     }
 
-    .log-title{
-      margin:0;
-      font-size:19px;
+    .logTitle{
+      font-size:clamp(22px,5vw,32px);
+      line-height:1;
       font-weight:1000;
-      text-transform:uppercase;
     }
 
-    .log-badges{
+    .logBadges{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
       justify-content:flex-end;
     }
 
-    .badge{
-      padding:8px 12px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:1000;
-      color:#eef2ff;
-      background:linear-gradient(180deg, rgba(88,99,214,.54), rgba(71,82,187,.70));
-      border:1px solid rgba(255,255,255,.10);
-      white-space:nowrap;
+    .logList{
+      margin-top:6px;
     }
 
-    .log-list{
-      display:flex;
-      flex-direction:column;
+    .logItem{
+      padding:14px 2px;
+      border-top:1px solid rgba(255,255,255,.08);
+      color:rgba(255,255,255,.96);
+      font-size:clamp(14px,2.9vw,18px);
+      line-height:1.34;
+      word-break:break-word;
     }
 
-    .log-item{
-      padding:11px 2px;
-      border-top:1px solid rgba(255,255,255,.07);
-      font-size:14px;
-      line-height:1.35;
-      color:rgba(255,255,255,.90);
-    }
-
-    .log-item:first-child{
+    .logItem:first-child{
       border-top:none;
-      padding-top:4px;
     }
 
-    .log-time{
-      color:rgba(255,255,255,.74);
+    .muted{
+      color:var(--muted);
     }
 
-    .log-empty{
-      color:rgba(255,255,255,.72);
-      padding:6px 2px 10px;
-      font-size:16px;
+    @media (max-width: 640px){
+      body{padding:18px 14px 34px}
+      .hero{padding:18px 14px 16px;border-radius:32px}
+      .hero::before{inset:14px;border-radius:24px}
+      .card{min-height:104px;padding:14px 14px}
+      .miniCard{min-height:90px;padding:14px}
+      .statusBox,.queueBox{min-height:108px;padding:16px}
+      .actionBtn{min-height:84px}
+      .resetBtn{min-height:88px}
+      .autoBox{min-height:104px;padding:16px}
+      .toggle{min-width:116px;min-height:66px}
+      .metric{min-height:112px;padding:16px}
+      .grid3{grid-template-columns:repeat(3,1fr);gap:10px}
+      .buttonGrid,.statusGrid,.queueGrid,.metrics,.grid2{gap:12px}
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="topbar">
-      <div class="version" id="versionText">V22.6 HARD LIVE <span class="bolt">⚡</span></div>
-      <div class="live-dot" id="liveDot"></div>
+      <div class="title" id="appTitle">V22.7.2 HARD LIVE ⚡</div>
+      <div class="dotWrap"><div class="dot" id="liveDot"></div></div>
     </div>
 
-    <section class="hero card">
-      <div class="hero-inner">
-        <h1 class="hero-title" id="heroTitle">READY</h1>
-        <p class="hero-sub" id="heroSub">System bereit.</p>
-        <p class="hero-sub2 hidden" id="heroSub2"></p>
-        <p class="hero-reason hidden" id="heroReason"></p>
+    <section class="hero">
+      <div class="heroTitle" id="heroTitle">READY</div>
+      <div class="heroSub" id="heroSub">System bereit.</div>
+      <div class="heroSub2" id="heroSub2"></div>
+      <div class="heroReason" id="heroReason"></div>
 
-        <div class="hero-pnl" id="heroPnl">0</div>
-        <p class="hero-label">Net PnL</p>
+      <div class="heroPnl" id="heroPnl">0</div>
+      <div class="heroPnlLabel">Net PnL</div>
 
-        <div class="hero-status-pill" id="heroStatusPill">LIVE</div>
+      <div class="pillRow">
+        <div class="pill" id="heroModePill">LIVE</div>
+      </div>
 
-        <div class="hero-limits">
-          <div class="limit-pill" id="lossLimitPill">LOSS LIMIT -20</div>
-          <div class="limit-pill" id="winTargetPill">WIN TARGET +20</div>
-        </div>
+      <div class="pillRow">
+        <div class="pill secondary" id="lossLimitPill">LOSS LIMIT -20</div>
+        <div class="pill secondary" id="winTargetPill">WIN TARGET +20</div>
+      </div>
 
-        <div class="hero-ai">
-          <div class="hero-ai-top">
-            <div class="mini">
-              <div class="mini-label">AI SIGNAL</div>
-              <div class="mini-value hold" id="aiSignalValue">HOLD</div>
-            </div>
-
-            <div class="mini conf-wrap">
-              <div class="conf-row">
-                <div class="mini-label">AI CONFIDENCE</div>
-                <div class="conf-big" id="aiConfValue">50%</div>
-              </div>
-              <div class="bar"><span id="aiConfBar"></span></div>
-            </div>
+      <div class="aiPanel">
+        <div class="grid2">
+          <div class="card">
+            <div class="label">AI SIGNAL</div>
+            <div class="value" id="aiSignal">BUY</div>
           </div>
 
-          <div class="hero-ai-mid">
-            <div class="mini">
-              <div class="mini-label">BIAS</div>
-              <div class="mini-value" id="aiBiasValue">BUY</div>
+          <div class="card">
+            <div class="confTop">
+              <div class="label">AI<br>CONFIDENCE</div>
+              <div class="confPct" id="aiConfPct">72%</div>
             </div>
-
-            <div class="mini">
-              <div class="mini-label">BUY EDGE</div>
-              <div class="mini-value" id="aiBuyEdgeValue">0</div>
-            </div>
-
-            <div class="mini">
-              <div class="mini-label">SELL EDGE</div>
-              <div class="mini-value soft" id="aiSellEdgeValue">0</div>
-            </div>
+            <div class="bar"><div class="fill" id="aiConfFill"></div></div>
           </div>
-
-          <div class="reason-box" id="reasonBox"></div>
         </div>
+
+        <div class="grid3">
+          <div class="miniCard">
+            <div class="label">BIAS</div>
+            <div class="value small" id="aiBias">BUY</div>
+          </div>
+          <div class="miniCard">
+            <div class="label">BUY EDGE</div>
+            <div class="value small" id="aiBuyEdge">0</div>
+          </div>
+          <div class="miniCard">
+            <div class="label">SELL EDGE</div>
+            <div class="value small red" id="aiSellEdge">0</div>
+          </div>
+        </div>
+
+        <div class="tagWrap" id="reasonTags"></div>
       </div>
     </section>
 
-    <section class="grid-2">
-      <div class="card stat-card">
-        <p class="stat-title">STATUS</p>
-        <p class="stat-value" id="statusValue">OK</p>
-      </div>
-      <div class="card stat-card">
-        <p class="stat-title">BUY POST</p>
-        <p class="stat-value" id="buyPostValue">OK</p>
-      </div>
-      <div class="card stat-card">
-        <p class="stat-title">SELL POST</p>
-        <p class="stat-value" id="sellPostValue">OK</p>
-      </div>
-      <div class="card stat-card">
-        <p class="stat-title">CONF</p>
-        <p class="stat-value" id="confValue">0%</p>
-      </div>
-    </section>
-
-    <section class="actions">
-      <button class="btn buy" id="buyBtn">BUY</button>
-      <button class="btn sell" id="sellBtn">SELL</button>
-      <button class="btn win" id="winBtn">WIN</button>
-      <button class="btn loss" id="lossBtn">LOSS</button>
-      <button class="btn reset" id="resetBtn">RESET</button>
-    </section>
-
-    <section class="card toggle-card" id="autoCard">
-      <div class="toggle-left">
-        <div class="toggle-dot" id="toggleDot"></div>
-        <div class="toggle-text">
-          <div class="toggle-label">AUTO MODE</div>
-          <div class="toggle-value" id="autoValue">AUTO OFF</div>
+    <section class="section">
+      <div class="statusGrid">
+        <div class="statusBox">
+          <div class="label">STATUS</div>
+          <div class="value" id="statusHealth">OK</div>
         </div>
-      </div>
-      <div class="toggle-switch" id="autoSwitch">OFF</div>
-    </section>
-
-    <section class="grid-2">
-      <div class="card stat-card">
-        <p class="stat-title">QUEUE</p>
-        <p class="stat-value" id="queueValue">0</p>
-      </div>
-      <div class="card stat-card">
-        <p class="stat-title">PROCESSING</p>
-        <p class="stat-value white" id="processingValue">OFF</p>
-      </div>
-    </section>
-
-    <section class="card panel">
-      <div class="panel-head">
-        <h2 class="panel-title">AI SCORE</h2>
-        <div class="panel-score" id="scoreValue">0</div>
-      </div>
-
-      <div class="score-bar"><span id="scoreBar"></span></div>
-
-      <div class="factors">
-        <div class="factor">
-          <p class="factor-name">Trend</p>
-          <p class="factor-value" id="trendValue">0</p>
+        <div class="statusBox">
+          <div class="label">BUY POST</div>
+          <div class="value" id="buyPostState">OK</div>
         </div>
-        <div class="factor">
-          <p class="factor-name">Volume</p>
-          <p class="factor-value" id="volumeValue">0</p>
+        <div class="statusBox">
+          <div class="label">SELL POST</div>
+          <div class="value" id="sellPostState">OK</div>
         </div>
-        <div class="factor">
-          <p class="factor-name">Structure</p>
-          <p class="factor-value" id="structureValue">0</p>
-        </div>
-        <div class="factor">
-          <p class="factor-name">Volatility</p>
-          <p class="factor-value" id="volatilityValue">0</p>
-        </div>
-        <div class="factor">
-          <p class="factor-name">Liquidity</p>
-          <p class="factor-value" id="liquidityValue">0</p>
-        </div>
-        <div class="factor">
-          <p class="factor-name">Session</p>
-          <p class="factor-value" id="sessionValue">0</p>
+        <div class="statusBox">
+          <div class="label">CONF</div>
+          <div class="value yellow" id="confBox">0%</div>
         </div>
       </div>
 
-      <div class="session-row">
-        <div id="tradesValue">Trades 0 / 50</div>
-        <div id="dayValue">-</div>
+      <div class="buttonGrid">
+        <button class="actionBtn buyBtn" id="buyBtn">BUY</button>
+        <button class="actionBtn sellBtn" id="sellBtn">SELL</button>
+        <button class="actionBtn winBtn" id="winBtn">WIN</button>
+        <button class="actionBtn lossBtn" id="lossBtn">LOSS</button>
       </div>
 
-      <div class="trade-bar"><span id="tradeBar"></span></div>
+      <button class="resetBtn" id="resetBtn">RESET</button>
 
-      <div class="below-pills" id="belowPills"></div>
-    </section>
+      <div class="autoBox">
+        <div class="autoLeft">
+          <div class="autoDot" id="autoDot"></div>
+          <div class="autoText">
+            <div class="label">AUTO MODE</div>
+            <div class="big" id="autoLabel">AUTO OFF</div>
+          </div>
+        </div>
+        <button class="toggle" id="autoToggle">OFF</button>
+      </div>
 
-    <section class="card log-card">
-      <div class="log-head">
-        <h2 class="log-title">LOG</h2>
-        <div class="log-badges">
-          <div class="badge" id="dayBadge">DAY READY</div>
-          <div class="badge" id="syncBadge">SYNC OK</div>
+      <div class="queueGrid" style="margin-top:14px;">
+        <div class="queueBox">
+          <div class="label">QUEUE</div>
+          <div class="value" id="queueValue">0</div>
+        </div>
+        <div class="queueBox">
+          <div class="label">PROCESSING</div>
+          <div class="value" id="processingValue">OFF</div>
         </div>
       </div>
 
-      <div class="log-list" id="logList">
-        <div class="log-empty">Keine Einträge.</div>
+      <div class="aiScoreBox">
+        <div class="scoreHead">
+          <div class="scoreTitle">AI SCORE</div>
+          <div class="scoreBig" id="scoreBig">0</div>
+        </div>
+
+        <div class="bar" style="margin-top:14px;"><div class="fill" id="scoreFill"></div></div>
+
+        <div class="metrics">
+          <div class="metric">
+            <div class="name">Trend</div>
+            <div class="num" id="trendVal">0</div>
+          </div>
+          <div class="metric">
+            <div class="name">Volume</div>
+            <div class="num" id="volumeVal">0</div>
+          </div>
+          <div class="metric">
+            <div class="name">Structure</div>
+            <div class="num" id="structureVal">0</div>
+          </div>
+          <div class="metric">
+            <div class="name">Volatility</div>
+            <div class="num" id="volatilityVal">0</div>
+          </div>
+          <div class="metric">
+            <div class="name">Liquidity</div>
+            <div class="num" id="liquidityVal">0</div>
+          </div>
+          <div class="metric">
+            <div class="name">Session</div>
+            <div class="num" id="sessionVal">0</div>
+          </div>
+        </div>
+
+        <div class="tradesRow">
+          <div id="tradesText">Trades 0 / 50</div>
+          <div id="dayText">—</div>
+        </div>
+
+        <div class="bar" style="margin-top:10px;"><div class="fill" id="tradesFill"></div></div>
+
+        <div class="miniPills" id="scoreBadges"></div>
+      </div>
+
+      <div class="logBox">
+        <div class="logHead">
+          <div class="logTitle">LOG</div>
+          <div class="logBadges">
+            <div class="miniPill" id="dayReadyBadge">DAY READY</div>
+            <div class="miniPill" id="syncBadge">SYNC OK</div>
+          </div>
+        </div>
+        <div class="logList" id="logList"></div>
       </div>
     </section>
   </div>
@@ -845,70 +762,87 @@
     const $ = (id) => document.getElementById(id);
 
     const els = {
+      appTitle: $("appTitle"),
       heroTitle: $("heroTitle"),
       heroSub: $("heroSub"),
       heroSub2: $("heroSub2"),
       heroReason: $("heroReason"),
       heroPnl: $("heroPnl"),
-      heroStatusPill: $("heroStatusPill"),
+      heroModePill: $("heroModePill"),
+      lossLimitPill: $("lossLimitPill"),
+      winTargetPill: $("winTargetPill"),
 
-      aiSignalValue: $("aiSignalValue"),
-      aiConfValue: $("aiConfValue"),
-      aiConfBar: $("aiConfBar"),
-      aiBiasValue: $("aiBiasValue"),
-      aiBuyEdgeValue: $("aiBuyEdgeValue"),
-      aiSellEdgeValue: $("aiSellEdgeValue"),
-      reasonBox: $("reasonBox"),
+      aiSignal: $("aiSignal"),
+      aiConfPct: $("aiConfPct"),
+      aiConfFill: $("aiConfFill"),
+      aiBias: $("aiBias"),
+      aiBuyEdge: $("aiBuyEdge"),
+      aiSellEdge: $("aiSellEdge"),
+      reasonTags: $("reasonTags"),
 
-      statusValue: $("statusValue"),
-      buyPostValue: $("buyPostValue"),
-      sellPostValue: $("sellPostValue"),
-      confValue: $("confValue"),
+      statusHealth: $("statusHealth"),
+      buyPostState: $("buyPostState"),
+      sellPostState: $("sellPostState"),
+      confBox: $("confBox"),
 
       buyBtn: $("buyBtn"),
       sellBtn: $("sellBtn"),
       winBtn: $("winBtn"),
       lossBtn: $("lossBtn"),
       resetBtn: $("resetBtn"),
-
-      toggleDot: $("toggleDot"),
-      autoValue: $("autoValue"),
-      autoSwitch: $("autoSwitch"),
-      autoCard: $("autoCard"),
-
+      autoDot: $("autoDot"),
+      autoLabel: $("autoLabel"),
+      autoToggle: $("autoToggle"),
       queueValue: $("queueValue"),
       processingValue: $("processingValue"),
 
-      scoreValue: $("scoreValue"),
-      scoreBar: $("scoreBar"),
-      trendValue: $("trendValue"),
-      volumeValue: $("volumeValue"),
-      structureValue: $("structureValue"),
-      volatilityValue: $("volatilityValue"),
-      liquidityValue: $("liquidityValue"),
-      sessionValue: $("sessionValue"),
+      scoreBig: $("scoreBig"),
+      scoreFill: $("scoreFill"),
+      trendVal: $("trendVal"),
+      volumeVal: $("volumeVal"),
+      structureVal: $("structureVal"),
+      volatilityVal: $("volatilityVal"),
+      liquidityVal: $("liquidityVal"),
+      sessionVal: $("sessionVal"),
+      tradesText: $("tradesText"),
+      dayText: $("dayText"),
+      tradesFill: $("tradesFill"),
+      scoreBadges: $("scoreBadges"),
 
-      tradesValue: $("tradesValue"),
-      dayValue: $("dayValue"),
-      tradeBar: $("tradeBar"),
-      belowPills: $("belowPills"),
-
-      dayBadge: $("dayBadge"),
+      dayReadyBadge: $("dayReadyBadge"),
       syncBadge: $("syncBadge"),
       logList: $("logList")
     };
 
-    function fmt1(v){
+    function niceNum(v){
       const n = Number(v ?? 0);
-      return Number.isInteger(n) ? String(n) : n.toFixed(1);
+      if (Math.abs(n % 1) < 0.001) return String(Math.round(n));
+      return n.toFixed(1);
     }
 
-    function scorePct(v){
-      const n = Math.round(Number(v || 0));
-      return Math.max(0, Math.min(100, n));
+    function upper(v){
+      return String(v || "").toUpperCase();
     }
 
-    function humanReason(reason){
+    function clamp(v,min,max){
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function normalizeReasons(arr){
+      if (!Array.isArray(arr)) return [];
+      const seen = new Set();
+      const out = [];
+      for (const x of arr) {
+        const s = String(x || "").trim();
+        if (!s) continue;
+        if (seen.has(s)) continue;
+        seen.add(s);
+        out.push(s);
+      }
+      return out;
+    }
+
+    function humanReason(v){
       const map = {
         trend_up: "Trend Up",
         trend_weak: "Trend Weak",
@@ -925,181 +859,199 @@
         session_soft: "Session Soft",
         session_tight: "Session Tight",
         low_confidence: "Low Confidence",
-        ai_paused: "AI Paused"
+        signal_confirmed: "Signal Confirmed",
+        waiting_confirm: "Waiting Confirm",
+        learning_buy_good: "Buy Memory Good",
+        learning_sell_good: "Sell Memory Good",
+        learning_buy_bad: "Buy Memory Weak",
+        learning_sell_bad: "Sell Memory Weak",
+        watch_mode: "Watch Mode",
+        ready_mode: "Ready Mode",
+        ai_paused: "AI Paused",
+        grace_buy: "Buy Context",
+        grace_sell: "Sell Context"
       };
-      return map[reason] || String(reason || "").replaceAll("_", " ");
+      return map[v] || String(v || "")
+        .replaceAll("_"," ")
+        .replace(/\b\w/g, m => m.toUpperCase());
     }
 
-    function buildHeroPill(s){
-      if (s.guard === "SESSION_LIMIT") return "SESSION LIMIT";
-      if (s.guard === "WIN_TARGET") return "WIN TARGET";
-      if (s.guard === "DAILY_LOSS") return "LOSS LIMIT";
-      if (s.guard === "HEALTH_FAIL") return "HEALTH FAIL";
-      if (s.processing) return "PROCESSING";
-      if (s.queueLength > 0) return "BLOCKED";
-      if (s.cooldownActive) return `COOLDOWN ${Math.max(1, Math.ceil((s.cooldownMsLeft || 0)/1000))}s`;
-      if (s.autoEnabled) return "AI AUTO ON";
+    function heroModeText(data){
+      if (data.guard === "WIN_TARGET") return "WIN TARGET";
+      if (data.guard === "DAILY_LOSS") return "LOSS LIMIT";
+      if (data.guard === "SESSION_LIMIT") return "SESSION LIMIT";
+      if (data.processing) return "PROCESSING";
+      if (data.cooldownActive) return `COOLDOWN ${Math.max(1, Math.ceil((data.cooldownMsLeft || 0)/1000))}s`;
+      if (data.autoEnabled) return "AI AUTO ON";
       return "LIVE";
     }
 
-    function renderReasonPills(reasons){
-      const items = (reasons || []).map(humanReason);
-      if (!items.length) {
-        els.reasonBox.innerHTML = `<div class="reason-pill">AI Ready</div>`;
+    function signalText(data){
+      if (data.aiMode === "PAUSED") return "PAUSED";
+      if (data.aiSignal) return upper(data.aiSignal);
+      return "HOLD";
+    }
+
+    function signalBadgeText(data){
+      if (data.guard === "WIN_TARGET" || data.guard === "SESSION_LIMIT" || data.guard === "DAILY_LOSS") return "AI PAUSED";
+      if (data.processing) return "PROCESSING";
+      if (data.cooldownActive) return `COOLDOWN ${Math.max(1, Math.ceil((data.cooldownMsLeft || 0)/1000))}s`;
+      if (data.aiMode === "BUY") return "AI BUY";
+      if (data.aiMode === "SELL") return "AI SELL";
+      if (data.aiMode === "PAUSED") return "AI PAUSED";
+      return "AI HOLD";
+    }
+
+    function renderReasons(reasons){
+      els.reasonTags.innerHTML = "";
+      for (const reason of normalizeReasons(reasons).slice(0,7)) {
+        const el = document.createElement("div");
+        el.className = "tag";
+        el.textContent = humanReason(reason);
+        els.reasonTags.appendChild(el);
+      }
+    }
+
+    function renderScoreBadges(data){
+      els.scoreBadges.innerHTML = "";
+      const badges = [];
+
+      if (data.cooldownActive) badges.push(`COOLDOWN ${Math.max(1, Math.ceil((data.cooldownMsLeft || 0)/1000))}s`);
+      badges.push(signalBadgeText(data));
+
+      for (const b of badges.slice(0,2)) {
+        const el = document.createElement("div");
+        el.className = "miniPill";
+        el.textContent = b;
+        els.scoreBadges.appendChild(el);
+      }
+    }
+
+    function renderLogs(log){
+      els.logList.innerHTML = "";
+      const list = Array.isArray(log) ? [...log].reverse() : [];
+
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "logItem muted";
+        empty.textContent = "Keine Einträge.";
+        els.logList.appendChild(empty);
         return;
       }
-      els.reasonBox.innerHTML = items.map(x => `<div class="reason-pill">${x}</div>`).join("");
-    }
 
-    function renderBelowPills(s){
-      const pills = [];
-
-      if (s.cooldownActive) {
-        pills.push(`COOLDOWN ${Math.max(1, Math.ceil((s.cooldownMsLeft || 0)/1000))}s`);
-      }
-
-      if (s.guard === "SESSION_LIMIT") pills.push("AI PAUSED");
-      else if (s.guard === "WIN_TARGET") pills.push("WIN TARGET");
-      else if (s.guard === "DAILY_LOSS") pills.push("LOSS LIMIT");
-      else if (s.aiSignal === "BUY") pills.push("AI BUY");
-      else if (s.aiSignal === "SELL") pills.push("AI SELL");
-      else if (s.aiSignal === "HOLD") pills.push("AI HOLD");
-      else if (s.aiSignal === "PAUSED") pills.push("AI PAUSED");
-
-      els.belowPills.innerHTML = pills.map(x => `<div class="below-pill">${x}</div>`).join("");
-    }
-
-    function renderLog(log){
-      if (!log || !log.length) {
-        els.logList.innerHTML = `<div class="log-empty">Keine Einträge.</div>`;
-        return;
-      }
-
-      const last = [...log].slice(-10).reverse();
-      els.logList.innerHTML = last.map(item => `
-        <div class="log-item">
-          <span class="log-time">${item.localTime}</span> - ${item.msg}
-        </div>
-      `).join("");
-    }
-
-    function setSignalStyles(signal){
-      els.aiSignalValue.className = "mini-value";
-      if (signal === "HOLD") els.aiSignalValue.classList.add("hold");
-      if (signal === "PAUSED") els.aiSignalValue.classList.add("paused");
-      if (signal === "SELL") els.aiSignalValue.classList.add("soft");
-      if (signal !== "BUY" && signal !== "HOLD" && signal !== "SELL" && signal !== "PAUSED") {
-        els.aiSignalValue.classList.add("white");
+      for (const item of list.slice(0, 14)) {
+        const row = document.createElement("div");
+        row.className = "logItem";
+        row.textContent = `${item.localTime || "--:--:--"} - ${item.msg || ""}`;
+        els.logList.appendChild(row);
       }
     }
 
-    function applyDisabledState(s){
-      const locked = !!(
-        s.processing ||
-        s.queueLength > 0 ||
-        s.cooldownActive ||
-        s.guard === "SESSION_LIMIT" ||
-        s.guard === "WIN_TARGET" ||
-        s.guard === "DAILY_LOSS" ||
-        s.guard === "HEALTH_FAIL"
-      );
+    function setDisabled(data){
+      const hardLocked =
+        data.processing ||
+        data.queueLength > 0 ||
+        data.cooldownActive ||
+        data.guard === "WIN_TARGET" ||
+        data.guard === "DAILY_LOSS" ||
+        data.guard === "SESSION_LIMIT" ||
+        data.guard === "HEALTH_FAIL";
 
-      els.buyBtn.disabled = locked;
-      els.sellBtn.disabled = locked;
+      els.buyBtn.disabled = hardLocked || !data.health?.buy;
+      els.sellBtn.disabled = hardLocked || !data.health?.sell;
       els.winBtn.disabled = false;
       els.lossBtn.disabled = false;
+      els.resetBtn.disabled = false;
     }
 
-    function render(s){
-      els.heroTitle.textContent = s.heroTitle || "READY";
-      els.heroSub.textContent = s.heroSub || "System bereit.";
+    function render(data){
+      els.appTitle.textContent = "V22.7.2 HARD LIVE ⚡";
 
-      els.heroSub2.textContent = s.heroSub2 || "";
-      els.heroSub2.classList.toggle("hidden", !s.heroSub2);
+      els.heroTitle.textContent = data.heroTitle || "READY";
+      els.heroSub.textContent = data.heroSub || "System bereit.";
+      els.heroSub2.textContent = data.heroSub2 || "";
+      els.heroReason.textContent = data.heroReason || "";
 
-      els.heroReason.textContent = s.heroReason || "";
-      els.heroReason.classList.toggle("hidden", !s.heroReason);
+      els.heroPnl.textContent = niceNum(data.pnl || 0);
+      els.heroModePill.textContent = heroModeText(data);
+      els.lossLimitPill.textContent = `LOSS LIMIT ${data.lossLimit ?? -20}`;
+      els.winTargetPill.textContent = `WIN TARGET +${Math.abs(data.winTarget ?? 20)}`;
 
-      els.heroPnl.textContent = fmt1(s.pnl);
-      els.heroStatusPill.textContent = buildHeroPill(s);
+      els.aiSignal.textContent = signalText(data);
+      els.aiConfPct.textContent = `${Math.round(data.confidence || data.conf || 0)}%`;
+      els.aiConfFill.style.width = `${clamp(Number(data.confidence || data.conf || 0),0,100)}%`;
 
-      const signal = s.aiSignal || "HOLD";
-      els.aiSignalValue.textContent = signal;
-      setSignalStyles(signal);
+      els.aiBias.textContent = upper(data.aiBias || "BUY");
+      els.aiBuyEdge.textContent = niceNum(data.aiBuyEdge || 0);
+      els.aiSellEdge.textContent = niceNum(data.aiSellEdge || 0);
 
-      const conf = Math.round(Number(s.confidence ?? s.conf ?? 0));
-      els.aiConfValue.textContent = `${conf}%`;
-      els.aiConfBar.style.width = `${Math.max(0, Math.min(100, conf))}%`;
+      renderReasons(data.aiReasons);
 
-      els.aiBiasValue.textContent = s.aiBias || "NEUTRAL";
-      els.aiBuyEdgeValue.textContent = fmt1(s.aiBuyEdge);
-      els.aiSellEdgeValue.textContent = fmt1(s.aiSellEdge);
+      els.statusHealth.textContent = data.health?.status ? "OK" : "FAIL";
+      els.buyPostState.textContent = data.health?.buy ? "OK" : "FAIL";
+      els.sellPostState.textContent = data.health?.sell ? "OK" : "FAIL";
+      els.confBox.textContent = `${Math.round(data.confidence || data.conf || 0)}%`;
 
-      renderReasonPills(s.aiReasons || []);
+      els.autoDot.classList.toggle("on", !!data.autoEnabled);
+      els.autoLabel.textContent = data.autoEnabled ? "AUTO ON" : "AUTO OFF";
+      els.autoToggle.textContent = data.autoEnabled ? "ON" : "OFF";
 
-      els.statusValue.textContent = s.health?.status ? "OK" : "FAIL";
-      els.buyPostValue.textContent = s.health?.buy ? "OK" : "FAIL";
-      els.sellPostValue.textContent = s.health?.sell ? "OK" : "FAIL";
-      els.confValue.textContent = `${conf}%`;
+      els.queueValue.textContent = String(data.queueLength || 0);
+      els.processingValue.textContent = data.processing ? "ON" : "OFF";
 
-      els.autoValue.textContent = s.autoEnabled ? "AUTO ON" : "AUTO OFF";
-      els.autoSwitch.textContent = s.autoEnabled ? "ON" : "OFF";
-      els.toggleDot.className = `toggle-dot${s.autoEnabled ? " on" : ""}`;
+      els.scoreBig.textContent = `${Math.round(data.score || 0)}`;
+      els.scoreFill.style.width = `${clamp(Number(data.score || 0),0,100)}%`;
 
-      els.queueValue.textContent = String(s.queueLength ?? 0);
-      els.processingValue.textContent = s.processing ? "ON" : "OFF";
+      els.trendVal.textContent = niceNum(data.trend || 0);
+      els.volumeVal.textContent = niceNum(data.volume || 0);
+      els.structureVal.textContent = niceNum(data.structure || 0);
+      els.volatilityVal.textContent = niceNum(data.volatility || 0);
+      els.liquidityVal.textContent = niceNum(data.liquidity || 0);
+      els.sessionVal.textContent = niceNum(data.session || 0);
 
-      els.scoreValue.textContent = Math.round(Number(s.score || 0));
-      els.scoreBar.style.width = `${scorePct(s.score)}%`;
+      els.tradesText.textContent = `Trades ${data.sessionTrades || 0} / ${data.maxSessionTrades || 50}`;
+      els.dayText.textContent = data.dayKey || "—";
+      els.tradesFill.style.width = `${clamp(((data.sessionTrades || 0) / (data.maxSessionTrades || 50)) * 100, 0, 100)}%`;
 
-      els.trendValue.textContent = fmt1(s.trend);
-      els.volumeValue.textContent = fmt1(s.volume);
-      els.structureValue.textContent = fmt1(s.structure);
-      els.volatilityValue.textContent = fmt1(s.volatility);
-      els.liquidityValue.textContent = fmt1(s.liquidity);
-      els.sessionValue.textContent = fmt1(s.session);
+      renderScoreBadges(data);
 
-      const maxTrades = Number(s.maxSessionTrades || 50);
-      const trades = Number(s.sessionTrades || 0);
-      els.tradesValue.textContent = `Trades ${trades} / ${maxTrades}`;
-      els.dayValue.textContent = s.dayKey || "-";
-      els.tradeBar.style.width = `${Math.max(0, Math.min(100, (trades / maxTrades) * 100))}%`;
+      els.dayReadyBadge.textContent =
+        data.guard === "SESSION_LIMIT" ? "DAY LIMIT" :
+        data.guard === "WIN_TARGET" ? "WIN TARGET" :
+        data.guard === "DAILY_LOSS" ? "LOSS LIMIT" :
+        "DAY READY";
 
-      if (s.guard === "SESSION_LIMIT") els.dayBadge.textContent = "DAY LIMIT";
-      else if (s.guard === "WIN_TARGET") els.dayBadge.textContent = "WIN TARGET";
-      else if (s.guard === "DAILY_LOSS") els.dayBadge.textContent = "LOSS LIMIT";
-      else els.dayBadge.textContent = "DAY READY";
+      els.syncBadge.textContent = "SYNC OK";
 
-      els.syncBadge.textContent = s.health?.status ? "SYNC OK" : "SYNC FAIL";
-
-      renderBelowPills(s);
-      renderLog(s.log);
-      applyDisabledState(s);
+      renderLogs(data.log);
+      setDisabled(data);
     }
 
-    async function api(path, method = "GET"){
-      const res = await fetch(path, {
-        method,
-        headers: { "Content-Type": "application/json" }
+    async function post(url){
+      const res = await fetch(url, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" }
       });
-      return res.json();
+      const data = await res.json();
+      render(data);
     }
 
     async function refresh(){
-      try {
-        const s = await api("/api/status");
-        render(s);
-      } catch (e) {
-        console.error(e);
+      try{
+        const res = await fetch("/api/status");
+        const data = await res.json();
+        render(data);
+      }catch(err){
+        els.syncBadge.textContent = "SYNC FAIL";
       }
     }
 
-    els.buyBtn.addEventListener("click", async () => render(await api("/api/buy", "POST")));
-    els.sellBtn.addEventListener("click", async () => render(await api("/api/sell", "POST")));
-    els.winBtn.addEventListener("click", async () => render(await api("/api/win", "POST")));
-    els.lossBtn.addEventListener("click", async () => render(await api("/api/loss", "POST")));
-    els.resetBtn.addEventListener("click", async () => render(await api("/api/reset", "POST")));
-    els.autoCard.addEventListener("click", async () => render(await api("/api/auto", "POST")));
+    els.buyBtn.addEventListener("click", () => post("/api/buy"));
+    els.sellBtn.addEventListener("click", () => post("/api/sell"));
+    els.winBtn.addEventListener("click", () => post("/api/win"));
+    els.lossBtn.addEventListener("click", () => post("/api/loss"));
+    els.resetBtn.addEventListener("click", () => post("/api/reset"));
+    els.autoToggle.addEventListener("click", () => post("/api/auto"));
 
     refresh();
     setInterval(refresh, 1200);
