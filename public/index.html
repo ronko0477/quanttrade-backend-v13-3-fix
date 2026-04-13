@@ -2,52 +2,47 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>V22.7.2 HARD LIVE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>V22.7.3 HARD LIVE</title>
   <style>
     :root{
-      --bg:#020617;
-      --bg2:#0a1230;
-      --panel:#5663e9;
-      --panel2:#4a56d8;
-      --panelDark:#3843bc;
-      --line:rgba(255,255,255,.10);
-      --lineSoft:rgba(255,255,255,.06);
-      --text:#f8fbff;
-      --muted:rgba(245,248,255,.78);
-
-      --green:#c2dd8d;
-      --red:#efc8c8;
-      --yellow:#e8df9e;
-      --cyan:#bfdfe6;
-
-      --glow:0 0 0 1px rgba(255,255,255,.06), 0 14px 34px rgba(23,31,92,.34);
-      --softGlow:0 8px 22px rgba(78,90,220,.20);
-      --heroGlow:0 14px 38px rgba(132,145,255,.20);
-
-      --radius:28px;
-      --radiusLg:34px;
-      --radiusSm:18px;
-
-      --font:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      --bg1:#050816;
+      --bg2:#0a0f2a;
+      --panel:#6c75ff2e;
+      --panel-strong:#4f59f0;
+      --card:#4450e6;
+      --card-dark:#3945d4;
+      --text:#f4f6ff;
+      --muted:#d8ddff;
+      --lime:#c8de8c;
+      --pink:#ead7d9;
+      --gold:#ddd39c;
+      --shadow:0 18px 45px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08);
+      --shadow-soft:0 10px 24px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.06);
+      --outline:rgba(255,255,255,.08);
+      --bar-bg:rgba(173,185,255,.24);
+      --hero-bg:linear-gradient(180deg, rgba(173,181,255,.88) 0%, rgba(120,132,255,.88) 100%);
+      --card-bg:linear-gradient(180deg, rgba(80,91,245,.98) 0%, rgba(63,73,211,.98) 100%);
+      --pill-bg:linear-gradient(180deg, rgba(86,96,244,.98) 0%, rgba(61,71,209,.98) 100%);
+      --good-bg:linear-gradient(90deg, #eac7b5 0%, #d6dd8f 45%, #afd9df 100%);
     }
 
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
     body{
-      font-family:var(--font);
+      min-height:100vh;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
       color:var(--text);
       background:
-        radial-gradient(1200px 700px at 50% -10%, rgba(137,148,255,.16), transparent 55%),
-        radial-gradient(900px 500px at 50% 0%, rgba(95,108,255,.12), transparent 60%),
-        linear-gradient(180deg, #11182f 0%, #040814 18%, #020617 44%, #01040d 100%);
-      min-height:100vh;
-      padding:24px 16px 44px;
+        radial-gradient(1200px 400px at 50% -80px, rgba(180,190,255,.22), transparent 60%),
+        radial-gradient(700px 400px at 50% 100%, rgba(57,69,212,.18), transparent 60%),
+        linear-gradient(180deg, #030617 0%, #071129 34%, #040814 100%);
     }
 
-    .wrap{
+    .app{
       width:min(100%, 760px);
       margin:0 auto;
+      padding:22px 18px 42px;
     }
 
     .topbar{
@@ -55,1006 +50,1122 @@
       justify-content:center;
       align-items:center;
       gap:14px;
-      margin:6px 0 18px;
-    }
-
-    .title{
+      margin:6px auto 18px;
+      padding:12px 14px;
       font-weight:900;
-      font-size:clamp(22px,4.8vw,38px);
-      letter-spacing:.02em;
-      text-transform:uppercase;
-      text-shadow:0 4px 18px rgba(0,0,0,.35);
+      font-size:22px;
+      letter-spacing:.3px;
+      color:#f7f8ff;
     }
 
-    .dotWrap{
-      width:40px;
-      height:40px;
+    .dot-wrap{
+      position:relative;
+      width:28px;
+      height:28px;
+      flex:0 0 28px;
+    }
+
+    .dot-wrap::before{
+      content:"";
+      position:absolute;
+      inset:-10px;
       border-radius:999px;
-      display:grid;
-      place-items:center;
-      background:rgba(146,255,173,.10);
-      box-shadow:0 0 0 1px rgba(255,255,255,.05), 0 0 22px rgba(146,255,173,.22);
-      flex:0 0 auto;
+      background:radial-gradient(circle, rgba(174,228,152,.38) 0%, rgba(174,228,152,.12) 42%, transparent 72%);
+      filter:blur(4px);
     }
 
     .dot{
-      width:22px;
-      height:22px;
+      position:absolute;
+      inset:0;
+      margin:auto;
+      width:18px;
+      height:18px;
       border-radius:50%;
-      background:#a6dca5;
-      box-shadow:0 0 18px rgba(166,220,165,.55);
+      background:#b9e59f;
+      box-shadow:0 0 0 8px rgba(185,229,159,.10), 0 0 28px rgba(185,229,159,.55);
     }
 
     .hero{
       position:relative;
-      background:linear-gradient(180deg, rgba(160,170,255,.92), rgba(120,132,239,.90));
-      border-radius:40px;
-      box-shadow:var(--heroGlow), inset 0 0 0 1px rgba(255,255,255,.10);
-      padding:22px 18px 20px;
+      border-radius:36px;
+      padding:24px 22px 22px;
+      background:var(--hero-bg);
+      box-shadow:var(--shadow);
       overflow:hidden;
+      border:1px solid rgba(255,255,255,.1);
     }
 
     .hero::before{
       content:"";
       position:absolute;
-      inset:18px;
-      border-radius:30px;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+      inset:16px;
+      border-radius:28px;
+      border:1px solid rgba(255,255,255,.09);
       pointer-events:none;
     }
 
-    .heroTitle{
+    .hero-title{
       text-align:center;
-      font-size:clamp(68px,15vw,126px);
+      font-size:92px;
       line-height:.92;
-      margin:6px 0 10px;
       font-weight:1000;
-      color:var(--green);
-      letter-spacing:-.04em;
-      text-shadow:0 8px 30px rgba(0,0,0,.18);
+      color:#bfd98a;
+      letter-spacing:-2px;
+      text-shadow:0 2px 0 rgba(0,0,0,.04);
+      margin:4px 0 12px;
+      word-break:break-word;
     }
 
-    .heroSub, .heroSub2, .heroReason{
+    .hero-subtitle,
+    .hero-detail,
+    .hero-reasons{
       text-align:center;
       font-weight:900;
-      line-height:1.14;
+      color:#f4f4fb;
     }
 
-    .heroSub{
-      font-size:clamp(18px,4vw,24px);
-      margin-top:2px;
+    .hero-subtitle{
+      font-size:28px;
+      margin-top:6px;
     }
 
-    .heroSub2{
-      font-size:clamp(16px,3.3vw,20px);
+    .hero-detail{
+      font-size:24px;
       margin-top:10px;
-      color:rgba(255,255,255,.96);
     }
 
-    .heroReason{
-      font-size:clamp(14px,2.8vw,17px);
-      margin-top:10px;
-      color:rgba(255,255,255,.90);
+    .hero-reasons{
+      font-size:18px;
+      line-height:1.35;
+      margin:14px auto 18px;
+      max-width:92%;
+      color:#f1f1fb;
+      opacity:.96;
     }
 
-    .heroPnl{
+    .netpnl{
       text-align:center;
-      margin-top:18px;
+      margin-top:10px;
+    }
+
+    .netpnl-value{
+      font-size:110px;
+      line-height:.95;
       font-weight:1000;
-      font-size:clamp(74px,15vw,118px);
-      line-height:1;
+      margin:0;
     }
 
-    .heroPnlLabel{
-      text-align:center;
-      margin-top:8px;
-      font-size:clamp(18px,4vw,24px);
+    .netpnl-label{
+      font-size:28px;
       font-weight:900;
+      margin-top:6px;
     }
 
-    .pillRow{
+    .center-pill{
       display:flex;
-      gap:12px;
       justify-content:center;
-      flex-wrap:wrap;
-      margin-top:14px;
+      margin:20px 0 18px;
     }
 
     .pill{
-      min-height:52px;
-      padding:0 22px;
+      min-width:170px;
+      min-height:64px;
+      border:none;
       border-radius:999px;
-      display:flex;
+      padding:16px 28px;
+      background:var(--pill-bg);
+      color:#f8f8ff;
+      font-size:22px;
+      font-weight:1000;
+      box-shadow:0 12px 24px rgba(49,59,188,.42), inset 0 2px 0 rgba(255,255,255,.08);
+      display:inline-flex;
       align-items:center;
       justify-content:center;
       text-align:center;
+    }
+
+    .hero-limits{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      margin:4px 28px 22px;
+    }
+
+    .limit-pill{
+      border-radius:999px;
+      padding:14px 16px;
+      text-align:center;
+      background:var(--pill-bg);
+      font-size:20px;
       font-weight:1000;
-      font-size:clamp(15px,3.2vw,18px);
-      letter-spacing:.01em;
-      color:#fff;
-      background:linear-gradient(180deg, rgba(78,92,221,.92), rgba(63,75,195,.96));
-      box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,.08),
-        0 10px 24px rgba(44,56,161,.28);
+      box-shadow:var(--shadow-soft);
     }
 
-    .pill.secondary{
-      min-height:44px;
-      font-size:clamp(14px,3vw,17px);
-      padding:0 18px;
+    .signal-panel{
+      margin-top:4px;
+      border-radius:28px;
+      padding:16px;
+      background:linear-gradient(180deg, rgba(80,91,245,.42), rgba(63,73,211,.42));
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
     }
 
-    .aiPanel{
-      margin-top:18px;
-      padding:18px 14px 16px;
-      border-radius:26px;
-      background:linear-gradient(180deg, rgba(76,88,214,.92), rgba(66,77,197,.96));
-      box-shadow:var(--softGlow), inset 0 0 0 1px rgba(255,255,255,.06);
+    .signal-top{
+      display:grid;
+      grid-template-columns:1fr 1.35fr;
+      gap:14px;
+      margin-bottom:14px;
+    }
+
+    .mini-card, .conf-card, .stat-card, .section-card, .wide-card{
+      border-radius:22px;
+      background:var(--card-bg);
+      box-shadow:var(--shadow-soft);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .mini-card, .conf-card{
+      padding:18px 18px 16px;
+      min-height:132px;
+    }
+
+    .mini-label, .conf-label, .card-label, .log-title, .score-title{
+      font-size:22px;
+      font-weight:1000;
+      color:#f3f5ff;
+      letter-spacing:.2px;
+    }
+
+    .mini-value{
+      margin-top:16px;
+      font-size:58px;
+      font-weight:1000;
+      color:var(--lime);
+      line-height:.95;
+    }
+
+    .conf-head{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .conf-label{
+      max-width:52%;
+      line-height:.95;
+    }
+
+    .conf-value{
+      font-size:66px;
+      font-weight:1000;
+      line-height:.9;
+      color:#d9f0d6;
+      white-space:nowrap;
+    }
+
+    .progress{
+      width:100%;
+      height:18px;
+      border-radius:999px;
+      background:var(--bar-bg);
+      overflow:hidden;
+      box-shadow:inset 0 1px 2px rgba(0,0,0,.18);
+    }
+
+    .progress > span{
+      display:block;
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:var(--good-bg);
+      transition:width .35s ease;
+    }
+
+    .signal-bottom{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:14px;
+      margin-bottom:14px;
+    }
+
+    .stat-card{
+      min-height:122px;
+      padding:18px 18px 14px;
+    }
+
+    .card-label{
+      font-size:20px;
+      line-height:1;
+    }
+
+    .card-value{
+      margin-top:24px;
+      font-size:56px;
+      font-weight:1000;
+      line-height:.95;
+      color:var(--lime);
+      white-space:nowrap;
+    }
+
+    .card-value.sell{
+      color:#f4d0cb;
+    }
+
+    .chip-box{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      justify-content:center;
+      padding:16px 10px 4px;
+      min-height:112px;
+    }
+
+    .chip{
+      padding:12px 20px;
+      border-radius:999px;
+      background:linear-gradient(180deg, rgba(102,113,249,.95), rgba(82,92,225,.95));
+      color:#f4f6ff;
+      font-size:18px;
+      font-weight:900;
+      box-shadow:var(--shadow-soft);
+      border:1px solid rgba(255,255,255,.08);
+      text-align:center;
     }
 
     .grid2{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:12px;
+      gap:16px;
+      margin-top:20px;
     }
 
-    .grid3{
+    .section-card{
+      padding:18px 18px 16px;
+      min-height:150px;
+    }
+
+    .section-card .big{
+      margin-top:28px;
+      font-size:66px;
+      font-weight:1000;
+      line-height:.95;
+      color:var(--lime);
+    }
+
+    .btn-grid{
       display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:12px;
-      margin-top:12px;
-    }
-
-    .card{
-      background:linear-gradient(180deg, rgba(60,72,188,.96), rgba(53,63,171,.98));
-      border-radius:24px;
-      padding:16px 18px;
-      box-shadow:var(--glow);
-      min-height:116px;
-    }
-
-    .miniCard{
-      background:linear-gradient(180deg, rgba(60,72,188,.96), rgba(53,63,171,.98));
-      border-radius:22px;
-      padding:16px 18px;
-      box-shadow:var(--glow);
-      min-height:102px;
-    }
-
-    .label{
-      font-size:clamp(14px,2.9vw,16px);
-      font-weight:900;
-      color:rgba(255,255,255,.82);
-      text-transform:uppercase;
-      line-height:1.05;
-      letter-spacing:.02em;
-    }
-
-    .value{
-      margin-top:12px;
-      font-size:clamp(36px,7vw,56px);
-      line-height:1;
-      font-weight:1000;
-      color:var(--green);
-    }
-
-    .value.small{
-      font-size:clamp(25px,5.4vw,40px);
-    }
-
-    .value.red{ color:#f1c9c9; }
-    .value.yellow{ color:var(--yellow); }
-    .value.cyan{ color:var(--cyan); }
-
-    .confTop{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:10px;
-    }
-
-    .confPct{
-      font-size:clamp(36px,8vw,58px);
-      line-height:.9;
-      font-weight:1000;
-      color:var(--cyan);
-      white-space:nowrap;
-    }
-
-    .bar{
-      width:100%;
-      height:16px;
-      border-radius:999px;
-      background:rgba(255,255,255,.10);
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
-      overflow:hidden;
-      margin-top:10px;
-    }
-
-    .fill{
-      height:100%;
-      width:0%;
-      border-radius:999px;
-      background:linear-gradient(90deg, #f0c8b4 0%, #c9dc91 52%, #b7dae0 100%);
-    }
-
-    .tagWrap{
-      margin-top:14px;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:center;
-    }
-
-    .tag{
-      min-height:42px;
-      padding:0 18px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:linear-gradient(180deg, rgba(86,101,230,.66), rgba(75,88,197,.70));
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
-      color:rgba(255,255,255,.92);
-      font-size:clamp(13px,2.6vw,16px);
-      font-weight:900;
-      text-align:center;
-    }
-
-    .section{
+      grid-template-columns:1fr 1fr;
+      gap:16px;
       margin-top:16px;
     }
 
-    .statusGrid, .buttonGrid, .queueGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-    }
-
-    .statusBox, .queueBox, .aiScoreBox, .logBox, .actionBtn, .resetBtn, .autoBox{
-      border-radius:28px;
-      box-shadow:var(--glow);
-    }
-
-    .statusBox, .queueBox{
-      min-height:124px;
-      padding:18px 20px;
-      background:linear-gradient(180deg, rgba(63,76,202,.98), rgba(52,63,174,.98));
-    }
-
-    .statusBox .label,
-    .queueBox .label{
-      font-size:clamp(16px,3vw,18px);
-    }
-
-    .statusBox .value,
-    .queueBox .value{
-      font-size:clamp(30px,6vw,46px);
-      margin-top:18px;
-    }
-
-    .buttonGrid{
-      margin-top:14px;
-    }
-
-    .actionBtn{
-      min-height:92px;
+    .btn{
+      appearance:none;
       border:none;
-      cursor:pointer;
-      font-family:inherit;
-      font-size:clamp(22px,5.5vw,34px);
+      border-radius:24px;
+      padding:28px 18px;
+      font-size:26px;
       font-weight:1000;
-      letter-spacing:.02em;
       color:#fff;
-    }
-
-    .buyBtn, .winBtn{
-      background:linear-gradient(90deg, #bddaa4 0%, #b4d396 100%);
-      color:#ffffff;
-    }
-
-    .sellBtn, .lossBtn{
-      background:linear-gradient(90deg, #e6d3d3 0%, #e8d8d8 100%);
-      color:#ffffff;
-    }
-
-    .resetBtn{
-      width:100%;
-      min-height:96px;
-      border:none;
+      box-shadow:var(--shadow-soft);
       cursor:pointer;
-      margin-top:14px;
-      font-family:inherit;
-      font-size:clamp(24px,5.8vw,34px);
-      font-weight:1000;
-      letter-spacing:.02em;
-      color:#ffffff;
-      background:linear-gradient(90deg, #d3cf9b 0%, #cbc68f 100%);
+      transition:transform .05s ease, opacity .2s ease;
     }
 
-    .actionBtn:disabled,
-    .resetBtn:disabled{
-      opacity:.42;
+    .btn:active{ transform:scale(.99); }
+    .btn:disabled{
+      opacity:.45;
       cursor:not-allowed;
-      filter:saturate(.7);
     }
 
-    .autoBox{
-      margin-top:14px;
-      padding:18px 20px;
-      min-height:112px;
-      display:flex;
+    .btn-buy, .btn-win{
+      background:linear-gradient(90deg, #c8deb0 0%, #b7d592 52%, #bfdcac 100%);
+      color:#ffffff;
+    }
+
+    .btn-sell, .btn-loss{
+      background:linear-gradient(90deg, #e4d7d8 0%, #eadbdb 48%, #e9d7d8 100%);
+      color:#ffffff;
+    }
+
+    .btn-reset{
+      width:100%;
+      margin-top:16px;
+      background:linear-gradient(90deg, #d7d0a0 0%, #d9d39f 52%, #d4ce9d 100%);
+      color:#ffffff;
+    }
+
+    .toggle-card{
+      margin-top:16px;
+      border-radius:28px;
+      background:var(--card-bg);
+      box-shadow:var(--shadow);
+      padding:18px 18px;
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
       align-items:center;
-      justify-content:space-between;
-      gap:16px;
-      background:linear-gradient(180deg, rgba(63,76,202,.98), rgba(52,63,174,.98));
-      position:relative;
-      overflow:hidden;
     }
 
-    .autoLeft{
+    .toggle-left{
       display:flex;
       align-items:center;
       gap:14px;
       min-width:0;
     }
 
-    .autoDot{
-      width:24px;
-      height:24px;
+    .toggle-dot{
+      width:22px;
+      height:22px;
       border-radius:50%;
-      background:rgba(255,255,255,.25);
-      box-shadow:0 0 0 1px rgba(255,255,255,.08);
-      flex:0 0 auto;
+      background:#94a0cf;
+      box-shadow:0 0 0 6px rgba(255,255,255,.05);
+      flex:0 0 22px;
     }
 
-    .autoDot.on{
-      background:#a6dca5;
-      box-shadow:0 0 18px rgba(166,220,165,.45);
+    .toggle-card.on .toggle-dot{
+      background:#b9e59f;
+      box-shadow:0 0 0 6px rgba(185,229,159,.15), 0 0 20px rgba(185,229,159,.3);
     }
 
-    .autoText .label{
-      font-size:clamp(16px,2.8vw,18px);
+    .toggle-copy{
+      min-width:0;
     }
 
-    .autoText .big{
-      margin-top:4px;
-      font-size:clamp(30px,6vw,46px);
+    .toggle-label{
+      font-size:18px;
       font-weight:1000;
-      line-height:1;
+      color:#f2f4ff;
+      opacity:.95;
     }
 
-    .toggle{
-      min-width:140px;
-      min-height:74px;
+    .toggle-value{
+      font-size:28px;
+      font-weight:1000;
+      line-height:1.05;
+      margin-top:2px;
+    }
+
+    .toggle-switch{
+      min-width:136px;
+      min-height:78px;
+      border-radius:28px;
       border:none;
-      cursor:pointer;
-      border-radius:999px;
-      background:linear-gradient(180deg, rgba(88,99,208,.78), rgba(70,80,184,.82));
+      background:linear-gradient(180deg, rgba(104,115,247,.95), rgba(82,92,225,.95));
       color:#fff;
-      font-family:inherit;
-      font-size:clamp(24px,5vw,32px);
+      font-size:24px;
       font-weight:1000;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+      box-shadow:var(--shadow-soft);
+      cursor:pointer;
+      padding:0 22px;
     }
 
-    .aiScoreBox{
-      margin-top:16px;
-      padding:18px 18px 16px;
-      background:linear-gradient(180deg, rgba(79,92,223,.98), rgba(67,79,201,.98));
-    }
-
-    .scoreHead{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      gap:10px;
-    }
-
-    .scoreTitle{
-      font-size:clamp(22px,5vw,32px);
-      font-weight:1000;
-      line-height:1;
-    }
-
-    .scoreBig{
-      font-size:clamp(68px,14vw,108px);
-      line-height:.82;
-      font-weight:1000;
-      color:var(--cyan);
-    }
-
-    .metrics{
-      margin-top:14px;
+    .wide-row{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:14px;
+      gap:16px;
+      margin-top:16px;
     }
 
-    .metric{
-      min-height:128px;
-      border-radius:24px;
-      padding:18px 18px;
-      background:linear-gradient(180deg, rgba(58,70,182,.96), rgba(52,63,172,.98));
-      box-shadow:var(--glow);
+    .score-card, .log-card{
+      margin-top:16px;
+      border-radius:30px;
+      background:var(--card-bg);
+      box-shadow:var(--shadow);
+      padding:20px 20px 18px;
+      border:1px solid rgba(255,255,255,.06);
     }
 
-    .metric .name{
-      font-size:clamp(15px,2.9vw,18px);
-      color:rgba(255,255,255,.82);
-      font-weight:800;
-    }
-
-    .metric .num{
-      margin-top:18px;
-      font-size:clamp(34px,7vw,56px);
-      line-height:1;
-      font-weight:1000;
-      color:var(--yellow);
-    }
-
-    .tradesRow{
-      margin-top:14px;
+    .score-head{
       display:flex;
+      align-items:flex-end;
       justify-content:space-between;
-      align-items:center;
-      gap:10px;
+      gap:14px;
+      margin-bottom:12px;
+    }
+
+    .score-title{
+      font-size:26px;
+    }
+
+    .score-value{
+      font-size:96px;
+      font-weight:1000;
+      line-height:.9;
+      color:#cfe6d8;
+      white-space:nowrap;
+    }
+
+    .score-grid{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+
+    .score-mini{
+      border-radius:24px;
+      background:linear-gradient(180deg, rgba(59,69,209,.88), rgba(57,67,200,.88));
+      min-height:146px;
+      padding:18px 20px 16px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.04);
+    }
+
+    .score-mini-label{
+      font-size:20px;
       font-weight:900;
-      color:rgba(255,255,255,.94);
-      font-size:clamp(16px,3.2vw,20px);
+      color:#eff2ff;
     }
 
-    .miniPills{
+    .score-mini-value{
+      margin-top:34px;
+      font-size:64px;
+      line-height:.95;
+      font-weight:1000;
+      color:var(--gold);
+    }
+
+    .trades-row{
+      margin-top:18px;
       display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:12px;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      font-size:18px;
+      font-weight:900;
+      color:#f2f3ff;
     }
 
-    .miniPill{
-      min-height:40px;
-      padding:0 16px;
+    .trades-bar{
+      margin-top:10px;
+      width:100%;
+      height:16px;
       border-radius:999px;
-      display:flex;
+      background:var(--bar-bg);
+      overflow:hidden;
+    }
+
+    .trades-bar > span{
+      display:block;
+      width:0%;
+      height:100%;
+      border-radius:999px;
+      background:var(--good-bg);
+      transition:width .35s ease;
+    }
+
+    .score-footer-pill{
+      display:inline-flex;
       align-items:center;
       justify-content:center;
-      font-size:clamp(13px,2.8vw,16px);
-      font-weight:900;
-      background:linear-gradient(180deg, rgba(86,101,230,.66), rgba(75,88,197,.70));
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
-    }
-
-    .logBox{
-      margin-top:16px;
-      padding:18px 18px 8px;
-      background:linear-gradient(180deg, rgba(63,76,202,.98), rgba(52,63,174,.98));
-    }
-
-    .logHead{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      margin-bottom:8px;
-    }
-
-    .logTitle{
-      font-size:clamp(22px,5vw,32px);
-      line-height:1;
+      min-width:120px;
+      min-height:54px;
+      margin-top:18px;
+      border-radius:999px;
+      background:var(--pill-bg);
+      color:#fff;
+      font-size:18px;
       font-weight:1000;
+      box-shadow:var(--shadow-soft);
+      padding:0 18px;
     }
 
-    .logBadges{
+    .log-head{
       display:flex;
-      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .log-pills{
+      display:flex;
       flex-wrap:wrap;
+      gap:12px;
       justify-content:flex-end;
     }
 
-    .logList{
-      margin-top:6px;
+    .mini-pill{
+      min-height:52px;
+      padding:0 18px;
+      border-radius:999px;
+      background:var(--pill-bg);
+      color:#f7f8ff;
+      font-weight:1000;
+      font-size:18px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:var(--shadow-soft);
+      white-space:nowrap;
     }
 
-    .logItem{
-      padding:14px 2px;
-      border-top:1px solid rgba(255,255,255,.08);
-      color:rgba(255,255,255,.96);
-      font-size:clamp(14px,2.9vw,18px);
-      line-height:1.34;
+    .log-lines{
+      display:flex;
+      flex-direction:column;
+    }
+
+    .log-line{
+      padding:16px 4px;
+      border-bottom:1px solid rgba(255,255,255,.09);
+      color:#f1f3ff;
+      font-size:18px;
+      line-height:1.35;
       word-break:break-word;
     }
 
-    .logItem:first-child{
-      border-top:none;
+    .log-line:last-child{
+      border-bottom:none;
     }
 
     .muted{
-      color:var(--muted);
+      opacity:.96;
     }
 
-    @media (max-width: 640px){
-      body{padding:18px 14px 34px}
-      .hero{padding:18px 14px 16px;border-radius:32px}
-      .hero::before{inset:14px;border-radius:24px}
-      .card{min-height:104px;padding:14px 14px}
-      .miniCard{min-height:90px;padding:14px}
-      .statusBox,.queueBox{min-height:108px;padding:16px}
-      .actionBtn{min-height:84px}
-      .resetBtn{min-height:88px}
-      .autoBox{min-height:104px;padding:16px}
-      .toggle{min-width:116px;min-height:66px}
-      .metric{min-height:112px;padding:16px}
-      .grid3{grid-template-columns:repeat(3,1fr);gap:10px}
-      .buttonGrid,.statusGrid,.queueGrid,.metrics,.grid2{gap:12px}
+    @media (max-width: 720px){
+      .app{padding:18px 14px 34px}
+      .topbar{font-size:20px}
+      .hero{padding:20px 18px 18px; border-radius:32px}
+      .hero::before{inset:14px}
+      .hero-title{font-size:74px}
+      .hero-subtitle{font-size:22px}
+      .hero-detail{font-size:18px}
+      .hero-reasons{font-size:16px; max-width:96%; margin-top:10px}
+      .netpnl-value{font-size:86px}
+      .netpnl-label{font-size:22px}
+      .pill{min-width:146px; min-height:58px; font-size:18px}
+      .hero-limits{margin:4px 12px 18px; gap:12px}
+      .limit-pill{font-size:16px; padding:12px 10px}
+      .signal-top{grid-template-columns:1fr 1.15fr; gap:12px}
+      .mini-card,.conf-card{min-height:114px; padding:14px}
+      .mini-label,.conf-label,.card-label,.log-title,.score-title{font-size:16px}
+      .mini-value{font-size:38px; margin-top:14px}
+      .conf-value{font-size:54px}
+      .signal-bottom{gap:12px}
+      .stat-card{min-height:106px; padding:14px}
+      .card-value{font-size:34px; margin-top:20px}
+      .chip{font-size:15px; padding:10px 16px}
+      .section-card{min-height:122px}
+      .section-card .big{font-size:48px; margin-top:24px}
+      .btn{padding:22px 14px; font-size:22px}
+      .toggle-switch{min-width:108px; min-height:66px; font-size:20px}
+      .toggle-value{font-size:22px}
+      .score-value{font-size:72px}
+      .score-mini{min-height:124px}
+      .score-mini-label{font-size:16px}
+      .score-mini-value{font-size:32px; margin-top:28px}
+      .log-line{font-size:16px}
+      .mini-pill{font-size:15px; min-height:46px; padding:0 14px}
+    }
+
+    @media (max-width: 480px){
+      .hero-title{font-size:64px}
+      .hero-subtitle{font-size:20px}
+      .hero-detail{font-size:16px}
+      .hero-reasons{font-size:15px}
+      .netpnl-value{font-size:78px}
+      .netpnl-label{font-size:20px}
+      .pill{min-width:124px; min-height:54px; font-size:17px}
+      .limit-pill{font-size:15px}
+      .mini-value{font-size:32px}
+      .conf-value{font-size:44px}
+      .card-value{font-size:28px}
+      .section-card .big{font-size:42px}
+      .score-value{font-size:58px}
+      .log-head{align-items:flex-start; flex-direction:column}
+      .log-pills{justify-content:flex-start}
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="app">
     <div class="topbar">
-      <div class="title" id="appTitle">V22.7.2 HARD LIVE ⚡</div>
-      <div class="dotWrap"><div class="dot" id="liveDot"></div></div>
+      <div id="versionText">V22.7.3 HARD LIVE ⚡</div>
+      <div class="dot-wrap"><div class="dot" id="liveDot"></div></div>
     </div>
 
     <section class="hero">
-      <div class="heroTitle" id="heroTitle">READY</div>
-      <div class="heroSub" id="heroSub">System bereit.</div>
-      <div class="heroSub2" id="heroSub2"></div>
-      <div class="heroReason" id="heroReason"></div>
+      <div class="hero-title" id="heroTitle">READY</div>
+      <div class="hero-subtitle" id="heroSubtitle">System bereit.</div>
+      <div class="hero-detail" id="heroDetail">AI bereit für Entry.</div>
+      <div class="hero-reasons" id="heroReasons">AI Buy • Trend Up • Structure Strong • Volume OK</div>
 
-      <div class="heroPnl" id="heroPnl">0</div>
-      <div class="heroPnlLabel">Net PnL</div>
-
-      <div class="pillRow">
-        <div class="pill" id="heroModePill">LIVE</div>
+      <div class="netpnl">
+        <div class="netpnl-value" id="netPnlValue">0</div>
+        <div class="netpnl-label">Net PnL</div>
       </div>
 
-      <div class="pillRow">
-        <div class="pill secondary" id="lossLimitPill">LOSS LIMIT -20</div>
-        <div class="pill secondary" id="winTargetPill">WIN TARGET +20</div>
+      <div class="center-pill">
+        <div class="pill" id="liveBadge">LIVE</div>
       </div>
 
-      <div class="aiPanel">
-        <div class="grid2">
-          <div class="card">
-            <div class="label">AI SIGNAL</div>
-            <div class="value" id="aiSignal">BUY</div>
+      <div class="hero-limits">
+        <div class="limit-pill" id="lossLimitPill">LOSS LIMIT -20</div>
+        <div class="limit-pill" id="winTargetPill">WIN TARGET +20</div>
+      </div>
+
+      <div class="signal-panel">
+        <div class="signal-top">
+          <div class="mini-card">
+            <div class="mini-label">AI SIGNAL</div>
+            <div class="mini-value" id="aiSignalValue">HOLD</div>
           </div>
 
-          <div class="card">
-            <div class="confTop">
-              <div class="label">AI<br>CONFIDENCE</div>
-              <div class="confPct" id="aiConfPct">72%</div>
+          <div class="conf-card">
+            <div class="conf-head">
+              <div class="conf-label">AI CONFIDENCE</div>
+              <div class="conf-value" id="aiConfidenceValue">0%</div>
             </div>
-            <div class="bar"><div class="fill" id="aiConfFill"></div></div>
+            <div class="progress"><span id="confidenceBar"></span></div>
           </div>
         </div>
 
-        <div class="grid3">
-          <div class="miniCard">
-            <div class="label">BIAS</div>
-            <div class="value small" id="aiBias">BUY</div>
+        <div class="signal-bottom">
+          <div class="stat-card">
+            <div class="card-label">BIAS</div>
+            <div class="card-value" id="biasValue">BUY</div>
           </div>
-          <div class="miniCard">
-            <div class="label">BUY EDGE</div>
-            <div class="value small" id="aiBuyEdge">0</div>
+          <div class="stat-card">
+            <div class="card-label">BUY EDGE</div>
+            <div class="card-value" id="buyEdgeValue">0</div>
           </div>
-          <div class="miniCard">
-            <div class="label">SELL EDGE</div>
-            <div class="value small red" id="aiSellEdge">0</div>
+          <div class="stat-card">
+            <div class="card-label">SELL EDGE</div>
+            <div class="card-value sell" id="sellEdgeValue">0</div>
           </div>
         </div>
 
-        <div class="tagWrap" id="reasonTags"></div>
+        <div class="chip-box" id="reasonChips"></div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="statusGrid">
-        <div class="statusBox">
-          <div class="label">STATUS</div>
-          <div class="value" id="statusHealth">OK</div>
+    <div class="grid2">
+      <div class="section-card">
+        <div class="card-label">STATUS</div>
+        <div class="big" id="statusCardValue">OK</div>
+      </div>
+      <div class="section-card">
+        <div class="card-label">BUY POST</div>
+        <div class="big" id="buyPostValue">OK</div>
+      </div>
+      <div class="section-card">
+        <div class="card-label">SELL POST</div>
+        <div class="big" id="sellPostValue">OK</div>
+      </div>
+      <div class="section-card">
+        <div class="card-label">CONF</div>
+        <div class="big" id="confCardValue">0%</div>
+      </div>
+    </div>
+
+    <div class="btn-grid">
+      <button class="btn btn-buy" id="manualBuyBtn">BUY</button>
+      <button class="btn btn-sell" id="manualSellBtn">SELL</button>
+      <button class="btn btn-win" id="manualWinBtn">WIN</button>
+      <button class="btn btn-loss" id="manualLossBtn">LOSS</button>
+    </div>
+
+    <button class="btn btn-reset" id="resetBtn">RESET</button>
+
+    <div class="toggle-card" id="autoCard">
+      <div class="toggle-left">
+        <div class="toggle-dot"></div>
+        <div class="toggle-copy">
+          <div class="toggle-label">AUTO MODE</div>
+          <div class="toggle-value" id="autoModeText">AUTO OFF</div>
         </div>
-        <div class="statusBox">
-          <div class="label">BUY POST</div>
-          <div class="value" id="buyPostState">OK</div>
+      </div>
+      <button class="toggle-switch" id="autoToggleBtn">OFF</button>
+    </div>
+
+    <div class="wide-row">
+      <div class="section-card">
+        <div class="card-label">QUEUE</div>
+        <div class="big" id="queueValue">0</div>
+      </div>
+      <div class="section-card">
+        <div class="card-label">PROCESSING</div>
+        <div class="big" id="processingValue">OFF</div>
+      </div>
+    </div>
+
+    <section class="score-card">
+      <div class="score-head">
+        <div class="score-title">AI SCORE</div>
+        <div class="score-value" id="aiScoreValue">0</div>
+      </div>
+
+      <div class="progress"><span id="scoreBar"></span></div>
+
+      <div class="score-grid">
+        <div class="score-mini">
+          <div class="score-mini-label">Trend</div>
+          <div class="score-mini-value" id="trendValue">0.0</div>
         </div>
-        <div class="statusBox">
-          <div class="label">SELL POST</div>
-          <div class="value" id="sellPostState">OK</div>
+        <div class="score-mini">
+          <div class="score-mini-label">Volume</div>
+          <div class="score-mini-value" id="volumeValue">0.0</div>
         </div>
-        <div class="statusBox">
-          <div class="label">CONF</div>
-          <div class="value yellow" id="confBox">0%</div>
+        <div class="score-mini">
+          <div class="score-mini-label">Structure</div>
+          <div class="score-mini-value" id="structureValue">0.0</div>
+        </div>
+        <div class="score-mini">
+          <div class="score-mini-label">Volatility</div>
+          <div class="score-mini-value" id="volatilityValue">0.0</div>
+        </div>
+        <div class="score-mini">
+          <div class="score-mini-label">Liquidity</div>
+          <div class="score-mini-value" id="liquidityValue">0.0</div>
+        </div>
+        <div class="score-mini">
+          <div class="score-mini-label">Session</div>
+          <div class="score-mini-value" id="sessionValue">0.0</div>
         </div>
       </div>
 
-      <div class="buttonGrid">
-        <button class="actionBtn buyBtn" id="buyBtn">BUY</button>
-        <button class="actionBtn sellBtn" id="sellBtn">SELL</button>
-        <button class="actionBtn winBtn" id="winBtn">WIN</button>
-        <button class="actionBtn lossBtn" id="lossBtn">LOSS</button>
+      <div class="trades-row">
+        <div id="tradesLabel">Trades 0 / 50</div>
+        <div id="dateLabel">0000-00-00</div>
       </div>
+      <div class="trades-bar"><span id="tradesBar"></span></div>
 
-      <button class="resetBtn" id="resetBtn">RESET</button>
+      <div class="score-footer-pill" id="scoreFooterPill">AI HOLD</div>
+    </section>
 
-      <div class="autoBox">
-        <div class="autoLeft">
-          <div class="autoDot" id="autoDot"></div>
-          <div class="autoText">
-            <div class="label">AUTO MODE</div>
-            <div class="big" id="autoLabel">AUTO OFF</div>
-          </div>
-        </div>
-        <button class="toggle" id="autoToggle">OFF</button>
-      </div>
-
-      <div class="queueGrid" style="margin-top:14px;">
-        <div class="queueBox">
-          <div class="label">QUEUE</div>
-          <div class="value" id="queueValue">0</div>
-        </div>
-        <div class="queueBox">
-          <div class="label">PROCESSING</div>
-          <div class="value" id="processingValue">OFF</div>
+    <section class="log-card">
+      <div class="log-head">
+        <div class="log-title">LOG</div>
+        <div class="log-pills">
+          <div class="mini-pill" id="dayStatePill">DAY READY</div>
+          <div class="mini-pill" id="syncPill">SYNC OK</div>
         </div>
       </div>
 
-      <div class="aiScoreBox">
-        <div class="scoreHead">
-          <div class="scoreTitle">AI SCORE</div>
-          <div class="scoreBig" id="scoreBig">0</div>
-        </div>
-
-        <div class="bar" style="margin-top:14px;"><div class="fill" id="scoreFill"></div></div>
-
-        <div class="metrics">
-          <div class="metric">
-            <div class="name">Trend</div>
-            <div class="num" id="trendVal">0</div>
-          </div>
-          <div class="metric">
-            <div class="name">Volume</div>
-            <div class="num" id="volumeVal">0</div>
-          </div>
-          <div class="metric">
-            <div class="name">Structure</div>
-            <div class="num" id="structureVal">0</div>
-          </div>
-          <div class="metric">
-            <div class="name">Volatility</div>
-            <div class="num" id="volatilityVal">0</div>
-          </div>
-          <div class="metric">
-            <div class="name">Liquidity</div>
-            <div class="num" id="liquidityVal">0</div>
-          </div>
-          <div class="metric">
-            <div class="name">Session</div>
-            <div class="num" id="sessionVal">0</div>
-          </div>
-        </div>
-
-        <div class="tradesRow">
-          <div id="tradesText">Trades 0 / 50</div>
-          <div id="dayText">—</div>
-        </div>
-
-        <div class="bar" style="margin-top:10px;"><div class="fill" id="tradesFill"></div></div>
-
-        <div class="miniPills" id="scoreBadges"></div>
-      </div>
-
-      <div class="logBox">
-        <div class="logHead">
-          <div class="logTitle">LOG</div>
-          <div class="logBadges">
-            <div class="miniPill" id="dayReadyBadge">DAY READY</div>
-            <div class="miniPill" id="syncBadge">SYNC OK</div>
-          </div>
-        </div>
-        <div class="logList" id="logList"></div>
+      <div class="log-lines" id="logLines">
+        <div class="log-line">Keine Einträge.</div>
       </div>
     </section>
   </div>
 
   <script>
-    const $ = (id) => document.getElementById(id);
-
     const els = {
-      appTitle: $("appTitle"),
-      heroTitle: $("heroTitle"),
-      heroSub: $("heroSub"),
-      heroSub2: $("heroSub2"),
-      heroReason: $("heroReason"),
-      heroPnl: $("heroPnl"),
-      heroModePill: $("heroModePill"),
-      lossLimitPill: $("lossLimitPill"),
-      winTargetPill: $("winTargetPill"),
+      versionText: document.getElementById('versionText'),
+      liveDot: document.getElementById('liveDot'),
 
-      aiSignal: $("aiSignal"),
-      aiConfPct: $("aiConfPct"),
-      aiConfFill: $("aiConfFill"),
-      aiBias: $("aiBias"),
-      aiBuyEdge: $("aiBuyEdge"),
-      aiSellEdge: $("aiSellEdge"),
-      reasonTags: $("reasonTags"),
+      heroTitle: document.getElementById('heroTitle'),
+      heroSubtitle: document.getElementById('heroSubtitle'),
+      heroDetail: document.getElementById('heroDetail'),
+      heroReasons: document.getElementById('heroReasons'),
+      netPnlValue: document.getElementById('netPnlValue'),
+      liveBadge: document.getElementById('liveBadge'),
+      lossLimitPill: document.getElementById('lossLimitPill'),
+      winTargetPill: document.getElementById('winTargetPill'),
 
-      statusHealth: $("statusHealth"),
-      buyPostState: $("buyPostState"),
-      sellPostState: $("sellPostState"),
-      confBox: $("confBox"),
+      aiSignalValue: document.getElementById('aiSignalValue'),
+      aiConfidenceValue: document.getElementById('aiConfidenceValue'),
+      confidenceBar: document.getElementById('confidenceBar'),
+      biasValue: document.getElementById('biasValue'),
+      buyEdgeValue: document.getElementById('buyEdgeValue'),
+      sellEdgeValue: document.getElementById('sellEdgeValue'),
+      reasonChips: document.getElementById('reasonChips'),
 
-      buyBtn: $("buyBtn"),
-      sellBtn: $("sellBtn"),
-      winBtn: $("winBtn"),
-      lossBtn: $("lossBtn"),
-      resetBtn: $("resetBtn"),
-      autoDot: $("autoDot"),
-      autoLabel: $("autoLabel"),
-      autoToggle: $("autoToggle"),
-      queueValue: $("queueValue"),
-      processingValue: $("processingValue"),
+      statusCardValue: document.getElementById('statusCardValue'),
+      buyPostValue: document.getElementById('buyPostValue'),
+      sellPostValue: document.getElementById('sellPostValue'),
+      confCardValue: document.getElementById('confCardValue'),
 
-      scoreBig: $("scoreBig"),
-      scoreFill: $("scoreFill"),
-      trendVal: $("trendVal"),
-      volumeVal: $("volumeVal"),
-      structureVal: $("structureVal"),
-      volatilityVal: $("volatilityVal"),
-      liquidityVal: $("liquidityVal"),
-      sessionVal: $("sessionVal"),
-      tradesText: $("tradesText"),
-      dayText: $("dayText"),
-      tradesFill: $("tradesFill"),
-      scoreBadges: $("scoreBadges"),
+      manualBuyBtn: document.getElementById('manualBuyBtn'),
+      manualSellBtn: document.getElementById('manualSellBtn'),
+      manualWinBtn: document.getElementById('manualWinBtn'),
+      manualLossBtn: document.getElementById('manualLossBtn'),
+      resetBtn: document.getElementById('resetBtn'),
 
-      dayReadyBadge: $("dayReadyBadge"),
-      syncBadge: $("syncBadge"),
-      logList: $("logList")
+      autoCard: document.getElementById('autoCard'),
+      autoModeText: document.getElementById('autoModeText'),
+      autoToggleBtn: document.getElementById('autoToggleBtn'),
+
+      queueValue: document.getElementById('queueValue'),
+      processingValue: document.getElementById('processingValue'),
+
+      aiScoreValue: document.getElementById('aiScoreValue'),
+      scoreBar: document.getElementById('scoreBar'),
+      trendValue: document.getElementById('trendValue'),
+      volumeValue: document.getElementById('volumeValue'),
+      structureValue: document.getElementById('structureValue'),
+      volatilityValue: document.getElementById('volatilityValue'),
+      liquidityValue: document.getElementById('liquidityValue'),
+      sessionValue: document.getElementById('sessionValue'),
+      tradesLabel: document.getElementById('tradesLabel'),
+      dateLabel: document.getElementById('dateLabel'),
+      tradesBar: document.getElementById('tradesBar'),
+      scoreFooterPill: document.getElementById('scoreFooterPill'),
+
+      dayStatePill: document.getElementById('dayStatePill'),
+      syncPill: document.getElementById('syncPill'),
+      logLines: document.getElementById('logLines'),
     };
 
-    function niceNum(v){
-      const n = Number(v ?? 0);
-      if (Math.abs(n % 1) < 0.001) return String(Math.round(n));
-      return n.toFixed(1);
+    function toNum(v, fallback = 0) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
     }
 
-    function upper(v){
-      return String(v || "").toUpperCase();
+    function toInt(v, fallback = 0) {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.round(n) : fallback;
     }
 
-    function clamp(v,min,max){
+    function clamp(v, min, max) {
       return Math.max(min, Math.min(max, v));
     }
 
-    function normalizeReasons(arr){
-      if (!Array.isArray(arr)) return [];
-      const seen = new Set();
-      const out = [];
-      for (const x of arr) {
-        const s = String(x || "").trim();
-        if (!s) continue;
-        if (seen.has(s)) continue;
-        seen.add(s);
-        out.push(s);
-      }
-      return out;
+    function fmt1(v) {
+      return toNum(v, 0).toFixed(1);
     }
 
-    function humanReason(v){
-      const map = {
-        trend_up: "Trend Up",
-        trend_weak: "Trend Weak",
-        structure_strong: "Structure Strong",
-        structure_weak: "Structure Weak",
-        volume_ok: "Volume OK",
-        volume_low: "Volume Low",
-        liquidity_ok: "Liquidity OK",
-        liquidity_thin: "Liquidity Thin",
-        volatility_high: "Volatility High",
-        volatility_mid: "Volatility Mid",
-        volatility_stable: "Volatility Stable",
-        session_good: "Session Good",
-        session_soft: "Session Soft",
-        session_tight: "Session Tight",
-        low_confidence: "Low Confidence",
-        signal_confirmed: "Signal Confirmed",
-        waiting_confirm: "Waiting Confirm",
-        learning_buy_good: "Buy Memory Good",
-        learning_sell_good: "Sell Memory Good",
-        learning_buy_bad: "Buy Memory Weak",
-        learning_sell_bad: "Sell Memory Weak",
-        watch_mode: "Watch Mode",
-        ready_mode: "Ready Mode",
-        ai_paused: "AI Paused",
-        grace_buy: "Buy Context",
-        grace_sell: "Sell Context"
-      };
-      return map[v] || String(v || "")
-        .replaceAll("_"," ")
-        .replace(/\b\w/g, m => m.toUpperCase());
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
-    function heroModeText(data){
-      if (data.guard === "WIN_TARGET") return "WIN TARGET";
-      if (data.guard === "DAILY_LOSS") return "LOSS LIMIT";
-      if (data.guard === "SESSION_LIMIT") return "SESSION LIMIT";
-      if (data.processing) return "PROCESSING";
-      if (data.cooldownActive) return `COOLDOWN ${Math.max(1, Math.ceil((data.cooldownMsLeft || 0)/1000))}s`;
-      if (data.autoEnabled) return "AI AUTO ON";
-      return "LIVE";
+    function normalizeReasons(reasons) {
+      if (!Array.isArray(reasons)) return [];
+      return reasons
+        .map(r => String(r || '').trim())
+        .filter(Boolean);
     }
 
-    function signalText(data){
-      if (data.aiMode === "PAUSED") return "PAUSED";
-      if (data.aiSignal) return upper(data.aiSignal);
-      return "HOLD";
-    }
-
-    function signalBadgeText(data){
-      if (data.guard === "WIN_TARGET" || data.guard === "SESSION_LIMIT" || data.guard === "DAILY_LOSS") return "AI PAUSED";
-      if (data.processing) return "PROCESSING";
-      if (data.cooldownActive) return `COOLDOWN ${Math.max(1, Math.ceil((data.cooldownMsLeft || 0)/1000))}s`;
-      if (data.aiMode === "BUY") return "AI BUY";
-      if (data.aiMode === "SELL") return "AI SELL";
-      if (data.aiMode === "PAUSED") return "AI PAUSED";
-      return "AI HOLD";
-    }
-
-    function renderReasons(reasons){
-      els.reasonTags.innerHTML = "";
-      for (const reason of normalizeReasons(reasons).slice(0,7)) {
-        const el = document.createElement("div");
-        el.className = "tag";
-        el.textContent = humanReason(reason);
-        els.reasonTags.appendChild(el);
-      }
-    }
-
-    function renderScoreBadges(data){
-      els.scoreBadges.innerHTML = "";
-      const badges = [];
-
-      if (data.cooldownActive) badges.push(`COOLDOWN ${Math.max(1, Math.ceil((data.cooldownMsLeft || 0)/1000))}s`);
-      badges.push(signalBadgeText(data));
-
-      for (const b of badges.slice(0,2)) {
-        const el = document.createElement("div");
-        el.className = "miniPill";
-        el.textContent = b;
-        els.scoreBadges.appendChild(el);
-      }
-    }
-
-    function renderLogs(log){
-      els.logList.innerHTML = "";
-      const list = Array.isArray(log) ? [...log].reverse() : [];
-
+    function renderChips(reasons) {
+      const list = normalizeReasons(reasons);
       if (!list.length) {
-        const empty = document.createElement("div");
-        empty.className = "logItem muted";
-        empty.textContent = "Keine Einträge.";
-        els.logList.appendChild(empty);
+        els.reasonChips.innerHTML = '<div class="chip">Keine Tags</div>';
+        return;
+      }
+      els.reasonChips.innerHTML = list
+        .map(item => `<div class="chip">${escapeHtml(item)}</div>`)
+        .join('');
+    }
+
+    function renderLogs(logs) {
+      if (!Array.isArray(logs) || !logs.length) {
+        els.logLines.innerHTML = '<div class="log-line">Keine Einträge.</div>';
         return;
       }
 
-      for (const item of list.slice(0, 14)) {
-        const row = document.createElement("div");
-        row.className = "logItem";
-        row.textContent = `${item.localTime || "--:--:--"} - ${item.msg || ""}`;
-        els.logList.appendChild(row);
+      els.logLines.innerHTML = logs
+        .map(line => `<div class="log-line">${escapeHtml(line)}</div>`)
+        .join('');
+    }
+
+    function setButtonState(processing) {
+      const busy = processing === 'ON';
+      els.manualBuyBtn.disabled = busy;
+      els.manualSellBtn.disabled = busy;
+    }
+
+    function renderState(data) {
+      const hero = data?.hero || {};
+      const ai = data?.ai || {};
+      const session = data?.session || {};
+      const market = data?.market || {};
+      const cards = data?.cards || {};
+      const limits = data?.limits || {};
+
+      const version = data?.version || 'V22.7.3 HARD LIVE';
+
+      const heroTitle = hero.title || data.title || 'READY';
+      const heroSubtitle = hero.subtitle || data.subtitle || 'System bereit.';
+      const heroDetail = hero.detail || data.detail || '';
+      const liveBadge = hero.liveBadge || data.liveBadge || 'LIVE';
+      const netPnL = toNum(hero.netPnL ?? data.netPnL ?? 0, 0);
+
+      const signal = ai.signal || data.signal || data.aiSignal || 'HOLD';
+      const bias = ai.bias || data.bias || data.aiBias || 'BUY';
+      const confidence = toInt(ai.confidence ?? data.confidence ?? data.aiConfidence ?? 0, 0);
+      const buyEdge = toInt(ai.buyEdge ?? data.buyEdge ?? 0, 0);
+      const sellEdge = toInt(ai.sellEdge ?? data.sellEdge ?? 0, 0);
+      const aiScore = toInt(ai.score ?? data.aiScore ?? data.score ?? 0, 0);
+
+      const reasons = normalizeReasons(ai.reasons || data.reasons || data.aiReasons || []);
+
+      const trend = toNum(market.trend ?? data.trend ?? 0, 0);
+      const volume = toNum(market.volume ?? data.volume ?? 0, 0);
+      const structure = toNum(market.structure ?? data.structure ?? 0, 0);
+      const volatility = toNum(market.volatility ?? data.volatility ?? 0, 0);
+      const liquidity = toNum(market.liquidity ?? data.liquidity ?? 0, 0);
+      const sessionVal = toNum(market.session ?? data.sessionValue ?? data.marketSession ?? 0, 0);
+
+      const date = session.date || data.date || new Date().toISOString().slice(0, 10);
+      const tradesToday = toInt(session.tradesToday ?? data.tradesToday ?? 0, 0);
+      const maxTrades = toInt(session.maxTradesPerDay ?? data.maxTradesPerDay ?? 50, 50);
+      const queue = toInt(session.queue ?? data.queue ?? 0, 0);
+      const processing = session.processing || data.processing || 'OFF';
+      const autoMode = session.autoMode || data.autoMode || 'OFF';
+      const sync = session.sync || data.sync || 'SYNC OK';
+      const dayState = session.dayState || data.dayState || 'DAY READY';
+
+      const statusCard = cards.status || data.statusCard || 'OK';
+      const buyPost = cards.buyPost || data.buyPost || 'OK';
+      const sellPost = cards.sellPost || data.sellPost || 'OK';
+      const confCard = cards.conf || data.conf || `${confidence}%`;
+
+      const lossLimit = toInt(limits.lossLimit ?? data.lossLimit ?? -20, -20);
+      const winTarget = toInt(limits.winTarget ?? data.winTarget ?? 20, 20);
+
+      els.versionText.textContent = `${version} ⚡`;
+      els.heroTitle.textContent = heroTitle;
+      els.heroSubtitle.textContent = heroSubtitle;
+      els.heroDetail.textContent = heroDetail;
+      els.heroReasons.textContent = reasons.length ? reasons.join(' • ') : 'Keine Tags';
+      els.netPnlValue.textContent = String(toInt(netPnL, 0));
+      els.liveBadge.textContent = liveBadge;
+      els.lossLimitPill.textContent = `LOSS LIMIT ${lossLimit}`;
+      els.winTargetPill.textContent = `WIN TARGET +${Math.abs(winTarget)}`;
+
+      els.aiSignalValue.textContent = signal;
+      els.aiConfidenceValue.textContent = `${confidence}%`;
+      els.confidenceBar.style.width = `${clamp(confidence, 0, 100)}%`;
+
+      els.biasValue.textContent = bias;
+      els.buyEdgeValue.textContent = String(buyEdge);
+      els.sellEdgeValue.textContent = String(sellEdge);
+
+      renderChips(reasons);
+
+      els.statusCardValue.textContent = statusCard;
+      els.buyPostValue.textContent = buyPost;
+      els.sellPostValue.textContent = sellPost;
+      els.confCardValue.textContent = confCard;
+
+      els.autoModeText.textContent = autoMode === 'ON' ? 'AUTO ON' : 'AUTO OFF';
+      els.autoToggleBtn.textContent = autoMode === 'ON' ? 'ON' : 'OFF';
+      els.autoCard.classList.toggle('on', autoMode === 'ON');
+
+      els.queueValue.textContent = String(queue);
+      els.processingValue.textContent = processing === 'ON' ? 'ON' : 'OFF';
+
+      els.aiScoreValue.textContent = String(aiScore);
+      els.scoreBar.style.width = `${clamp(aiScore, 0, 100)}%`;
+
+      els.trendValue.textContent = fmt1(trend);
+      els.volumeValue.textContent = fmt1(volume);
+      els.structureValue.textContent = fmt1(structure);
+      els.volatilityValue.textContent = fmt1(volatility);
+      els.liquidityValue.textContent = fmt1(liquidity);
+      els.sessionValue.textContent = fmt1(sessionVal);
+
+      els.tradesLabel.textContent = `Trades ${tradesToday} / ${maxTrades}`;
+      els.dateLabel.textContent = date;
+      els.tradesBar.style.width = `${maxTrades > 0 ? clamp((tradesToday / maxTrades) * 100, 0, 100) : 0}%`;
+
+      if (processing === 'ON') {
+        els.scoreFooterPill.textContent = 'PROCESSING';
+      } else if (signal === 'BUY') {
+        els.scoreFooterPill.textContent = 'AI BUY';
+      } else if (signal === 'SELL') {
+        els.scoreFooterPill.textContent = 'AI SELL';
+      } else if (signal === 'PAUSED') {
+        els.scoreFooterPill.textContent = 'AI PAUSED';
+      } else {
+        els.scoreFooterPill.textContent = 'AI HOLD';
       }
+
+      els.dayStatePill.textContent = dayState;
+      els.syncPill.textContent = sync;
+
+      renderLogs(data.logs);
+      setButtonState(processing);
+
+      const dotOn = Boolean(hero.dot ?? data.dot ?? true);
+      els.liveDot.style.opacity = dotOn ? '1' : '.35';
     }
 
-    function setDisabled(data){
-      const hardLocked =
-        data.processing ||
-        data.queueLength > 0 ||
-        data.cooldownActive ||
-        data.guard === "WIN_TARGET" ||
-        data.guard === "DAILY_LOSS" ||
-        data.guard === "SESSION_LIMIT" ||
-        data.guard === "HEALTH_FAIL";
-
-      els.buyBtn.disabled = hardLocked || !data.health?.buy;
-      els.sellBtn.disabled = hardLocked || !data.health?.sell;
-      els.winBtn.disabled = false;
-      els.lossBtn.disabled = false;
-      els.resetBtn.disabled = false;
-    }
-
-    function render(data){
-      els.appTitle.textContent = "V22.7.2 HARD LIVE ⚡";
-
-      els.heroTitle.textContent = data.heroTitle || "READY";
-      els.heroSub.textContent = data.heroSub || "System bereit.";
-      els.heroSub2.textContent = data.heroSub2 || "";
-      els.heroReason.textContent = data.heroReason || "";
-
-      els.heroPnl.textContent = niceNum(data.pnl || 0);
-      els.heroModePill.textContent = heroModeText(data);
-      els.lossLimitPill.textContent = `LOSS LIMIT ${data.lossLimit ?? -20}`;
-      els.winTargetPill.textContent = `WIN TARGET +${Math.abs(data.winTarget ?? 20)}`;
-
-      els.aiSignal.textContent = signalText(data);
-      els.aiConfPct.textContent = `${Math.round(data.confidence || data.conf || 0)}%`;
-      els.aiConfFill.style.width = `${clamp(Number(data.confidence || data.conf || 0),0,100)}%`;
-
-      els.aiBias.textContent = upper(data.aiBias || "BUY");
-      els.aiBuyEdge.textContent = niceNum(data.aiBuyEdge || 0);
-      els.aiSellEdge.textContent = niceNum(data.aiSellEdge || 0);
-
-      renderReasons(data.aiReasons);
-
-      els.statusHealth.textContent = data.health?.status ? "OK" : "FAIL";
-      els.buyPostState.textContent = data.health?.buy ? "OK" : "FAIL";
-      els.sellPostState.textContent = data.health?.sell ? "OK" : "FAIL";
-      els.confBox.textContent = `${Math.round(data.confidence || data.conf || 0)}%`;
-
-      els.autoDot.classList.toggle("on", !!data.autoEnabled);
-      els.autoLabel.textContent = data.autoEnabled ? "AUTO ON" : "AUTO OFF";
-      els.autoToggle.textContent = data.autoEnabled ? "ON" : "OFF";
-
-      els.queueValue.textContent = String(data.queueLength || 0);
-      els.processingValue.textContent = data.processing ? "ON" : "OFF";
-
-      els.scoreBig.textContent = `${Math.round(data.score || 0)}`;
-      els.scoreFill.style.width = `${clamp(Number(data.score || 0),0,100)}%`;
-
-      els.trendVal.textContent = niceNum(data.trend || 0);
-      els.volumeVal.textContent = niceNum(data.volume || 0);
-      els.structureVal.textContent = niceNum(data.structure || 0);
-      els.volatilityVal.textContent = niceNum(data.volatility || 0);
-      els.liquidityVal.textContent = niceNum(data.liquidity || 0);
-      els.sessionVal.textContent = niceNum(data.session || 0);
-
-      els.tradesText.textContent = `Trades ${data.sessionTrades || 0} / ${data.maxSessionTrades || 50}`;
-      els.dayText.textContent = data.dayKey || "—";
-      els.tradesFill.style.width = `${clamp(((data.sessionTrades || 0) / (data.maxSessionTrades || 50)) * 100, 0, 100)}%`;
-
-      renderScoreBadges(data);
-
-      els.dayReadyBadge.textContent =
-        data.guard === "SESSION_LIMIT" ? "DAY LIMIT" :
-        data.guard === "WIN_TARGET" ? "WIN TARGET" :
-        data.guard === "DAILY_LOSS" ? "LOSS LIMIT" :
-        "DAY READY";
-
-      els.syncBadge.textContent = "SYNC OK";
-
-      renderLogs(data.log);
-      setDisabled(data);
-    }
-
-    async function post(url){
+    async function apiPost(url) {
       const res = await fetch(url, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" }
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
       });
-      const data = await res.json();
-      render(data);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || `POST ${url} failed`);
+      }
+      return data;
     }
 
-    async function refresh(){
-      try{
-        const res = await fetch("/api/status");
+    async function loadState() {
+      try {
+        const res = await fetch('/api/state', { cache: 'no-store' });
         const data = await res.json();
-        render(data);
-      }catch(err){
-        els.syncBadge.textContent = "SYNC FAIL";
+        renderState(data);
+      } catch (err) {
+        console.error('loadState failed', err);
       }
     }
 
-    els.buyBtn.addEventListener("click", () => post("/api/buy"));
-    els.sellBtn.addEventListener("click", () => post("/api/sell"));
-    els.winBtn.addEventListener("click", () => post("/api/win"));
-    els.lossBtn.addEventListener("click", () => post("/api/loss"));
-    els.resetBtn.addEventListener("click", () => post("/api/reset"));
-    els.autoToggle.addEventListener("click", () => post("/api/auto"));
+    els.autoToggleBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/auto/toggle');
+        renderState(data);
+      } catch (err) {
+        console.error('toggle auto failed', err);
+      }
+    });
 
-    refresh();
-    setInterval(refresh, 1200);
+    els.resetBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/reset');
+        renderState(data);
+      } catch (err) {
+        console.error('reset failed', err);
+      }
+    });
+
+    els.manualBuyBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/manual/buy');
+        renderState(data);
+      } catch (err) {
+        console.error('manual buy failed', err);
+      }
+    });
+
+    els.manualSellBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/manual/sell');
+        renderState(data);
+      } catch (err) {
+        console.error('manual sell failed', err);
+      }
+    });
+
+    els.manualWinBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/manual/win');
+        renderState(data);
+      } catch (err) {
+        console.error('manual win failed', err);
+      }
+    });
+
+    els.manualLossBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/manual/loss');
+        renderState(data);
+      } catch (err) {
+        console.error('manual loss failed', err);
+      }
+    });
+
+    loadState();
+    setInterval(loadState, 1500);
   </script>
 </body>
 </html>
