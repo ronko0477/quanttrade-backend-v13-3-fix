@@ -34,6 +34,7 @@ const CONFIG = {
   minSellEdge: 18,
 
   trendStrong: 62,
+  trendWeak: 48,
   structureStrong: 70,
   volumeOk: 58,
   liquidityOk: 60,
@@ -59,6 +60,9 @@ const state = {
 
   guard: "",
   message: "System bereit.",
+  subMessage: "",
+  reasonLine: "",
+
   lastActionLabel: "",
   lastActionSide: "",
   lastResetType: "",
@@ -92,6 +96,9 @@ const state = {
   log: []
 };
 
+let lastLogMessage = "";
+let lastAiLogSignature = "";
+
 /* =================================
    UTILS
 ================================= */
@@ -116,14 +123,32 @@ function round1(n) {
   return Math.round(Number(n) * 10) / 10;
 }
 
-function log(type, msg) {
+function pushLog(type, msg) {
   state.log.push({
     ts: now(),
     localTime: localTimeString(),
     type,
     msg
   });
-  if (state.log.length > 120) state.log = state.log.slice(-120);
+  if (state.log.length > 120) {
+    state.log = state.log.slice(-120);
+  }
+}
+
+function log(type, msg) {
+  pushLog(type, msg);
+}
+
+function smartLog(type, msg) {
+  if (msg === lastLogMessage) return;
+  lastLogMessage = msg;
+  pushLog(type, msg);
+}
+
+function logAiSignal(signal, msg, signature) {
+  if (signature === lastAiLogSignature) return;
+  lastAiLogSignature = signature;
+  pushLog("AI", msg);
 }
 
 function refreshDayIfNeeded() {
@@ -134,7 +159,9 @@ function refreshDayIfNeeded() {
     state.guard = "";
     state.lastResetType = "DAY";
     state.message = "System bereit.";
-    log("SYSTEM", "Neuer Handelstag gestartet");
+    state.subMessage = "";
+    state.reasonLine = "";
+    smartLog("SYSTEM", "Neuer Handelstag gestartet");
   }
 }
 
@@ -148,7 +175,7 @@ function cooldownMsLeft() {
 
 function startCooldown() {
   state.cooldownUntil = now() + CONFIG.cooldownMs;
-  log("SYSTEM", "Cooldown aktiv");
+  smartLog("SYSTEM", "Cooldown aktiv");
 }
 
 function clearCooldown() {
@@ -227,20 +254,180 @@ function humanReason(reason) {
   return map[reason] || String(reason).replaceAll("_", " ");
 }
 
-function buildReasonLine() {
-  if (state.guard === "SESSION_LIMIT" || state.guard === "WIN_TARGET" || state.guard === "DAILY_LOSS") {
-    return "AI pausiert";
-  }
+function cleanReason(reasons) {
+  return (reasons || [])
+    .filter(Boolean)
+    .slice(0, 3)
+    .map(humanReason)
+    .join(" • ");
+}
 
-  const parts = [];
-  if (state.aiSignal) parts.push(`AI ${state.aiSignal[0] + state.aiSignal.slice(1).toLowerCase()}`);
+function buildSignalReasonLine() {
+  const base = [];
+  base.push(`AI ${capitalizeSignal(state.aiSignal)}`);
 
   for (const r of state.aiReasons || []) {
     if (r === "low_confidence") continue;
-    parts.push(humanReason(r));
+    if (r === "ai_paused") continue;
+    base.push(humanReason(r));
   }
 
-  return parts.join(" · ");
+  return cleanReason(base);
+}
+
+function capitalizeSignal(v) {
+  if (!v) return "";
+  return v[0] + v.slice(1).toLowerCase();
+}
+
+function classifyTrendLabel(value) {
+  return value >= CONFIG.trendStrong ? "Up" : "Weak";
+}
+
+function buildStatusBlock() {
+  if (state.guard === "WIN_TARGET") {
+    return {
+      title: "TARGET...",
+      sub: "Win Target erreicht.",
+      sub2: "AI pausiert wegen Win Target",
+      reason: "AI Paused"
+    };
+  }
+
+  if (state.guard === "DAILY_LOSS") {
+    return {
+      title: "LOSS...",
+      sub: "Loss Limit erreicht.",
+      sub2: "AI pausiert zum Schutz",
+      reason: "AI Paused"
+    };
+  }
+
+  if (state.guard === "SESSION_LIMIT") {
+    return {
+      title: "SESSION...",
+      sub: "Tageslimit erreicht.",
+      sub2: "AI pausiert wegen Tageslimit",
+      reason: "AI Paused"
+    };
+  }
+
+  if (state.guard === "HEALTH_FAIL") {
+    return {
+      title: "LOCKED",
+      sub: "Health Check fehlgeschlagen.",
+      sub2: "",
+      reason: ""
+    };
+  }
+
+  if (state.processing) {
+    return {
+      title: "LOCKED",
+      sub: state.lastActionLabel || "Order wird verarbeitet",
+      sub2: "Order wird verarbeitet",
+      reason: buildSignalReasonLine()
+    };
+  }
+
+  if (state.queueLength > 0) {
+    return {
+      title: "LOCKED",
+      sub: "Order in Queue",
+      sub2: state.lastActionLabel || "",
+      reason: buildSignalReasonLine()
+    };
+  }
+
+  if (cooldownActive()) {
+    return {
+      title: "LOCKED",
+      sub: "Kurze Schutzpause aktiv.",
+      sub2: "",
+      reason: buildSignalReasonLine()
+    };
+  }
+
+  if (state.autoEnabled) {
+    if (state.aiSignal === "BUY") {
+      return {
+        title: "READY",
+        sub: "AI Auto aktiv",
+        sub2: "AI bereit für Entry.",
+        reason: buildSignalReasonLine()
+      };
+    }
+
+    if (state.aiSignal === "SELL") {
+      return {
+        title: "READY",
+        sub: "AI Auto aktiv",
+        sub2: "Sell Setup erkannt.",
+        reason: buildSignalReasonLine()
+      };
+    }
+
+    if (state.aiSignal === "HOLD") {
+      if (state.confidence < 50) {
+        return {
+          title: "READY",
+          sub: "AI Auto aktiv",
+          sub2: "Unsichere Marktlage.",
+          reason: buildSignalReasonLine()
+        };
+      }
+
+      return {
+        title: "READY",
+        sub: "AI Auto aktiv",
+        sub2: "Kein Setup aktuell.",
+        reason: buildSignalReasonLine()
+      };
+    }
+  }
+
+  if (state.aiSignal === "BUY") {
+    return {
+      title: "READY",
+      sub: "System bereit.",
+      sub2: "AI bereit für Entry.",
+      reason: buildSignalReasonLine()
+    };
+  }
+
+  if (state.aiSignal === "SELL") {
+    return {
+      title: "READY",
+      sub: "System bereit.",
+      sub2: "Sell Setup erkannt.",
+      reason: buildSignalReasonLine()
+    };
+  }
+
+  if (state.aiSignal === "HOLD") {
+    if (state.confidence < 50) {
+      return {
+        title: "READY",
+        sub: "System bereit.",
+        sub2: "Unsichere Marktlage.",
+        reason: buildSignalReasonLine()
+      };
+    }
+
+    return {
+      title: "READY",
+      sub: "System bereit.",
+      sub2: "",
+      reason: buildSignalReasonLine()
+    };
+  }
+
+  return {
+    title: "READY",
+    sub: "System bereit.",
+    sub2: "",
+    reason: ""
+  };
 }
 
 /* =================================
@@ -263,6 +450,7 @@ function recomputeAi() {
   const reasons = [];
 
   const trendBull = state.trend >= CONFIG.trendStrong;
+  const trendWeak = state.trend < CONFIG.trendStrong;
   const structureBull = state.structure >= CONFIG.structureStrong;
   const volumeOk = state.volume >= CONFIG.volumeOk;
   const liquidityOk = state.liquidity >= CONFIG.liquidityOk;
@@ -274,7 +462,7 @@ function recomputeAi() {
   const sessionTight = state.session < CONFIG.sessionSoft;
 
   if (trendBull) reasons.push("trend_up");
-  else reasons.push("trend_weak");
+  else if (trendWeak) reasons.push("trend_weak");
 
   if (structureBull) reasons.push("structure_strong");
   else reasons.push("structure_weak");
@@ -394,23 +582,10 @@ function recalcDerivedState() {
   recomputeMarket();
   recomputeAi();
 
-  if (state.guard === "SESSION_LIMIT") {
-    state.message = "Tageslimit erreicht.";
-  } else if (state.guard === "WIN_TARGET") {
-    state.message = "Win Target erreicht.";
-  } else if (state.guard === "DAILY_LOSS") {
-    state.message = "Loss Limit erreicht.";
-  } else if (state.guard === "HEALTH_FAIL") {
-    state.message = "Health Check fehlgeschlagen.";
-  } else if (state.processing) {
-    state.message = "Order wird verarbeitet";
-  } else if (state.queueLength > 0) {
-    state.message = "Order in Queue";
-  } else if (cooldownActive()) {
-    state.message = "Kurze Schutzpause aktiv.";
-  } else {
-    state.message = "System bereit.";
-  }
+  const hero = buildStatusBlock();
+  state.message = hero.sub;
+  state.subMessage = hero.sub2;
+  state.reasonLine = hero.reason;
 }
 
 /* =================================
@@ -426,14 +601,16 @@ function manualReset() {
   clearCooldown();
   clearGuard();
   state.message = "System bereit.";
-  log("SYSTEM", "Manual reset");
+  state.subMessage = "";
+  state.reasonLine = "";
+  smartLog("SYSTEM", "Manual reset");
   recalcDerivedState();
 }
 
 function applyWin() {
   state.pnl = round1(state.pnl + 4);
   state.lastActionLabel = "WIN";
-  log("SYSTEM", "WIN PnL +4");
+  smartLog("SYSTEM", "WIN PnL +4");
   updateSessionStatus();
   recalcDerivedState();
 }
@@ -441,15 +618,21 @@ function applyWin() {
 function applyLoss() {
   state.pnl = round1(state.pnl - 4);
   state.lastActionLabel = "LOSS";
-  log("SYSTEM", "LOSS PnL -4");
+  smartLog("SYSTEM", "LOSS PnL -4");
   updateSessionStatus();
   recalcDerivedState();
 }
 
 function executeOrder(side, source = "MANUAL") {
-  if (state.guard === "SESSION_LIMIT" || state.guard === "WIN_TARGET" || state.guard === "DAILY_LOSS" || state.guard === "HEALTH_FAIL") {
+  if (
+    state.guard === "SESSION_LIMIT" ||
+    state.guard === "WIN_TARGET" ||
+    state.guard === "DAILY_LOSS" ||
+    state.guard === "HEALTH_FAIL"
+  ) {
     return false;
   }
+
   if (state.processing || state.queueLength > 0 || cooldownActive()) {
     return false;
   }
@@ -462,7 +645,7 @@ function executeOrder(side, source = "MANUAL") {
   state.lastActionSide = side;
   state.lastActionLabel = source === "AI" ? `${side} Auto gesendet` : side;
 
-  log("ORDER", `${state.lastActionLabel}`);
+  smartLog("ORDER", `${state.lastActionLabel}`);
   log("ORDER", `Order ${side} queued`);
   log("ORDER", `Order wird verarbeitet (${side})`);
 
@@ -478,7 +661,7 @@ function executeOrder(side, source = "MANUAL") {
     setTimeout(() => {
       if (cooldownActive()) {
         clearCooldown();
-        log("SYSTEM", "Cooldown Ende");
+        smartLog("SYSTEM", "Cooldown Ende");
         updateSessionStatus();
         recalcDerivedState();
       }
@@ -494,25 +677,31 @@ function autoStep() {
   recalcDerivedState();
 
   if (!state.autoEnabled) return;
-  if (state.guard === "SESSION_LIMIT" || state.guard === "WIN_TARGET" || state.guard === "DAILY_LOSS" || state.guard === "HEALTH_FAIL") return;
+  if (
+    state.guard === "SESSION_LIMIT" ||
+    state.guard === "WIN_TARGET" ||
+    state.guard === "DAILY_LOSS" ||
+    state.guard === "HEALTH_FAIL"
+  ) return;
   if (state.processing || state.queueLength > 0 || cooldownActive()) return;
 
-  const reasonLine = buildReasonLine();
+  const reasonLine = buildSignalReasonLine();
+  const signature = `${state.aiSignal}|${state.aiBias}|${state.reasonLine}|${Math.round(state.confidence)}|${Math.round(state.aiBuyEdge)}|${Math.round(state.aiSellEdge)}`;
 
   if (state.aiSignal === "BUY") {
-    log("AI", reasonLine);
+    logAiSignal("BUY", reasonLine, signature);
     executeOrder("BUY", "AI");
     return;
   }
 
   if (state.aiSignal === "SELL") {
-    log("AI", reasonLine);
+    logAiSignal("SELL", reasonLine, signature);
     executeOrder("SELL", "AI");
     return;
   }
 
   if (state.aiSignal === "HOLD") {
-    log("AI", reasonLine);
+    logAiSignal("HOLD", reasonLine, signature);
   }
 }
 
@@ -521,6 +710,8 @@ function autoStep() {
 ================================= */
 function responseState() {
   recalcDerivedState();
+
+  const hero = buildStatusBlock();
 
   return {
     pnl: state.pnl,
@@ -533,6 +724,13 @@ function responseState() {
 
     guard: state.guard,
     message: state.message,
+    subMessage: state.subMessage,
+    reasonLine: state.reasonLine,
+    heroTitle: hero.title,
+    heroSub: hero.sub,
+    heroSub2: hero.sub2,
+    heroReason: hero.reason,
+
     lastActionLabel: state.lastActionLabel,
     lastActionSide: state.lastActionSide,
     lastResetType: state.lastResetType,
@@ -600,23 +798,27 @@ app.post("/api/reset", (req, res) => {
 });
 
 app.post("/api/auto", (req, res) => {
-  if (state.guard === "SESSION_LIMIT" || state.guard === "WIN_TARGET" || state.guard === "DAILY_LOSS" || state.guard === "HEALTH_FAIL") {
+  if (
+    state.guard === "SESSION_LIMIT" ||
+    state.guard === "WIN_TARGET" ||
+    state.guard === "DAILY_LOSS" ||
+    state.guard === "HEALTH_FAIL"
+  ) {
     state.autoEnabled = false;
   } else {
     state.autoEnabled = !state.autoEnabled;
-    log("SYSTEM", state.autoEnabled ? "AI Auto EIN" : "AI Auto AUS");
+    smartLog("SYSTEM", state.autoEnabled ? "AI Auto EIN" : "AI Auto AUS");
   }
 
   recalcDerivedState();
   res.json(responseState());
 });
 
-/* optional health */
 app.post("/api/health/ok", (req, res) => {
   state.health = { status: true, buy: true, sell: true };
   clearGuard();
   setReadyIfPossible("System bereit.");
-  log("SYSTEM", "Health OK");
+  smartLog("SYSTEM", "Health OK");
   recalcDerivedState();
   res.json(responseState());
 });
@@ -626,7 +828,7 @@ app.post("/api/health/fail", (req, res) => {
   state.autoEnabled = false;
   clearCooldown();
   setGuard("HEALTH_FAIL", "Health Check fehlgeschlagen.");
-  log("SYSTEM", "Health FAIL");
+  smartLog("SYSTEM", "Health FAIL");
   recalcDerivedState();
   res.json(responseState());
 });
