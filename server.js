@@ -14,60 +14,32 @@ app.get("/", (_req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));
 });
 
-/* =================================
-   CONFIG
-================================= */
+/* =========================
+   CONFIG V22.7.2 CLEAN
+========================= */
 const CONFIG = {
   port: Number(process.env.PORT || 3000),
 
   maxSessionTrades: 50,
   cooldownMs: 2200,
-  autoPollMs: 1400,
+  autoPollMs: 1200,
 
   lossLimit: -20,
   winTarget: 20,
 
-  confidenceBuyMin: 64,
-  confidenceSellMin: 64,
-  confidenceReadyMin: 54,
-  confidenceWatchMin: 42,
-
-  minBuyEdge: 22,
-  minSellEdge: 22,
-  minReadyEdge: 12,
-  minWatchEdge: 6,
-
-  trendStrong: 64,
-  trendWeak: 46,
-  structureStrong: 72,
-  structureWeak: 48,
-  volumeOk: 56,
-  volumeLow: 44,
-  liquidityOk: 58,
-  liquidityThin: 46,
-
-  volatilityHigh: 74,
-  volatilityMid: 48,
-
-  sessionGood: 62,
-  sessionSoft: 52,
-
-  scoreBase: 50,
-
-  learningWindow: 8,
   confirmStrong: 2,
   confirmSoft: 3,
 
-  memoryBonusCap: 10,
-  memoryPenaltyCap: -10,
+  logLimit: 160,
+  responseLogLimit: 90,
 
-  logLimit: 140,
-  responseLogLimit: 80
+  learningWindow: 8,
+  graceAfterTradeMs: 8000
 };
 
-/* =================================
+/* =========================
    STATE
-================================= */
+========================= */
 const state = {
   pnl: 0,
 
@@ -75,6 +47,7 @@ const state = {
   processing: false,
   queueLength: 0,
   cooldownUntil: 0,
+  graceUntil: 0,
 
   guard: "",
   message: "System bereit.",
@@ -105,19 +78,17 @@ const state = {
   structure: 80.1,
   volatility: 51.2,
   liquidity: 81.9,
-  session: 68.0,
+  session: 66.0,
 
   confidence: 62,
   conf: 62,
 
   aiSignal: "HOLD",
+  aiMode: "HOLD",
   aiBias: "BUY",
-  aiMode: "HOLD", // HOLD | WATCH | READY | BUY | SELL | PAUSED
   aiBuyEdge: 0,
   aiSellEdge: 0,
   aiReasons: [],
-
-  log: [],
 
   marketMemory: {
     trend: [],
@@ -132,22 +103,22 @@ const state = {
     lastRawSignal: "HOLD",
     rawSignalStreak: 0,
     confirmedSignal: "HOLD",
-
     buyWins: 0,
     buyLosses: 0,
     sellWins: 0,
     sellLosses: 0
-  }
+  },
+
+  log: []
 };
 
 let lastLogMessage = "";
-let lastAiLogSignature = "";
-let lastHoldReasonSignature = "";
-let lastStateSignature = "";
+let lastAiSignature = "";
+let lastHoldSignature = "";
 
-/* =================================
+/* =========================
    UTILS
-================================= */
+========================= */
 function now() {
   return Date.now();
 }
@@ -173,11 +144,37 @@ function avg(arr) {
   return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
-function pushMemory(arr, value) {
-  arr.push(Number(value));
-  if (arr.length > CONFIG.learningWindow) {
-    arr.shift();
-  }
+function drift(base, spread, min = 0, max = 100) {
+  return clamp(round1(base + (Math.random() * 2 - 1) * spread), min, max);
+}
+
+function cooldownActive() {
+  return state.cooldownUntil > now();
+}
+
+function cooldownMsLeft() {
+  return Math.max(0, state.cooldownUntil - now());
+}
+
+function graceActive() {
+  return state.graceUntil > now();
+}
+
+function startCooldown() {
+  state.cooldownUntil = now() + CONFIG.cooldownMs;
+  smartLog("SYSTEM", "Cooldown aktiv");
+}
+
+function clearCooldown() {
+  state.cooldownUntil = 0;
+}
+
+function startGrace() {
+  state.graceUntil = now() + CONFIG.graceAfterTradeMs;
+}
+
+function clearGrace() {
+  state.graceUntil = 0;
 }
 
 function pushLog(type, msg) {
@@ -200,11 +197,19 @@ function smartLog(type, msg) {
   pushLog(type, msg);
 }
 
-function logAiSignal(type, msg, signature) {
-  if (!msg || !signature) return;
-  if (signature === lastAiLogSignature) return;
-  lastAiLogSignature = signature;
-  pushLog(type, msg);
+function pushMemory(arr, value) {
+  arr.push(Number(value));
+  if (arr.length > CONFIG.learningWindow) arr.shift();
+}
+
+function memorySideScore(side) {
+  if (side === "BUY") {
+    return clamp((state.learning.buyWins - state.learning.buyLosses) * 2.5, -10, 10);
+  }
+  if (side === "SELL") {
+    return clamp((state.learning.sellWins - state.learning.sellLosses) * 2.5, -10, 10);
+  }
+  return 0;
 }
 
 function humanReason(reason) {
@@ -226,89 +231,62 @@ function humanReason(reason) {
     low_confidence: "Low Confidence",
     signal_confirmed: "Signal Confirmed",
     waiting_confirm: "Waiting Confirm",
-    learning_buy_good: "Buy Memory Good",
-    learning_sell_good: "Sell Memory Good",
-    learning_buy_bad: "Buy Memory Weak",
-    learning_sell_bad: "Sell Memory Weak",
-    ai_paused: "AI Paused",
     watch_mode: "Watch Mode",
-    ready_mode: "Ready Mode"
+    ready_mode: "Ready Mode",
+    ai_paused: "AI Paused",
+    grace_buy: "Buy Context",
+    grace_sell: "Sell Context"
   };
   return map[reason] || String(reason).replaceAll("_", " ");
-}
-
-function capitalizeSignal(v) {
-  if (!v) return "";
-  return v[0] + v.slice(1).toLowerCase();
 }
 
 function cleanReason(reasons) {
   return (reasons || [])
     .filter(Boolean)
-    .slice(0, 6)
+    .slice(0, 7)
     .map(humanReason)
     .join(" • ");
 }
 
-function buildSignalReasonLine() {
-  const parts = [`AI ${capitalizeSignal(state.aiSignal)}`];
+function displaySignal() {
+  if (state.aiMode === "WATCH_BUY") return "HOLD";
+  if (state.aiMode === "WATCH_SELL") return "HOLD";
+  if (state.aiMode === "READY_BUY") return "HOLD";
+  if (state.aiMode === "READY_SELL") return "HOLD";
+  return state.aiSignal;
+}
 
+function buildSignalReasonLine() {
+  const base =
+    state.aiMode === "WATCH_BUY" ? "AI Hold" :
+    state.aiMode === "WATCH_SELL" ? "AI Hold" :
+    state.aiMode === "READY_BUY" ? "AI Hold" :
+    state.aiMode === "READY_SELL" ? "AI Hold" :
+    `AI ${displaySignal().charAt(0)}${displaySignal().slice(1).toLowerCase()}`;
+
+  const parts = [base];
   for (const r of state.aiReasons || []) {
-    if (r === "signal_confirmed") continue;
-    if (r === "waiting_confirm") continue;
-    if (r === "watch_mode") continue;
-    if (r === "ready_mode") continue;
-    if (r === "ai_paused") continue;
+    if (["signal_confirmed", "waiting_confirm", "watch_mode", "ready_mode", "ai_paused", "grace_buy", "grace_sell"].includes(r)) continue;
     parts.push(humanReason(r));
   }
-
-  return cleanReason(parts);
-}
-
-function cooldownActive() {
-  return state.cooldownUntil > now();
-}
-
-function cooldownMsLeft() {
-  return Math.max(0, state.cooldownUntil - now());
-}
-
-function startCooldown() {
-  state.cooldownUntil = now() + CONFIG.cooldownMs;
-  smartLog("SYSTEM", "Cooldown aktiv");
-}
-
-function clearCooldown() {
-  state.cooldownUntil = 0;
+  return parts.join(" • ");
 }
 
 function clearGuard() {
   state.guard = "";
 }
 
-function setGuard(guard, message = "") {
-  state.guard = guard || "";
-  if (message) state.message = message;
-}
-
-function memorySideScore(side) {
-  if (side === "BUY") {
-    const net = state.learning.buyWins - state.learning.buyLosses;
-    return clamp(net * 2.5, CONFIG.memoryPenaltyCap, CONFIG.memoryBonusCap);
-  }
-  if (side === "SELL") {
-    const net = state.learning.sellWins - state.learning.sellLosses;
-    return clamp(net * 2.5, CONFIG.memoryPenaltyCap, CONFIG.memoryBonusCap);
-  }
-  return 0;
+function setGuard(guard, message) {
+  state.guard = guard;
+  state.message = message || state.message;
 }
 
 function refreshDayIfNeeded() {
   const today = getDayKey();
-  if (state.dayKey !== today) {
+  if (today !== state.dayKey) {
     state.dayKey = today;
     state.sessionTrades = 0;
-    state.guard = "";
+    state.pnl = 0;
     state.lastResetType = "DAY";
 
     state.learning.lastRawSignal = "HOLD";
@@ -319,15 +297,18 @@ function refreshDayIfNeeded() {
     state.learning.sellWins = 0;
     state.learning.sellLosses = 0;
 
+    state.guard = "";
+    state.autoEnabled = false;
+    state.processing = false;
+    state.queueLength = 0;
     state.lastActionLabel = "";
     state.lastActionSide = "";
-    state.message = "System bereit.";
-    state.subMessage = "";
-    state.reasonLine = "";
 
-    lastAiLogSignature = "";
-    lastHoldReasonSignature = "";
-    lastStateSignature = "";
+    clearCooldown();
+    clearGrace();
+
+    lastAiSignature = "";
+    lastHoldSignature = "";
 
     smartLog("SYSTEM", "Neuer Handelstag gestartet");
   }
@@ -352,35 +333,269 @@ function updateSessionStatus() {
     return;
   }
 
-  if (
-    state.guard === "DAILY_LOSS" ||
-    state.guard === "WIN_TARGET" ||
-    state.guard === "SESSION_LIMIT"
-  ) {
+  if (["DAILY_LOSS", "WIN_TARGET", "SESSION_LIMIT"].includes(state.guard)) {
     clearGuard();
     state.message = "System bereit.";
   }
 }
 
-function setReadyIfPossible(message = "System bereit.") {
-  const blocked = (
-    state.processing ||
-    state.queueLength > 0 ||
-    cooldownActive() ||
-    state.guard === "DAILY_LOSS" ||
-    state.guard === "WIN_TARGET" ||
-    state.guard === "SESSION_LIMIT" ||
-    state.guard === "HEALTH_FAIL"
-  );
+/* =========================
+   MARKET UPDATE
+========================= */
+function recomputeMarket() {
+  state.trend = drift(state.trend, 6.2);
+  state.volume = drift(state.volume, 6.0);
+  state.structure = drift(state.structure, 5.2);
+  state.volatility = drift(state.volatility, 7.0);
+  state.liquidity = drift(state.liquidity, 5.8);
+  state.session = drift(state.session, 4.4);
 
-  if (!blocked) {
-    state.message = message;
-  }
+  pushMemory(state.marketMemory.trend, state.trend);
+  pushMemory(state.marketMemory.volume, state.volume);
+  pushMemory(state.marketMemory.structure, state.structure);
+  pushMemory(state.marketMemory.volatility, state.volatility);
+  pushMemory(state.marketMemory.liquidity, state.liquidity);
+  pushMemory(state.marketMemory.session, state.session);
 }
 
-/* =================================
+/* =========================
+   AI LOGIC V22.7.2
+========================= */
+function recomputeAi() {
+  const trendAvg = avg(state.marketMemory.trend);
+  const volumeAvg = avg(state.marketMemory.volume);
+  const structureAvg = avg(state.marketMemory.structure);
+  const volatilityAvg = avg(state.marketMemory.volatility);
+  const liquidityAvg = avg(state.marketMemory.liquidity);
+  const sessionAvg = avg(state.marketMemory.session);
+
+  const trendUp = trendAvg >= 62;
+  const trendWeak = trendAvg < 46;
+  const structureStrong = structureAvg >= 72;
+  const structureWeak = structureAvg < 50;
+  const volumeOk = volumeAvg >= 56;
+  const volumeLow = volumeAvg < 46;
+  const liquidityOk = liquidityAvg >= 58;
+  const liquidityThin = liquidityAvg < 48;
+  const volatilityHigh = volatilityAvg >= 74;
+  const volatilityMid = volatilityAvg >= 48 && volatilityAvg < 74;
+  const volatilityStable = volatilityAvg < 48;
+  const sessionGood = sessionAvg >= 60;
+  const sessionSoft = sessionAvg >= 50 && sessionAvg < 60;
+  const sessionTight = sessionAvg < 50;
+
+  const reasons = [];
+  reasons.push(trendUp ? "trend_up" : "trend_weak");
+  reasons.push(structureStrong ? "structure_strong" : "structure_weak");
+  reasons.push(volumeOk ? "volume_ok" : "volume_low");
+  reasons.push(liquidityOk ? "liquidity_ok" : "liquidity_thin");
+
+  if (volatilityHigh) reasons.push("volatility_high");
+  else if (volatilityMid) reasons.push("volatility_mid");
+  else reasons.push("volatility_stable");
+
+  if (sessionGood) reasons.push("session_good");
+  else if (sessionSoft) reasons.push("session_soft");
+  else reasons.push("session_tight");
+
+  let buyEdge =
+    (trendUp ? 18 : trendWeak ? 4 : 10) +
+    (structureStrong ? 18 : structureWeak ? 3 : 9) +
+    (volumeOk ? 10 : -4) +
+    (liquidityOk ? 8 : -4) +
+    (sessionGood ? 8 : sessionSoft ? 3 : -6) +
+    (volatilityHigh ? -12 : volatilityStable ? 5 : 1) +
+    memorySideScore("BUY");
+
+  let sellEdge =
+    (trendWeak ? 18 : trendUp ? 3 : 8) +
+    (structureWeak ? 15 : structureStrong ? 4 : 8) +
+    (volumeLow ? 9 : 1) +
+    (liquidityThin ? 6 : 1) +
+    (sessionTight ? 8 : sessionSoft ? 3 : 0) +
+    (volatilityHigh ? 8 : 0) +
+    memorySideScore("SELL");
+
+  if (graceActive()) {
+    if (state.lastActionSide === "BUY") {
+      buyEdge += 6;
+      reasons.push("grace_buy");
+    }
+    if (state.lastActionSide === "SELL") {
+      sellEdge += 6;
+      reasons.push("grace_sell");
+    }
+  }
+
+  buyEdge = round1(clamp(buyEdge, -20, 100));
+  sellEdge = round1(clamp(sellEdge, -20, 100));
+
+  state.aiBuyEdge = buyEdge;
+  state.aiSellEdge = sellEdge;
+  state.aiBias = buyEdge >= sellEdge ? "BUY" : "SELL";
+
+  let score =
+    50 +
+    (trendUp ? 8 : trendWeak ? -4 : 3) +
+    (structureStrong ? 12 : structureWeak ? -6 : 2) +
+    (volumeOk ? 5 : -3) +
+    (liquidityOk ? 5 : -3) +
+    (sessionGood ? 5 : sessionSoft ? 2 : -4) +
+    (volatilityHigh ? -8 : volatilityStable ? 4 : 0);
+
+  state.score = clamp(Math.round(score), 0, 100);
+
+  let conf = 44;
+  conf += trendUp ? 6 : trendWeak ? -2 : 2;
+  conf += structureStrong ? 10 : structureWeak ? -5 : 2;
+  conf += volumeOk ? 5 : -4;
+  conf += liquidityOk ? 4 : -4;
+  conf += sessionGood ? 5 : sessionSoft ? 2 : -4;
+  conf += volatilityHigh ? -10 : volatilityStable ? 4 : 0;
+
+  const dominance = Math.abs(buyEdge - sellEdge);
+  if (dominance > 22) conf += 9;
+  else if (dominance > 14) conf += 5;
+  else if (dominance < 7) conf -= 6;
+
+  conf += Math.round((memorySideScore("BUY") + memorySideScore("SELL")) / 4);
+  conf = clamp(Math.round(conf), 20, 92);
+
+  state.confidence = conf;
+  state.conf = conf;
+
+  if (["WIN_TARGET", "DAILY_LOSS", "SESSION_LIMIT"].includes(state.guard)) {
+    state.aiMode = "PAUSED";
+    state.aiSignal = "PAUSED";
+    state.aiBias = "PAUSED";
+    state.aiReasons = ["ai_paused"];
+    return;
+  }
+
+  let rawSignal = "HOLD";
+
+  const buyWatch =
+    buyEdge >= 5 &&
+    conf >= 38 &&
+    (
+      structureStrong ||
+      (trendUp && volumeOk) ||
+      (volumeOk && liquidityOk && volatilityStable)
+    );
+
+  const sellWatch =
+    sellEdge >= 5 &&
+    conf >= 38 &&
+    (
+      trendWeak ||
+      structureWeak ||
+      volatilityHigh
+    );
+
+  const buyReady =
+    buyEdge >= 12 &&
+    conf >= 52 &&
+    (
+      (trendUp && structureStrong) ||
+      (structureStrong && volumeOk) ||
+      (trendUp && volumeOk && liquidityOk && !volatilityHigh)
+    );
+
+  const sellReady =
+    sellEdge >= 12 &&
+    conf >= 52 &&
+    (
+      (trendWeak && structureWeak) ||
+      (trendWeak && volatilityHigh) ||
+      (structureWeak && volumeLow)
+    );
+
+  const buyFire =
+    buyEdge >= 22 &&
+    conf >= 64 &&
+    (
+      (trendUp && structureStrong && volumeOk) ||
+      (trendUp && structureStrong && liquidityOk && !volatilityHigh) ||
+      (trendUp && volumeOk && liquidityOk && volatilityStable && buyEdge >= 28)
+    ) &&
+    !volatilityHigh;
+
+  const sellFire =
+    sellEdge >= 22 &&
+    conf >= 64 &&
+    (
+      (trendWeak && structureWeak) ||
+      (trendWeak && volatilityHigh)
+    );
+
+  if (buyFire) rawSignal = "BUY";
+  else if (sellFire) rawSignal = "SELL";
+  else if (buyReady && buyEdge >= sellEdge) rawSignal = "READY_BUY";
+  else if (sellReady && sellEdge > buyEdge) rawSignal = "READY_SELL";
+  else if (buyWatch && buyEdge >= sellEdge) rawSignal = "WATCH_BUY";
+  else if (sellWatch && sellEdge > buyEdge) rawSignal = "WATCH_SELL";
+  else rawSignal = "HOLD";
+
+  if (rawSignal === state.learning.lastRawSignal) {
+    state.learning.rawSignalStreak += 1;
+  } else {
+    state.learning.lastRawSignal = rawSignal;
+    state.learning.rawSignalStreak = 1;
+  }
+
+  let needed = CONFIG.confirmSoft;
+  if (rawSignal === "BUY" || rawSignal === "SELL") {
+    needed = conf >= 72 ? CONFIG.confirmStrong : CONFIG.confirmSoft;
+  } else if (rawSignal === "READY_BUY" || rawSignal === "READY_SELL") {
+    needed = 2;
+  } else if (rawSignal === "WATCH_BUY" || rawSignal === "WATCH_SELL") {
+    needed = 1;
+  } else {
+    needed = 1;
+  }
+
+  if (state.learning.rawSignalStreak >= needed) {
+    state.learning.confirmedSignal = rawSignal;
+    if (rawSignal !== "HOLD") reasons.push("signal_confirmed");
+  } else if (rawSignal !== "HOLD") {
+    reasons.push("waiting_confirm");
+  }
+
+  let finalMode = "HOLD";
+
+  if (rawSignal === "BUY" || rawSignal === "SELL") {
+    if (state.learning.confirmedSignal === rawSignal && state.learning.rawSignalStreak >= needed) {
+      finalMode = rawSignal;
+    } else {
+      finalMode = rawSignal === "BUY" ? "READY_BUY" : "READY_SELL";
+    }
+  } else if (rawSignal === "READY_BUY" || rawSignal === "READY_SELL") {
+    finalMode = rawSignal;
+  } else if (rawSignal === "WATCH_BUY" || rawSignal === "WATCH_SELL") {
+    finalMode = rawSignal;
+  } else {
+    if (state.aiBias === "BUY" && buyEdge >= 10 && conf >= 38) finalMode = "WATCH_BUY";
+    else if (state.aiBias === "SELL" && sellEdge >= 10 && conf >= 38) finalMode = "WATCH_SELL";
+    else finalMode = "HOLD";
+  }
+
+  if (finalMode === "WATCH_BUY" || finalMode === "WATCH_SELL") reasons.push("watch_mode");
+  if (finalMode === "READY_BUY" || finalMode === "READY_SELL") reasons.push("ready_mode");
+  if (conf < 52) reasons.push("low_confidence");
+
+  state.aiMode = finalMode;
+  state.aiSignal =
+    finalMode === "BUY" ? "BUY" :
+    finalMode === "SELL" ? "SELL" :
+    finalMode === "PAUSED" ? "PAUSED" :
+    "HOLD";
+
+  state.aiReasons = [...new Set(reasons)];
+}
+
+/* =========================
    HERO
-================================= */
+========================= */
 function buildStatusBlock() {
   if (state.guard === "WIN_TARGET") {
     return {
@@ -459,25 +674,25 @@ function buildStatusBlock() {
       return {
         title: "READY",
         sub: "AI Auto aktiv",
-        sub2: "Sell Setup erkannt.",
+        sub2: "Sell Setup bestätigt.",
         reason: buildSignalReasonLine()
       };
     }
 
-    if (state.aiMode === "READY") {
+    if (state.aiMode === "READY_BUY" || state.aiMode === "WATCH_BUY") {
       return {
         title: "READY",
         sub: "AI Auto aktiv",
-        sub2: "Setup fast bestätigt.",
+        sub2: "BUY Setup baut sich auf.",
         reason: buildSignalReasonLine()
       };
     }
 
-    if (state.aiMode === "WATCH") {
+    if (state.aiMode === "READY_SELL" || state.aiMode === "WATCH_SELL") {
       return {
         title: "READY",
         sub: "AI Auto aktiv",
-        sub2: "Setup baut sich auf.",
+        sub2: "SELL Setup baut sich auf.",
         reason: buildSignalReasonLine()
       };
     }
@@ -491,7 +706,6 @@ function buildStatusBlock() {
           reason: buildSignalReasonLine()
         };
       }
-
       return {
         title: "READY",
         sub: "AI Auto aktiv",
@@ -514,43 +728,7 @@ function buildStatusBlock() {
     return {
       title: "READY",
       sub: "System bereit.",
-      sub2: "Sell Setup erkannt.",
-      reason: buildSignalReasonLine()
-    };
-  }
-
-  if (state.aiMode === "READY") {
-    return {
-      title: "READY",
-      sub: "System bereit.",
-      sub2: "Setup fast bestätigt.",
-      reason: buildSignalReasonLine()
-    };
-  }
-
-  if (state.aiMode === "WATCH") {
-    return {
-      title: "READY",
-      sub: "System bereit.",
-      sub2: "Setup baut sich auf.",
-      reason: buildSignalReasonLine()
-    };
-  }
-
-  if (state.aiMode === "HOLD") {
-    if (state.confidence < 50) {
-      return {
-        title: "READY",
-        sub: "System bereit.",
-        sub2: "Unsichere Marktlage.",
-        reason: buildSignalReasonLine()
-      };
-    }
-
-    return {
-      title: "READY",
-      sub: "System bereit.",
-      sub2: "",
+      sub2: "Sell Setup bestätigt.",
       reason: buildSignalReasonLine()
     };
   }
@@ -559,281 +737,13 @@ function buildStatusBlock() {
     title: "READY",
     sub: "System bereit.",
     sub2: "",
-    reason: ""
+    reason: buildSignalReasonLine()
   };
 }
 
-/* =================================
-   MARKET SIM
-================================= */
-function driftValue(base, spread, min = 0, max = 100) {
-  return clamp(round1(base + (Math.random() * 2 - 1) * spread), min, max);
-}
-
-function recomputeMarket() {
-  state.trend = driftValue(state.trend, 4.0);
-  state.volume = driftValue(state.volume, 4.8);
-  state.structure = driftValue(state.structure, 3.8);
-  state.volatility = driftValue(state.volatility, 4.8);
-  state.liquidity = driftValue(state.liquidity, 4.2);
-  state.session = driftValue(state.session, 3.1);
-
-  pushMemory(state.marketMemory.trend, state.trend);
-  pushMemory(state.marketMemory.volume, state.volume);
-  pushMemory(state.marketMemory.structure, state.structure);
-  pushMemory(state.marketMemory.volatility, state.volatility);
-  pushMemory(state.marketMemory.liquidity, state.liquidity);
-  pushMemory(state.marketMemory.session, state.session);
-}
-
-/* =================================
-   AI / LEARNING MODE
-================================= */
-function recomputeAi() {
-  const trendAvg = avg(state.marketMemory.trend);
-  const volumeAvg = avg(state.marketMemory.volume);
-  const structureAvg = avg(state.marketMemory.structure);
-  const volatilityAvg = avg(state.marketMemory.volatility);
-  const liquidityAvg = avg(state.marketMemory.liquidity);
-  const sessionAvg = avg(state.marketMemory.session);
-
-  const reasons = [];
-
-  const trendBull = trendAvg >= CONFIG.trendStrong;
-  const trendWeak = trendAvg < CONFIG.trendWeak;
-  const trendNeutral = !trendBull && !trendWeak;
-
-  const structureBull = structureAvg >= CONFIG.structureStrong;
-  const structureWeak = structureAvg < CONFIG.structureWeak;
-
-  const volumeOk = volumeAvg >= CONFIG.volumeOk;
-  const volumeLow = volumeAvg < CONFIG.volumeLow;
-
-  const liquidityOk = liquidityAvg >= CONFIG.liquidityOk;
-  const liquidityThin = liquidityAvg < CONFIG.liquidityThin;
-
-  const volHigh = volatilityAvg >= CONFIG.volatilityHigh;
-  const volMid = volatilityAvg >= CONFIG.volatilityMid && volatilityAvg < CONFIG.volatilityHigh;
-  const volStable = volatilityAvg < CONFIG.volatilityMid;
-
-  const sessionGood = sessionAvg >= CONFIG.sessionGood;
-  const sessionSoft = sessionAvg >= CONFIG.sessionSoft && sessionAvg < CONFIG.sessionGood;
-  const sessionTight = sessionAvg < CONFIG.sessionSoft;
-
-  if (trendBull) reasons.push("trend_up");
-  else reasons.push("trend_weak");
-
-  if (structureBull) reasons.push("structure_strong");
-  else reasons.push("structure_weak");
-
-  if (volumeOk) reasons.push("volume_ok");
-  else reasons.push("volume_low");
-
-  if (liquidityOk) reasons.push("liquidity_ok");
-  else reasons.push("liquidity_thin");
-
-  if (volHigh) reasons.push("volatility_high");
-  else if (volMid) reasons.push("volatility_mid");
-  else reasons.push("volatility_stable");
-
-  if (sessionGood) reasons.push("session_good");
-  else if (sessionSoft) reasons.push("session_soft");
-  else reasons.push("session_tight");
-
-  let buyEdge =
-    (trendBull ? 18 : trendNeutral ? 10 : 4) +
-    (structureBull ? 20 : structureWeak ? 1 : 7) +
-    (volumeOk ? 11 : volumeLow ? -6 : 2) +
-    (liquidityOk ? 9 : liquidityThin ? -5 : 1) +
-    (sessionGood ? 8 : sessionSoft ? 3 : -5) +
-    (volHigh ? -11 : volMid ? 1 : 4) +
-    memorySideScore("BUY");
-
-  let sellEdge =
-    (trendWeak ? 18 : trendNeutral ? 8 : 1) +
-    (structureWeak ? 16 : structureBull ? 3 : 6) +
-    (volumeLow ? 8 : 2) +
-    (liquidityThin ? 7 : 1) +
-    (sessionTight ? 8 : sessionSoft ? 3 : 0) +
-    (volHigh ? 7 : 0) +
-    memorySideScore("SELL");
-
-  buyEdge = round1(clamp(buyEdge, -20, 100));
-  sellEdge = round1(clamp(sellEdge, -20, 100));
-
-  state.aiBuyEdge = buyEdge;
-  state.aiSellEdge = sellEdge;
-  state.aiBias = buyEdge >= sellEdge ? "BUY" : "SELL";
-
-  let score =
-    CONFIG.scoreBase +
-    (trendBull ? 8 : trendWeak ? -3 : 3) +
-    (structureBull ? 10 : structureWeak ? -6 : 2) +
-    (volumeOk ? 5 : volumeLow ? -5 : 0) +
-    (liquidityOk ? 5 : liquidityThin ? -5 : 0) +
-    (sessionGood ? 6 : sessionSoft ? 2 : -6) +
-    (volHigh ? -9 : volStable ? 4 : 0);
-
-  score = clamp(Math.round(score), 0, 100);
-  state.score = score;
-
-  let conf = 44;
-
-  conf += trendBull ? 6 : trendNeutral ? 3 : -1;
-  conf += structureBull ? 10 : structureWeak ? -4 : 2;
-  conf += volumeOk ? 5 : volumeLow ? -4 : 0;
-  conf += liquidityOk ? 4 : liquidityThin ? -4 : 0;
-
-  if (sessionGood) conf += 5;
-  else if (sessionSoft) conf += 2;
-  else conf -= 5;
-
-  if (volHigh) conf -= 10;
-  else if (volStable) conf += 4;
-
-  const dominance = Math.abs(buyEdge - sellEdge);
-  if (dominance > 24) conf += 9;
-  else if (dominance > 14) conf += 5;
-  else if (dominance < 7) conf -= 6;
-
-  conf += clamp(Math.round((memorySideScore("BUY") + memorySideScore("SELL")) / 3), -4, 4);
-  conf = clamp(Math.round(conf), 20, 92);
-
-  state.confidence = conf;
-  state.conf = conf;
-
-  if (
-    state.guard === "SESSION_LIMIT" ||
-    state.guard === "WIN_TARGET" ||
-    state.guard === "DAILY_LOSS"
-  ) {
-    state.aiMode = "PAUSED";
-    state.aiSignal = "PAUSED";
-    state.aiBias = "PAUSED";
-    state.aiReasons = ["ai_paused"];
-    state.learning.confirmedSignal = "PAUSED";
-    return;
-  }
-
-  let rawSignal = "HOLD";
-
-  const buyWatch =
-    buyEdge >= CONFIG.minWatchEdge &&
-    conf >= CONFIG.confidenceWatchMin &&
-    (
-      structureBull ||
-      (trendBull && volumeOk) ||
-      (trendNeutral && structureBull && volumeOk)
-    );
-
-  const sellWatch =
-    sellEdge >= CONFIG.minWatchEdge &&
-    conf >= CONFIG.confidenceWatchMin &&
-    (
-      structureWeak ||
-      trendWeak
-    );
-
-  const buyReady =
-    buyEdge >= CONFIG.minReadyEdge &&
-    conf >= CONFIG.confidenceReadyMin &&
-    (
-      (structureBull && volumeOk) ||
-      (trendBull && structureBull) ||
-      (trendWeak && structureBull && volumeOk && liquidityOk && !volHigh)
-    );
-
-  const sellReady =
-    sellEdge >= CONFIG.minReadyEdge &&
-    conf >= CONFIG.confidenceReadyMin &&
-    (
-      (trendWeak && structureWeak) ||
-      (trendWeak && volHigh) ||
-      (structureWeak && volumeLow)
-    );
-
-  const buyFire =
-    buyEdge >= CONFIG.minBuyEdge &&
-    conf >= CONFIG.confidenceBuyMin &&
-    (
-      (trendBull && structureBull && volumeOk) ||
-      (trendNeutral && structureBull && volumeOk && liquidityOk && !volHigh && buyEdge >= 30)
-    ) &&
-    !volHigh;
-
-  const sellFire =
-    sellEdge >= CONFIG.minSellEdge &&
-    conf >= CONFIG.confidenceSellMin &&
-    trendWeak &&
-    structureWeak &&
-    !volHigh;
-
-  if (buyFire) rawSignal = "BUY";
-  else if (sellFire) rawSignal = "SELL";
-  else if (buyReady || sellReady) rawSignal = "READY";
-  else if (buyWatch || sellWatch) rawSignal = "WATCH";
-  else rawSignal = "HOLD";
-
-  if (rawSignal === state.learning.lastRawSignal) {
-    state.learning.rawSignalStreak += 1;
-  } else {
-    state.learning.lastRawSignal = rawSignal;
-    state.learning.rawSignalStreak = 1;
-  }
-
-  let needed = CONFIG.confirmSoft;
-  if (rawSignal === "BUY" || rawSignal === "SELL") {
-    needed = conf >= 72 ? CONFIG.confirmStrong : CONFIG.confirmSoft;
-  } else if (rawSignal === "READY") {
-    needed = 2;
-  } else {
-    needed = 1;
-  }
-
-  if (state.learning.rawSignalStreak >= needed) {
-    state.learning.confirmedSignal = rawSignal;
-    if (rawSignal === "BUY" || rawSignal === "SELL" || rawSignal === "READY") {
-      reasons.push("signal_confirmed");
-    }
-  } else if (rawSignal === "BUY" || rawSignal === "SELL" || rawSignal === "READY") {
-    reasons.push("waiting_confirm");
-  }
-
-  let finalMode = "HOLD";
-
-  if (rawSignal === "BUY" || rawSignal === "SELL") {
-    if (state.learning.confirmedSignal === rawSignal && state.learning.rawSignalStreak >= needed) {
-      finalMode = rawSignal;
-    } else {
-      finalMode = "READY";
-    }
-  } else if (rawSignal === "READY") {
-    finalMode = state.learning.rawSignalStreak >= needed ? "READY" : "WATCH";
-  } else if (rawSignal === "WATCH") {
-    finalMode = "WATCH";
-  } else {
-    finalMode = "HOLD";
-  }
-
-  if (finalMode === "WATCH") reasons.push("watch_mode");
-  if (finalMode === "READY") reasons.push("ready_mode");
-  if ((finalMode === "WATCH" || finalMode === "HOLD") && conf < 52) {
-    reasons.push("low_confidence");
-  }
-
-  if (memorySideScore("BUY") >= 4) reasons.push("learning_buy_good");
-  if (memorySideScore("SELL") >= 4) reasons.push("learning_sell_good");
-  if (memorySideScore("BUY") <= -4) reasons.push("learning_buy_bad");
-  if (memorySideScore("SELL") <= -4) reasons.push("learning_sell_bad");
-
-  state.aiMode = finalMode;
-  state.aiSignal = (finalMode === "WATCH" || finalMode === "READY") ? "HOLD" : finalMode;
-  state.aiReasons = reasons;
-}
-
-/* =================================
-   STATE RECALC
-================================= */
+/* =========================
+   DERIVED
+========================= */
 function recalcDerivedState() {
   refreshDayIfNeeded();
   updateSessionStatus();
@@ -851,9 +761,9 @@ function recalcDerivedState() {
   state.reasonLine = hero.reason;
 }
 
-/* =================================
-   TRADE RESULTS
-================================= */
+/* =========================
+   TRADE RESULT
+========================= */
 function recordTradeResult(side, pnlDelta) {
   if (!side) return;
 
@@ -866,32 +776,6 @@ function recordTradeResult(side, pnlDelta) {
     if (pnlDelta > 0) state.learning.sellWins += 1;
     if (pnlDelta < 0) state.learning.sellLosses += 1;
   }
-}
-
-function manualReset() {
-  state.pnl = 0;
-  state.queueLength = 0;
-  state.processing = false;
-  state.lastActionLabel = "";
-  state.lastActionSide = "";
-  state.lastResetType = "MANUAL";
-
-  clearCooldown();
-  clearGuard();
-
-  state.learning.lastRawSignal = "HOLD";
-  state.learning.rawSignalStreak = 0;
-  state.learning.confirmedSignal = "HOLD";
-
-  state.message = "System bereit.";
-  state.subMessage = "";
-  state.reasonLine = "";
-
-  lastAiLogSignature = "";
-  lastHoldReasonSignature = "";
-
-  smartLog("SYSTEM", "Manual reset");
-  recalcDerivedState();
 }
 
 function applyWin() {
@@ -912,16 +796,40 @@ function applyLoss() {
   recalcDerivedState();
 }
 
-/* =================================
-   ORDER EXECUTION
-================================= */
+function manualReset() {
+  state.pnl = 0;
+  state.queueLength = 0;
+  state.processing = false;
+  state.lastActionLabel = "";
+  state.lastActionSide = "";
+  state.lastResetType = "MANUAL";
+
+  clearCooldown();
+  clearGrace();
+  clearGuard();
+
+  state.learning.lastRawSignal = "HOLD";
+  state.learning.rawSignalStreak = 0;
+  state.learning.confirmedSignal = "HOLD";
+
+  state.message = "System bereit.";
+  state.subMessage = "";
+  state.reasonLine = "";
+
+  lastAiSignature = "";
+  lastHoldSignature = "";
+
+  smartLog("SYSTEM", "Manual reset");
+  recalcDerivedState();
+}
+
+/* =========================
+   EXECUTION
+========================= */
 function executeOrder(side, source = "MANUAL") {
-  if (
-    state.guard === "SESSION_LIMIT" ||
-    state.guard === "WIN_TARGET" ||
-    state.guard === "DAILY_LOSS" ||
-    state.guard === "HEALTH_FAIL"
-  ) return false;
+  if (["SESSION_LIMIT", "WIN_TARGET", "DAILY_LOSS", "HEALTH_FAIL"].includes(state.guard)) {
+    return false;
+  }
 
   if (state.processing || state.queueLength > 0 || cooldownActive()) return false;
   if (side === "BUY" && !state.health.buy) return false;
@@ -944,6 +852,7 @@ function executeOrder(side, source = "MANUAL") {
     pushLog("ORDER", `Order ausgeführt (${side})`);
 
     startCooldown();
+    startGrace();
     updateSessionStatus();
     recalcDerivedState();
 
@@ -954,17 +863,17 @@ function executeOrder(side, source = "MANUAL") {
         updateSessionStatus();
         recalcDerivedState();
       }
-    }, CONFIG.cooldownMs + 30);
-  }, 700);
+    }, CONFIG.cooldownMs + 40);
+  }, 650);
 
   recalcDerivedState();
   return true;
 }
 
-/* =================================
+/* =========================
    AUTO LOOP
-================================= */
-function buildStateSignature() {
+========================= */
+function buildAiSig() {
   return [
     state.aiMode,
     state.aiSignal,
@@ -980,26 +889,23 @@ function autoStep() {
   refreshDayIfNeeded();
   recalcDerivedState();
 
-  const stateSig = buildStateSignature();
+  const aiSig = buildAiSig();
 
   if (state.aiMode === "HOLD") {
-    const holdReasonSig = `${state.aiMode}|${cleanReason(state.aiReasons)}|${Math.round(state.confidence)}`;
-    if (holdReasonSig !== lastHoldReasonSignature) {
-      lastHoldReasonSignature = holdReasonSig;
-      logAiSignal("AI", buildSignalReasonLine(), `HOLD|${holdReasonSig}`);
+    const holdSig = `${state.aiMode}|${cleanReason(state.aiReasons)}|${Math.round(state.confidence)}`;
+    if (holdSig !== lastHoldSignature) {
+      lastHoldSignature = holdSig;
+      smartLog("AI", buildSignalReasonLine());
     }
-  } else if (stateSig !== lastStateSignature) {
-    lastStateSignature = stateSig;
-    logAiSignal("AI", buildSignalReasonLine(), `STATE|${stateSig}`);
+  } else {
+    if (aiSig !== lastAiSignature) {
+      lastAiSignature = aiSig;
+      smartLog("AI", buildSignalReasonLine());
+    }
   }
 
   if (!state.autoEnabled) return;
-  if (
-    state.guard === "SESSION_LIMIT" ||
-    state.guard === "WIN_TARGET" ||
-    state.guard === "DAILY_LOSS" ||
-    state.guard === "HEALTH_FAIL"
-  ) return;
+  if (["SESSION_LIMIT", "WIN_TARGET", "DAILY_LOSS", "HEALTH_FAIL"].includes(state.guard)) return;
   if (state.processing || state.queueLength > 0 || cooldownActive()) return;
 
   if (state.aiMode === "BUY") {
@@ -1013,9 +919,9 @@ function autoStep() {
   }
 }
 
-/* =================================
+/* =========================
    RESPONSE
-================================= */
+========================= */
 function responseState() {
   recalcDerivedState();
 
@@ -1027,6 +933,7 @@ function responseState() {
     queueLength: state.queueLength,
     cooldownActive: cooldownActive(),
     cooldownMsLeft: cooldownMsLeft(),
+    graceActive: graceActive(),
 
     guard: state.guard,
     message: state.message,
@@ -1075,9 +982,9 @@ function responseState() {
   };
 }
 
-/* =================================
+/* =========================
    ROUTES
-================================= */
+========================= */
 app.get("/api/status", (_req, res) => {
   res.json(responseState());
 });
@@ -1108,18 +1015,12 @@ app.post("/api/reset", (_req, res) => {
 });
 
 app.post("/api/auto", (_req, res) => {
-  if (
-    state.guard === "SESSION_LIMIT" ||
-    state.guard === "WIN_TARGET" ||
-    state.guard === "DAILY_LOSS" ||
-    state.guard === "HEALTH_FAIL"
-  ) {
+  if (["SESSION_LIMIT", "WIN_TARGET", "DAILY_LOSS", "HEALTH_FAIL"].includes(state.guard)) {
     state.autoEnabled = false;
   } else {
     state.autoEnabled = !state.autoEnabled;
     smartLog("SYSTEM", state.autoEnabled ? "AI Auto EIN" : "AI Auto AUS");
   }
-
   recalcDerivedState();
   res.json(responseState());
 });
@@ -1127,7 +1028,7 @@ app.post("/api/auto", (_req, res) => {
 app.post("/api/health/ok", (_req, res) => {
   state.health = { status: true, buy: true, sell: true };
   clearGuard();
-  setReadyIfPossible("System bereit.");
+  state.message = "System bereit.";
   smartLog("SYSTEM", "Health OK");
   recalcDerivedState();
   res.json(responseState());
@@ -1137,15 +1038,16 @@ app.post("/api/health/fail", (_req, res) => {
   state.health = { status: false, buy: false, sell: false };
   state.autoEnabled = false;
   clearCooldown();
+  clearGrace();
   setGuard("HEALTH_FAIL", "Health Check fehlgeschlagen.");
   smartLog("SYSTEM", "Health FAIL");
   recalcDerivedState();
   res.json(responseState());
 });
 
-/* =================================
+/* =========================
    START
-================================= */
+========================= */
 setInterval(() => {
   try {
     autoStep();
@@ -1157,5 +1059,5 @@ setInterval(() => {
 recalcDerivedState();
 
 app.listen(CONFIG.port, () => {
-  console.log(`🚀 V22.7.2 LEARNING MODE running on port ${CONFIG.port}`);
+  console.log(`🚀 V22.7.2 CLEAN running on port ${CONFIG.port}`);
 });
