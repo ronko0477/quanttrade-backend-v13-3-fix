@@ -1,1057 +1,1171 @@
-'use strict';
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>V22.7.3 HARD LIVE</title>
+  <style>
+    :root{
+      --bg1:#050816;
+      --bg2:#0a0f2a;
+      --panel:#6c75ff2e;
+      --panel-strong:#4f59f0;
+      --card:#4450e6;
+      --card-dark:#3945d4;
+      --text:#f4f6ff;
+      --muted:#d8ddff;
+      --lime:#c8de8c;
+      --pink:#ead7d9;
+      --gold:#ddd39c;
+      --shadow:0 18px 45px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08);
+      --shadow-soft:0 10px 24px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.06);
+      --outline:rgba(255,255,255,.08);
+      --bar-bg:rgba(173,185,255,.24);
+      --hero-bg:linear-gradient(180deg, rgba(173,181,255,.88) 0%, rgba(120,132,255,.88) 100%);
+      --card-bg:linear-gradient(180deg, rgba(80,91,245,.98) 0%, rgba(63,73,211,.98) 100%);
+      --pill-bg:linear-gradient(180deg, rgba(86,96,244,.98) 0%, rgba(61,71,209,.98) 100%);
+      --good-bg:linear-gradient(90deg, #eac7b5 0%, #d6dd8f 45%, #afd9df 100%);
+    }
 
-const express = require('express');
-const path = require('path');
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{
+      min-height:100vh;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 400px at 50% -80px, rgba(180,190,255,.22), transparent 60%),
+        radial-gradient(700px 400px at 50% 100%, rgba(57,69,212,.18), transparent 60%),
+        linear-gradient(180deg, #030617 0%, #071129 34%, #040814 100%);
+    }
 
-const app = express();
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true }));
+    .app{
+      width:min(100%, 760px);
+      margin:0 auto;
+      padding:22px 18px 42px;
+    }
 
-const PORT = process.env.PORT || 3000;
+    .topbar{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:14px;
+      margin:6px auto 18px;
+      padding:12px 14px;
+      font-weight:900;
+      font-size:22px;
+      letter-spacing:.3px;
+      color:#f7f8ff;
+    }
 
-/* =========================================================
-   V22.7.4 HARD LIVE
-   Logic tuning only
-   - softer HOLD behavior
-   - more realistic confidence
-   - easier WATCH / READY
-   - selective FIRE
-   - cleaner logs
-   ========================================================= */
+    .dot-wrap{
+      position:relative;
+      width:28px;
+      height:28px;
+      flex:0 0 28px;
+    }
 
-const CONFIG = {
-  tickMs: 1000,
+    .dot-wrap::before{
+      content:"";
+      position:absolute;
+      inset:-10px;
+      border-radius:999px;
+      background:radial-gradient(circle, rgba(174,228,152,.38) 0%, rgba(174,228,152,.12) 42%, transparent 72%);
+      filter:blur(4px);
+    }
 
-  session: {
-    maxTradesPerDay: 50,
-    winTarget: 20,
-    lossLimit: -20,
-    cooldownMs: 2000,
-  },
+    .dot{
+      position:absolute;
+      inset:0;
+      margin:auto;
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      background:#b9e59f;
+      box-shadow:0 0 0 8px rgba(185,229,159,.10), 0 0 28px rgba(185,229,159,.55);
+    }
 
-  ai: {
-    enableLearning: true,
+    .hero{
+      position:relative;
+      border-radius:36px;
+      padding:24px 22px 22px;
+      background:var(--hero-bg);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.1);
+    }
 
-    watchScoreMin: 54,
-    readyScoreMin: 63,
-    fireScoreMin: 74,
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:16px;
+      border-radius:28px;
+      border:1px solid rgba(255,255,255,.09);
+      pointer-events:none;
+    }
 
-    buyEdgeMinWatch: 10,
-    buyEdgeMinReady: 20,
-    buyEdgeMinFire: 34,
+    .hero-title{
+      text-align:center;
+      font-size:92px;
+      line-height:.92;
+      font-weight:1000;
+      color:#bfd98a;
+      letter-spacing:-2px;
+      text-shadow:0 2px 0 rgba(0,0,0,.04);
+      margin:4px 0 12px;
+      word-break:break-word;
+    }
 
-    sellEdgeMinWatch: 10,
-    sellEdgeMinReady: 20,
-    sellEdgeMinFire: 34,
+    .hero-subtitle,
+    .hero-detail,
+    .hero-reasons{
+      text-align:center;
+      font-weight:900;
+      color:#f4f4fb;
+    }
 
-    confidenceMinWatch: 36,
-    confidenceMinReady: 50,
-    confidenceMinFire: 68,
+    .hero-subtitle{
+      font-size:28px;
+      margin-top:6px;
+    }
 
-    stateConfirmTicks: 2,
-    regimeConfirmTicks: 2,
+    .hero-detail{
+      font-size:24px;
+      margin-top:10px;
+    }
 
-    maxVolatilityForFire: 76,
-    minLiquidityForFire: 42,
-    minSessionForFire: 38,
+    .hero-reasons{
+      font-size:18px;
+      line-height:1.35;
+      margin:14px auto 18px;
+      max-width:92%;
+      color:#f1f1fb;
+      opacity:.96;
+    }
 
-    thresholdAdjustStep: 1,
-    maxThresholdDrift: 8,
-  },
+    .netpnl{
+      text-align:center;
+      margin-top:10px;
+    }
 
-  log: {
-    maxEntries: 120,
-    suppressRepeatWithinMs: 20000,
-  },
-};
+    .netpnl-value{
+      font-size:110px;
+      line-height:.95;
+      font-weight:1000;
+      margin:0;
+    }
 
-/* =========================================================
-   Helpers
-   ========================================================= */
+    .netpnl-label{
+      font-size:28px;
+      font-weight:900;
+      margin-top:6px;
+    }
 
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
-}
+    .center-pill{
+      display:flex;
+      justify-content:center;
+      margin:20px 0 18px;
+    }
 
-function round1(v) {
-  return Math.round(v * 10) / 10;
-}
+    .pill{
+      min-width:170px;
+      min-height:64px;
+      border:none;
+      border-radius:999px;
+      padding:16px 28px;
+      background:var(--pill-bg);
+      color:#f8f8ff;
+      font-size:22px;
+      font-weight:1000;
+      box-shadow:0 12px 24px rgba(49,59,188,.42), inset 0 2px 0 rgba(255,255,255,.08);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
 
-function nowIsoDate() {
-  return new Date().toISOString().slice(0, 10);
-}
+    .hero-limits{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      margin:4px 28px 22px;
+    }
 
-function timeLabel(date = new Date()) {
-  return date.toTimeString().slice(0, 8);
-}
+    .limit-pill{
+      border-radius:999px;
+      padding:14px 16px;
+      text-align:center;
+      background:var(--pill-bg);
+      font-size:20px;
+      font-weight:1000;
+      box-shadow:var(--shadow-soft);
+    }
 
-function normalizeTag(text) {
-  return String(text || '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/\b\w/g, (m) => m.toUpperCase());
-}
+    .signal-panel{
+      margin-top:4px;
+      border-radius:28px;
+      padding:16px;
+      background:linear-gradient(180deg, rgba(80,91,245,.42), rgba(63,73,211,.42));
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
+    }
 
-function safeNum(v, fallback = 0) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
+    .signal-top{
+      display:grid;
+      grid-template-columns:1fr 1.35fr;
+      gap:14px;
+      margin-bottom:14px;
+    }
 
-/* =========================================================
-   Core state
-   ========================================================= */
+    .mini-card, .conf-card, .stat-card, .section-card, .wide-card{
+      border-radius:22px;
+      background:var(--card-bg);
+      box-shadow:var(--shadow-soft);
+      border:1px solid rgba(255,255,255,.06);
+    }
 
-const state = {
-  version: 'V22.7.4 HARD LIVE',
+    .mini-card, .conf-card{
+      padding:18px 18px 16px;
+      min-height:132px;
+    }
 
-  system: {
-    status: 'READY',
-    subtitle: 'System bereit.',
-    detail: 'AI bereit für Entry.',
-    liveBadge: 'LIVE',
-    dot: true,
-  },
+    .mini-label, .conf-label, .card-label, .log-title, .score-title{
+      font-size:22px;
+      font-weight:1000;
+      color:#f3f5ff;
+      letter-spacing:.2px;
+    }
 
-  session: {
-    date: nowIsoDate(),
-    tradesToday: 0,
-    maxTradesPerDay: CONFIG.session.maxTradesPerDay,
-    netPnL: 0,
-    winTarget: CONFIG.session.winTarget,
-    lossLimit: CONFIG.session.lossLimit,
-    cooldownUntil: 0,
-    queue: 0,
-    processing: false,
-    autoMode: true,
-    lastOrderSide: null,
-    syncOk: true,
-  },
+    .mini-value{
+      margin-top:16px;
+      font-size:58px;
+      font-weight:1000;
+      color:var(--lime);
+      line-height:.95;
+    }
 
-  market: {
-    trend: 72.0,
-    volume: 64.0,
-    structure: 78.0,
-    volatility: 49.0,
-    liquidity: 76.0,
-    session: 58.0,
-  },
+    .conf-head{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+    }
 
-  learning: {
-    drift: 0,
-    winCount: 0,
-    lossCount: 0,
-    lastOutcome: null,
-  },
+    .conf-label{
+      max-width:52%;
+      line-height:.95;
+    }
 
-  ai: {
-    score: 76,
-    signal: 'HOLD',
-    bias: 'BUY',
-    confidence: 52,
-    buyEdge: 24,
-    sellEdge: 18,
-    stage: 'WATCH',
-    summary: 'AI Hold',
-    reasons: ['Trend Up', 'Structure Strong', 'Volume OK'],
-    setupConfirmed: false,
-    watchMode: false,
-    paused: false,
-    pauseReason: '',
-  },
+    .conf-value{
+      font-size:66px;
+      font-weight:1000;
+      line-height:.9;
+      color:#d9f0d6;
+      white-space:nowrap;
+    }
 
-  engine: {
-    candidateStage: 'WATCH',
-    candidateStageTicks: 0,
-    regimeCandidate: 'BUY',
-    regimeTicks: 0,
-    stableBias: 'BUY',
-    lastDecisionKey: '',
-    lastLoggedAt: 0,
-    lastLogSignature: '',
-    lastActionAt: 0,
-    lastFireAt: 0,
-    lastHoldReason: '',
-    lastStageLogged: '',
-    lastBiasLogged: '',
-  },
+    .progress{
+      width:100%;
+      height:18px;
+      border-radius:999px;
+      background:var(--bar-bg);
+      overflow:hidden;
+      box-shadow:inset 0 1px 2px rgba(0,0,0,.18);
+    }
 
-  manual: {
-    buyPost: 'OK',
-    sellPost: 'OK',
-    status: 'OK',
-    conf: 0,
-  },
+    .progress > span{
+      display:block;
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:var(--good-bg);
+      transition:width .35s ease;
+    }
 
-  logs: [],
-};
+    .signal-bottom{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:14px;
+      margin-bottom:14px;
+    }
 
-/* =========================================================
-   Logging
-   ========================================================= */
+    .stat-card{
+      min-height:122px;
+      padding:18px 18px 14px;
+    }
 
-function addLog(text, opts = {}) {
-  const ts = timeLabel();
-  const signature = opts.signature || text;
-  const now = Date.now();
+    .card-label{
+      font-size:20px;
+      line-height:1;
+    }
 
-  const repeatedTooSoon =
-    state.engine.lastLogSignature === signature &&
-    now - state.engine.lastLoggedAt < CONFIG.log.suppressRepeatWithinMs;
+    .card-value{
+      margin-top:24px;
+      font-size:56px;
+      font-weight:1000;
+      line-height:.95;
+      color:var(--lime);
+      white-space:nowrap;
+    }
 
-  if (repeatedTooSoon && !opts.force) return;
+    .card-value.sell{
+      color:#f4d0cb;
+    }
 
-  state.logs.unshift(`${ts} - ${text}`);
-  state.logs = state.logs.slice(0, CONFIG.log.maxEntries);
-  state.engine.lastLogSignature = signature;
-  state.engine.lastLoggedAt = now;
-}
+    .chip-box{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      justify-content:center;
+      padding:16px 10px 4px;
+      min-height:112px;
+    }
 
-function addStateLog(text, signature) {
-  addLog(text, { signature: signature || text });
-}
+    .chip{
+      padding:12px 20px;
+      border-radius:999px;
+      background:linear-gradient(180deg, rgba(102,113,249,.95), rgba(82,92,225,.95));
+      color:#f4f6ff;
+      font-size:18px;
+      font-weight:900;
+      box-shadow:var(--shadow-soft);
+      border:1px solid rgba(255,255,255,.08);
+      text-align:center;
+    }
 
-/* =========================================================
-   Session reset
-   ========================================================= */
+    .grid2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+      margin-top:20px;
+    }
 
-function resetDayIfNeeded() {
-  const today = nowIsoDate();
-  if (state.session.date !== today) {
-    state.session.date = today;
-    state.session.tradesToday = 0;
-    state.session.netPnL = 0;
-    state.session.cooldownUntil = 0;
-    state.session.processing = false;
-    state.session.queue = 0;
-    state.ai.paused = false;
-    state.ai.pauseReason = '';
-    state.system.status = 'READY';
-    state.system.subtitle = 'System bereit.';
-    state.system.detail = state.session.autoMode ? 'AI bereit für Entry.' : 'Bereit für manuellen Modus.';
-    addLog('Day reset', { force: true, signature: `day-reset-${today}` });
-  }
-}
+    .section-card{
+      padding:18px 18px 16px;
+      min-height:150px;
+    }
 
-/* =========================================================
-   Synthetic market feed
-   ========================================================= */
+    .section-card .big{
+      margin-top:28px;
+      font-size:66px;
+      font-weight:1000;
+      line-height:.95;
+      color:var(--lime);
+    }
 
-function driftMetric(key, target, speed = 0.30, noise = 3.4) {
-  const current = safeNum(state.market[key], 50);
-  const delta = (target - current) * speed + (Math.random() * noise - noise / 2);
-  state.market[key] = round1(clamp(current + delta, 0, 100));
-}
+    .btn-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+      margin-top:16px;
+    }
 
-function generateMarket() {
-  const phase = Math.random();
+    .btn{
+      appearance:none;
+      border:none;
+      border-radius:24px;
+      padding:28px 18px;
+      font-size:26px;
+      font-weight:1000;
+      color:#fff;
+      box-shadow:var(--shadow-soft);
+      cursor:pointer;
+      transition:transform .05s ease, opacity .2s ease;
+    }
 
-  let trendTarget = 55;
-  let volumeTarget = 58;
-  let structureTarget = 62;
-  let volatilityTarget = 45;
-  let liquidityTarget = 65;
-  let sessionTarget = 54;
+    .btn:active{ transform:scale(.99); }
+    .btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
 
-  if (phase < 0.20) {
-    trendTarget = 84;
-    structureTarget = 84;
-    volumeTarget = 74;
-    volatilityTarget = 34;
-    liquidityTarget = 80;
-    sessionTarget = 66;
-  } else if (phase < 0.42) {
-    trendTarget = 72;
-    structureTarget = 76;
-    volumeTarget = 63;
-    volatilityTarget = 46;
-    liquidityTarget = 72;
-    sessionTarget = 58;
-  } else if (phase < 0.62) {
-    trendTarget = 52;
-    structureTarget = 61;
-    volumeTarget = 58;
-    volatilityTarget = 52;
-    liquidityTarget = 62;
-    sessionTarget = 50;
-  } else if (phase < 0.82) {
-    trendTarget = 38;
-    structureTarget = 47;
-    volumeTarget = 52;
-    volatilityTarget = 66;
-    liquidityTarget = 50;
-    sessionTarget = 44;
-  } else {
-    trendTarget = 60;
-    structureTarget = 68;
-    volumeTarget = 80;
-    volatilityTarget = 28;
-    liquidityTarget = 84;
-    sessionTarget = 62;
-  }
+    .btn-buy, .btn-win{
+      background:linear-gradient(90deg, #c8deb0 0%, #b7d592 52%, #bfdcac 100%);
+      color:#ffffff;
+    }
 
-  driftMetric('trend', trendTarget);
-  driftMetric('volume', volumeTarget);
-  driftMetric('structure', structureTarget);
-  driftMetric('volatility', volatilityTarget);
-  driftMetric('liquidity', liquidityTarget);
-  driftMetric('session', sessionTarget);
-}
+    .btn-sell, .btn-loss{
+      background:linear-gradient(90deg, #e4d7d8 0%, #eadbdb 48%, #e9d7d8 100%);
+      color:#ffffff;
+    }
 
-/* =========================================================
-   Regime tags
-   ========================================================= */
+    .btn-reset{
+      width:100%;
+      margin-top:16px;
+      background:linear-gradient(90deg, #d7d0a0 0%, #d9d39f 52%, #d4ce9d 100%);
+      color:#ffffff;
+    }
 
-function regimeTags(m) {
-  const tags = [];
+    .toggle-card{
+      margin-top:16px;
+      border-radius:28px;
+      background:var(--card-bg);
+      box-shadow:var(--shadow);
+      padding:18px 18px;
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
+      align-items:center;
+    }
 
-  if (m.trend >= 68) tags.push('Trend Up');
-  else if (m.trend <= 42) tags.push('Trend Weak');
+    .toggle-left{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      min-width:0;
+    }
 
-  if (m.structure >= 74) tags.push('Structure Strong');
-  else if (m.structure <= 48) tags.push('Structure Weak');
+    .toggle-dot{
+      width:22px;
+      height:22px;
+      border-radius:50%;
+      background:#94a0cf;
+      box-shadow:0 0 0 6px rgba(255,255,255,.05);
+      flex:0 0 22px;
+    }
 
-  if (m.volume >= 60) tags.push('Volume OK');
-  else tags.push('Volume Low');
+    .toggle-card.on .toggle-dot{
+      background:#b9e59f;
+      box-shadow:0 0 0 6px rgba(185,229,159,.15), 0 0 20px rgba(185,229,159,.3);
+    }
 
-  if (m.liquidity >= 56) tags.push('Liquidity OK');
-  else tags.push('Liquidity Thin');
+    .toggle-copy{
+      min-width:0;
+    }
 
-  if (m.volatility <= 35) tags.push('Volatility Stable');
-  else if (m.volatility <= 62) tags.push('Volatility Mid');
-  else tags.push('Volatility High');
+    .toggle-label{
+      font-size:18px;
+      font-weight:1000;
+      color:#f2f4ff;
+      opacity:.95;
+    }
 
-  if (m.session >= 58) tags.push('Session Good');
-  else if (m.session >= 45) tags.push('Session Soft');
-  else tags.push('Session Tight');
+    .toggle-value{
+      font-size:28px;
+      font-weight:1000;
+      line-height:1.05;
+      margin-top:2px;
+    }
 
-  return tags;
-}
+    .toggle-switch{
+      min-width:136px;
+      min-height:78px;
+      border-radius:28px;
+      border:none;
+      background:linear-gradient(180deg, rgba(104,115,247,.95), rgba(82,92,225,.95));
+      color:#fff;
+      font-size:24px;
+      font-weight:1000;
+      box-shadow:var(--shadow-soft);
+      cursor:pointer;
+      padding:0 22px;
+    }
 
-/* =========================================================
-   Learning thresholds
-   ========================================================= */
+    .wide-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+      margin-top:16px;
+    }
 
-function getAdaptiveThresholds() {
-  const drift = clamp(state.learning.drift, -CONFIG.ai.maxThresholdDrift, CONFIG.ai.maxThresholdDrift);
+    .score-card, .log-card{
+      margin-top:16px;
+      border-radius:30px;
+      background:var(--card-bg);
+      box-shadow:var(--shadow);
+      padding:20px 20px 18px;
+      border:1px solid rgba(255,255,255,.06);
+    }
 
-  return {
-    watchScoreMin: CONFIG.ai.watchScoreMin + drift,
-    readyScoreMin: CONFIG.ai.readyScoreMin + drift,
-    fireScoreMin: CONFIG.ai.fireScoreMin + drift,
+    .score-head{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:12px;
+    }
 
-    buyEdgeMinWatch: CONFIG.ai.buyEdgeMinWatch + drift,
-    buyEdgeMinReady: CONFIG.ai.buyEdgeMinReady + drift,
-    buyEdgeMinFire: CONFIG.ai.buyEdgeMinFire + drift,
+    .score-title{
+      font-size:26px;
+    }
 
-    sellEdgeMinWatch: CONFIG.ai.sellEdgeMinWatch + drift,
-    sellEdgeMinReady: CONFIG.ai.sellEdgeMinReady + drift,
-    sellEdgeMinFire: CONFIG.ai.sellEdgeMinFire + drift,
+    .score-value{
+      font-size:96px;
+      font-weight:1000;
+      line-height:.9;
+      color:#cfe6d8;
+      white-space:nowrap;
+    }
 
-    confidenceMinWatch: CONFIG.ai.confidenceMinWatch + Math.max(0, drift),
-    confidenceMinReady: CONFIG.ai.confidenceMinReady + Math.max(0, drift),
-    confidenceMinFire: CONFIG.ai.confidenceMinFire + Math.max(0, drift),
-  };
-}
+    .score-grid{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
 
-function learnFromOutcome(outcome) {
-  if (!CONFIG.ai.enableLearning) return;
+    .score-mini{
+      border-radius:24px;
+      background:linear-gradient(180deg, rgba(59,69,209,.88), rgba(57,67,200,.88));
+      min-height:146px;
+      padding:18px 20px 16px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.04);
+    }
 
-  if (outcome === 'WIN') {
-    state.learning.winCount += 1;
-    state.learning.lastOutcome = 'WIN';
-    state.learning.drift = clamp(
-      state.learning.drift - CONFIG.ai.thresholdAdjustStep,
-      -CONFIG.ai.maxThresholdDrift,
-      CONFIG.ai.maxThresholdDrift
-    );
-    addLog(`Learning WIN | drift ${state.learning.drift}`, {
-      signature: `learn-win-${state.learning.winCount}-${state.learning.drift}`,
+    .score-mini-label{
+      font-size:20px;
+      font-weight:900;
+      color:#eff2ff;
+    }
+
+    .score-mini-value{
+      margin-top:34px;
+      font-size:64px;
+      line-height:.95;
+      font-weight:1000;
+      color:var(--gold);
+    }
+
+    .trades-row{
+      margin-top:18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      font-size:18px;
+      font-weight:900;
+      color:#f2f3ff;
+    }
+
+    .trades-bar{
+      margin-top:10px;
+      width:100%;
+      height:16px;
+      border-radius:999px;
+      background:var(--bar-bg);
+      overflow:hidden;
+    }
+
+    .trades-bar > span{
+      display:block;
+      width:0%;
+      height:100%;
+      border-radius:999px;
+      background:var(--good-bg);
+      transition:width .35s ease;
+    }
+
+    .score-footer-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:120px;
+      min-height:54px;
+      margin-top:18px;
+      border-radius:999px;
+      background:var(--pill-bg);
+      color:#fff;
+      font-size:18px;
+      font-weight:1000;
+      box-shadow:var(--shadow-soft);
+      padding:0 18px;
+    }
+
+    .log-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .log-pills{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      justify-content:flex-end;
+    }
+
+    .mini-pill{
+      min-height:52px;
+      padding:0 18px;
+      border-radius:999px;
+      background:var(--pill-bg);
+      color:#f7f8ff;
+      font-weight:1000;
+      font-size:18px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:var(--shadow-soft);
+      white-space:nowrap;
+    }
+
+    .log-lines{
+      display:flex;
+      flex-direction:column;
+    }
+
+    .log-line{
+      padding:16px 4px;
+      border-bottom:1px solid rgba(255,255,255,.09);
+      color:#f1f3ff;
+      font-size:18px;
+      line-height:1.35;
+      word-break:break-word;
+    }
+
+    .log-line:last-child{
+      border-bottom:none;
+    }
+
+    .muted{
+      opacity:.96;
+    }
+
+    @media (max-width: 720px){
+      .app{padding:18px 14px 34px}
+      .topbar{font-size:20px}
+      .hero{padding:20px 18px 18px; border-radius:32px}
+      .hero::before{inset:14px}
+      .hero-title{font-size:74px}
+      .hero-subtitle{font-size:22px}
+      .hero-detail{font-size:18px}
+      .hero-reasons{font-size:16px; max-width:96%; margin-top:10px}
+      .netpnl-value{font-size:86px}
+      .netpnl-label{font-size:22px}
+      .pill{min-width:146px; min-height:58px; font-size:18px}
+      .hero-limits{margin:4px 12px 18px; gap:12px}
+      .limit-pill{font-size:16px; padding:12px 10px}
+      .signal-top{grid-template-columns:1fr 1.15fr; gap:12px}
+      .mini-card,.conf-card{min-height:114px; padding:14px}
+      .mini-label,.conf-label,.card-label,.log-title,.score-title{font-size:16px}
+      .mini-value{font-size:38px; margin-top:14px}
+      .conf-value{font-size:54px}
+      .signal-bottom{gap:12px}
+      .stat-card{min-height:106px; padding:14px}
+      .card-value{font-size:34px; margin-top:20px}
+      .chip{font-size:15px; padding:10px 16px}
+      .section-card{min-height:122px}
+      .section-card .big{font-size:48px; margin-top:24px}
+      .btn{padding:22px 14px; font-size:22px}
+      .toggle-switch{min-width:108px; min-height:66px; font-size:20px}
+      .toggle-value{font-size:22px}
+      .score-value{font-size:72px}
+      .score-mini{min-height:124px}
+      .score-mini-label{font-size:16px}
+      .score-mini-value{font-size:32px; margin-top:28px}
+      .log-line{font-size:16px}
+      .mini-pill{font-size:15px; min-height:46px; padding:0 14px}
+    }
+
+    @media (max-width: 480px){
+      .hero-title{font-size:64px}
+      .hero-subtitle{font-size:20px}
+      .hero-detail{font-size:16px}
+      .hero-reasons{font-size:15px}
+      .netpnl-value{font-size:78px}
+      .netpnl-label{font-size:20px}
+      .pill{min-width:124px; min-height:54px; font-size:17px}
+      .limit-pill{font-size:15px}
+      .mini-value{font-size:32px}
+      .conf-value{font-size:44px}
+      .card-value{font-size:28px}
+      .section-card .big{font-size:42px}
+      .score-value{font-size:58px}
+      .log-head{align-items:flex-start; flex-direction:column}
+      .log-pills{justify-content:flex-start}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div id="versionText">V22.7.3 HARD LIVE ⚡</div>
+      <div class="dot-wrap"><div class="dot" id="liveDot"></div></div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-title" id="heroTitle">READY</div>
+      <div class="hero-subtitle" id="heroSubtitle">System bereit.</div>
+      <div class="hero-detail" id="heroDetail">AI bereit für Entry.</div>
+      <div class="hero-reasons" id="heroReasons">AI Buy • Trend Up • Structure Strong • Volume OK</div>
+
+      <div class="netpnl">
+        <div class="netpnl-value" id="netPnlValue">0</div>
+        <div class="netpnl-label">Net PnL</div>
+      </div>
+
+      <div class="center-pill">
+        <div class="pill" id="liveBadge">LIVE</div>
+      </div>
+
+      <div class="hero-limits">
+        <div class="limit-pill" id="lossLimitPill">LOSS LIMIT -20</div>
+        <div class="limit-pill" id="winTargetPill">WIN TARGET +20</div>
+      </div>
+
+      <div class="signal-panel">
+        <div class="signal-top">
+          <div class="mini-card">
+            <div class="mini-label">AI SIGNAL</div>
+            <div class="mini-value" id="aiSignalValue">HOLD</div>
+          </div>
+
+          <div class="conf-card">
+            <div class="conf-head">
+              <div class="conf-label">AI CONFIDENCE</div>
+              <div class="conf-value" id="aiConfidenceValue">0%</div>
+            </div>
+            <div class="progress"><span id="confidenceBar"></span></div>
+          </div>
+        </div>
+
+        <div class="signal-bottom">
+          <div class="stat-card">
+            <div class="card-label">BIAS</div>
+            <div class="card-value" id="biasValue">BUY</div>
+          </div>
+          <div class="stat-card">
+            <div class="card-label">BUY EDGE</div>
+            <div class="card-value" id="buyEdgeValue">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="card-label">SELL EDGE</div>
+            <div class="card-value sell" id="sellEdgeValue">0</div>
+          </div>
+        </div>
+
+        <div class="chip-box" id="reasonChips"></div>
+      </div>
+    </section>
+
+    <div class="grid2">
+      <div class="section-card">
+        <div class="card-label">STATUS</div>
+        <div class="big" id="statusCardValue">OK</div>
+      </div>
+      <div class="section-card">
+        <div class="card-label">BUY POST</div>
+        <div class="big" id="buyPostValue">OK</div>
+      </div>
+      <div class="section-card">
+        <div class="card-label">SELL POST</div>
+        <div class="big" id="sellPostValue">OK</div>
+      </div>
+      <div class="section-card">
+        <div class="card-label">CONF</div>
+        <div class="big" id="confCardValue">0%</div>
+      </div>
+    </div>
+
+    <div class="btn-grid">
+      <button class="btn btn-buy" id="manualBuyBtn">BUY</button>
+      <button class="btn btn-sell" id="manualSellBtn">SELL</button>
+      <button class="btn btn-win" id="manualWinBtn">WIN</button>
+      <button class="btn btn-loss" id="manualLossBtn">LOSS</button>
+    </div>
+
+    <button class="btn btn-reset" id="resetBtn">RESET</button>
+
+    <div class="toggle-card" id="autoCard">
+      <div class="toggle-left">
+        <div class="toggle-dot"></div>
+        <div class="toggle-copy">
+          <div class="toggle-label">AUTO MODE</div>
+          <div class="toggle-value" id="autoModeText">AUTO OFF</div>
+        </div>
+      </div>
+      <button class="toggle-switch" id="autoToggleBtn">OFF</button>
+    </div>
+
+    <div class="wide-row">
+      <div class="section-card">
+        <div class="card-label">QUEUE</div>
+        <div class="big" id="queueValue">0</div>
+      </div>
+      <div class="section-card">
+        <div class="card-label">PROCESSING</div>
+        <div class="big" id="processingValue">OFF</div>
+      </div>
+    </div>
+
+    <section class="score-card">
+      <div class="score-head">
+        <div class="score-title">AI SCORE</div>
+        <div class="score-value" id="aiScoreValue">0</div>
+      </div>
+
+      <div class="progress"><span id="scoreBar"></span></div>
+
+      <div class="score-grid">
+        <div class="score-mini">
+          <div class="score-mini-label">Trend</div>
+          <div class="score-mini-value" id="trendValue">0.0</div>
+        </div>
+        <div class="score-mini">
+          <div class="score-mini-label">Volume</div>
+          <div class="score-mini-value" id="volumeValue">0.0</div>
+        </div>
+        <div class="score-mini">
+          <div class="score-mini-label">Structure</div>
+          <div class="score-mini-value" id="structureValue">0.0</div>
+        </div>
+        <div class="score-mini">
+          <div class="score-mini-label">Volatility</div>
+          <div class="score-mini-value" id="volatilityValue">0.0</div>
+        </div>
+        <div class="score-mini">
+          <div class="score-mini-label">Liquidity</div>
+          <div class="score-mini-value" id="liquidityValue">0.0</div>
+        </div>
+        <div class="score-mini">
+          <div class="score-mini-label">Session</div>
+          <div class="score-mini-value" id="sessionValue">0.0</div>
+        </div>
+      </div>
+
+      <div class="trades-row">
+        <div id="tradesLabel">Trades 0 / 50</div>
+        <div id="dateLabel">0000-00-00</div>
+      </div>
+      <div class="trades-bar"><span id="tradesBar"></span></div>
+
+      <div class="score-footer-pill" id="scoreFooterPill">AI HOLD</div>
+    </section>
+
+    <section class="log-card">
+      <div class="log-head">
+        <div class="log-title">LOG</div>
+        <div class="log-pills">
+          <div class="mini-pill" id="dayStatePill">DAY READY</div>
+          <div class="mini-pill" id="syncPill">SYNC OK</div>
+        </div>
+      </div>
+
+      <div class="log-lines" id="logLines">
+        <div class="log-line">Keine Einträge.</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const els = {
+      versionText: document.getElementById('versionText'),
+      liveDot: document.getElementById('liveDot'),
+
+      heroTitle: document.getElementById('heroTitle'),
+      heroSubtitle: document.getElementById('heroSubtitle'),
+      heroDetail: document.getElementById('heroDetail'),
+      heroReasons: document.getElementById('heroReasons'),
+      netPnlValue: document.getElementById('netPnlValue'),
+      liveBadge: document.getElementById('liveBadge'),
+      lossLimitPill: document.getElementById('lossLimitPill'),
+      winTargetPill: document.getElementById('winTargetPill'),
+
+      aiSignalValue: document.getElementById('aiSignalValue'),
+      aiConfidenceValue: document.getElementById('aiConfidenceValue'),
+      confidenceBar: document.getElementById('confidenceBar'),
+      biasValue: document.getElementById('biasValue'),
+      buyEdgeValue: document.getElementById('buyEdgeValue'),
+      sellEdgeValue: document.getElementById('sellEdgeValue'),
+      reasonChips: document.getElementById('reasonChips'),
+
+      statusCardValue: document.getElementById('statusCardValue'),
+      buyPostValue: document.getElementById('buyPostValue'),
+      sellPostValue: document.getElementById('sellPostValue'),
+      confCardValue: document.getElementById('confCardValue'),
+
+      manualBuyBtn: document.getElementById('manualBuyBtn'),
+      manualSellBtn: document.getElementById('manualSellBtn'),
+      manualWinBtn: document.getElementById('manualWinBtn'),
+      manualLossBtn: document.getElementById('manualLossBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+
+      autoCard: document.getElementById('autoCard'),
+      autoModeText: document.getElementById('autoModeText'),
+      autoToggleBtn: document.getElementById('autoToggleBtn'),
+
+      queueValue: document.getElementById('queueValue'),
+      processingValue: document.getElementById('processingValue'),
+
+      aiScoreValue: document.getElementById('aiScoreValue'),
+      scoreBar: document.getElementById('scoreBar'),
+      trendValue: document.getElementById('trendValue'),
+      volumeValue: document.getElementById('volumeValue'),
+      structureValue: document.getElementById('structureValue'),
+      volatilityValue: document.getElementById('volatilityValue'),
+      liquidityValue: document.getElementById('liquidityValue'),
+      sessionValue: document.getElementById('sessionValue'),
+      tradesLabel: document.getElementById('tradesLabel'),
+      dateLabel: document.getElementById('dateLabel'),
+      tradesBar: document.getElementById('tradesBar'),
+      scoreFooterPill: document.getElementById('scoreFooterPill'),
+
+      dayStatePill: document.getElementById('dayStatePill'),
+      syncPill: document.getElementById('syncPill'),
+      logLines: document.getElementById('logLines'),
+    };
+
+    function toNum(v, fallback = 0) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function toInt(v, fallback = 0) {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.round(n) : fallback;
+    }
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function fmt1(v) {
+      return toNum(v, 0).toFixed(1);
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function normalizeReasons(reasons) {
+      if (!Array.isArray(reasons)) return [];
+      return reasons
+        .map(r => String(r || '').trim())
+        .filter(Boolean);
+    }
+
+    function renderChips(reasons) {
+      const list = normalizeReasons(reasons);
+      if (!list.length) {
+        els.reasonChips.innerHTML = '<div class="chip">Keine Tags</div>';
+        return;
+      }
+      els.reasonChips.innerHTML = list
+        .map(item => `<div class="chip">${escapeHtml(item)}</div>`)
+        .join('');
+    }
+
+    function renderLogs(logs) {
+      if (!Array.isArray(logs) || !logs.length) {
+        els.logLines.innerHTML = '<div class="log-line">Keine Einträge.</div>';
+        return;
+      }
+
+      els.logLines.innerHTML = logs
+        .map(line => `<div class="log-line">${escapeHtml(line)}</div>`)
+        .join('');
+    }
+
+    function setButtonState(processing) {
+      const busy = processing === 'ON';
+      els.manualBuyBtn.disabled = busy;
+      els.manualSellBtn.disabled = busy;
+    }
+
+    function renderState(data) {
+      const hero = data?.hero || {};
+      const ai = data?.ai || {};
+      const session = data?.session || {};
+      const market = data?.market || {};
+      const cards = data?.cards || {};
+      const limits = data?.limits || {};
+
+      const version = data?.version || 'V22.7.3 HARD LIVE';
+
+      const heroTitle = hero.title || data.title || 'READY';
+      const heroSubtitle = hero.subtitle || data.subtitle || 'System bereit.';
+      const heroDetail = hero.detail || data.detail || '';
+      const liveBadge = hero.liveBadge || data.liveBadge || 'LIVE';
+      const netPnL = toNum(hero.netPnL ?? data.netPnL ?? 0, 0);
+
+      const signal = ai.signal || data.signal || data.aiSignal || 'HOLD';
+      const bias = ai.bias || data.bias || data.aiBias || 'BUY';
+      const confidence = toInt(ai.confidence ?? data.confidence ?? data.aiConfidence ?? 0, 0);
+      const buyEdge = toInt(ai.buyEdge ?? data.buyEdge ?? 0, 0);
+      const sellEdge = toInt(ai.sellEdge ?? data.sellEdge ?? 0, 0);
+      const aiScore = toInt(ai.score ?? data.aiScore ?? data.score ?? 0, 0);
+
+      const reasons = normalizeReasons(ai.reasons || data.reasons || data.aiReasons || []);
+
+      const trend = toNum(market.trend ?? data.trend ?? 0, 0);
+      const volume = toNum(market.volume ?? data.volume ?? 0, 0);
+      const structure = toNum(market.structure ?? data.structure ?? 0, 0);
+      const volatility = toNum(market.volatility ?? data.volatility ?? 0, 0);
+      const liquidity = toNum(market.liquidity ?? data.liquidity ?? 0, 0);
+      const sessionVal = toNum(market.session ?? data.sessionValue ?? data.marketSession ?? 0, 0);
+
+      const date = session.date || data.date || new Date().toISOString().slice(0, 10);
+      const tradesToday = toInt(session.tradesToday ?? data.tradesToday ?? 0, 0);
+      const maxTrades = toInt(session.maxTradesPerDay ?? data.maxTradesPerDay ?? 50, 50);
+      const queue = toInt(session.queue ?? data.queue ?? 0, 0);
+      const processing = session.processing || data.processing || 'OFF';
+      const autoMode = session.autoMode || data.autoMode || 'OFF';
+      const sync = session.sync || data.sync || 'SYNC OK';
+      const dayState = session.dayState || data.dayState || 'DAY READY';
+
+      const statusCard = cards.status || data.statusCard || 'OK';
+      const buyPost = cards.buyPost || data.buyPost || 'OK';
+      const sellPost = cards.sellPost || data.sellPost || 'OK';
+      const confCard = cards.conf || data.conf || `${confidence}%`;
+
+      const lossLimit = toInt(limits.lossLimit ?? data.lossLimit ?? -20, -20);
+      const winTarget = toInt(limits.winTarget ?? data.winTarget ?? 20, 20);
+
+      els.versionText.textContent = `${version} ⚡`;
+      els.heroTitle.textContent = heroTitle;
+      els.heroSubtitle.textContent = heroSubtitle;
+      els.heroDetail.textContent = heroDetail;
+      els.heroReasons.textContent = reasons.length ? reasons.join(' • ') : 'Keine Tags';
+      els.netPnlValue.textContent = String(toInt(netPnL, 0));
+      els.liveBadge.textContent = liveBadge;
+      els.lossLimitPill.textContent = `LOSS LIMIT ${lossLimit}`;
+      els.winTargetPill.textContent = `WIN TARGET +${Math.abs(winTarget)}`;
+
+      els.aiSignalValue.textContent = signal;
+      els.aiConfidenceValue.textContent = `${confidence}%`;
+      els.confidenceBar.style.width = `${clamp(confidence, 0, 100)}%`;
+
+      els.biasValue.textContent = bias;
+      els.buyEdgeValue.textContent = String(buyEdge);
+      els.sellEdgeValue.textContent = String(sellEdge);
+
+      renderChips(reasons);
+
+      els.statusCardValue.textContent = statusCard;
+      els.buyPostValue.textContent = buyPost;
+      els.sellPostValue.textContent = sellPost;
+      els.confCardValue.textContent = confCard;
+
+      els.autoModeText.textContent = autoMode === 'ON' ? 'AUTO ON' : 'AUTO OFF';
+      els.autoToggleBtn.textContent = autoMode === 'ON' ? 'ON' : 'OFF';
+      els.autoCard.classList.toggle('on', autoMode === 'ON');
+
+      els.queueValue.textContent = String(queue);
+      els.processingValue.textContent = processing === 'ON' ? 'ON' : 'OFF';
+
+      els.aiScoreValue.textContent = String(aiScore);
+      els.scoreBar.style.width = `${clamp(aiScore, 0, 100)}%`;
+
+      els.trendValue.textContent = fmt1(trend);
+      els.volumeValue.textContent = fmt1(volume);
+      els.structureValue.textContent = fmt1(structure);
+      els.volatilityValue.textContent = fmt1(volatility);
+      els.liquidityValue.textContent = fmt1(liquidity);
+      els.sessionValue.textContent = fmt1(sessionVal);
+
+      els.tradesLabel.textContent = `Trades ${tradesToday} / ${maxTrades}`;
+      els.dateLabel.textContent = date;
+      els.tradesBar.style.width = `${maxTrades > 0 ? clamp((tradesToday / maxTrades) * 100, 0, 100) : 0}%`;
+
+      if (processing === 'ON') {
+        els.scoreFooterPill.textContent = 'PROCESSING';
+      } else if (signal === 'BUY') {
+        els.scoreFooterPill.textContent = 'AI BUY';
+      } else if (signal === 'SELL') {
+        els.scoreFooterPill.textContent = 'AI SELL';
+      } else if (signal === 'PAUSED') {
+        els.scoreFooterPill.textContent = 'AI PAUSED';
+      } else {
+        els.scoreFooterPill.textContent = 'AI HOLD';
+      }
+
+      els.dayStatePill.textContent = dayState;
+      els.syncPill.textContent = sync;
+
+      renderLogs(data.logs);
+      setButtonState(processing);
+
+      const dotOn = Boolean(hero.dot ?? data.dot ?? true);
+      els.liveDot.style.opacity = dotOn ? '1' : '.35';
+    }
+
+    async function apiPost(url) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || `POST ${url} failed`);
+      }
+      return data;
+    }
+
+    async function loadState() {
+      try {
+        const res = await fetch('/api/state', { cache: 'no-store' });
+        const data = await res.json();
+        renderState(data);
+      } catch (err) {
+        console.error('loadState failed', err);
+      }
+    }
+
+    els.autoToggleBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/auto/toggle');
+        renderState(data);
+      } catch (err) {
+        console.error('toggle auto failed', err);
+      }
     });
-  } else if (outcome === 'LOSS') {
-    state.learning.lossCount += 1;
-    state.learning.lastOutcome = 'LOSS';
-    state.learning.drift = clamp(
-      state.learning.drift + CONFIG.ai.thresholdAdjustStep,
-      -CONFIG.ai.maxThresholdDrift,
-      CONFIG.ai.maxThresholdDrift
-    );
-    addLog(`Learning LOSS | drift ${state.learning.drift}`, {
-      signature: `learn-loss-${state.learning.lossCount}-${state.learning.drift}`,
+
+    els.resetBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/reset');
+        renderState(data);
+      } catch (err) {
+        console.error('reset failed', err);
+      }
     });
-  }
-}
 
-/* =========================================================
-   AI scoring
-   ========================================================= */
-
-function computeAiMetrics() {
-  const m = state.market;
-
-  const trendBuy = m.trend;
-  const trendSell = 100 - m.trend;
-
-  const structureBuy = m.structure;
-  const structureSell = 100 - m.structure;
-
-  const volumeSupport = m.volume;
-  const liquiditySupport = m.liquidity;
-  const calmness = 100 - m.volatility;
-  const sessionSupport = m.session;
-
-  const buyComposite = round1(
-    trendBuy * 0.26 +
-    structureBuy * 0.23 +
-    volumeSupport * 0.15 +
-    liquiditySupport * 0.15 +
-    calmness * 0.09 +
-    sessionSupport * 0.12
-  );
-
-  const sellComposite = round1(
-    trendSell * 0.26 +
-    structureSell * 0.23 +
-    volumeSupport * 0.15 +
-    liquiditySupport * 0.15 +
-    calmness * 0.09 +
-    sessionSupport * 0.12
-  );
-
-  const buyEdgeRaw = round1(
-    (m.trend - 50) * 0.85 +
-    (m.structure - 50) * 0.75 +
-    (m.volume - 50) * 0.30 +
-    (m.liquidity - 50) * 0.28 -
-    Math.max(0, m.volatility - 60) * 0.40 +
-    (m.session - 50) * 0.20
-  );
-
-  const sellEdgeRaw = round1(
-    ((100 - m.trend) - 50) * 0.85 +
-    ((100 - m.structure) - 50) * 0.75 +
-    (m.volume - 50) * 0.30 +
-    (m.liquidity - 50) * 0.28 -
-    Math.max(0, m.volatility - 60) * 0.40 +
-    (m.session - 50) * 0.20
-  );
-
-  const rawBias = buyComposite >= sellComposite ? 'BUY' : 'SELL';
-
-  return {
-    buyComposite,
-    sellComposite,
-    buyEdge: round1(clamp(buyEdgeRaw + 30, 0, 99)),
-    sellEdge: round1(clamp(sellEdgeRaw + 30, 0, 99)),
-    rawBias,
-  };
-}
-
-function computeConfidence(metrics) {
-  const dominant = Math.max(metrics.buyComposite, metrics.sellComposite);
-  const spread = Math.abs(metrics.buyComposite - metrics.sellComposite);
-  const m = state.market;
-
-  let confidence =
-    dominant * 0.42 +
-    spread * 0.85 +
-    (100 - m.volatility) * 0.18 +
-    m.liquidity * 0.10 +
-    m.session * 0.08;
-
-  if (m.volatility > 78) confidence -= 14;
-  else if (m.volatility > 66) confidence -= 8;
-
-  if (m.liquidity < 42) confidence -= 10;
-  else if (m.liquidity < 50) confidence -= 4;
-
-  if (m.session < 38) confidence -= 8;
-  else if (m.session < 45) confidence -= 3;
-
-  if (m.volume < 45) confidence -= 4;
-
-  return Math.round(clamp(confidence / 1.15, 24, 95));
-}
-
-function computeScore() {
-  const m = state.market;
-
-  const score = (
-    m.trend * 0.17 +
-    m.structure * 0.22 +
-    m.volume * 0.15 +
-    m.liquidity * 0.16 +
-    (100 - m.volatility) * 0.14 +
-    m.session * 0.16
-  );
-
-  return Math.round(clamp(score, 0, 99));
-}
-
-/* =========================================================
-   Stable bias / stabilizer
-   ========================================================= */
-
-function updateStableBias(metrics) {
-  const candidate = metrics.rawBias;
-
-  if (state.engine.regimeCandidate === candidate) {
-    state.engine.regimeTicks += 1;
-  } else {
-    state.engine.regimeCandidate = candidate;
-    state.engine.regimeTicks = 1;
-  }
-
-  if (state.engine.regimeTicks >= CONFIG.ai.regimeConfirmTicks) {
-    state.engine.stableBias = candidate;
-  }
-
-  return state.engine.stableBias;
-}
-
-/* =========================================================
-   Watch / Ready / Fire
-   ========================================================= */
-
-function evaluateStage(metrics, confidence, score) {
-  const m = state.market;
-  const th = getAdaptiveThresholds();
-  const bias = state.engine.stableBias;
-  const edge = bias === 'BUY' ? metrics.buyEdge : metrics.sellEdge;
-
-  const hardBlockFire =
-    m.volatility > CONFIG.ai.maxVolatilityForFire ||
-    m.liquidity < CONFIG.ai.minLiquidityForFire ||
-    m.session < CONFIG.ai.minSessionForFire;
-
-  const softPenalty =
-    (m.volume < 55 ? 1 : 0) +
-    (m.liquidity < 56 ? 1 : 0) +
-    (m.session < 50 ? 1 : 0) +
-    (m.volatility > 62 ? 1 : 0);
-
-  let candidateStage = 'HOLD';
-  let setupConfirmed = false;
-  let signal = 'HOLD';
-  let detail = 'Kein Setup aktuell.';
-
-  const passesWatch =
-    score >= th.watchScoreMin &&
-    edge >= (bias === 'BUY' ? th.buyEdgeMinWatch : th.sellEdgeMinWatch) &&
-    confidence >= th.confidenceMinWatch;
-
-  const passesReady =
-    score >= th.readyScoreMin &&
-    edge >= (bias === 'BUY' ? th.buyEdgeMinReady : th.sellEdgeMinReady) &&
-    confidence >= th.confidenceMinReady;
-
-  const passesFire =
-    score >= th.fireScoreMin &&
-    edge >= (bias === 'BUY' ? th.buyEdgeMinFire : th.sellEdgeMinFire) &&
-    confidence >= th.confidenceMinFire &&
-    !hardBlockFire &&
-    softPenalty <= 1;
-
-  if (passesFire) {
-    candidateStage = 'FIRE';
-    setupConfirmed = true;
-    signal = bias;
-    detail = 'Signal bestätigt.';
-  } else if (passesReady) {
-    candidateStage = 'READY';
-    signal = 'HOLD';
-    detail = bias === 'BUY' ? 'BUY Setup baut sich auf.' : 'SELL Setup baut sich auf.';
-  } else if (passesWatch) {
-    candidateStage = 'WATCH';
-    signal = 'HOLD';
-    detail = confidence < 46 ? 'Unsichere Marktlage.' : 'Setup baut sich auf.';
-  } else {
-    candidateStage = 'HOLD';
-    signal = 'HOLD';
-    detail = confidence < 42 ? 'Kein Setup aktuell.' : 'Markt beobachten.';
-  }
-
-  if (hardBlockFire && candidateStage === 'FIRE') {
-    candidateStage = 'WATCH';
-    signal = 'HOLD';
-    setupConfirmed = false;
-    detail = 'Markt instabil. Beobachtung aktiv.';
-  }
-
-  if (candidateStage === 'READY' && softPenalty >= 3) {
-    candidateStage = 'WATCH';
-    signal = 'HOLD';
-    setupConfirmed = false;
-    detail = 'Setup baut sich auf.';
-  }
-
-  if (confidence < th.confidenceMinWatch) {
-    candidateStage = 'HOLD';
-    signal = 'HOLD';
-    setupConfirmed = false;
-    detail = 'Kein Setup aktuell.';
-  }
-
-  return {
-    candidateStage,
-    setupConfirmed,
-    signal,
-    detail,
-  };
-}
-
-function stabilizeStage(candidateStage) {
-  if (state.engine.candidateStage === candidateStage) {
-    state.engine.candidateStageTicks += 1;
-  } else {
-    state.engine.candidateStage = candidateStage;
-    state.engine.candidateStageTicks = 1;
-  }
-
-  if (state.engine.candidateStageTicks >= CONFIG.ai.stateConfirmTicks) {
-    return candidateStage;
-  }
-
-  return state.ai.stage;
-}
-
-/* =========================================================
-   AI text mapping
-   ========================================================= */
-
-function buildAiReasons(confidence) {
-  const tags = regimeTags(state.market);
-  if (confidence < 52) tags.push('Low Confidence');
-  return tags.slice(0, 7);
-}
-
-function mapHero(stage, signal, confidence) {
-  if (state.ai.paused) {
-    if (state.ai.pauseReason === 'WIN_TARGET') {
-      return {
-        status: 'TARGET',
-        subtitle: 'Win Target erreicht.',
-        detail: 'AI pausiert wegen Win Target',
-        liveBadge: 'WIN TARGET',
-      };
-    }
-    if (state.ai.pauseReason === 'LOSS_LIMIT') {
-      return {
-        status: 'SESSION_LIMIT',
-        subtitle: 'Loss Limit erreicht.',
-        detail: 'AI pausiert wegen Loss Limit',
-        liveBadge: 'LOSS LIMIT',
-      };
-    }
-    return {
-      status: 'SESSION_LIMIT',
-      subtitle: 'Tageslimit erreicht.',
-      detail: 'AI pausiert wegen Tageslimit',
-      liveBadge: 'SESSION LIMIT',
-    };
-  }
-
-  if (Date.now() < state.session.cooldownUntil) {
-    return {
-      status: 'LOCKED',
-      subtitle: 'Kurze Schutzpause aktiv.',
-      detail: 'Cooldown aktiv.',
-      liveBadge: `COOLDOWN ${Math.max(1, Math.ceil((state.session.cooldownUntil - Date.now()) / 1000))}s`,
-    };
-  }
-
-  if (stage === 'FIRE') {
-    return {
-      status: 'LOCKED',
-      subtitle: signal === 'BUY' ? 'BUY Auto gesendet' : 'SELL Auto gesendet',
-      detail: 'Order wird verarbeitet',
-      liveBadge: 'PROCESSING',
-    };
-  }
-
-  if (stage === 'READY') {
-    return {
-      status: 'READY',
-      subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'AI bereit für Entry.',
-      detail: signal === 'BUY' ? 'BUY Setup baut sich auf.' : 'SELL Setup baut sich auf.',
-      liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
-    };
-  }
-
-  if (stage === 'WATCH') {
-    return {
-      status: 'READY',
-      subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'System bereit.',
-      detail: confidence < 46 ? 'Unsichere Marktlage.' : 'Setup baut sich auf.',
-      liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
-    };
-  }
-
-  return {
-    status: 'READY',
-    subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'System bereit.',
-    detail: 'Kein Setup aktuell.',
-    liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
-  };
-}
-
-/* =========================================================
-   Fire / order simulation
-   ========================================================= */
-
-function canFire() {
-  if (!state.session.autoMode) return false;
-  if (state.ai.paused) return false;
-  if (state.session.processing) return false;
-  if (Date.now() < state.session.cooldownUntil) return false;
-  if (state.session.tradesToday >= state.session.maxTradesPerDay) return false;
-  if (state.session.netPnL >= state.session.winTarget) return false;
-  if (state.session.netPnL <= state.session.lossLimit) return false;
-  return true;
-}
-
-function simulateTradeOutcome(side) {
-  const conf = safeNum(state.ai.confidence, 0);
-  const edge = side === 'BUY' ? safeNum(state.ai.buyEdge, 0) : safeNum(state.ai.sellEdge, 0);
-  const score = safeNum(state.ai.score, 0);
-  const volPenalty = Math.max(0, safeNum(state.market.volatility, 50) - 58) * 0.32;
-
-  const quality = conf * 0.42 + edge * 0.33 + score * 0.25 - volPenalty;
-  const winChance = clamp(quality / 100, 0.28, 0.78);
-  const isWin = Math.random() < winChance;
-
-  return isWin ? 4 : -4;
-}
-
-function afterTradeResult(pnl) {
-  state.session.netPnL += pnl;
-
-  if (pnl > 0) {
-    addLog(`WIN PnL +${pnl}`, { signature: `win-${Date.now()}` });
-    learnFromOutcome('WIN');
-  } else {
-    addLog(`LOSS PnL ${pnl}`, { signature: `loss-${Date.now()}` });
-    learnFromOutcome('LOSS');
-  }
-
-  if (state.session.netPnL >= state.session.winTarget) {
-    state.ai.paused = true;
-    state.ai.pauseReason = 'WIN_TARGET';
-    addLog('AI pausiert wegen Win Target', { force: true, signature: 'pause-win-target' });
-  } else if (state.session.netPnL <= state.session.lossLimit) {
-    state.ai.paused = true;
-    state.ai.pauseReason = 'LOSS_LIMIT';
-    addLog('AI pausiert wegen Loss Limit', { force: true, signature: 'pause-loss-limit' });
-  } else if (state.session.tradesToday >= state.session.maxTradesPerDay) {
-    state.ai.paused = true;
-    state.ai.pauseReason = 'DAY_LIMIT';
-    addLog('AI pausiert wegen Tageslimit', { force: true, signature: 'pause-day-limit' });
-  }
-}
-
-function fireOrder(side) {
-  state.session.processing = true;
-  state.session.queue = 1;
-  state.session.lastOrderSide = side;
-  state.engine.lastFireAt = Date.now();
-
-  addLog(`AI ${side} confirmed`, { signature: `ai-confirm-${side}-${Date.now()}` });
-  addLog(`Order wird verarbeitet (${side})`, { signature: `order-processing-${side}-${Date.now()}` });
-  addLog(`Order ${side} queued`, { signature: `order-queued-${side}-${Date.now()}` });
-
-  setTimeout(() => {
-    addLog(`Order ausgeführt (${side})`, { signature: `order-filled-${side}-${Date.now()}` });
-    state.session.processing = false;
-    state.session.queue = 0;
-    state.session.tradesToday += 1;
-    state.session.cooldownUntil = Date.now() + CONFIG.session.cooldownMs;
-
-    const pnl = simulateTradeOutcome(side);
-    afterTradeResult(pnl);
-  }, 700);
-}
-
-/* =========================================================
-   Main AI loop
-   ========================================================= */
-
-function processAiTick() {
-  resetDayIfNeeded();
-  generateMarket();
-
-  const metrics = computeAiMetrics();
-  const stableBias = updateStableBias(metrics);
-  const confidence = computeConfidence(metrics);
-  const score = computeScore();
-  const reasons = buildAiReasons(confidence);
-
-  state.ai.score = score;
-  state.ai.confidence = confidence;
-  state.ai.buyEdge = Math.max(0, Math.round(metrics.buyEdge));
-  state.ai.sellEdge = Math.max(0, Math.round(metrics.sellEdge));
-  state.ai.bias = state.ai.paused ? 'PAUSED' : stableBias;
-
-  const evaluated = evaluateStage(metrics, confidence, score);
-  let stage = stabilizeStage(evaluated.candidateStage);
-
-  if (state.ai.paused) {
-    stage = 'PAUSED';
-  }
-
-  let signal = evaluated.signal;
-  let setupConfirmed = evaluated.setupConfirmed;
-
-  if (stage === 'PAUSED') {
-    signal = 'PAUSED';
-    setupConfirmed = false;
-  } else if (stage === 'HOLD' || stage === 'WATCH' || stage === 'READY') {
-    signal = 'HOLD';
-    setupConfirmed = false;
-  } else if (stage === 'FIRE') {
-    signal = stableBias;
-    setupConfirmed = true;
-  }
-
-  if (signal === 'HOLD') {
-    setupConfirmed = false;
-  }
-
-  state.ai.stage = stage;
-  state.ai.signal = signal;
-  state.ai.setupConfirmed = setupConfirmed;
-  state.ai.reasons = reasons;
-  state.ai.summary =
-    signal === 'PAUSED'
-      ? 'AI Paused'
-      : signal === 'HOLD'
-        ? 'AI Hold'
-        : `AI ${signal}`;
-  state.ai.watchMode = stage === 'WATCH';
-
-  const hero = mapHero(stage, signal, confidence);
-  state.system.status = hero.status;
-  state.system.subtitle = hero.subtitle;
-  state.system.detail = hero.detail;
-  state.system.liveBadge = hero.liveBadge;
-
-  state.manual.conf = state.ai.confidence;
-  state.manual.status = 'OK';
-  state.manual.buyPost = 'OK';
-  state.manual.sellPost = 'OK';
-
-  const stageKey = `${stage}|${signal}|${state.ai.bias}`;
-  const reasonKey = reasons.join('-');
-
-  if (stageKey !== state.engine.lastStageLogged) {
-    state.engine.lastStageLogged = stageKey;
-
-    if (signal === 'PAUSED') {
-      addStateLog('AI Paused', `state-paused-${state.ai.pauseReason}`);
-    } else if (stage === 'FIRE') {
-      addStateLog(`AI Fire ${signal}`, `state-fire-${signal}`);
-    } else if (stage === 'READY') {
-      addStateLog(`AI Ready ${state.ai.bias}`, `state-ready-${state.ai.bias}`);
-    } else if (stage === 'WATCH') {
-      addStateLog(`AI Watch ${state.ai.bias}`, `state-watch-${state.ai.bias}`);
-    } else {
-      addStateLog(`AI Hold ${state.ai.bias}`, `state-hold-${state.ai.bias}`);
-    }
-  }
-
-  const holdSignature = `${stage}|${reasonKey}`;
-  if ((stage === 'HOLD' || stage === 'WATCH') && holdSignature !== state.engine.lastHoldReason) {
-    state.engine.lastHoldReason = holdSignature;
-    addStateLog(
-      `${state.ai.summary} • ${reasons.join(' • ')}`,
-      `hold-reasons-${holdSignature}`
-    );
-  }
-
-  if (stage === 'FIRE' && canFire()) {
-    fireOrder(signal);
-  }
-
-  if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
-    state.ai.paused = true;
-    state.ai.pauseReason = 'DAY_LIMIT';
-    addLog('AI pausiert wegen Tageslimit', { force: true, signature: 'pause-day-limit' });
-  }
-}
-
-/* =========================================================
-   Public state for frontend
-   ========================================================= */
-
-function getPublicState() {
-  const tags = state.ai.reasons.map(normalizeTag);
-
-  return {
-    ok: true,
-    version: state.version,
-
-    hero: {
-      title: state.system.status,
-      subtitle: state.system.subtitle,
-      detail: state.system.detail,
-      netPnL: state.session.netPnL,
-      liveBadge: state.system.liveBadge,
-      dot: state.system.dot,
-    },
-
-    ai: {
-      score: state.ai.score,
-      signal: state.ai.signal,
-      bias: state.ai.bias,
-      confidence: state.ai.confidence,
-      buyEdge: state.ai.buyEdge,
-      sellEdge: state.ai.sellEdge,
-      stage: state.ai.stage,
-      setupConfirmed: state.ai.setupConfirmed,
-      reasons: tags,
-      summary: state.ai.summary,
-      paused: state.ai.paused,
-      pauseReason: state.ai.pauseReason,
-    },
-
-    session: {
-      date: state.session.date,
-      tradesToday: state.session.tradesToday,
-      maxTradesPerDay: state.session.maxTradesPerDay,
-      tradesLabel: `${state.session.tradesToday} / ${state.session.maxTradesPerDay}`,
-      netPnL: state.session.netPnL,
-      queue: state.session.queue,
-      processing: state.session.processing ? 'ON' : 'OFF',
-      autoMode: state.session.autoMode ? 'ON' : 'OFF',
-      sync: state.session.syncOk ? 'SYNC OK' : 'SYNC FAIL',
-      cooldownActive: Date.now() < state.session.cooldownUntil,
-      cooldownLeftSec: Math.max(0, Math.ceil((state.session.cooldownUntil - Date.now()) / 1000)),
-      dayState:
-        state.ai.paused && state.ai.pauseReason === 'DAY_LIMIT'
-          ? 'DAY LIMIT'
-          : state.ai.paused && state.ai.pauseReason === 'WIN_TARGET'
-            ? 'WIN TARGET'
-            : state.ai.paused && state.ai.pauseReason === 'LOSS_LIMIT'
-              ? 'LOSS LIMIT'
-              : 'DAY READY',
-    },
-
-    market: {
-      trend: state.market.trend,
-      volume: state.market.volume,
-      structure: state.market.structure,
-      volatility: state.market.volatility,
-      liquidity: state.market.liquidity,
-      session: state.market.session,
-    },
-
-    cards: {
-      status: state.manual.status,
-      buyPost: state.manual.buyPost,
-      sellPost: state.manual.sellPost,
-      conf: `${state.ai.confidence}%`,
-    },
-
-    limits: {
-      lossLimit: CONFIG.session.lossLimit,
-      winTarget: CONFIG.session.winTarget,
-    },
-
-    logs: state.logs,
-  };
-}
-
-/* =========================================================
-   Manual actions
-   ========================================================= */
-
-app.post('/api/auto/toggle', (_req, res) => {
-  state.session.autoMode = !state.session.autoMode;
-  addLog(`AI Auto ${state.session.autoMode ? 'EIN' : 'AUS'}`, {
-    force: true,
-    signature: `auto-toggle-${state.session.autoMode}-${Date.now()}`,
-  });
-  res.json(getPublicState());
-});
-
-app.post('/api/reset', (_req, res) => {
-  state.session.tradesToday = 0;
-  state.session.netPnL = 0;
-  state.session.cooldownUntil = 0;
-  state.session.processing = false;
-  state.session.queue = 0;
-  state.ai.paused = false;
-  state.ai.pauseReason = '';
-  state.engine.lastDecisionKey = '';
-  state.engine.lastHoldReason = '';
-  state.engine.lastStageLogged = '';
-  state.engine.lastBiasLogged = '';
-  addLog('Manual reset', { force: true, signature: `manual-reset-${Date.now()}` });
-  res.json(getPublicState());
-});
-
-app.post('/api/manual/buy', (_req, res) => {
-  if (state.session.processing) {
-    return res.status(409).json({ ok: false, error: 'Processing active' });
-  }
-  fireOrder('BUY');
-  res.json(getPublicState());
-});
-
-app.post('/api/manual/sell', (_req, res) => {
-  if (state.session.processing) {
-    return res.status(409).json({ ok: false, error: 'Processing active' });
-  }
-  fireOrder('SELL');
-  res.json(getPublicState());
-});
-
-app.post('/api/manual/win', (_req, res) => {
-  afterTradeResult(4);
-  res.json(getPublicState());
-});
-
-app.post('/api/manual/loss', (_req, res) => {
-  afterTradeResult(-4);
-  res.json(getPublicState());
-});
-
-/* =========================================================
-   Read endpoints
-   ========================================================= */
-
-app.get('/api/state', (_req, res) => {
-  res.json(getPublicState());
-});
-
-app.get('/api/status', (_req, res) => {
-  res.json(getPublicState());
-});
-
-app.get('/health', (_req, res) => {
-  res.json({
-    ok: true,
-    version: state.version,
-    uptime: process.uptime(),
-  });
-});
-
-/* =========================================================
-   Static frontend
-   ========================================================= */
-
-const publicDir = path.join(process.cwd(), 'public');
-app.use(express.static(publicDir));
-
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(publicDir, 'index.html'));
-});
-
-/* =========================================================
-   Boot
-   ========================================================= */
-
-setInterval(processAiTick, CONFIG.tickMs);
-processAiTick();
-
-app.listen(PORT, () => {
-  console.log(`V22.7.4 listening on :${PORT}`);
-});
+    els.manualBuyBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/manual/buy');
+        renderState(data);
+      } catch (err) {
+        console.error('manual buy failed', err);
+      }
+    });
+
+    els.manualSellBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/manual/sell');
+        renderState(data);
+      } catch (err) {
+        console.error('manual sell failed', err);
+      }
+    });
+
+    els.manualWinBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/manual/win');
+        renderState(data);
+      } catch (err) {
+        console.error('manual win failed', err);
+      }
+    });
+
+    els.manualLossBtn.addEventListener('click', async () => {
+      try {
+        const data = await apiPost('/api/manual/loss');
+        renderState(data);
+      } catch (err) {
+        console.error('manual loss failed', err);
+      }
+    });
+
+    loadState();
+    setInterval(loadState, 1500);
+  </script>
+</body>
+</html>
