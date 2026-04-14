@@ -10,12 +10,12 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.7.8 HARD LIVE
-   - stabil backend
-   - BUY/SELL im WATCH/READY früher sichtbar
-   - HOLD nicht mehr zu hart
-   - FIRE weiter strikt
-   - keine HTML/CSS Änderung nötig
+   V22.7.9 HARD LIVE
+   - stronger directional logic
+   - less unnecessary HOLD
+   - stable watch / ready / fire pipeline
+   - safe numbers everywhere
+   - no frontend / optic changes needed
    ========================================================= */
 
 const CONFIG = {
@@ -31,20 +31,20 @@ const CONFIG = {
   ai: {
     enableLearning: true,
 
-    watchScoreMin: 56,
-    readyScoreMin: 66,
+    watchScoreMin: 55,
+    readyScoreMin: 64,
     fireScoreMin: 76,
 
-    buyEdgeMinWatch: 12,
-    buyEdgeMinReady: 22,
+    buyEdgeMinWatch: 10,
+    buyEdgeMinReady: 20,
     buyEdgeMinFire: 38,
 
-    sellEdgeMinWatch: 12,
-    sellEdgeMinReady: 22,
+    sellEdgeMinWatch: 10,
+    sellEdgeMinReady: 20,
     sellEdgeMinFire: 38,
 
-    confidenceMinWatch: 40,
-    confidenceMinReady: 52,
+    confidenceMinWatch: 38,
+    confidenceMinReady: 50,
     confidenceMinFire: 72,
 
     stateConfirmTicks: 2,
@@ -57,13 +57,15 @@ const CONFIG = {
     thresholdAdjustStep: 1,
     maxThresholdDrift: 8,
 
-    minDirectionalSpreadForWatchSignal: 6,
-    minDirectionalSpreadForReadySignal: 9,
+    minDirectionalSpreadForWatchSignal: 4,
+    minDirectionalSpreadForReadySignal: 7,
     minDirectionalSpreadForFireSignal: 14,
 
-    strongEdgeMin: 55,
-    strongSpreadMin: 20,
-    strongConfidenceMin: 40,
+    strongEdgeMin: 52,
+    strongSpreadMin: 16,
+    strongConfidenceMin: 36,
+
+    holdOnlyBelowConfidence: 30,
   },
 
   log: {
@@ -89,6 +91,10 @@ function safeNumber(v, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function safeRound(v, fallback = 0) {
+  return round1(safeNumber(v, fallback));
+}
+
 function nowIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -109,7 +115,7 @@ function normalizeTag(text) {
    ========================================================= */
 
 const state = {
-  version: 'V22.7.8 HARD LIVE',
+  version: 'V22.7.9 HARD LIVE',
 
   system: {
     status: 'READY',
@@ -257,41 +263,41 @@ function generateMarket() {
   let liquidityTarget = 65;
   let sessionTarget = 54;
 
-  if (phase < 0.22) {
-    trendTarget = 82;
-    structureTarget = 84;
-    volumeTarget = 72;
-    volatilityTarget = 38;
-    liquidityTarget = 78;
-    sessionTarget = 64;
-  } else if (phase < 0.42) {
+  if (phase < 0.18) {
+    trendTarget = 84;
+    structureTarget = 86;
+    volumeTarget = 74;
+    volatilityTarget = 34;
+    liquidityTarget = 80;
+    sessionTarget = 66;
+  } else if (phase < 0.36) {
     trendTarget = 72;
     structureTarget = 76;
-    volumeTarget = 62;
-    volatilityTarget = 48;
-    liquidityTarget = 70;
+    volumeTarget = 64;
+    volatilityTarget = 46;
+    liquidityTarget = 72;
     sessionTarget = 58;
-  } else if (phase < 0.62) {
-    trendTarget = 45;
-    structureTarget = 52;
-    volumeTarget = 66;
-    volatilityTarget = 62;
-    liquidityTarget = 54;
-    sessionTarget = 48;
-  } else if (phase < 0.82) {
-    trendTarget = 28;
-    structureTarget = 42;
-    volumeTarget = 48;
-    volatilityTarget = 76;
-    liquidityTarget = 46;
-    sessionTarget = 40;
-  } else {
+  } else if (phase < 0.56) {
     trendTarget = 58;
-    structureTarget = 68;
-    volumeTarget = 80;
-    volatilityTarget = 28;
-    liquidityTarget = 82;
-    sessionTarget = 60;
+    structureTarget = 66;
+    volumeTarget = 60;
+    volatilityTarget = 52;
+    liquidityTarget = 66;
+    sessionTarget = 52;
+  } else if (phase < 0.76) {
+    trendTarget = 42;
+    structureTarget = 50;
+    volumeTarget = 54;
+    volatilityTarget = 64;
+    liquidityTarget = 54;
+    sessionTarget = 46;
+  } else {
+    trendTarget = 28;
+    structureTarget = 40;
+    volumeTarget = 48;
+    volatilityTarget = 78;
+    liquidityTarget = 44;
+    sessionTarget = 40;
   }
 
   driftMetric('trend', trendTarget);
@@ -507,29 +513,95 @@ function updateStableBias(metrics) {
    Direction helpers
    ========================================================= */
 
+function getBiasEdge(metrics, side) {
+  return side === 'BUY' ? metrics.buyEdge : metrics.sellEdge;
+}
+
+function getOppositeEdge(metrics, side) {
+  return side === 'BUY' ? metrics.sellEdge : metrics.buyEdge;
+}
+
 function isStrongDirectionalSide(side, metrics, confidence) {
   const m = state.market;
   const spread = safeNumber(metrics.directionalSpread, 0);
+  const edge = getBiasEdge(metrics, side);
+  const opp = getOppositeEdge(metrics, side);
 
   if (side === 'BUY') {
     return (
-      metrics.buyEdge >= CONFIG.ai.strongEdgeMin &&
-      (metrics.buyEdge - metrics.sellEdge) >= CONFIG.ai.strongSpreadMin &&
+      edge >= CONFIG.ai.strongEdgeMin &&
+      (edge - opp) >= CONFIG.ai.strongSpreadMin &&
       spread >= CONFIG.ai.strongSpreadMin &&
       confidence >= CONFIG.ai.strongConfidenceMin &&
-      m.trend >= 60 &&
-      m.structure >= 60
+      m.trend >= 58 &&
+      m.structure >= 58
     );
   }
 
   return (
-    metrics.sellEdge >= CONFIG.ai.strongEdgeMin &&
-    (metrics.sellEdge - metrics.buyEdge) >= CONFIG.ai.strongSpreadMin &&
+    edge >= CONFIG.ai.strongEdgeMin &&
+    (edge - opp) >= CONFIG.ai.strongSpreadMin &&
     spread >= CONFIG.ai.strongSpreadMin &&
     confidence >= CONFIG.ai.strongConfidenceMin &&
-    m.trend <= 40 &&
-    m.structure <= 40
+    m.trend <= 42 &&
+    m.structure <= 42
   );
+}
+
+function chooseDisplaySignal(stage, stableBias, metrics, confidence) {
+  const spread = safeNumber(metrics.directionalSpread, 0);
+  const biasEdge = getBiasEdge(metrics, stableBias);
+  const oppEdge = getOppositeEdge(metrics, stableBias);
+  const strongDirectional = isStrongDirectionalSide(stableBias, metrics, confidence);
+
+  if (stage === 'PAUSED') {
+    return { signal: 'PAUSED', setupConfirmed: false };
+  }
+
+  if (stage === 'FIRE') {
+    if (spread >= CONFIG.ai.minDirectionalSpreadForFireSignal) {
+      return { signal: stableBias, setupConfirmed: true };
+    }
+    return { signal: 'HOLD', setupConfirmed: false };
+  }
+
+  if (stage === 'READY') {
+    if (
+      strongDirectional ||
+      (
+        spread >= CONFIG.ai.minDirectionalSpreadForReadySignal &&
+        biasEdge >= 20 &&
+        biasEdge > oppEdge
+      )
+    ) {
+      return { signal: stableBias, setupConfirmed: false };
+    }
+    return { signal: 'HOLD', setupConfirmed: false };
+  }
+
+  if (stage === 'WATCH') {
+    if (
+      strongDirectional ||
+      (
+        spread >= CONFIG.ai.minDirectionalSpreadForWatchSignal &&
+        biasEdge >= 14 &&
+        confidence >= CONFIG.ai.confidenceMinWatch
+      )
+    ) {
+      return { signal: stableBias, setupConfirmed: false };
+    }
+    return { signal: 'HOLD', setupConfirmed: false };
+  }
+
+  if (confidence <= CONFIG.ai.holdOnlyBelowConfidence) {
+    return { signal: 'HOLD', setupConfirmed: false };
+  }
+
+  if (strongDirectional) {
+    return { signal: stableBias, setupConfirmed: false };
+  }
+
+  return { signal: 'HOLD', setupConfirmed: false };
 }
 
 /* =========================================================
@@ -540,7 +612,8 @@ function evaluateStage(metrics, confidence, score) {
   const m = state.market;
   const th = getAdaptiveThresholds();
   const bias = state.engine.stableBias;
-  const edge = bias === 'BUY' ? metrics.buyEdge : metrics.sellEdge;
+  const edge = getBiasEdge(metrics, bias);
+  const oppEdge = getOppositeEdge(metrics, bias);
   const spread = metrics.directionalSpread;
 
   const blockers = [];
@@ -557,7 +630,8 @@ function evaluateStage(metrics, confidence, score) {
     (
       score >= th.watchScoreMin &&
       edge >= (bias === 'BUY' ? th.buyEdgeMinWatch : th.sellEdgeMinWatch) &&
-      confidence >= th.confidenceMinWatch
+      confidence >= th.confidenceMinWatch &&
+      edge > oppEdge
     ) || strongDirectional;
 
   const passesReady =
@@ -565,11 +639,12 @@ function evaluateStage(metrics, confidence, score) {
       score >= th.readyScoreMin &&
       edge >= (bias === 'BUY' ? th.buyEdgeMinReady : th.sellEdgeMinReady) &&
       confidence >= th.confidenceMinReady &&
-      spread >= CONFIG.ai.minDirectionalSpreadForReadySignal
+      spread >= CONFIG.ai.minDirectionalSpreadForReadySignal &&
+      edge > oppEdge
     ) || (
       strongDirectional &&
-      confidence >= 44 &&
-      score >= th.watchScoreMin
+      score >= th.watchScoreMin &&
+      confidence >= 42
     );
 
   const passesFire =
@@ -577,6 +652,7 @@ function evaluateStage(metrics, confidence, score) {
     edge >= (bias === 'BUY' ? th.buyEdgeMinFire : th.sellEdgeMinFire) &&
     confidence >= th.confidenceMinFire &&
     spread >= CONFIG.ai.minDirectionalSpreadForFireSignal &&
+    edge > oppEdge &&
     blockers.length === 0;
 
   if (passesFire) {
@@ -598,7 +674,7 @@ function evaluateStage(metrics, confidence, score) {
     detail = 'Markt instabil. Beobachtung aktiv.';
   }
 
-  if (confidence < 50 && candidateStage !== 'FIRE' && candidateStage !== 'READY') {
+  if (confidence < 50 && candidateStage !== 'FIRE' && candidateStage !== 'READY' && !strongDirectional) {
     detail = 'Unsichere Marktlage.';
   }
 
@@ -628,42 +704,6 @@ function stabilizeStage(candidateStage) {
   }
 
   return state.ai.stage;
-}
-
-function resolveSignal(stage, stableBias, metrics, confidence) {
-  const spread = safeNumber(metrics.directionalSpread, 0);
-  const strongDirectional = isStrongDirectionalSide(stableBias, metrics, confidence);
-
-  if (stage === 'PAUSED') {
-    return { signal: 'PAUSED', setupConfirmed: false };
-  }
-
-  if (stage === 'FIRE') {
-    if (spread >= CONFIG.ai.minDirectionalSpreadForFireSignal) {
-      return { signal: stableBias, setupConfirmed: true };
-    }
-    return { signal: 'HOLD', setupConfirmed: false };
-  }
-
-  if (stage === 'READY') {
-    if (strongDirectional || spread >= CONFIG.ai.minDirectionalSpreadForReadySignal) {
-      return { signal: stableBias, setupConfirmed: false };
-    }
-    return { signal: 'HOLD', setupConfirmed: false };
-  }
-
-  if (stage === 'WATCH') {
-    if (
-      strongDirectional ||
-      (spread >= CONFIG.ai.minDirectionalSpreadForWatchSignal &&
-        confidence >= CONFIG.ai.confidenceMinWatch)
-    ) {
-      return { signal: stableBias, setupConfirmed: false };
-    }
-    return { signal: 'HOLD', setupConfirmed: false };
-  }
-
-  return { signal: 'HOLD', setupConfirmed: false };
 }
 
 /* =========================================================
@@ -864,7 +904,7 @@ function processAiTick() {
       stage = 'PAUSED';
     }
 
-    const resolved = resolveSignal(stage, stableBias, metrics, confidence);
+    const resolved = chooseDisplaySignal(stage, stableBias, metrics, confidence);
     let signal = resolved.signal;
     let setupConfirmed = resolved.setupConfirmed;
 
@@ -1140,5 +1180,5 @@ setInterval(processAiTick, CONFIG.tickMs);
 processAiTick();
 
 app.listen(PORT, () => {
-  console.log(`V22.7.8 listening on :${PORT}`);
+  console.log(`V22.7.9 listening on :${PORT}`);
 });
