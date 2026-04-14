@@ -10,14 +10,15 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.8.9 HARD LIVE
-   Controlled FIRE fine tuning:
-   - stable watch / ready / fire pipeline
-   - premium setup override for controlled FIRE
-   - no spam-fire loops
-   - cooldown lock after filled order
-   - adaptive learning kept
-   - market weakness stays HOLD
+   V22.9.0 HARD LIVE
+   Balanced FIRE upgrade:
+   - less over-blocking on decent market
+   - weak-market filter now weighted, not single-metric hard block
+   - controlled READY -> FIRE escalation after stable setup
+   - improved confidence model for good trend/structure conditions
+   - still protected against spam-fire loops
+   - cooldown after filled order remains
+   - adaptive learning remains
    ========================================================= */
 
 const CONFIG = {
@@ -33,36 +34,41 @@ const CONFIG = {
   ai: {
     enableLearning: true,
 
-    watchScoreMin: 56,
-    readyScoreMin: 64,
-    fireScoreMin: 74,
+    watchScoreMin: 54,
+    readyScoreMin: 61,
+    fireScoreMin: 69,
 
-    buyEdgeMinWatch: 18,
-    buyEdgeMinReady: 32,
-    buyEdgeMinFire: 54,
+    buyEdgeMinWatch: 16,
+    buyEdgeMinReady: 28,
+    buyEdgeMinFire: 46,
 
-    sellEdgeMinWatch: 18,
-    sellEdgeMinReady: 32,
-    sellEdgeMinFire: 54,
+    sellEdgeMinWatch: 16,
+    sellEdgeMinReady: 28,
+    sellEdgeMinFire: 46,
 
-    confidenceMinWatch: 34,
-    confidenceMinReady: 46,
-    confidenceMinFire: 60,
+    confidenceMinWatch: 30,
+    confidenceMinReady: 38,
+    confidenceMinFire: 48,
 
     stateConfirmTicks: 2,
     regimeConfirmTicks: 2,
     fireConfirmTicks: 2,
 
-    maxVolatilityForFire: 68,
-    minLiquidityForFire: 54,
-    minSessionForFire: 46,
+    maxVolatilityForFire: 72,
+    minLiquidityForFire: 50,
+    minSessionForFire: 42,
+
+    readyToFireTicks: 4,
+    qualityFireMin: 63,
+    qualityConfidenceFloor: 34,
+    premiumConfidenceFloor: 34,
 
     thresholdAdjustStep: 1,
     maxThresholdDrift: 8,
   },
 
   log: {
-    maxEntries: 140,
+    maxEntries: 160,
     suppressRepeatWithinMs: 12000,
   },
 };
@@ -99,7 +105,7 @@ function normalizeTag(text) {
    ========================================================= */
 
 const state = {
-  version: 'V22.8.9 HARD LIVE',
+  version: 'V22.9.0 HARD LIVE',
 
   system: {
     status: 'READY', // READY | LOCKED | SESSION_LIMIT | TARGET
@@ -167,6 +173,9 @@ const state = {
     fireCandidateTicks: 0,
     lastFiredSignature: '',
     lastFireAt: 0,
+
+    readyBias: null,
+    readyTicks: 0,
 
     lastDecisionKey: '',
     lastLoggedAt: 0,
@@ -239,6 +248,8 @@ function resetDayIfNeeded() {
     state.engine.fireCandidateTicks = 0;
     state.engine.lastFiredSignature = '';
     state.engine.lastFireAt = 0;
+    state.engine.readyBias = null;
+    state.engine.readyTicks = 0;
     state.engine.lastDecisionKey = '';
     state.engine.lastHoldReason = '';
 
@@ -273,7 +284,7 @@ function generateMarket() {
   let sessionTarget = 52;
 
   // premium bullish
-  if (phase < 0.16) {
+  if (phase < 0.18) {
     trendTarget = 84;
     structureTarget = 86;
     volumeTarget = 74;
@@ -282,7 +293,7 @@ function generateMarket() {
     sessionTarget = 64;
   }
   // good bullish
-  else if (phase < 0.34) {
+  else if (phase < 0.38) {
     trendTarget = 74;
     structureTarget = 78;
     volumeTarget = 66;
@@ -291,7 +302,7 @@ function generateMarket() {
     sessionTarget = 58;
   }
   // neutral
-  else if (phase < 0.58) {
+  else if (phase < 0.60) {
     trendTarget = 58;
     structureTarget = 62;
     volumeTarget = 58;
@@ -300,7 +311,7 @@ function generateMarket() {
     sessionTarget = 52;
   }
   // weak / defensive
-  else if (phase < 0.80) {
+  else if (phase < 0.82) {
     trendTarget = 42;
     structureTarget = 46;
     volumeTarget = 46;
@@ -451,21 +462,21 @@ function computeAiMetrics() {
   );
 
   const buyEdge = round1(
-    (m.trend - 50) * 0.95 +
-      (m.structure - 50) * 0.92 +
-      (m.volume - 50) * 0.45 +
-      (m.liquidity - 50) * 0.42 -
-      Math.max(0, m.volatility - 55) * 0.72 +
-      (m.session - 50) * 0.28
+    (m.trend - 50) * 0.98 +
+      (m.structure - 50) * 0.95 +
+      (m.volume - 50) * 0.50 +
+      (m.liquidity - 50) * 0.48 -
+      Math.max(0, m.volatility - 55) * 0.68 +
+      (m.session - 50) * 0.30
   );
 
   const sellEdge = round1(
-    ((100 - m.trend) - 50) * 0.95 +
-      ((100 - m.structure) - 50) * 0.92 +
-      (m.volume - 50) * 0.45 +
-      (m.liquidity - 50) * 0.42 -
-      Math.max(0, m.volatility - 55) * 0.72 +
-      (m.session - 50) * 0.28
+    ((100 - m.trend) - 50) * 0.98 +
+      ((100 - m.structure) - 50) * 0.95 +
+      (m.volume - 50) * 0.50 +
+      (m.liquidity - 50) * 0.48 -
+      Math.max(0, m.volatility - 55) * 0.68 +
+      (m.session - 50) * 0.30
   );
 
   const rawBias = buyComposite >= sellComposite ? 'BUY' : 'SELL';
@@ -484,14 +495,20 @@ function computeConfidence(metrics) {
   const spread = Math.abs(metrics.buyComposite - metrics.sellComposite);
   const m = state.market;
 
-  let confidence = dominant * 0.44 + spread * 0.48 + (100 - m.volatility) * 0.12;
+  let confidence = dominant * 0.42 + spread * 0.46 + (100 - m.volatility) * 0.12;
 
-  if (m.volume < 52) confidence -= 9;
-  if (m.liquidity < 56) confidence -= 10;
-  if (m.volatility > 62) confidence -= 12;
-  if (m.session < 46) confidence -= 8;
+  if (m.trend >= 68) confidence += 4;
+  if (m.structure >= 74) confidence += 4;
+  if (m.volume >= 60) confidence += 3;
+  if (m.liquidity >= 60) confidence += 3;
+  if (m.session >= 58) confidence += 2;
 
-  return Math.round(clamp(confidence / 1.22, 20, 95));
+  if (m.volume < 52) confidence -= 7;
+  if (m.liquidity < 56) confidence -= 8;
+  if (m.volatility > 62) confidence -= 10;
+  if (m.session < 46) confidence -= 6;
+
+  return Math.round(clamp(confidence / 1.18, 20, 95));
 }
 
 function computeScore(metrics) {
@@ -558,8 +575,8 @@ function getSetupQuality(metrics, confidence, score) {
     volatilityMid &&
     sessionSoft &&
     edge >= 72 &&
-    score >= 66 &&
-    confidence >= 36;
+    score >= 64 &&
+    confidence >= CONFIG.ai.premiumConfidenceFloor;
 
   const premiumSell =
     bias === 'SELL' &&
@@ -570,19 +587,22 @@ function getSetupQuality(metrics, confidence, score) {
     volatilityMid &&
     sessionSoft &&
     edge >= 72 &&
-    score >= 66 &&
-    confidence >= 36;
+    score >= 64 &&
+    confidence >= CONFIG.ai.premiumConfidenceFloor;
 
-  const weakMarket =
-    m.volume < 54 ||
-    m.liquidity < 54 ||
-    m.volatility > 66 ||
-    m.session < 44 ||
-    confidence < 34;
+  let weaknessScore = 0;
+  if (m.volume < 54) weaknessScore += 1;
+  if (m.liquidity < 54) weaknessScore += 1;
+  if (m.volatility > 66) weaknessScore += 1;
+  if (m.session < 44) weaknessScore += 1;
+  if (confidence < 34) weaknessScore += 1;
+
+  const weakMarket = weaknessScore >= 2;
 
   return {
     premiumSetup: premiumBuy || premiumSell,
     weakMarket,
+    weaknessScore,
     volumeOk,
     liquidityOk,
     volatilityStable,
@@ -591,7 +611,25 @@ function getSetupQuality(metrics, confidence, score) {
     sessionSoft,
     trendUp,
     structureStrong,
+    trendWeak,
+    structureWeak,
   };
+}
+
+function updateReadyEscalation(stage, bias) {
+  if (stage === 'READY') {
+    if (state.engine.readyBias === bias) {
+      state.engine.readyTicks += 1;
+    } else {
+      state.engine.readyBias = bias;
+      state.engine.readyTicks = 1;
+    }
+  } else {
+    state.engine.readyBias = null;
+    state.engine.readyTicks = 0;
+  }
+
+  return state.engine.readyTicks;
 }
 
 function evaluateStage(metrics, confidence, score) {
@@ -627,14 +665,24 @@ function evaluateStage(metrics, confidence, score) {
     confidence >= th.confidenceMinFire &&
     blockers.length === 0;
 
+  const passesQualityFire =
+    score >= CONFIG.ai.qualityFireMin &&
+    edge >= 64 &&
+    confidence >= CONFIG.ai.qualityConfidenceFloor &&
+    blockers.length === 0 &&
+    (
+      (bias === 'BUY' && m.trend >= 66 && m.structure >= 68 && m.volume >= 58 && m.liquidity >= 56) ||
+      (bias === 'SELL' && m.trend <= 38 && m.structure <= 42 && m.volume >= 58 && m.liquidity >= 56)
+    );
+
   const passesPremiumFire =
     setup.premiumSetup &&
     blockers.length === 0 &&
     edge >= 72 &&
-    score >= 66 &&
-    confidence >= 36;
+    score >= 64 &&
+    confidence >= CONFIG.ai.premiumConfidenceFloor;
 
-  const passesFire = passesNormalFire || passesPremiumFire;
+  const passesFire = passesNormalFire || passesQualityFire || passesPremiumFire;
 
   if (passesFire) {
     candidateStage = 'FIRE';
@@ -660,6 +708,24 @@ function evaluateStage(metrics, confidence, score) {
     detail = 'Kein Setup aktuell.';
   }
 
+  const readyTicks = updateReadyEscalation(candidateStage, bias);
+
+  const escalatedFromReady =
+    candidateStage === 'READY' &&
+    readyTicks >= CONFIG.ai.readyToFireTicks &&
+    edge >= 62 &&
+    score >= 62 &&
+    confidence >= 36 &&
+    blockers.length === 0 &&
+    !setup.weakMarket;
+
+  if (escalatedFromReady) {
+    candidateStage = 'FIRE';
+    setupConfirmed = true;
+    signal = bias;
+    detail = bias === 'BUY' ? 'BUY Signal bestätigt.' : 'SELL Signal bestätigt.';
+  }
+
   if (setup.weakMarket && candidateStage !== 'FIRE' && !setup.premiumSetup) {
     candidateStage = 'HOLD';
     setupConfirmed = false;
@@ -667,13 +733,13 @@ function evaluateStage(metrics, confidence, score) {
     detail = 'Markt zu schwach für Entry.';
   }
 
-  if (confidence < 34 && candidateStage !== 'FIRE') {
+  if (confidence < 30 && candidateStage !== 'FIRE') {
     signal = 'HOLD';
     setupConfirmed = false;
     detail = 'Markt zu schwach für Entry.';
   }
 
-  if (blockers.length > 0 && candidateStage === 'FIRE') {
+  if (blockers.length > 0 && candidateStage === 'FIRE' && !passesPremiumFire) {
     candidateStage = setup.premiumSetup ? 'READY' : 'WATCH';
     setupConfirmed = false;
     signal = 'HOLD';
@@ -688,6 +754,8 @@ function evaluateStage(metrics, confidence, score) {
     blockers,
     premiumSetup: setup.premiumSetup,
     weakMarket: setup.weakMarket,
+    weaknessScore: setup.weaknessScore,
+    readyTicks,
   };
 }
 
@@ -988,7 +1056,10 @@ function processAiTick() {
     if (signal === 'PAUSED') {
       addStateLog('AI Paused', `state-paused-${state.ai.pauseReason}`);
     } else if (stage === 'FIRE') {
-      addStateLog(`AI FIRE ${signal}`, `state-fire-${signal}-${evaluated.premiumSetup ? 'premium' : 'normal'}`);
+      addStateLog(
+        `AI FIRE ${signal}`,
+        `state-fire-${signal}-${evaluated.premiumSetup ? 'premium' : 'normal'}`
+      );
     } else if (stage === 'READY') {
       addStateLog(`AI Ready ${state.ai.bias}`, `state-ready-${state.ai.bias}-${evaluated.detail}`);
     } else if (stage === 'WATCH') {
@@ -1143,6 +1214,8 @@ app.post('/api/reset', (_req, res) => {
   state.engine.fireCandidateTicks = 0;
   state.engine.lastFiredSignature = '';
   state.engine.lastFireAt = 0;
+  state.engine.readyBias = null;
+  state.engine.readyTicks = 0;
 
   addLog('Manual reset', { force: true, signature: `manual-reset-${Date.now()}` });
   res.json(getPublicState());
@@ -1215,5 +1288,5 @@ setInterval(processAiTick, CONFIG.tickMs);
 processAiTick();
 
 app.listen(PORT, () => {
-  console.log(`V22.8.9 listening on :${PORT}`);
+  console.log(`V22.9.0 listening on :${PORT}`);
 });
