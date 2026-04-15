@@ -10,14 +10,12 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.9.6 HARD LIVE
-   - symbol / aktie sichtbar
-   - watchlist rotation
-   - active symbol in hero / state / logs
-   - paper position state added
-   - controlled FIRE kept
-   - cooldown + adaptive learning kept
-   - ready / watch / hold / fire stable
+   V22.9.7 HARD LIVE
+   - tradeSymbolLock
+   - setupId / fireId
+   - only one FIRE per setup
+   - no symbol switch during READY/FIRE/PROCESSING/COOLDOWN
+   - symbol shown in logs and public state
    ========================================================= */
 
 const CONFIG = {
@@ -30,36 +28,24 @@ const CONFIG = {
     cooldownMs: 10000,
   },
 
-  symbols: {
-    rotationTicks: 14,
-    list: [
-      { symbol: 'AAPL', name: 'Apple' },
-      { symbol: 'NVDA', name: 'NVIDIA' },
-      { symbol: 'TSLA', name: 'Tesla' },
-      { symbol: 'MSFT', name: 'Microsoft' },
-      { symbol: 'AMZN', name: 'Amazon' },
-      { symbol: 'META', name: 'Meta' },
-    ],
-  },
-
   ai: {
     enableLearning: true,
 
     watchScoreMin: 56,
-    readyScoreMin: 63,
-    fireScoreMin: 71,
+    readyScoreMin: 64,
+    fireScoreMin: 74,
 
     buyEdgeMinWatch: 18,
-    buyEdgeMinReady: 30,
-    buyEdgeMinFire: 50,
+    buyEdgeMinReady: 32,
+    buyEdgeMinFire: 54,
 
     sellEdgeMinWatch: 18,
-    sellEdgeMinReady: 30,
-    sellEdgeMinFire: 50,
+    sellEdgeMinReady: 32,
+    sellEdgeMinFire: 54,
 
     confidenceMinWatch: 34,
-    confidenceMinReady: 38,
-    confidenceMinFire: 44,
+    confidenceMinReady: 46,
+    confidenceMinFire: 60,
 
     stateConfirmTicks: 2,
     regimeConfirmTicks: 2,
@@ -73,9 +59,22 @@ const CONFIG = {
     maxThresholdDrift: 8,
   },
 
+  symbols: {
+    rotationMsMin: 25000,
+    rotationMsMax: 50000,
+    list: [
+      { symbol: 'AAPL', name: 'Apple' },
+      { symbol: 'MSFT', name: 'Microsoft' },
+      { symbol: 'NVDA', name: 'NVIDIA' },
+      { symbol: 'META', name: 'Meta' },
+      { symbol: 'AMZN', name: 'Amazon' },
+      { symbol: 'TSLA', name: 'Tesla' },
+    ],
+  },
+
   log: {
     maxEntries: 160,
-    suppressRepeatWithinMs: 10000,
+    suppressRepeatWithinMs: 12000,
   },
 };
 
@@ -89,10 +88,6 @@ function clamp(v, min, max) {
 
 function round1(v) {
   return Math.round(v * 10) / 10;
-}
-
-function round2(v) {
-  return Math.round(v * 100) / 100;
 }
 
 function nowIsoDate() {
@@ -110,44 +105,38 @@ function normalizeTag(text) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+function randomInt(min, max) {
+  return Math.floor(min + Math.random() * (max - min + 1));
 }
 
-function symbolTag() {
-  return state.symbol.activeSymbol || 'NO-SYMBOL';
+function createId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 }
 
-function currentSymbolLabel() {
-  return `${state.symbol.activeSymbol}${state.symbol.activeName ? ` · ${state.symbol.activeName}` : ''}`;
+function symbolSuffix(symbol) {
+  return symbol ? ` (${symbol})` : '';
 }
 
-/* =========================================================
-   Symbol state
-   ========================================================= */
-
-function createSymbolSeed(symbol, name, index) {
-  const base = 140 + index * 35;
-  return {
-    symbol,
-    name,
-    lastPrice: round2(base + Math.random() * 40),
-    changePct: round2(Math.random() * 2 - 1),
-    phaseBias: Math.random(),
-  };
+function tradeSuffix(symbol, side) {
+  if (symbol && side) return ` (${symbol} ${side})`;
+  if (symbol) return ` (${symbol})`;
+  return '';
 }
 
-const symbolBook = {};
-CONFIG.symbols.list.forEach((item, index) => {
-  symbolBook[item.symbol] = createSymbolSeed(item.symbol, item.name, index);
-});
+function detailWithSymbol(detail, symbol) {
+  if (!symbol) return detail;
+  if (!detail) return `Symbol ${symbol}`;
+  return `${detail} • ${symbol}`;
+}
 
 /* =========================================================
    Core state
    ========================================================= */
 
+const initialSymbol = CONFIG.symbols.list[0];
+
 const state = {
-  version: 'V22.9.6 HARD LIVE',
+  version: 'V22.9.7 HARD LIVE',
 
   system: {
     status: 'READY', // READY | WATCH | HOLD | FIRE | LOCKED | SESSION_LIMIT | TARGET
@@ -172,14 +161,6 @@ const state = {
     syncOk: true,
   },
 
-  symbol: {
-    activeSymbol: CONFIG.symbols.list[0].symbol,
-    activeName: CONFIG.symbols.list[0].name,
-    rotationIndex: 0,
-    rotationTick: 0,
-    list: CONFIG.symbols.list.map((x) => x.symbol),
-  },
-
   market: {
     trend: 62.0,
     volume: 58.0,
@@ -187,8 +168,6 @@ const state = {
     volatility: 54.0,
     liquidity: 63.0,
     session: 52.0,
-    lastPrice: symbolBook[CONFIG.symbols.list[0].symbol].lastPrice,
-    changePct: symbolBook[CONFIG.symbols.list[0].symbol].changePct,
   },
 
   learning: {
@@ -196,6 +175,17 @@ const state = {
     winCount: 0,
     lossCount: 0,
     lastOutcome: null,
+  },
+
+  symbol: {
+    active: initialSymbol.symbol,
+    name: initialSymbol.name,
+    lastSwitchAt: Date.now(),
+    nextSwitchAt: Date.now() + randomInt(CONFIG.symbols.rotationMsMin, CONFIG.symbols.rotationMsMax),
+
+    locked: false,
+    lockReason: '', // SETUP | PROCESSING | COOLDOWN
+    lockedSymbol: null,
   },
 
   ai: {
@@ -214,21 +204,6 @@ const state = {
     pauseReason: '',
   },
 
-  position: {
-    mode: 'SIM PAPER',
-    status: 'NONE', // NONE | BUY | SELL
-    symbol: null,
-    side: null,
-    entry: 0,
-    qty: 1,
-    lastPrice: 0,
-    pnl: 0,
-    openedAt: 0,
-    lastClosedSymbol: null,
-    lastClosedSide: null,
-    lastResult: null,
-  },
-
   engine: {
     candidateStage: 'WATCH',
     candidateStageTicks: 0,
@@ -236,10 +211,16 @@ const state = {
     regimeTicks: 0,
     stableBias: 'BUY',
 
-    fireCandidateSide: null,
+    fireCandidateKey: null,
     fireCandidateTicks: 0,
-    lastFiredSignature: '',
+    lastFiredSetupId: '',
     lastFireAt: 0,
+    activeFireId: null,
+
+    activeSetupId: null,
+    activeSetupKey: '',
+    setupSymbol: null,
+    setupSide: null,
 
     lastDecisionKey: '',
     lastLoggedAt: 0,
@@ -303,93 +284,109 @@ function resetDayIfNeeded() {
 
     state.learning.lastOutcome = null;
 
-    state.position.status = 'NONE';
-    state.position.symbol = null;
-    state.position.side = null;
-    state.position.entry = 0;
-    state.position.qty = 1;
-    state.position.lastPrice = 0;
-    state.position.pnl = 0;
-    state.position.openedAt = 0;
-    state.position.lastClosedSymbol = null;
-    state.position.lastClosedSide = null;
-    state.position.lastResult = null;
-
     state.engine.candidateStage = 'WATCH';
     state.engine.candidateStageTicks = 0;
     state.engine.regimeCandidate = 'BUY';
     state.engine.regimeTicks = 0;
     state.engine.stableBias = 'BUY';
-    state.engine.fireCandidateSide = null;
+
+    state.engine.fireCandidateKey = null;
     state.engine.fireCandidateTicks = 0;
-    state.engine.lastFiredSignature = '';
+    state.engine.lastFiredSetupId = '';
     state.engine.lastFireAt = 0;
+    state.engine.activeFireId = null;
+
+    state.engine.activeSetupId = null;
+    state.engine.activeSetupKey = '';
+    state.engine.setupSymbol = null;
+    state.engine.setupSide = null;
+
     state.engine.lastDecisionKey = '';
     state.engine.lastHoldReason = '';
 
+    state.symbol.locked = false;
+    state.symbol.lockReason = '';
+    state.symbol.lockedSymbol = null;
+    state.symbol.lastSwitchAt = Date.now();
+    state.symbol.nextSwitchAt =
+      Date.now() + randomInt(CONFIG.symbols.rotationMsMin, CONFIG.symbols.rotationMsMax);
+
     state.system.status = 'READY';
     state.system.subtitle = 'System bereit.';
-    state.system.detail = state.session.autoMode ? 'AI bereit für Entry.' : 'Bereit für manuellen Modus.';
+    state.system.detail = state.session.autoMode
+      ? detailWithSymbol('AI bereit für Entry.', state.symbol.active)
+      : detailWithSymbol('Bereit für manuellen Modus.', state.symbol.active);
     state.system.liveBadge = state.session.autoMode ? 'AI AUTO ON' : 'LIVE';
 
-    addLog(`Day reset (${state.symbol.activeSymbol})`, {
-      force: true,
-      signature: `day-reset-${today}`,
-    });
+    addLog('Day reset', { force: true, signature: `day-reset-${today}` });
   }
 }
 
 /* =========================================================
-   Symbol / price feed
+   Symbol rotation / lock
    ========================================================= */
 
-function rotateSymbolIfNeeded() {
-  if (state.session.processing) return;
-  if (Date.now() < state.session.cooldownUntil) return;
+function getActiveSymbolMeta() {
+  const found = CONFIG.symbols.list.find((s) => s.symbol === state.symbol.active);
+  return found || { symbol: state.symbol.active, name: state.symbol.active };
+}
 
-  state.symbol.rotationTick += 1;
+function canSwitchSymbol() {
+  if (state.symbol.locked) return false;
+  if (state.session.processing) return false;
+  if (Date.now() < state.session.cooldownUntil) return false;
+  if (state.ai.stage === 'READY' || state.ai.stage === 'FIRE') return false;
+  if (state.engine.activeSetupId) return false;
+  return true;
+}
 
-  if (state.symbol.rotationTick < CONFIG.symbols.rotationTicks) return;
+function setActiveSymbol(symbolObj) {
+  state.symbol.active = symbolObj.symbol;
+  state.symbol.name = symbolObj.name;
+  state.symbol.lastSwitchAt = Date.now();
+  state.symbol.nextSwitchAt =
+    Date.now() + randomInt(CONFIG.symbols.rotationMsMin, CONFIG.symbols.rotationMsMax);
 
-  state.symbol.rotationTick = 0;
-  state.symbol.rotationIndex = (state.symbol.rotationIndex + 1) % CONFIG.symbols.list.length;
-
-  const next = CONFIG.symbols.list[state.symbol.rotationIndex];
-  state.symbol.activeSymbol = next.symbol;
-  state.symbol.activeName = next.name;
-
-  addLog(`Symbol aktiv ${next.symbol}`, {
-    signature: `symbol-rotate-${next.symbol}`,
+  addLog(`Symbol aktiv ${symbolObj.symbol}`, {
+    force: true,
+    signature: `symbol-active-${symbolObj.symbol}-${state.symbol.lastSwitchAt}`,
   });
 }
 
-function updateActiveSymbolPrice() {
-  const sym = symbolBook[state.symbol.activeSymbol];
-  if (!sym) return;
+function maybeRotateSymbol() {
+  const now = Date.now();
+  if (now < state.symbol.nextSwitchAt) return;
+  if (!canSwitchSymbol()) return;
 
-  const trendInfluence = (state.market.trend - 50) * 0.015;
-  const volInfluence = (state.market.volume - 50) * 0.006;
-  const noise = (Math.random() - 0.5) * 1.1;
-  const delta = trendInfluence + volInfluence + noise;
+  const current = state.symbol.active;
+  const choices = CONFIG.symbols.list.filter((s) => s.symbol !== current);
+  if (!choices.length) return;
 
-  sym.lastPrice = round2(clamp(sym.lastPrice + delta, 5, 9999));
+  const picked = choices[Math.floor(Math.random() * choices.length)];
+  setActiveSymbol(picked);
+}
 
-  const intradayMove = clamp(((sym.lastPrice % 17) - 8) / 3.5, -9, 9);
-  sym.changePct = round2(intradayMove);
+function lockSymbol(reason, symbol) {
+  state.symbol.locked = true;
+  state.symbol.lockReason = reason;
+  state.symbol.lockedSymbol = symbol || state.symbol.active;
+}
 
-  state.market.lastPrice = sym.lastPrice;
-  state.market.changePct = sym.changePct;
+function unlockSymbol() {
+  state.symbol.locked = false;
+  state.symbol.lockReason = '';
+  state.symbol.lockedSymbol = null;
+  state.symbol.nextSwitchAt =
+    Date.now() + randomInt(CONFIG.symbols.rotationMsMin, CONFIG.symbols.rotationMsMax);
+}
 
-  if (state.position.status !== 'NONE' && state.position.symbol === sym.symbol) {
-    state.position.lastPrice = sym.lastPrice;
-    const dir = state.position.side === 'BUY' ? 1 : -1;
-    state.position.pnl = round2((sym.lastPrice - state.position.entry) * dir * state.position.qty);
-  }
+function getWorkingSymbol() {
+  if (state.symbol.lockedSymbol) return state.symbol.lockedSymbol;
+  return state.symbol.active;
 }
 
 /* =========================================================
    Synthetic market feed
-   Replace later with real feed if needed.
    ========================================================= */
 
 function driftMetric(key, target, speed = 0.28, noise = 3.6) {
@@ -399,7 +396,6 @@ function driftMetric(key, target, speed = 0.28, noise = 3.6) {
 }
 
 function generateMarket() {
-  const active = symbolBook[state.symbol.activeSymbol];
   const phase = Math.random();
 
   let trendTarget = 56;
@@ -409,46 +405,35 @@ function generateMarket() {
   let liquidityTarget = 60;
   let sessionTarget = 52;
 
-  const symbolBias = active ? active.phaseBias : 0.5;
-
-  // premium bullish
-  if (phase < 0.14 + symbolBias * 0.04) {
+  if (phase < 0.16) {
     trendTarget = 84;
     structureTarget = 86;
     volumeTarget = 74;
     volatilityTarget = 34;
     liquidityTarget = 78;
     sessionTarget = 64;
-  }
-  // good bullish
-  else if (phase < 0.34 + symbolBias * 0.03) {
+  } else if (phase < 0.34) {
     trendTarget = 74;
     structureTarget = 78;
     volumeTarget = 66;
     volatilityTarget = 44;
     liquidityTarget = 72;
     sessionTarget = 58;
-  }
-  // neutral
-  else if (phase < 0.58) {
+  } else if (phase < 0.58) {
     trendTarget = 58;
     structureTarget = 62;
     volumeTarget = 58;
     volatilityTarget = 52;
     liquidityTarget = 62;
     sessionTarget = 52;
-  }
-  // weak / defensive
-  else if (phase < 0.80) {
+  } else if (phase < 0.80) {
     trendTarget = 42;
     structureTarget = 46;
     volumeTarget = 46;
     volatilityTarget = 70;
     liquidityTarget = 48;
     sessionTarget = 42;
-  }
-  // bearish but tradable
-  else {
+  } else {
     trendTarget = 30;
     structureTarget = 36;
     volumeTarget = 62;
@@ -630,10 +615,10 @@ function computeConfidence(metrics) {
   if (m.volatility > 62) confidence -= 12;
   if (m.session < 46) confidence -= 8;
 
-  return Math.round(clamp(confidence / 1.18, 20, 95));
+  return Math.round(clamp(confidence / 1.22, 20, 95));
 }
 
-function computeScore(metrics) {
+function computeScore() {
   const m = state.market;
 
   const score =
@@ -669,7 +654,7 @@ function updateStableBias(metrics) {
 }
 
 /* =========================================================
-   Setup quality / stage evaluation
+   Setup evaluation
    ========================================================= */
 
 function getSetupQuality(metrics, confidence, score) {
@@ -679,9 +664,7 @@ function getSetupQuality(metrics, confidence, score) {
 
   const volumeOk = m.volume >= 60;
   const liquidityOk = m.liquidity >= 56;
-  const volatilityStable = m.volatility <= 38;
   const volatilityMid = m.volatility <= 62;
-  const sessionGood = m.session >= 58;
   const sessionSoft = m.session >= 45;
   const trendUp = m.trend >= 68;
   const structureStrong = m.structure >= 74;
@@ -696,9 +679,9 @@ function getSetupQuality(metrics, confidence, score) {
     liquidityOk &&
     volatilityMid &&
     sessionSoft &&
-    edge >= 70 &&
-    score >= 64 &&
-    confidence >= 34;
+    edge >= 72 &&
+    score >= 66 &&
+    confidence >= 36;
 
   const premiumSell =
     bias === 'SELL' &&
@@ -708,9 +691,9 @@ function getSetupQuality(metrics, confidence, score) {
     liquidityOk &&
     volatilityMid &&
     sessionSoft &&
-    edge >= 70 &&
-    score >= 64 &&
-    confidence >= 34;
+    edge >= 72 &&
+    score >= 66 &&
+    confidence >= 36;
 
   const weakMarket =
     m.volume < 54 ||
@@ -722,14 +705,6 @@ function getSetupQuality(metrics, confidence, score) {
   return {
     premiumSetup: premiumBuy || premiumSell,
     weakMarket,
-    volumeOk,
-    liquidityOk,
-    volatilityStable,
-    volatilityMid,
-    sessionGood,
-    sessionSoft,
-    trendUp,
-    structureStrong,
   };
 }
 
@@ -769,9 +744,9 @@ function evaluateStage(metrics, confidence, score) {
   const passesPremiumFire =
     setup.premiumSetup &&
     blockers.length === 0 &&
-    edge >= 70 &&
-    score >= 64 &&
-    confidence >= 34;
+    edge >= 72 &&
+    score >= 66 &&
+    confidence >= 36;
 
   const passesFire = passesNormalFire || passesPremiumFire;
 
@@ -807,17 +782,17 @@ function evaluateStage(metrics, confidence, score) {
   }
 
   if (confidence < 34 && candidateStage !== 'FIRE') {
-    candidateStage = candidateStage === 'READY' ? 'WATCH' : 'HOLD';
-    signal = candidateStage === 'WATCH' ? bias : 'HOLD';
+    candidateStage = 'HOLD';
     setupConfirmed = false;
-    detail = candidateStage === 'WATCH' ? 'Beobachtung aktiv.' : 'Markt zu schwach für Entry.';
+    signal = 'HOLD';
+    detail = 'Markt zu schwach für Entry.';
   }
 
   if (blockers.length > 0 && candidateStage === 'FIRE') {
     candidateStage = setup.premiumSetup ? 'READY' : 'WATCH';
     setupConfirmed = false;
-    signal = candidateStage === 'READY' ? bias : 'HOLD';
-    detail = candidateStage === 'READY' ? 'Setup fast bereit.' : 'Markt instabil. Beobachtung aktiv.';
+    signal = 'HOLD';
+    detail = 'Markt instabil. Beobachtung aktiv.';
   }
 
   return {
@@ -847,26 +822,77 @@ function stabilizeStage(candidateStage) {
 }
 
 /* =========================================================
+   Setup tracking / symbol lock
+   ========================================================= */
+
+function buildSetupKey(stage, side, symbol, score, confidence, premiumSetup) {
+  return [
+    stage,
+    side,
+    symbol,
+    Math.round(score / 2),
+    Math.round(confidence / 2),
+    premiumSetup ? 'premium' : 'normal',
+  ].join('|');
+}
+
+function syncSetupState(stage, side, symbol, score, confidence, premiumSetup) {
+  const lockWindow =
+    stage === 'WATCH' || stage === 'READY' || stage === 'FIRE' || state.session.processing;
+
+  if (!lockWindow) {
+    state.engine.activeSetupId = null;
+    state.engine.activeSetupKey = '';
+    state.engine.setupSymbol = null;
+    state.engine.setupSide = null;
+
+    if (!state.session.processing && Date.now() >= state.session.cooldownUntil) {
+      unlockSymbol();
+    }
+    return;
+  }
+
+  const setupKey = buildSetupKey(stage, side, symbol, score, confidence, premiumSetup);
+
+  if (
+    state.engine.activeSetupKey !== setupKey ||
+    state.engine.setupSymbol !== symbol ||
+    state.engine.setupSide !== side
+  ) {
+    state.engine.activeSetupId = createId('setup');
+    state.engine.activeSetupKey = setupKey;
+    state.engine.setupSymbol = symbol;
+    state.engine.setupSide = side;
+  }
+
+  lockSymbol(
+    state.session.processing ? 'PROCESSING' : 'SETUP',
+    state.engine.setupSymbol || symbol
+  );
+}
+
+/* =========================================================
    Controlled fire latch
    ========================================================= */
 
-function shouldTriggerFire(stage, side, confidence, score, premiumSetup) {
+function shouldTriggerFire(stage, side, symbol, confidence, score, premiumSetup) {
   if (stage !== 'FIRE') {
-    state.engine.fireCandidateSide = null;
+    state.engine.fireCandidateKey = null;
     state.engine.fireCandidateTicks = 0;
     return false;
   }
 
-  const signature = `${state.symbol.activeSymbol}|${side}|${score}|${confidence}|${premiumSetup ? 'premium' : 'normal'}`;
+  const setupId = state.engine.activeSetupId || createId('setup-fallback');
+  const candidateKey = `${setupId}|${symbol}|${side}|${premiumSetup ? 'premium' : 'normal'}|${Math.round(score)}|${Math.round(confidence)}`;
 
-  if (state.engine.lastFiredSignature === signature) {
+  if (state.engine.lastFiredSetupId === setupId) {
     return false;
   }
 
-  if (state.engine.fireCandidateSide === signature) {
+  if (state.engine.fireCandidateKey === candidateKey) {
     state.engine.fireCandidateTicks += 1;
   } else {
-    state.engine.fireCandidateSide = signature;
+    state.engine.fireCandidateKey = candidateKey;
     state.engine.fireCandidateTicks = 1;
   }
 
@@ -874,9 +900,8 @@ function shouldTriggerFire(stage, side, confidence, score, premiumSetup) {
     return false;
   }
 
-  state.engine.fireCandidateSide = null;
+  state.engine.fireCandidateKey = null;
   state.engine.fireCandidateTicks = 0;
-  state.engine.lastFiredSignature = signature;
   return true;
 }
 
@@ -884,7 +909,7 @@ function shouldTriggerFire(stage, side, confidence, score, premiumSetup) {
    AI text mapping
    ========================================================= */
 
-function buildAiReasons(metrics, confidence) {
+function buildAiReasons(confidence) {
   const tags = regimeTags(state.market);
 
   if (confidence < 42) tags.push('Low Confidence');
@@ -893,13 +918,13 @@ function buildAiReasons(metrics, confidence) {
   return tags.slice(0, 7);
 }
 
-function mapHero(stage, signal, confidence, detail) {
+function mapHero(stage, signal, confidence, detail, symbol) {
   if (state.ai.paused) {
     if (state.ai.pauseReason === 'WIN_TARGET') {
       return {
         status: 'TARGET',
         subtitle: 'Win Target erreicht.',
-        detail: `AI pausiert wegen Win Target • ${state.symbol.activeSymbol}`,
+        detail: detailWithSymbol('AI pausiert wegen Win Target', symbol),
         liveBadge: 'WIN TARGET',
       };
     }
@@ -907,14 +932,14 @@ function mapHero(stage, signal, confidence, detail) {
       return {
         status: 'SESSION_LIMIT',
         subtitle: 'Loss Limit erreicht.',
-        detail: `AI pausiert wegen Loss Limit • ${state.symbol.activeSymbol}`,
+        detail: detailWithSymbol('AI pausiert wegen Loss Limit', symbol),
         liveBadge: 'LOSS LIMIT',
       };
     }
     return {
       status: 'SESSION_LIMIT',
       subtitle: 'Tageslimit erreicht.',
-      detail: `AI pausiert wegen Tageslimit • ${state.symbol.activeSymbol}`,
+      detail: detailWithSymbol('AI pausiert wegen Tageslimit', symbol),
       liveBadge: 'SESSION LIMIT',
     };
   }
@@ -923,7 +948,7 @@ function mapHero(stage, signal, confidence, detail) {
     return {
       status: 'LOCKED',
       subtitle: 'Kurze Schutzpause aktiv.',
-      detail: `Cooldown aktiv auf ${state.symbol.activeSymbol}.`,
+      detail: detailWithSymbol('Cooldown aktiv.', symbol),
       liveBadge: `COOLDOWN ${Math.max(1, Math.ceil((state.session.cooldownUntil - Date.now()) / 1000))}s`,
     };
   }
@@ -932,36 +957,56 @@ function mapHero(stage, signal, confidence, detail) {
     return {
       status: 'LOCKED',
       subtitle: signal === 'SELL' ? 'SELL Auto gesendet' : 'BUY Auto gesendet',
-      detail: `Order wird verarbeitet • ${state.symbol.activeSymbol}`,
+      detail: detailWithSymbol('Order wird verarbeitet', symbol),
       liveBadge: 'PROCESSING',
     };
   }
 
+  if (stage === 'FIRE') {
+    return {
+      status: 'FIRE',
+      subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'System bereit.',
+      detail: detailWithSymbol(detail || 'Signal bestätigt.', symbol),
+      liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
+    };
+  }
+
+  if (stage === 'WATCH') {
+    return {
+      status: 'WATCH',
+      subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'System bereit.',
+      detail: detailWithSymbol(detail || 'Beobachtung aktiv.', symbol),
+      liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
+    };
+  }
+
+  if (stage === 'HOLD') {
+    return {
+      status: 'HOLD',
+      subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'System bereit.',
+      detail: detailWithSymbol(detail || 'Kein Setup aktuell.', symbol),
+      liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
+    };
+  }
+
   return {
-    status:
-      stage === 'FIRE'
-        ? 'FIRE'
-        : stage === 'WATCH'
-          ? 'WATCH'
-          : stage === 'HOLD'
-            ? 'HOLD'
-            : 'READY',
+    status: 'READY',
     subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'System bereit.',
-    detail:
+    detail: detailWithSymbol(
       detail ||
-      (stage === 'WATCH'
-        ? 'Beobachtung aktiv.'
-        : stage === 'READY'
+        (stage === 'READY'
           ? 'Setup fast bereit.'
           : confidence < 34
             ? 'Markt zu schwach für Entry.'
             : 'Kein Setup aktuell.'),
+      symbol
+    ),
     liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
   };
 }
 
 /* =========================================================
-   Fire / paper trade simulation
+   Fire / order simulation
    ========================================================= */
 
 function canFire() {
@@ -972,6 +1017,8 @@ function canFire() {
   if (state.session.tradesToday >= state.session.maxTradesPerDay) return false;
   if (state.session.netPnL >= state.session.winTarget) return false;
   if (state.session.netPnL <= state.session.lossLimit) return false;
+  if (!state.engine.activeSetupId) return false;
+  if (!state.engine.setupSymbol) return false;
   return true;
 }
 
@@ -983,105 +1030,98 @@ function simulateTradeOutcome(side) {
   const liqPenalty = Math.max(0, 56 - state.market.liquidity) * 0.25;
   const sessionPenalty = Math.max(0, 48 - state.market.session) * 0.20;
 
-  const quality = conf * 0.40 + edge * 0.38 + score * 0.22 - volPenalty - liqPenalty - sessionPenalty;
+  const quality =
+    conf * 0.40 +
+    edge * 0.38 +
+    score * 0.22 -
+    volPenalty -
+    liqPenalty -
+    sessionPenalty;
+
   const winChance = clamp(quality / 100, 0.28, 0.78);
   const isWin = Math.random() < winChance;
 
   return isWin ? 4 : -4;
 }
 
-function afterTradeResult(pnl, symbol, side) {
+function afterTradeResult(pnl, symbol) {
   state.session.netPnL += pnl;
 
-  state.position.lastClosedSymbol = symbol;
-  state.position.lastClosedSide = side;
-  state.position.lastResult = pnl > 0 ? 'WIN' : 'LOSS';
-  state.position.status = 'NONE';
-  state.position.symbol = null;
-  state.position.side = null;
-  state.position.entry = 0;
-  state.position.qty = 1;
-  state.position.openedAt = 0;
-  state.position.pnl = 0;
-
   if (pnl > 0) {
-    addLog(`WIN PnL +${pnl} (${symbol})`, { signature: `win-${symbol}-${Date.now()}` });
+    addLog(`WIN PnL +${pnl}${symbolSuffix(symbol)}`, {
+      signature: `win-${symbol}-${Date.now()}`,
+    });
     learnFromOutcome('WIN');
   } else {
-    addLog(`LOSS PnL ${pnl} (${symbol})`, { signature: `loss-${symbol}-${Date.now()}` });
+    addLog(`LOSS PnL ${pnl}${symbolSuffix(symbol)}`, {
+      signature: `loss-${symbol}-${Date.now()}`,
+    });
     learnFromOutcome('LOSS');
   }
 
   if (state.session.netPnL >= state.session.winTarget) {
     state.ai.paused = true;
     state.ai.pauseReason = 'WIN_TARGET';
-    addLog(`AI pausiert wegen Win Target (${symbol})`, {
-      force: true,
-      signature: 'pause-win-target',
-    });
+    addLog('AI pausiert wegen Win Target', { force: true, signature: 'pause-win-target' });
   } else if (state.session.netPnL <= state.session.lossLimit) {
     state.ai.paused = true;
     state.ai.pauseReason = 'LOSS_LIMIT';
-    addLog(`AI pausiert wegen Loss Limit (${symbol})`, {
-      force: true,
-      signature: 'pause-loss-limit',
-    });
+    addLog('AI pausiert wegen Loss Limit', { force: true, signature: 'pause-loss-limit' });
   } else if (state.session.tradesToday >= state.session.maxTradesPerDay) {
     state.ai.paused = true;
     state.ai.pauseReason = 'DAY_LIMIT';
-    addLog(`AI pausiert wegen Tageslimit (${symbol})`, {
-      force: true,
-      signature: 'pause-day-limit',
-    });
+    addLog('AI pausiert wegen Tageslimit', { force: true, signature: 'pause-day-limit' });
   }
 }
 
 function fireOrder(side) {
   if (state.session.processing) return;
+  if (!state.engine.activeSetupId) return;
 
-  const symbol = state.symbol.activeSymbol;
-  const price = state.market.lastPrice || symbolBook[symbol].lastPrice || 0;
+  const symbol = state.engine.setupSymbol || getWorkingSymbol();
+  const fireId = createId('fire');
+
+  state.engine.activeFireId = fireId;
+  state.engine.lastFiredSetupId = state.engine.activeSetupId;
+  state.engine.lastFireAt = Date.now();
 
   state.session.processing = true;
   state.session.queue = 1;
   state.session.lastOrderSide = side;
-  state.engine.lastFireAt = Date.now();
 
-  state.position.status = side;
-  state.position.symbol = symbol;
-  state.position.side = side;
-  state.position.entry = round2(price);
-  state.position.lastPrice = round2(price);
-  state.position.qty = 1;
-  state.position.pnl = 0;
-  state.position.openedAt = Date.now();
+  lockSymbol('PROCESSING', symbol);
 
-  addLog(`AI FIRE ${side} (${symbol})`, {
+  addLog(`AI FIRE ${side}${symbolSuffix(symbol)}`, {
     force: true,
-    signature: `ai-fire-${side}-${symbol}-${Date.now()}`,
+    signature: `ai-fire-${fireId}-1`,
   });
-  addLog(`Order wird verarbeitet (${symbol} ${side})`, {
+
+  addLog(`Order wird verarbeitet${tradeSuffix(symbol, side)}`, {
     force: true,
-    signature: `order-processing-${side}-${symbol}-${Date.now()}`,
+    signature: `order-processing-${fireId}`,
   });
-  addLog(`Order queued (${symbol} ${side})`, {
+
+  addLog(`Order queued${tradeSuffix(symbol, side)}`, {
     force: true,
-    signature: `order-queued-${side}-${symbol}-${Date.now()}`,
+    signature: `order-queued-${fireId}`,
   });
 
   setTimeout(() => {
-    addLog(`Order ausgeführt (${symbol} ${side})`, {
+    addLog(`Order ausgeführt${tradeSuffix(symbol, side)}`, {
       force: true,
-      signature: `order-filled-${side}-${symbol}-${Date.now()}`,
+      signature: `order-filled-${fireId}`,
     });
 
     state.session.processing = false;
     state.session.queue = 0;
     state.session.tradesToday += 1;
     state.session.cooldownUntil = Date.now() + CONFIG.session.cooldownMs;
+    state.engine.activeFireId = null;
+
+    lockSymbol('COOLDOWN', symbol);
 
     const pnl = simulateTradeOutcome(side);
-    afterTradeResult(pnl, symbol, side);
+    afterTradeResult(pnl, symbol);
   }, 900);
 }
 
@@ -1091,15 +1131,20 @@ function fireOrder(side) {
 
 function processAiTick() {
   resetDayIfNeeded();
-  rotateSymbolIfNeeded();
-  generateMarket();
-  updateActiveSymbolPrice();
 
+  if (!state.session.processing && Date.now() >= state.session.cooldownUntil && state.symbol.lockReason === 'COOLDOWN') {
+    unlockSymbol();
+  }
+
+  maybeRotateSymbol();
+  generateMarket();
+
+  const workingSymbol = getWorkingSymbol();
   const metrics = computeAiMetrics();
   const stableBias = updateStableBias(metrics);
   const confidence = computeConfidence(metrics);
   const score = computeScore(metrics);
-  const reasons = buildAiReasons(metrics, confidence);
+  const reasons = buildAiReasons(confidence);
 
   state.ai.score = score;
   state.ai.confidence = confidence;
@@ -1124,6 +1169,8 @@ function processAiTick() {
     setupConfirmed = true;
   } else if (stage === 'READY') {
     signal = stableBias;
+  } else if (stage === 'WATCH') {
+    signal = 'HOLD';
   } else {
     signal = 'HOLD';
   }
@@ -1132,15 +1179,17 @@ function processAiTick() {
     setupConfirmed = false;
   }
 
+  syncSetupState(stage, stableBias, workingSymbol, score, confidence, evaluated.premiumSetup);
+
   state.ai.stage = stage;
-  state.ai.signal = signal;
+  state.ai.signal = stage === 'READY' || stage === 'FIRE' ? stableBias : signal;
   state.ai.setupConfirmed = setupConfirmed;
   state.ai.reasons = reasons;
   state.ai.summary =
     signal === 'PAUSED'
       ? 'AI Paused'
       : stage === 'FIRE'
-        ? `AI ${signal}`
+        ? `AI ${stableBias}`
         : stage === 'READY'
           ? 'AI Ready'
           : stage === 'WATCH'
@@ -1148,7 +1197,7 @@ function processAiTick() {
             : 'AI Hold';
   state.ai.watchMode = stage === 'WATCH';
 
-  const hero = mapHero(stage, signal, confidence, evaluated.detail);
+  const hero = mapHero(stage, state.ai.signal, confidence, evaluated.detail, workingSymbol);
   state.system.status = hero.status;
   state.system.subtitle = hero.subtitle;
   state.system.detail = hero.detail;
@@ -1157,12 +1206,12 @@ function processAiTick() {
   state.manual.conf = state.ai.confidence;
 
   const decisionKey = [
-    state.symbol.activeSymbol,
     stage,
-    signal,
+    state.ai.signal,
     state.ai.bias,
     state.ai.confidence,
     evaluated.detail,
+    workingSymbol,
     ...reasons,
   ].join('|');
 
@@ -1170,27 +1219,30 @@ function processAiTick() {
     state.engine.lastDecisionKey = decisionKey;
 
     if (signal === 'PAUSED') {
-      addStateLog(`AI Paused (${state.symbol.activeSymbol})`, `state-paused-${state.ai.pauseReason}`);
+      addStateLog('AI Paused', `state-paused-${state.ai.pauseReason}`);
     } else if (stage === 'FIRE') {
       addStateLog(
-        `AI FIRE ${signal} (${state.symbol.activeSymbol})`,
-        `state-fire-${state.symbol.activeSymbol}-${signal}-${evaluated.premiumSetup ? 'premium' : 'normal'}`
+        `AI FIRE ${stableBias}${symbolSuffix(workingSymbol)}`,
+        `state-fire-${state.engine.activeSetupId}-${stableBias}-${workingSymbol}`
       );
     } else if (stage === 'READY') {
       addStateLog(
-        `AI Ready ${state.ai.bias} (${state.symbol.activeSymbol})`,
-        `state-ready-${state.symbol.activeSymbol}-${state.ai.bias}-${evaluated.detail}`
+        `AI Ready ${stableBias}${symbolSuffix(workingSymbol)}`,
+        `state-ready-${stableBias}-${workingSymbol}-${evaluated.detail}`
       );
     } else if (stage === 'WATCH') {
       addStateLog(
-        `AI Watch ${state.ai.bias} (${state.symbol.activeSymbol})`,
-        `state-watch-${state.symbol.activeSymbol}-${state.ai.bias}-${evaluated.detail}`
+        `AI Watch ${stableBias}${symbolSuffix(workingSymbol)}`,
+        `state-watch-${stableBias}-${workingSymbol}-${evaluated.detail}`
       );
     } else {
-      const holdSignature = `state-hold-${state.symbol.activeSymbol}-${state.ai.bias}-${reasons.join('-')}-${evaluated.detail}`;
+      const holdSignature = `state-hold-${state.ai.bias}-${workingSymbol}-${reasons.join('-')}-${evaluated.detail}`;
       if (holdSignature !== state.engine.lastHoldReason) {
         state.engine.lastHoldReason = holdSignature;
-        addStateLog(`AI Hold • ${reasons.join(' • ')} (${state.symbol.activeSymbol})`, holdSignature);
+        addStateLog(
+          `AI Hold • ${reasons.join(' • ')}${symbolSuffix(workingSymbol)}`,
+          holdSignature
+        );
       }
     }
   }
@@ -1198,6 +1250,7 @@ function processAiTick() {
   const triggerFire = shouldTriggerFire(
     stage,
     stableBias,
+    workingSymbol,
     confidence,
     score,
     evaluated.premiumSetup
@@ -1210,19 +1263,18 @@ function processAiTick() {
   if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
     state.ai.paused = true;
     state.ai.pauseReason = 'DAY_LIMIT';
-    addLog(`AI pausiert wegen Tageslimit (${state.symbol.activeSymbol})`, {
-      force: true,
-      signature: 'pause-day-limit',
-    });
+    addLog('AI pausiert wegen Tageslimit', { force: true, signature: 'pause-day-limit' });
   }
 }
 
 /* =========================================================
-   Public state for frontend
+   Public state
    ========================================================= */
 
 function getPublicState() {
   const tags = state.ai.reasons.map(normalizeTag);
+  const symbolMeta = getActiveSymbolMeta();
+  const workingSymbol = getWorkingSymbol();
 
   return {
     ok: true,
@@ -1235,9 +1287,7 @@ function getPublicState() {
       netPnL: state.session.netPnL,
       liveBadge: state.system.liveBadge,
       dot: state.system.dot,
-      symbol: state.symbol.activeSymbol,
-      symbolName: state.symbol.activeName,
-      symbolLabel: currentSymbolLabel(),
+      symbol: workingSymbol,
     },
 
     ai: {
@@ -1253,6 +1303,15 @@ function getPublicState() {
       summary: state.ai.summary,
       paused: state.ai.paused,
       pauseReason: state.ai.pauseReason,
+    },
+
+    symbol: {
+      active: symbolMeta.symbol,
+      name: symbolMeta.name,
+      working: workingSymbol,
+      locked: state.symbol.locked,
+      lockReason: state.symbol.lockReason,
+      setupSymbol: state.engine.setupSymbol,
     },
 
     session: {
@@ -1280,16 +1339,6 @@ function getPublicState() {
               : 'DAY READY',
     },
 
-    symbol: {
-      active: state.symbol.activeSymbol,
-      name: state.symbol.activeName,
-      label: currentSymbolLabel(),
-      rotationTick: state.symbol.rotationTick,
-      watchlist: CONFIG.symbols.list,
-      lastPrice: state.market.lastPrice,
-      changePct: state.market.changePct,
-    },
-
     market: {
       trend: state.market.trend,
       volume: state.market.volume,
@@ -1297,23 +1346,6 @@ function getPublicState() {
       volatility: state.market.volatility,
       liquidity: state.market.liquidity,
       session: state.market.session,
-      lastPrice: state.market.lastPrice,
-      changePct: state.market.changePct,
-    },
-
-    position: {
-      mode: state.position.mode,
-      status: state.position.status,
-      symbol: state.position.symbol,
-      side: state.position.side,
-      entry: state.position.entry,
-      qty: state.position.qty,
-      lastPrice: state.position.lastPrice || state.market.lastPrice,
-      pnl: state.position.pnl,
-      openedAt: state.position.openedAt,
-      lastClosedSymbol: state.position.lastClosedSymbol,
-      lastClosedSide: state.position.lastClosedSide,
-      lastResult: state.position.lastResult,
     },
 
     cards: {
@@ -1321,8 +1353,7 @@ function getPublicState() {
       buyPost: state.manual.buyPost,
       sellPost: state.manual.sellPost,
       conf: `${state.ai.confidence}%`,
-      symbol: state.symbol.activeSymbol,
-      price: state.market.lastPrice,
+      symbol: workingSymbol,
     },
 
     limits: {
@@ -1344,9 +1375,10 @@ app.post('/api/auto/toggle', (_req, res) => {
   if (!state.session.autoMode) {
     state.session.processing = false;
     state.session.queue = 0;
+    state.engine.activeFireId = null;
   }
 
-  addLog(`AI Auto ${state.session.autoMode ? 'EIN' : 'AUS'} (${state.symbol.activeSymbol})`, {
+  addLog(`AI Auto ${state.session.autoMode ? 'EIN' : 'AUS'}`, {
     force: true,
     signature: `auto-toggle-${state.session.autoMode}-${Date.now()}`,
   });
@@ -1365,36 +1397,36 @@ app.post('/api/reset', (_req, res) => {
   state.ai.paused = false;
   state.ai.pauseReason = '';
 
-  state.position.status = 'NONE';
-  state.position.symbol = null;
-  state.position.side = null;
-  state.position.entry = 0;
-  state.position.qty = 1;
-  state.position.lastPrice = 0;
-  state.position.pnl = 0;
-  state.position.openedAt = 0;
-  state.position.lastClosedSymbol = null;
-  state.position.lastClosedSide = null;
-  state.position.lastResult = null;
-
   state.engine.lastDecisionKey = '';
   state.engine.lastHoldReason = '';
-  state.engine.fireCandidateSide = null;
+
+  state.engine.fireCandidateKey = null;
   state.engine.fireCandidateTicks = 0;
-  state.engine.lastFiredSignature = '';
+  state.engine.lastFiredSetupId = '';
   state.engine.lastFireAt = 0;
+  state.engine.activeFireId = null;
 
-  addLog(`Manual reset (${state.symbol.activeSymbol})`, {
-    force: true,
-    signature: `manual-reset-${Date.now()}`,
-  });
+  state.engine.activeSetupId = null;
+  state.engine.activeSetupKey = '';
+  state.engine.setupSymbol = null;
+  state.engine.setupSide = null;
 
+  unlockSymbol();
+
+  addLog('Manual reset', { force: true, signature: `manual-reset-${Date.now()}` });
   res.json(getPublicState());
 });
 
 app.post('/api/manual/buy', (_req, res) => {
   if (state.session.processing) {
     return res.status(409).json({ ok: false, error: 'Processing active' });
+  }
+
+  if (!state.engine.activeSetupId) {
+    state.engine.activeSetupId = createId('manual-setup');
+    state.engine.setupSymbol = getWorkingSymbol();
+    state.engine.setupSide = 'BUY';
+    lockSymbol('PROCESSING', state.engine.setupSymbol);
   }
 
   fireOrder('BUY');
@@ -1406,44 +1438,24 @@ app.post('/api/manual/sell', (_req, res) => {
     return res.status(409).json({ ok: false, error: 'Processing active' });
   }
 
+  if (!state.engine.activeSetupId) {
+    state.engine.activeSetupId = createId('manual-setup');
+    state.engine.setupSymbol = getWorkingSymbol();
+    state.engine.setupSide = 'SELL';
+    lockSymbol('PROCESSING', state.engine.setupSymbol);
+  }
+
   fireOrder('SELL');
   res.json(getPublicState());
 });
 
 app.post('/api/manual/win', (_req, res) => {
-  afterTradeResult(4, state.symbol.activeSymbol, state.session.lastOrderSide || state.ai.bias || 'BUY');
+  afterTradeResult(4, getWorkingSymbol());
   res.json(getPublicState());
 });
 
 app.post('/api/manual/loss', (_req, res) => {
-  afterTradeResult(-4, state.symbol.activeSymbol, state.session.lastOrderSide || state.ai.bias || 'BUY');
-  res.json(getPublicState());
-});
-
-app.post('/api/symbol/select', (req, res) => {
-  const requested = String(req.body?.symbol || '').toUpperCase().trim();
-  const foundIndex = CONFIG.symbols.list.findIndex((x) => x.symbol === requested);
-
-  if (foundIndex === -1) {
-    return res.status(404).json({ ok: false, error: 'Symbol not found' });
-  }
-
-  const pickedSymbol = CONFIG.symbols.list[foundIndex];
-  state.symbol.rotationIndex = foundIndex;
-  state.symbol.rotationTick = 0;
-  state.symbol.activeSymbol = pickedSymbol.symbol;
-  state.symbol.activeName = pickedSymbol.name;
-
-  if (symbolBook[pickedSymbol.symbol]) {
-    state.market.lastPrice = symbolBook[pickedSymbol.symbol].lastPrice;
-    state.market.changePct = symbolBook[pickedSymbol.symbol].changePct;
-  }
-
-  addLog(`Symbol manuell ${pickedSymbol.symbol}`, {
-    force: true,
-    signature: `symbol-manual-${pickedSymbol.symbol}-${Date.now()}`,
-  });
-
+  afterTradeResult(-4, getWorkingSymbol());
   res.json(getPublicState());
 });
 
@@ -1459,25 +1471,12 @@ app.get('/api/status', (_req, res) => {
   res.json(getPublicState());
 });
 
-app.get('/api/symbols', (_req, res) => {
-  res.json({
-    ok: true,
-    active: state.symbol.activeSymbol,
-    list: CONFIG.symbols.list.map((item) => ({
-      symbol: item.symbol,
-      name: item.name,
-      lastPrice: symbolBook[item.symbol]?.lastPrice || 0,
-      changePct: symbolBook[item.symbol]?.changePct || 0,
-    })),
-  });
-});
-
 app.get('/health', (_req, res) => {
   res.json({
     ok: true,
     version: state.version,
-    symbol: state.symbol.activeSymbol,
     uptime: process.uptime(),
+    symbol: getWorkingSymbol(),
   });
 });
 
@@ -1500,5 +1499,5 @@ setInterval(processAiTick, CONFIG.tickMs);
 processAiTick();
 
 app.listen(PORT, () => {
-  console.log(`V22.9.6 listening on :${PORT}`);
+  console.log(`V22.9.7 listening on :${PORT}`);
 });
