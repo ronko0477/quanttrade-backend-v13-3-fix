@@ -10,16 +10,14 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.9.3 HARD LIVE
-   Final UI/state consistency pass:
-   - hero text matches real stage
-   - AI SIGNAL shows BUY/SELL only on FIRE
-   - READY shows setup confirmed, not fired
-   - WATCH stays observation only
-   - controlled FIRE kept
-   - no spam-fire loops
-   - cooldown lock after filled order
-   - adaptive learning kept
+   V22.9.4 HARD LIVE
+   UI / STATE SYNC FIX
+   - hero title synced with real AI stage
+   - no more READY hero while signal is HOLD
+   - weak market forces full HOLD sync
+   - watch / ready / hold texts now consistent
+   - fire pipeline kept stable
+   - cooldown / pause / target logic unchanged
    ========================================================= */
 
 const CONFIG = {
@@ -101,10 +99,10 @@ function normalizeTag(text) {
    ========================================================= */
 
 const state = {
-  version: 'V22.9.3 HARD LIVE',
+  version: 'V22.9.4 HARD LIVE',
 
   system: {
-    status: 'READY', // READY | LOCKED | SESSION_LIMIT | TARGET
+    status: 'HOLD', // HOLD | WATCH | READY | LOCKED | TARGET | SESSION_LIMIT
     subtitle: 'System bereit.',
     detail: 'AI bereit für Entry.',
     liveBadge: 'LIVE',
@@ -149,14 +147,13 @@ const state = {
     confidence: 36,
     buyEdge: 45,
     sellEdge: 24,
-    stage: 'WATCH', // WATCH | READY | FIRE | HOLD | PAUSED
+    stage: 'WATCH', // HOLD | WATCH | READY | FIRE | PAUSED
     summary: 'AI Hold',
     reasons: ['Volume Low', 'Liquidity OK', 'Volatility Mid'],
     setupConfirmed: false,
     watchMode: true,
     paused: false,
     pauseReason: '',
-    preferredSide: 'BUY', // BUY | SELL | null
   },
 
   engine: {
@@ -230,7 +227,6 @@ function resetDayIfNeeded() {
 
     state.ai.paused = false;
     state.ai.pauseReason = '';
-    state.ai.preferredSide = 'BUY';
 
     state.learning.lastOutcome = null;
 
@@ -246,9 +242,11 @@ function resetDayIfNeeded() {
     state.engine.lastDecisionKey = '';
     state.engine.lastHoldReason = '';
 
-    state.system.status = 'READY';
+    state.system.status = 'HOLD';
     state.system.subtitle = 'System bereit.';
-    state.system.detail = state.session.autoMode ? 'AI bereit für Entry.' : 'Bereit für manuellen Modus.';
+    state.system.detail = state.session.autoMode
+      ? 'AI bereit für Entry.'
+      : 'Bereit für manuellen Modus.';
     state.system.liveBadge = state.session.autoMode ? 'AI AUTO ON' : 'LIVE';
 
     addLog('Day reset', { force: true, signature: `day-reset-${today}` });
@@ -275,7 +273,6 @@ function generateMarket() {
   let liquidityTarget = 60;
   let sessionTarget = 52;
 
-  // premium bullish
   if (phase < 0.16) {
     trendTarget = 84;
     structureTarget = 86;
@@ -283,36 +280,28 @@ function generateMarket() {
     volatilityTarget = 34;
     liquidityTarget = 78;
     sessionTarget = 64;
-  }
-  // good bullish
-  else if (phase < 0.34) {
+  } else if (phase < 0.34) {
     trendTarget = 74;
     structureTarget = 78;
     volumeTarget = 66;
     volatilityTarget = 44;
     liquidityTarget = 72;
     sessionTarget = 58;
-  }
-  // neutral
-  else if (phase < 0.58) {
+  } else if (phase < 0.58) {
     trendTarget = 58;
     structureTarget = 62;
     volumeTarget = 58;
     volatilityTarget = 52;
     liquidityTarget = 62;
     sessionTarget = 52;
-  }
-  // weak / defensive
-  else if (phase < 0.80) {
+  } else if (phase < 0.80) {
     trendTarget = 42;
     structureTarget = 46;
     volumeTarget = 46;
     volatilityTarget = 70;
     liquidityTarget = 48;
     sessionTarget = 42;
-  }
-  // bearish but tradable
-  else {
+  } else {
     trendTarget = 30;
     structureTarget = 36;
     volumeTarget = 62;
@@ -634,15 +623,17 @@ function evaluateStage(metrics, confidence, score) {
     detail = bias === 'BUY' ? 'BUY Signal bestätigt.' : 'SELL Signal bestätigt.';
   } else if (passesReady || setup.premiumSetup) {
     candidateStage = 'READY';
-    setupConfirmed = true;
-    detail = bias === 'BUY' ? 'BUY Setup bestätigt.' : 'SELL Setup bestätigt.';
+    detail =
+      confidence < 42
+        ? 'Setup fast bereit.'
+        : bias === 'BUY'
+          ? 'BUY Setup baut sich auf.'
+          : 'SELL Setup baut sich auf.';
   } else if (passesWatch) {
     candidateStage = 'WATCH';
-    setupConfirmed = false;
     detail = 'Beobachtung aktiv.';
   } else {
     candidateStage = 'HOLD';
-    setupConfirmed = false;
     detail = 'Kein Setup aktuell.';
   }
 
@@ -660,10 +651,8 @@ function evaluateStage(metrics, confidence, score) {
 
   if (blockers.length > 0 && candidateStage === 'FIRE') {
     candidateStage = setup.premiumSetup ? 'READY' : 'WATCH';
-    setupConfirmed = candidateStage === 'READY';
-    detail = candidateStage === 'READY'
-      ? (bias === 'BUY' ? 'BUY Setup bestätigt.' : 'SELL Setup bestätigt.')
-      : 'Markt instabil. Beobachtung aktiv.';
+    setupConfirmed = false;
+    detail = 'Markt instabil. Beobachtung aktiv.';
   }
 
   return {
@@ -673,7 +662,6 @@ function evaluateStage(metrics, confidence, score) {
     blockers,
     premiumSetup: setup.premiumSetup,
     weakMarket: setup.weakMarket,
-    preferredSide: bias,
   };
 }
 
@@ -690,6 +678,71 @@ function stabilizeStage(candidateStage) {
   }
 
   return state.ai.stage;
+}
+
+/* =========================================================
+   Final sync stage context
+   ========================================================= */
+
+function buildFinalStageContext(stabilizedStage, evaluated, stableBias, confidence) {
+  let stage = stabilizedStage;
+  let signal = 'HOLD';
+  let setupConfirmed = false;
+  let detail = 'Kein Setup aktuell.';
+
+  if (state.ai.paused) {
+    return {
+      stage: 'PAUSED',
+      signal: 'PAUSED',
+      setupConfirmed: false,
+      detail: 'AI pausiert.',
+    };
+  }
+
+  if (evaluated.weakMarket || confidence < 34) {
+    return {
+      stage: 'HOLD',
+      signal: 'HOLD',
+      setupConfirmed: false,
+      detail: 'Markt zu schwach für Entry.',
+    };
+  }
+
+  if (stage === 'FIRE') {
+    signal = stableBias;
+    setupConfirmed = true;
+    detail = stableBias === 'BUY' ? 'BUY Signal bestätigt.' : 'SELL Signal bestätigt.';
+  } else if (stage === 'READY') {
+    signal = stableBias;
+    setupConfirmed = false;
+    detail =
+      confidence < 42
+        ? 'Setup fast bereit.'
+        : stableBias === 'BUY'
+          ? 'BUY Setup baut sich auf.'
+          : 'SELL Setup baut sich auf.';
+  } else if (stage === 'WATCH') {
+    signal = stableBias;
+    setupConfirmed = false;
+    detail = 'Beobachtung aktiv.';
+  } else {
+    stage = 'HOLD';
+    signal = 'HOLD';
+    setupConfirmed = false;
+    detail = evaluated.detail === 'Markt instabil. Beobachtung aktiv.'
+      ? 'Beobachtung aktiv.'
+      : 'Kein Setup aktuell.';
+  }
+
+  if (evaluated.detail === 'Markt instabil. Beobachtung aktiv.' && stage !== 'FIRE') {
+    if (stage === 'HOLD') {
+      stage = 'WATCH';
+      signal = stableBias;
+    }
+    detail = 'Markt instabil. Beobachtung aktiv.';
+  }
+
+  return { stage, signal, setupConfirmed, detail };
 }
 
 /* =========================================================
@@ -739,7 +792,7 @@ function buildAiReasons(confidence) {
   return tags.slice(0, 7);
 }
 
-function mapHero(stage, preferredSide, detail) {
+function mapHero(stage, detail) {
   if (state.ai.paused) {
     if (state.ai.pauseReason === 'WIN_TARGET') {
       return {
@@ -770,33 +823,27 @@ function mapHero(stage, preferredSide, detail) {
       status: 'LOCKED',
       subtitle: 'Kurze Schutzpause aktiv.',
       detail: 'Cooldown aktiv.',
-      liveBadge: `COOLDOWN ${Math.max(1, Math.ceil((state.session.cooldownUntil - Date.now()) / 1000))}s`,
+      liveBadge: `COOLDOWN ${Math.max(
+        1,
+        Math.ceil((state.session.cooldownUntil - Date.now()) / 1000)
+      )}s`,
     };
   }
 
   if (state.session.processing) {
     return {
       status: 'LOCKED',
-      subtitle: preferredSide === 'SELL' ? 'SELL Auto gesendet' : 'BUY Auto gesendet',
+      subtitle: state.session.lastOrderSide === 'SELL' ? 'SELL Auto gesendet' : 'BUY Auto gesendet',
       detail: 'Order wird verarbeitet',
       liveBadge: 'PROCESSING',
     };
   }
 
-  if (stage === 'FIRE') {
+  if (stage === 'READY' || stage === 'FIRE') {
     return {
       status: 'READY',
       subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'System bereit.',
-      detail: preferredSide === 'SELL' ? 'SELL Signal bestätigt.' : 'BUY Signal bestätigt.',
-      liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
-    };
-  }
-
-  if (stage === 'READY') {
-    return {
-      status: 'READY',
-      subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'System bereit.',
-      detail: preferredSide === 'SELL' ? 'SELL Setup bestätigt.' : 'BUY Setup bestätigt.',
+      detail,
       liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
     };
   }
@@ -811,9 +858,9 @@ function mapHero(stage, preferredSide, detail) {
   }
 
   return {
-    status: 'READY',
+    status: 'HOLD',
     subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'System bereit.',
-    detail: detail || 'Kein Setup aktuell.',
+    detail,
     liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
   };
 }
@@ -841,7 +888,14 @@ function simulateTradeOutcome(side) {
   const liqPenalty = Math.max(0, 56 - state.market.liquidity) * 0.25;
   const sessionPenalty = Math.max(0, 48 - state.market.session) * 0.20;
 
-  const quality = conf * 0.40 + edge * 0.38 + score * 0.22 - volPenalty - liqPenalty - sessionPenalty;
+  const quality =
+    conf * 0.40 +
+    edge * 0.38 +
+    score * 0.22 -
+    volPenalty -
+    liqPenalty -
+    sessionPenalty;
+
   const winChance = clamp(quality / 100, 0.28, 0.78);
   const isWin = Math.random() < winChance;
 
@@ -882,7 +936,10 @@ function fireOrder(side) {
   state.session.lastOrderSide = side;
   state.engine.lastFireAt = Date.now();
 
-  addLog(`AI FIRE ${side}`, { force: true, signature: `ai-fire-${side}-${Date.now()}` });
+  addLog(`AI FIRE ${side}`, {
+    force: true,
+    signature: `ai-fire-${side}-${Date.now()}`,
+  });
   addLog(`Order wird verarbeitet (${side})`, {
     force: true,
     signature: `order-processing-${side}-${Date.now()}`,
@@ -919,7 +976,7 @@ function processAiTick() {
   const metrics = computeAiMetrics();
   const stableBias = updateStableBias(metrics);
   const confidence = computeConfidence(metrics);
-  const score = computeScore();
+  const score = computeScore(metrics);
   const reasons = buildAiReasons(confidence);
 
   state.ai.score = score;
@@ -929,49 +986,36 @@ function processAiTick() {
   state.ai.bias = state.ai.paused ? 'PAUSED' : stableBias;
 
   const evaluated = evaluateStage(metrics, confidence, score);
-  let stage = stabilizeStage(evaluated.candidateStage);
+  let stabilizedStage = stabilizeStage(evaluated.candidateStage);
 
   if (state.ai.paused) {
-    stage = 'PAUSED';
+    stabilizedStage = 'PAUSED';
   }
 
-  let signal = 'HOLD';
-  let summary = 'AI Hold';
-  let setupConfirmed = false;
-  let preferredSide = evaluated.preferredSide;
+  const finalCtx = buildFinalStageContext(
+    stabilizedStage,
+    evaluated,
+    stableBias,
+    confidence
+  );
 
-  if (stage === 'PAUSED') {
-    signal = 'PAUSED';
-    summary = 'AI Paused';
-    preferredSide = 'PAUSED';
-  } else if (stage === 'FIRE') {
-    signal = preferredSide;
-    summary = `AI FIRE ${preferredSide}`;
-    setupConfirmed = true;
-  } else if (stage === 'READY') {
-    signal = 'HOLD';
-    summary = `AI Ready ${preferredSide}`;
-    setupConfirmed = true;
-  } else if (stage === 'WATCH') {
-    signal = 'HOLD';
-    summary = `AI Watch ${preferredSide}`;
-    setupConfirmed = false;
-  } else {
-    signal = 'HOLD';
-    summary = 'AI Hold';
-    setupConfirmed = false;
-  }
-
-  state.ai.stage = stage;
-  state.ai.signal = signal;
-  state.ai.setupConfirmed = setupConfirmed;
+  state.ai.stage = finalCtx.stage;
+  state.ai.signal = finalCtx.signal;
+  state.ai.setupConfirmed = finalCtx.setupConfirmed;
   state.ai.reasons = reasons;
-  state.ai.summary = summary;
-  state.ai.watchMode = stage === 'WATCH';
-  state.ai.preferredSide = preferredSide;
-  state.ai.pauseReason = state.ai.pauseReason;
+  state.ai.summary =
+    finalCtx.signal === 'PAUSED'
+      ? 'AI Paused'
+      : finalCtx.stage === 'FIRE'
+        ? `AI ${finalCtx.signal}`
+        : finalCtx.stage === 'READY'
+          ? 'AI Ready'
+          : finalCtx.stage === 'WATCH'
+            ? 'AI Watch'
+            : 'AI Hold';
+  state.ai.watchMode = finalCtx.stage === 'WATCH';
 
-  const hero = mapHero(stage, preferredSide, evaluated.detail);
+  const hero = mapHero(finalCtx.stage, finalCtx.detail);
   state.system.status = hero.status;
   state.system.subtitle = hero.subtitle;
   state.system.detail = hero.detail;
@@ -980,9 +1024,9 @@ function processAiTick() {
   state.manual.conf = state.ai.confidence;
 
   const decisionKey = [
-    stage,
-    signal,
-    preferredSide,
+    finalCtx.stage,
+    finalCtx.signal,
+    state.ai.bias,
     state.ai.confidence,
     hero.detail,
     ...reasons,
@@ -991,16 +1035,19 @@ function processAiTick() {
   if (decisionKey !== state.engine.lastDecisionKey) {
     state.engine.lastDecisionKey = decisionKey;
 
-    if (stage === 'PAUSED') {
+    if (finalCtx.signal === 'PAUSED') {
       addStateLog('AI Paused', `state-paused-${state.ai.pauseReason}`);
-    } else if (stage === 'FIRE') {
-      addStateLog(`AI FIRE ${preferredSide}`, `state-fire-${preferredSide}-${evaluated.premiumSetup ? 'premium' : 'normal'}`);
-    } else if (stage === 'READY') {
-      addStateLog(`AI Ready ${preferredSide}`, `state-ready-${preferredSide}-${hero.detail}`);
-    } else if (stage === 'WATCH') {
-      addStateLog(`AI Watch ${preferredSide}`, `state-watch-${preferredSide}-${hero.detail}`);
+    } else if (finalCtx.stage === 'FIRE') {
+      addStateLog(
+        `AI FIRE ${finalCtx.signal}`,
+        `state-fire-${finalCtx.signal}-${evaluated.premiumSetup ? 'premium' : 'normal'}`
+      );
+    } else if (finalCtx.stage === 'READY') {
+      addStateLog(`AI Ready ${state.ai.bias}`, `state-ready-${state.ai.bias}-${hero.detail}`);
+    } else if (finalCtx.stage === 'WATCH') {
+      addStateLog(`AI Watch ${state.ai.bias}`, `state-watch-${state.ai.bias}-${hero.detail}`);
     } else {
-      const holdSignature = `state-hold-${preferredSide}-${reasons.join('-')}-${hero.detail}`;
+      const holdSignature = `state-hold-${state.ai.bias}-${reasons.join('-')}-${hero.detail}`;
       if (holdSignature !== state.engine.lastHoldReason) {
         state.engine.lastHoldReason = holdSignature;
         addStateLog(`AI Hold • ${reasons.join(' • ')}`, holdSignature);
@@ -1009,15 +1056,15 @@ function processAiTick() {
   }
 
   const triggerFire = shouldTriggerFire(
-    stage,
-    preferredSide,
+    finalCtx.stage,
+    stableBias,
     confidence,
     score,
     evaluated.premiumSetup
   );
 
   if (triggerFire && canFire()) {
-    fireOrder(preferredSide);
+    fireOrder(stableBias);
   }
 
   if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
@@ -1060,7 +1107,6 @@ function getPublicState() {
       summary: state.ai.summary,
       paused: state.ai.paused,
       pauseReason: state.ai.pauseReason,
-      preferredSide: state.ai.preferredSide,
     },
 
     session: {
@@ -1143,7 +1189,6 @@ app.post('/api/reset', (_req, res) => {
 
   state.ai.paused = false;
   state.ai.pauseReason = '';
-  state.ai.preferredSide = 'BUY';
 
   state.engine.lastDecisionKey = '';
   state.engine.lastHoldReason = '';
@@ -1223,5 +1268,5 @@ setInterval(processAiTick, CONFIG.tickMs);
 processAiTick();
 
 app.listen(PORT, () => {
-  console.log(`V22.9.3 listening on :${PORT}`);
+  console.log(`V22.9.4 listening on :${PORT}`);
 });
