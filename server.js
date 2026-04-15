@@ -10,13 +10,15 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.9.1 HARD LIVE
-   clean fire / stable ready upgrade:
-   - FIRE log only once per real trigger
-   - stricter re-arm after filled order
-   - READY must stay stable before FIRE
-   - no direct WATCH -> FIRE jump
-   - weak market still HOLD
+   V22.9.2 HARD LIVE
+   Hero/Text cleanup:
+   - READY wording fixed
+   - no more "BUY Signal bestätigt" while still HOLD/READY
+   - FIRE only when final trigger is really there
+   - stable watch / ready / fire pipeline kept
+   - premium setup override kept
+   - no spam-fire loops
+   - cooldown lock after filled order
    - adaptive learning kept
    ========================================================= */
 
@@ -52,11 +54,6 @@ const CONFIG = {
     stateConfirmTicks: 2,
     regimeConfirmTicks: 2,
     fireConfirmTicks: 2,
-
-    // NEW
-    readyHoldTicksForFire: 2,
-    minTicksSinceLastFire: 14,
-    rearmAfterTradeTicks: 4,
 
     maxVolatilityForFire: 68,
     minLiquidityForFire: 54,
@@ -104,7 +101,7 @@ function normalizeTag(text) {
    ========================================================= */
 
 const state = {
-  version: 'V22.9.1 HARD LIVE',
+  version: 'V22.9.2 HARD LIVE',
 
   system: {
     status: 'READY', // READY | LOCKED | SESSION_LIMIT | TARGET
@@ -162,11 +159,8 @@ const state = {
   },
 
   engine: {
-    tick: 0,
-
     candidateStage: 'WATCH',
     candidateStageTicks: 0,
-
     regimeCandidate: 'BUY',
     regimeTicks: 0,
     stableBias: 'BUY',
@@ -175,17 +169,11 @@ const state = {
     fireCandidateTicks: 0,
     lastFiredSignature: '',
     lastFireAt: 0,
-    lastFireTick: -999,
-    lastOrderFinishedTick: -999,
 
     lastDecisionKey: '',
     lastLoggedAt: 0,
     lastLogSignature: '',
     lastHoldReason: '',
-
-    stableReadyTicks: 0,
-    lastStableReadyBias: null,
-    rearmBlockUntilTick: 0,
   },
 
   manual: {
@@ -244,7 +232,6 @@ function resetDayIfNeeded() {
 
     state.learning.lastOutcome = null;
 
-    state.engine.tick = 0;
     state.engine.candidateStage = 'WATCH';
     state.engine.candidateStageTicks = 0;
     state.engine.regimeCandidate = 'BUY';
@@ -254,13 +241,8 @@ function resetDayIfNeeded() {
     state.engine.fireCandidateTicks = 0;
     state.engine.lastFiredSignature = '';
     state.engine.lastFireAt = 0;
-    state.engine.lastFireTick = -999;
-    state.engine.lastOrderFinishedTick = -999;
     state.engine.lastDecisionKey = '';
     state.engine.lastHoldReason = '';
-    state.engine.stableReadyTicks = 0;
-    state.engine.lastStableReadyBias = null;
-    state.engine.rearmBlockUntilTick = 0;
 
     state.system.status = 'READY';
     state.system.subtitle = 'System bereit.';
@@ -603,14 +585,6 @@ function getSetupQuality(metrics, confidence, score) {
   return {
     premiumSetup: premiumBuy || premiumSell,
     weakMarket,
-    volumeOk,
-    liquidityOk,
-    volatilityStable,
-    volatilityMid,
-    sessionGood,
-    sessionSoft,
-    trendUp,
-    structureStrong,
   };
 }
 
@@ -668,8 +642,8 @@ function evaluateStage(metrics, confidence, score) {
       confidence < 42
         ? 'Setup fast bereit.'
         : bias === 'BUY'
-          ? 'BUY Setup baut sich auf.'
-          : 'SELL Setup baut sich auf.';
+          ? 'BUY Setup bestätigt.'
+          : 'SELL Setup bestätigt.';
   } else if (passesWatch) {
     candidateStage = 'WATCH';
     signal = bias;
@@ -688,9 +662,8 @@ function evaluateStage(metrics, confidence, score) {
   }
 
   if (confidence < 34 && candidateStage !== 'FIRE') {
-    candidateStage = 'HOLD';
-    setupConfirmed = false;
     signal = 'HOLD';
+    setupConfirmed = false;
     detail = 'Markt zu schwach für Entry.';
   }
 
@@ -727,22 +700,6 @@ function stabilizeStage(candidateStage) {
   return state.ai.stage;
 }
 
-function updateStableReadyTicks(stage, bias) {
-  if (stage === 'READY') {
-    if (state.engine.lastStableReadyBias === bias) {
-      state.engine.stableReadyTicks += 1;
-    } else {
-      state.engine.lastStableReadyBias = bias;
-      state.engine.stableReadyTicks = 1;
-    }
-  } else if (stage === 'FIRE') {
-    // keep ready memory for one more evaluation path
-  } else {
-    state.engine.lastStableReadyBias = null;
-    state.engine.stableReadyTicks = 0;
-  }
-}
-
 /* =========================================================
    Controlled fire latch
    ========================================================= */
@@ -751,24 +708,6 @@ function shouldTriggerFire(stage, side, confidence, score, premiumSetup) {
   if (stage !== 'FIRE') {
     state.engine.fireCandidateSide = null;
     state.engine.fireCandidateTicks = 0;
-    return false;
-  }
-
-  const tick = state.engine.tick;
-  const ticksSinceLastFire = tick - state.engine.lastFireTick;
-  const readyStableEnough = state.engine.lastStableReadyBias === side &&
-    state.engine.stableReadyTicks >= CONFIG.ai.readyHoldTicksForFire;
-  const rearmed = tick >= state.engine.rearmBlockUntilTick;
-
-  if (!readyStableEnough && !premiumSetup) {
-    return false;
-  }
-
-  if (!rearmed) {
-    return false;
-  }
-
-  if (ticksSinceLastFire < CONFIG.ai.minTicksSinceLastFire) {
     return false;
   }
 
@@ -799,7 +738,7 @@ function shouldTriggerFire(stage, side, confidence, score, premiumSetup) {
    AI text mapping
    ========================================================= */
 
-function buildAiReasons(confidence) {
+function buildAiReasons(_metrics, confidence) {
   const tags = regimeTags(state.market);
 
   if (confidence < 42) tags.push('Low Confidence');
@@ -852,18 +791,34 @@ function mapHero(stage, signal, confidence, detail) {
     };
   }
 
+  let safeDetail = detail;
+
+  // Text harmonization:
+  // READY should show setup wording, FIRE can show signal wording.
+  if (stage === 'READY') {
+    if (signal === 'BUY' && /Signal bestätigt/i.test(detail || '')) {
+      safeDetail = 'BUY Setup bestätigt.';
+    } else if (signal === 'SELL' && /Signal bestätigt/i.test(detail || '')) {
+      safeDetail = 'SELL Setup bestätigt.';
+    }
+  }
+
   return {
     status: 'READY',
     subtitle: state.session.autoMode ? 'AI Auto aktiv' : 'System bereit.',
     detail:
-      detail ||
+      safeDetail ||
       (stage === 'WATCH'
         ? 'Beobachtung aktiv.'
         : stage === 'READY'
           ? 'Setup fast bereit.'
-          : confidence < 34
-            ? 'Markt zu schwach für Entry.'
-            : 'Kein Setup aktuell.'),
+          : stage === 'FIRE'
+            ? signal === 'SELL'
+              ? 'SELL Signal bestätigt.'
+              : 'BUY Signal bestätigt.'
+            : confidence < 34
+              ? 'Markt zu schwach für Entry.'
+              : 'Kein Setup aktuell.'),
     liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
   };
 }
@@ -937,44 +892,28 @@ function fireOrder(side) {
   state.session.processing = true;
   state.session.queue = 1;
   state.session.lastOrderSide = side;
-
   state.engine.lastFireAt = Date.now();
-  state.engine.lastFireTick = state.engine.tick;
-  state.engine.rearmBlockUntilTick = state.engine.tick + CONFIG.ai.minTicksSinceLastFire;
 
-  // clear ready-memory after real fire
-  state.engine.stableReadyTicks = 0;
-  state.engine.lastStableReadyBias = null;
-
-  addLog(`AI FIRE ${side}`, {
-    force: true,
-    signature: `ai-fire-${side}-${state.engine.lastFireTick}`,
-  });
+  addLog(`AI FIRE ${side}`, { force: true, signature: `ai-fire-${side}-${Date.now()}` });
   addLog(`Order wird verarbeitet (${side})`, {
     force: true,
-    signature: `order-processing-${side}-${state.engine.lastFireTick}`,
+    signature: `order-processing-${side}-${Date.now()}`,
   });
   addLog(`Order queued (${side})`, {
     force: true,
-    signature: `order-queued-${side}-${state.engine.lastFireTick}`,
+    signature: `order-queued-${side}-${Date.now()}`,
   });
 
   setTimeout(() => {
     addLog(`Order ausgeführt (${side})`, {
       force: true,
-      signature: `order-filled-${side}-${state.engine.lastFireTick}`,
+      signature: `order-filled-${side}-${Date.now()}`,
     });
 
     state.session.processing = false;
     state.session.queue = 0;
     state.session.tradesToday += 1;
     state.session.cooldownUntil = Date.now() + CONFIG.session.cooldownMs;
-
-    state.engine.lastOrderFinishedTick = state.engine.tick;
-    state.engine.rearmBlockUntilTick = Math.max(
-      state.engine.rearmBlockUntilTick,
-      state.engine.tick + CONFIG.ai.rearmAfterTradeTicks
-    );
 
     const pnl = simulateTradeOutcome(side);
     afterTradeResult(pnl);
@@ -986,16 +925,14 @@ function fireOrder(side) {
    ========================================================= */
 
 function processAiTick() {
-  state.engine.tick += 1;
-
   resetDayIfNeeded();
   generateMarket();
 
   const metrics = computeAiMetrics();
   const stableBias = updateStableBias(metrics);
   const confidence = computeConfidence(metrics);
-  const score = computeScore();
-  const reasons = buildAiReasons(confidence);
+  const score = computeScore(metrics);
+  const reasons = buildAiReasons(metrics, confidence);
 
   state.ai.score = score;
   state.ai.confidence = confidence;
@@ -1005,25 +942,6 @@ function processAiTick() {
 
   const evaluated = evaluateStage(metrics, confidence, score);
   let stage = stabilizeStage(evaluated.candidateStage);
-
-  updateStableReadyTicks(stage, stableBias);
-
-  // no WATCH -> FIRE jump unless premium setup
-  if (
-    stage === 'FIRE' &&
-    state.engine.lastStableReadyBias !== stableBias &&
-    !evaluated.premiumSetup
-  ) {
-    stage = 'READY';
-  }
-
-  if (
-    stage === 'FIRE' &&
-    state.engine.stableReadyTicks < CONFIG.ai.readyHoldTicksForFire &&
-    !evaluated.premiumSetup
-  ) {
-    stage = 'READY';
-  }
 
   if (state.ai.paused) {
     stage = 'PAUSED';
@@ -1038,12 +956,15 @@ function processAiTick() {
     signal = stableBias;
     setupConfirmed = true;
   } else if (stage === 'READY') {
-    signal = stableBias;
+    // READY is setup-confirmed, but still not final fired state.
+    // Frontend can still show HOLD signal tile if desired.
+    signal = 'HOLD';
+    setupConfirmed = true;
   } else {
     signal = 'HOLD';
   }
 
-  if (signal === 'HOLD') {
+  if (signal === 'HOLD' && stage !== 'READY') {
     setupConfirmed = false;
   }
 
@@ -1052,18 +973,19 @@ function processAiTick() {
   state.ai.setupConfirmed = setupConfirmed;
   state.ai.reasons = reasons;
   state.ai.summary =
-    signal === 'PAUSED'
+    stage === 'PAUSED'
       ? 'AI Paused'
       : stage === 'FIRE'
-        ? `AI ${signal}`
+        ? `AI ${stableBias}`
         : stage === 'READY'
-          ? 'AI Ready'
+          ? `AI Ready ${stableBias}`
           : stage === 'WATCH'
-            ? 'AI Watch'
+            ? `AI Watch ${stableBias}`
             : 'AI Hold';
   state.ai.watchMode = stage === 'WATCH';
+  state.ai.pauseReason = state.ai.pauseReason;
 
-  const hero = mapHero(stage, signal, confidence, evaluated.detail);
+  const hero = mapHero(stage, stableBias, confidence, evaluated.detail);
   state.system.status = hero.status;
   state.system.subtitle = hero.subtitle;
   state.system.detail = hero.detail;
@@ -1073,8 +995,8 @@ function processAiTick() {
 
   const decisionKey = [
     stage,
-    signal,
-    state.ai.bias,
+    stableBias,
+    state.ai.signal,
     state.ai.confidence,
     evaluated.detail,
     ...reasons,
@@ -1083,14 +1005,25 @@ function processAiTick() {
   if (decisionKey !== state.engine.lastDecisionKey) {
     state.engine.lastDecisionKey = decisionKey;
 
-    if (signal === 'PAUSED') {
+    if (stage === 'PAUSED') {
       addStateLog('AI Paused', `state-paused-${state.ai.pauseReason}`);
+    } else if (stage === 'FIRE') {
+      addStateLog(
+        `AI FIRE ${stableBias}`,
+        `state-fire-${stableBias}-${evaluated.premiumSetup ? 'premium' : 'normal'}`
+      );
     } else if (stage === 'READY') {
-      addStateLog(`AI Ready ${state.ai.bias}`, `state-ready-${state.ai.bias}-${evaluated.detail}`);
+      addStateLog(
+        `AI Ready ${stableBias}`,
+        `state-ready-${stableBias}-${evaluated.detail}`
+      );
     } else if (stage === 'WATCH') {
-      addStateLog(`AI Watch ${state.ai.bias}`, `state-watch-${state.ai.bias}-${evaluated.detail}`);
-    } else if (stage === 'HOLD') {
-      const holdSignature = `state-hold-${state.ai.bias}-${reasons.join('-')}-${evaluated.detail}`;
+      addStateLog(
+        `AI Watch ${stableBias}`,
+        `state-watch-${stableBias}-${evaluated.detail}`
+      );
+    } else {
+      const holdSignature = `state-hold-${stableBias}-${reasons.join('-')}-${evaluated.detail}`;
       if (holdSignature !== state.engine.lastHoldReason) {
         state.engine.lastHoldReason = holdSignature;
         addStateLog(`AI Hold • ${reasons.join(' • ')}`, holdSignature);
@@ -1233,23 +1166,17 @@ app.post('/api/reset', (_req, res) => {
   state.ai.paused = false;
   state.ai.pauseReason = '';
 
-  state.engine.candidateStage = 'WATCH';
-  state.engine.candidateStageTicks = 0;
-  state.engine.regimeCandidate = 'BUY';
-  state.engine.regimeTicks = 0;
-  state.engine.stableBias = 'BUY';
-
   state.engine.lastDecisionKey = '';
   state.engine.lastHoldReason = '';
   state.engine.fireCandidateSide = null;
   state.engine.fireCandidateTicks = 0;
   state.engine.lastFiredSignature = '';
   state.engine.lastFireAt = 0;
-  state.engine.lastFireTick = -999;
-  state.engine.lastOrderFinishedTick = -999;
-  state.engine.stableReadyTicks = 0;
-  state.engine.lastStableReadyBias = null;
-  state.engine.rearmBlockUntilTick = 0;
+  state.engine.candidateStage = 'WATCH';
+  state.engine.candidateStageTicks = 0;
+  state.engine.regimeCandidate = 'BUY';
+  state.engine.regimeTicks = 0;
+  state.engine.stableBias = 'BUY';
 
   addLog('Manual reset', { force: true, signature: `manual-reset-${Date.now()}` });
   res.json(getPublicState());
@@ -1322,5 +1249,5 @@ setInterval(processAiTick, CONFIG.tickMs);
 processAiTick();
 
 app.listen(PORT, () => {
-  console.log(`V22.9.1 listening on :${PORT}`);
+  console.log(`V22.9.2 listening on :${PORT}`);
 });
