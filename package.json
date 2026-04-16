@@ -1,16 +1,13 @@
 {
   "name": "quanttrade-ai",
   "version": "22.11.3",
-  "description": "AI Trading Engine with Postgres Persistence (Render DB)",
+  "private": true,
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "engines": {
-    "node": ">=18"
-  },
   "dependencies": {
-    "express": "^4.18.2",
+    "express": "^4.19.2",
     "pg": "^8.12.0"
   }
 }
