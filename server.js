@@ -2,7 +2,7 @@
 
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
+const { Pool } = require('pg');
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -11,8 +11,9 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.11.1 HARD PERSIST LIVE
-   - true persist save/load
+   V22.11.3 DB FIX
+   - persist via Render Postgres
+   - no file persistence anymore
    - no reset on deploy/restart
    - symbol rotation persisted
    - fire lock stable
@@ -72,10 +73,24 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v22.11.1.json'),
     flushDebounceMs: 120,
   },
 };
+
+/* =========================================================
+   Postgres persistence
+   ========================================================= */
+
+const pgEnabled = !!process.env.PERSIST_DATABASE_URL;
+
+const pgPool = pgEnabled
+  ? new Pool({
+      connectionString: process.env.PERSIST_DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    })
+  : null;
+
+const PERSIST_KEY = 'main';
 
 /* =========================================================
    Helpers
@@ -108,24 +123,27 @@ function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
-function ensureDir(filePath) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+async function ensureDb() {
+  if (!pgPool) return;
+
+  await pgPool.query(`
+    CREATE TABLE IF NOT EXISTS app_state (
+      state_key TEXT PRIMARY KEY,
+      payload JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
 }
 
-function safeReadJson(filePath) {
-  try {
-    if (!fs.existsSync(filePath)) return null;
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch {
-    return null;
-  }
-}
+async function loadFromDb() {
+  if (!pgPool) return null;
 
-function safeWriteJson(filePath, data) {
-  ensureDir(filePath);
-  const tmp = `${filePath}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
-  fs.renameSync(tmp, filePath);
+  const res = await pgPool.query(
+    'SELECT payload FROM app_state WHERE state_key = $1 LIMIT 1',
+    [PERSIST_KEY]
+  );
+
+  return res.rows.length ? res.rows[0].payload : null;
 }
 
 /* =========================================================
@@ -134,7 +152,7 @@ function safeWriteJson(filePath, data) {
 
 function createInitialState() {
   return {
-    version: 'V22.11.1 HARD PERSIST LIVE',
+    version: 'V22.11.3 DB FIX',
 
     system: {
       status: 'READY',
@@ -156,7 +174,7 @@ function createInitialState() {
       processing: false,
       autoMode: true,
       lastOrderSide: null,
-      syncOk: true,
+      syncOk: pgEnabled,
     },
 
     market: {
@@ -252,20 +270,48 @@ function getPersistableState() {
   };
 }
 
-function flushStateNow() {
+async function saveToDb() {
+  if (!pgPool) return;
+
+  await pgPool.query(
+    `
+    INSERT INTO app_state (state_key, payload)
+    VALUES ($1, $2::jsonb)
+    ON CONFLICT (state_key)
+    DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()
+    `,
+    [PERSIST_KEY, JSON.stringify(getPersistableState())]
+  );
+
+  state.session.syncOk = true;
+}
+
+async function flushStateNow() {
   try {
-    safeWriteJson(CONFIG.persist.file, getPersistableState());
-    state.session.syncOk = true;
+    if (pgEnabled) {
+      await saveToDb();
+    }
+    state.session.syncOk = pgEnabled ? true : false;
   } catch {
     state.session.syncOk = false;
   }
 }
 
 function schedulePersist() {
+  if (!pgEnabled) {
+    state.session.syncOk = false;
+    return;
+  }
+
   if (persistTimer) clearTimeout(persistTimer);
-  persistTimer = setTimeout(() => {
+
+  persistTimer = setTimeout(async () => {
     persistTimer = null;
-    flushStateNow();
+    try {
+      await saveToDb();
+    } catch {
+      state.session.syncOk = false;
+    }
   }, CONFIG.persist.flushDebounceMs);
 }
 
@@ -289,7 +335,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V22.11.1 HARD PERSIST LIVE';
+  target.version = 'V22.11.3 DB FIX';
 
   if (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0) {
     target.symbol = {
@@ -307,47 +353,52 @@ function mergeLoadedState(target, loaded) {
   if (!Array.isArray(target.logs)) target.logs = [];
   target.logs = target.logs.slice(0, CONFIG.log.maxEntries);
 
-  if (typeof target.session.syncOk !== 'boolean') target.session.syncOk = true;
+  if (typeof target.session.syncOk !== 'boolean') {
+    target.session.syncOk = pgEnabled;
+  }
 }
 
-function hydrateState() {
-  const loaded = safeReadJson(CONFIG.persist.file);
+async function hydrateState() {
+  if (pgEnabled) {
+    await ensureDb();
+  }
+
+  const loaded = pgEnabled ? await loadFromDb() : null;
 
   if (loaded) {
     mergeLoadedState(state, loaded);
-    addLog(`STATE LOADED ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
+    addLog(`STATE RESTORED FROM DB PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
       force: true,
-      signature: `state-loaded-${Date.now()}`,
+      signature: `state-restored-${Date.now()}`,
     });
   } else {
     addLog('STATE INIT NEW', {
       force: true,
       signature: `state-init-new-${Date.now()}`,
     });
+
+    if (pgEnabled) {
+      await saveToDb();
+    }
   }
 
   isHydrated = true;
-  schedulePersist();
 }
 
 process.on('SIGINT', () => {
-  try {
-    flushStateNow();
-  } finally {
-    process.exit(0);
-  }
+  flushStateNow()
+    .catch(() => {})
+    .finally(() => process.exit(0));
 });
 
 process.on('SIGTERM', () => {
-  try {
-    flushStateNow();
-  } finally {
-    process.exit(0);
-  }
+  flushStateNow()
+    .catch(() => {})
+    .finally(() => process.exit(0));
 });
 
 process.on('beforeExit', () => {
-  flushStateNow();
+  return flushStateNow().catch(() => {});
 });
 
 /* =========================================================
@@ -749,9 +800,7 @@ function getSetupQuality(metrics, confidence, score) {
 
   const volumeOk = m.volume >= 60;
   const liquidityOk = m.liquidity >= 56;
-  const volatilityStable = m.volatility <= 38;
   const volatilityMid = m.volatility <= 62;
-  const sessionGood = m.session >= 58;
   const sessionSoft = m.session >= 45;
   const trendUp = m.trend >= 68;
   const structureStrong = m.structure >= 74;
@@ -1416,6 +1465,7 @@ app.get('/health', (_req, res) => {
     version: state.version,
     uptime: process.uptime(),
     symbol: state.symbol.active,
+    pgEnabled,
   });
 });
 
@@ -1434,10 +1484,21 @@ app.get('*', (_req, res) => {
    Boot
    ========================================================= */
 
-hydrateState();
-processAiTick();
-setInterval(processAiTick, CONFIG.tickMs);
+async function boot() {
+  try {
+    await hydrateState();
 
-app.listen(PORT, () => {
-  console.log(`V22.11.1 listening on :${PORT}`);
-});
+    processAiTick();
+    setInterval(processAiTick, CONFIG.tickMs);
+
+    app.listen(PORT, () => {
+      console.log(`V22.11.3 DB FIX listening on :${PORT}`);
+      console.log(`Postgres persist: ${pgEnabled ? 'ON' : 'OFF'}`);
+    });
+  } catch (err) {
+    console.error('BOOT ERROR', err);
+    process.exit(1);
+  }
+}
+
+boot();
