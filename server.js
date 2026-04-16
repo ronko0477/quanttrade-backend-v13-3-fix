@@ -12,12 +12,13 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.11.3 DB FIX
-   - real postgres persist
-   - load from db on boot
-   - save to db after changes
-   - file fallback only if db unavailable
-   - no reset on deploy when db works
+   V22.11.4 DB STABLE
+   - postgres persist priority
+   - file fallback only
+   - deploy-safe restore
+   - stronger sync status
+   - forced save after important actions
+   - stable boot / stable db writes
    ========================================================= */
 
 const CONFIG = {
@@ -72,9 +73,10 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v22.11.3.json'),
-    flushDebounceMs: 120,
-    stateKey: 'quanttrade-main',
+    file: path.join(process.cwd(), 'data', 'state.v22.11.4.json'),
+    flushDebounceMs: 150,
+    dbKey: 'global',
+    tableName: 'app_state',
   },
 };
 
@@ -130,12 +132,105 @@ function safeWriteJson(filePath, data) {
 }
 
 /* =========================================================
+   Postgres
+   ========================================================= */
+
+const DATABASE_URL =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_INTERNAL_URL ||
+  '';
+
+const DB_ENABLED = !!DATABASE_URL;
+
+let pool = null;
+let dbReady = false;
+let dbLastError = '';
+let dbSaveRunning = false;
+let dbPendingSave = false;
+
+if (DB_ENABLED) {
+  pool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: DATABASE_URL.includes('localhost')
+      ? false
+      : { rejectUnauthorized: false },
+  });
+}
+
+async function dbInit() {
+  if (!DB_ENABLED || !pool) return false;
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ${CONFIG.persist.tableName} (
+        id TEXT PRIMARY KEY,
+        payload JSONB NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    dbReady = true;
+    dbLastError = '';
+    console.log('Postgres persist: ON');
+    return true;
+  } catch (err) {
+    dbReady = false;
+    dbLastError = err?.message || 'db init failed';
+    console.log('Postgres persist: OFF');
+    console.error(dbLastError);
+    return false;
+  }
+}
+
+async function dbLoadState() {
+  if (!DB_ENABLED || !pool || !dbReady) return null;
+
+  try {
+    const res = await pool.query(
+      `SELECT payload FROM ${CONFIG.persist.tableName} WHERE id = $1 LIMIT 1`,
+      [CONFIG.persist.dbKey]
+    );
+
+    if (!res.rows.length) return null;
+    return res.rows[0].payload || null;
+  } catch (err) {
+    dbReady = false;
+    dbLastError = err?.message || 'db load failed';
+    return null;
+  }
+}
+
+async function dbSaveState(payload) {
+  if (!DB_ENABLED || !pool || !dbReady) return false;
+
+  try {
+    await pool.query(
+      `
+      INSERT INTO ${CONFIG.persist.tableName} (id, payload, updated_at)
+      VALUES ($1, $2::jsonb, NOW())
+      ON CONFLICT (id)
+      DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()
+      `,
+      [CONFIG.persist.dbKey, JSON.stringify(payload)]
+    );
+
+    dbLastError = '';
+    return true;
+  } catch (err) {
+    dbReady = false;
+    dbLastError = err?.message || 'db save failed';
+    return false;
+  }
+}
+
+/* =========================================================
    State factory
    ========================================================= */
 
 function createInitialState() {
   return {
-    version: 'V22.11.3 DB FIX',
+    version: 'V22.11.4 DB STABLE',
 
     system: {
       status: 'READY',
@@ -231,67 +326,6 @@ function createInitialState() {
 const state = createInitialState();
 
 /* =========================================================
-   Postgres
-   ========================================================= */
-
-const DATABASE_URL = process.env.DATABASE_URL || '';
-const hasDatabaseUrl = Boolean(DATABASE_URL && DATABASE_URL.trim());
-
-let pgPool = null;
-let postgresEnabled = false;
-
-if (hasDatabaseUrl) {
-  pgPool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-}
-
-async function initDb() {
-  if (!pgPool) return false;
-
-  await pgPool.query(`
-    CREATE TABLE IF NOT EXISTS app_state (
-      state_key TEXT PRIMARY KEY,
-      state_json JSONB NOT NULL,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  return true;
-}
-
-async function loadStateFromDb() {
-  if (!pgPool) return null;
-
-  const result = await pgPool.query(
-    `SELECT state_json FROM app_state WHERE state_key = $1 LIMIT 1`,
-    [CONFIG.persist.stateKey]
-  );
-
-  if (!result.rows.length) return null;
-  return result.rows[0].state_json || null;
-}
-
-async function saveStateToDb(data) {
-  if (!pgPool) return false;
-
-  await pgPool.query(
-    `
-    INSERT INTO app_state (state_key, state_json, updated_at)
-    VALUES ($1, $2::jsonb, NOW())
-    ON CONFLICT (state_key)
-    DO UPDATE SET
-      state_json = EXCLUDED.state_json,
-      updated_at = NOW()
-    `,
-    [CONFIG.persist.stateKey, JSON.stringify(data)]
-  );
-
-  return true;
-}
-
-/* =========================================================
    Persistence
    ========================================================= */
 
@@ -314,49 +348,72 @@ function getPersistableState() {
   };
 }
 
-function flushStateToFileNow() {
-  try {
-    safeWriteJson(CONFIG.persist.file, getPersistableState());
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 async function flushStateNow() {
-  try {
-    const payload = getPersistableState();
+  const payload = getPersistableState();
+  let ok = false;
 
-    if (postgresEnabled) {
-      await saveStateToDb(payload);
-      state.session.syncOk = true;
-      return true;
+  try {
+    if (DB_ENABLED && dbReady) {
+      ok = await dbSaveState(payload);
     }
 
-    const ok = flushStateToFileNow();
+    if (!ok) {
+      safeWriteJson(CONFIG.persist.file, payload);
+      ok = true;
+    }
+
     state.session.syncOk = ok;
-    return ok;
   } catch {
     state.session.syncOk = false;
-
-    try {
-      const ok = flushStateToFileNow();
-      if (ok) {
-        state.session.syncOk = false;
-        return true;
-      }
-    } catch {}
-
-    return false;
   }
 }
 
 function schedulePersist() {
   if (persistTimer) clearTimeout(persistTimer);
+
   persistTimer = setTimeout(async () => {
     persistTimer = null;
-    await flushStateNow();
+
+    if (dbSaveRunning) {
+      dbPendingSave = true;
+      return;
+    }
+
+    dbSaveRunning = true;
+    try {
+      await flushStateNow();
+    } finally {
+      dbSaveRunning = false;
+
+      if (dbPendingSave) {
+        dbPendingSave = false;
+        schedulePersist();
+      }
+    }
   }, CONFIG.persist.flushDebounceMs);
+}
+
+async function forcePersistNow() {
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+
+  if (dbSaveRunning) {
+    dbPendingSave = true;
+    return;
+  }
+
+  dbSaveRunning = true;
+  try {
+    await flushStateNow();
+  } finally {
+    dbSaveRunning = false;
+    if (dbPendingSave) {
+      dbPendingSave = false;
+      schedulePersist();
+    }
+  }
 }
 
 function mergeLoadedState(target, loaded) {
@@ -379,7 +436,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V22.11.3 DB FIX';
+  target.version = 'V22.11.4 DB STABLE';
 
   if (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0) {
     target.symbol = {
@@ -402,74 +459,68 @@ function mergeLoadedState(target, loaded) {
 
 async function hydrateState() {
   let loaded = null;
+  let source = 'NEW';
 
-  if (pgPool) {
-    try {
-      await initDb();
-      postgresEnabled = true;
-      console.log('Postgres persist: ON');
+  if (DB_ENABLED) {
+    await dbInit();
 
-      loaded = await loadStateFromDb();
-
-      if (loaded) {
-        mergeLoadedState(state, loaded);
-        addLog(`STATE RESTORED FROM DB ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
-          force: true,
-          signature: `state-restored-db-${Date.now()}`,
-        });
-      } else {
-        addLog('STATE INIT NEW DB', {
-          force: true,
-          signature: `state-init-new-db-${Date.now()}`,
-        });
-      }
-    } catch (err) {
-      postgresEnabled = false;
-      console.log('Postgres persist: OFF');
-      console.log(`Postgres error: ${err.message}`);
+    if (dbReady) {
+      loaded = await dbLoadState();
+      if (loaded) source = 'DB';
     }
-  } else {
-    console.log('Postgres persist: OFF');
-    console.log('No DATABASE_URL configured');
   }
 
   if (!loaded) {
     const fileLoaded = safeReadJson(CONFIG.persist.file);
     if (fileLoaded) {
-      mergeLoadedState(state, fileLoaded);
-      addLog(`STATE LOADED FILE ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
-        force: true,
-        signature: `state-loaded-file-${Date.now()}`,
-      });
-    } else if (!postgresEnabled) {
-      addLog('STATE INIT NEW', {
-        force: true,
-        signature: `state-init-new-${Date.now()}`,
-      });
+      loaded = fileLoaded;
+      source = 'FILE';
     }
   }
 
+  if (loaded) {
+    mergeLoadedState(state, loaded);
+
+    if (source === 'DB') {
+      addLog(`STATE RESTORED FROM DB ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
+        force: true,
+        signature: `state-restored-db-${Date.now()}`,
+      });
+    } else {
+      addLog(`STATE LOADED FROM FILE ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
+        force: true,
+        signature: `state-loaded-file-${Date.now()}`,
+      });
+    }
+  } else {
+    addLog('STATE INIT NEW', {
+      force: true,
+      signature: `state-init-new-${Date.now()}`,
+    });
+  }
+
   isHydrated = true;
-  schedulePersist();
+  await forcePersistNow();
 }
 
-async function shutdownAndExit() {
+process.on('SIGINT', async () => {
   try {
-    await flushStateNow();
+    await forcePersistNow();
   } finally {
-    try {
-      if (pgPool) await pgPool.end();
-    } catch {}
     process.exit(0);
   }
-}
+});
 
-process.on('SIGINT', shutdownAndExit);
-process.on('SIGTERM', shutdownAndExit);
-process.on('beforeExit', async () => {
+process.on('SIGTERM', async () => {
   try {
-    await flushStateNow();
-  } catch {}
+    await forcePersistNow();
+  } finally {
+    process.exit(0);
+  }
+});
+
+process.on('beforeExit', async () => {
+  await forcePersistNow();
 });
 
 /* =========================================================
@@ -871,9 +922,7 @@ function getSetupQuality(metrics, confidence, score) {
 
   const volumeOk = m.volume >= 60;
   const liquidityOk = m.liquidity >= 56;
-  const volatilityStable = m.volatility <= 38;
   const volatilityMid = m.volatility <= 62;
-  const sessionGood = m.session >= 58;
   const sessionSoft = m.session >= 45;
   const trendUp = m.trend >= 68;
   const structureStrong = m.structure >= 74;
@@ -1167,7 +1216,7 @@ function simulateTradeOutcome(side) {
   return isWin ? 4 : -4;
 }
 
-function afterTradeResult(pnl, symbolUsed) {
+async function afterTradeResult(pnl, symbolUsed) {
   state.session.netPnL += pnl;
 
   if (pnl > 0) {
@@ -1192,7 +1241,7 @@ function afterTradeResult(pnl, symbolUsed) {
     addLog('AI pausiert wegen Tageslimit', { force: true, signature: 'pause-day-limit' });
   }
 
-  schedulePersist();
+  await forcePersistNow();
 }
 
 function fireOrder(side) {
@@ -1215,9 +1264,9 @@ function fireOrder(side) {
     signature: `order-queued-${symbolUsed}-${side}-${Date.now()}`,
   });
 
-  schedulePersist();
+  forcePersistNow();
 
-  setTimeout(() => {
+  setTimeout(async () => {
     addLog(`Order ausgeführt (${symbolUsed} ${side})`, {
       force: true,
       signature: `order-filled-${symbolUsed}-${side}-${Date.now()}`,
@@ -1229,8 +1278,7 @@ function fireOrder(side) {
     state.session.cooldownUntil = Date.now() + CONFIG.session.cooldownMs;
 
     const pnl = simulateTradeOutcome(side);
-    afterTradeResult(pnl, symbolUsed);
-    schedulePersist();
+    await afterTradeResult(pnl, symbolUsed);
   }, 900);
 }
 
@@ -1367,6 +1415,10 @@ function processAiTick() {
 function getPublicState() {
   const tags = state.ai.reasons.map(normalizeTag);
 
+  const syncLabel = state.session.syncOk
+    ? (DB_ENABLED && dbReady ? 'SYNC DB OK' : 'SYNC FILE OK')
+    : 'SYNC FAIL';
+
   return {
     ok: true,
     version: state.version,
@@ -1405,7 +1457,7 @@ function getPublicState() {
       queue: state.session.queue,
       processing: state.session.processing ? 'ON' : 'OFF',
       autoMode: state.session.autoMode ? 'ON' : 'OFF',
-      sync: state.session.syncOk ? 'SYNC OK' : 'SYNC FAIL',
+      sync: syncLabel,
       cooldownActive: Date.now() < state.session.cooldownUntil,
       cooldownLeftSec: Math.max(
         0,
@@ -1448,6 +1500,14 @@ function getPublicState() {
       winTarget: CONFIG.session.winTarget,
     },
 
+    persist: {
+      dbEnabled: DB_ENABLED,
+      dbReady,
+      dbLastError,
+      mode: DB_ENABLED && dbReady ? 'postgres' : 'file',
+      file: CONFIG.persist.file,
+    },
+
     logs: state.logs,
   };
 }
@@ -1456,7 +1516,7 @@ function getPublicState() {
    Manual actions
    ========================================================= */
 
-app.post('/api/auto/toggle', (_req, res) => {
+app.post('/api/auto/toggle', async (_req, res) => {
   state.session.autoMode = !state.session.autoMode;
 
   if (!state.session.autoMode) {
@@ -1469,11 +1529,11 @@ app.post('/api/auto/toggle', (_req, res) => {
     signature: `auto-toggle-${state.session.autoMode}-${Date.now()}`,
   });
 
-  schedulePersist();
+  await forcePersistNow();
   res.json(getPublicState());
 });
 
-app.post('/api/reset', (_req, res) => {
+app.post('/api/reset', async (_req, res) => {
   const fresh = createInitialState();
 
   state.version = fresh.version;
@@ -1488,7 +1548,7 @@ app.post('/api/reset', (_req, res) => {
   state.logs = [];
 
   addLog('Manual reset', { force: true, signature: `manual-reset-${Date.now()}` });
-  schedulePersist();
+  await forcePersistNow();
   res.json(getPublicState());
 });
 
@@ -1510,13 +1570,13 @@ app.post('/api/manual/sell', (_req, res) => {
   res.json(getPublicState());
 });
 
-app.post('/api/manual/win', (_req, res) => {
-  afterTradeResult(4, state.symbol.active);
+app.post('/api/manual/win', async (_req, res) => {
+  await afterTradeResult(4, state.symbol.active);
   res.json(getPublicState());
 });
 
-app.post('/api/manual/loss', (_req, res) => {
-  afterTradeResult(-4, state.symbol.active);
+app.post('/api/manual/loss', async (_req, res) => {
+  await afterTradeResult(-4, state.symbol.active);
   res.json(getPublicState());
 });
 
@@ -1538,8 +1598,9 @@ app.get('/health', (_req, res) => {
     version: state.version,
     uptime: process.uptime(),
     symbol: state.symbol.active,
-    postgres: postgresEnabled,
-    sync: state.session.syncOk,
+    dbEnabled: DB_ENABLED,
+    dbReady,
+    dbLastError,
   });
 });
 
@@ -1564,6 +1625,6 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log(`V22.11.3 DB FIX listening on :${PORT}`);
+    console.log(`V22.11.4 DB STABLE listening on :${PORT}`);
   });
 })();
