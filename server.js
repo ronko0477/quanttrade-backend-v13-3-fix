@@ -12,13 +12,13 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.11.4 DB STABLE
-   - postgres persist priority
-   - file fallback only
+   V22.11.5 POSTGRES HARD LOCK
+   - postgres hard mode via PERSIST_MODE=postgres
+   - no silent file fallback in postgres mode
+   - db reconnect / retry on every load/save
+   - stronger startup diagnostics
    - deploy-safe restore
-   - stronger sync status
-   - forced save after important actions
-   - stable boot / stable db writes
+   - file mode still supported when explicitly used
    ========================================================= */
 
 const CONFIG = {
@@ -73,12 +73,35 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v22.11.4.json'),
+    file: path.join(process.cwd(), 'data', 'state.v22.11.5.json'),
     flushDebounceMs: 150,
     dbKey: 'global',
     tableName: 'app_state',
   },
 };
+
+/* =========================================================
+   Env / Persist mode
+   ========================================================= */
+
+const RAW_PERSIST_MODE = String(process.env.PERSIST_MODE || 'file').trim().toLowerCase();
+
+const DATABASE_URL =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_INTERNAL_URL ||
+  '';
+
+const DB_URL_FOUND = !!DATABASE_URL;
+const POSTGRES_HARD_MODE = RAW_PERSIST_MODE === 'postgres';
+const FILE_MODE = RAW_PERSIST_MODE === 'file';
+const DB_ENABLED = DB_URL_FOUND;
+
+if (!POSTGRES_HARD_MODE && !FILE_MODE) {
+  console.log(`[persist] unknown PERSIST_MODE="${RAW_PERSIST_MODE}", fallback -> file`);
+}
+
+const EFFECTIVE_PERSIST_MODE = POSTGRES_HARD_MODE ? 'postgres' : 'file';
 
 /* =========================================================
    Helpers
@@ -131,37 +154,60 @@ function safeWriteJson(filePath, data) {
   fs.renameSync(tmp, filePath);
 }
 
+function maskDbUrl(url) {
+  if (!url) return 'NONE';
+  try {
+    const u = new URL(url);
+    const user = u.username ? `${u.username}` : 'user';
+    const host = u.hostname || 'host';
+    const db = u.pathname ? u.pathname.replace('/', '') : 'db';
+    return `${u.protocol}//${user}:***@${host}/${db}`;
+  } catch {
+    return 'SET_BUT_INVALID_FORMAT';
+  }
+}
+
 /* =========================================================
    Postgres
    ========================================================= */
-
-const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.POSTGRES_INTERNAL_URL ||
-  '';
-
-const DB_ENABLED = !!DATABASE_URL;
 
 let pool = null;
 let dbReady = false;
 let dbLastError = '';
 let dbSaveRunning = false;
 let dbPendingSave = false;
+let dbInitRunning = false;
 
-if (DB_ENABLED) {
+function createPoolIfNeeded() {
+  if (!DB_ENABLED) return null;
+  if (pool) return pool;
+
   pool = new Pool({
     connectionString: DATABASE_URL,
     ssl: DATABASE_URL.includes('localhost')
       ? false
       : { rejectUnauthorized: false },
   });
+
+  pool.on('error', (err) => {
+    dbReady = false;
+    dbLastError = err?.message || 'pool error';
+    console.error('[db] pool error:', dbLastError);
+  });
+
+  return pool;
 }
 
-async function dbInit() {
-  if (!DB_ENABLED || !pool) return false;
+async function dbInit(forceRetry = false) {
+  if (!DB_ENABLED) return false;
+  if (dbReady && !forceRetry) return true;
+  if (dbInitRunning) return false;
+
+  dbInitRunning = true;
 
   try {
+    createPoolIfNeeded();
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS ${CONFIG.persist.tableName} (
         id TEXT PRIMARY KEY,
@@ -172,19 +218,29 @@ async function dbInit() {
 
     dbReady = true;
     dbLastError = '';
-    console.log('Postgres persist: ON');
+    console.log('[db] init OK');
     return true;
   } catch (err) {
     dbReady = false;
     dbLastError = err?.message || 'db init failed';
-    console.log('Postgres persist: OFF');
-    console.error(dbLastError);
+    console.error('[db] init FAIL:', dbLastError);
     return false;
+  } finally {
+    dbInitRunning = false;
   }
 }
 
+async function ensureDbReady() {
+  if (!DB_ENABLED) return false;
+  if (dbReady) return true;
+  return dbInit(true);
+}
+
 async function dbLoadState() {
-  if (!DB_ENABLED || !pool || !dbReady) return null;
+  if (!DB_ENABLED) return null;
+
+  const ok = await ensureDbReady();
+  if (!ok) return null;
 
   try {
     const res = await pool.query(
@@ -192,17 +248,24 @@ async function dbLoadState() {
       [CONFIG.persist.dbKey]
     );
 
+    dbReady = true;
+    dbLastError = '';
+
     if (!res.rows.length) return null;
     return res.rows[0].payload || null;
   } catch (err) {
     dbReady = false;
     dbLastError = err?.message || 'db load failed';
+    console.error('[db] load FAIL:', dbLastError);
     return null;
   }
 }
 
 async function dbSaveState(payload) {
-  if (!DB_ENABLED || !pool || !dbReady) return false;
+  if (!DB_ENABLED) return false;
+
+  const ok = await ensureDbReady();
+  if (!ok) return false;
 
   try {
     await pool.query(
@@ -215,11 +278,13 @@ async function dbSaveState(payload) {
       [CONFIG.persist.dbKey, JSON.stringify(payload)]
     );
 
+    dbReady = true;
     dbLastError = '';
     return true;
   } catch (err) {
     dbReady = false;
     dbLastError = err?.message || 'db save failed';
+    console.error('[db] save FAIL:', dbLastError);
     return false;
   }
 }
@@ -230,7 +295,7 @@ async function dbSaveState(payload) {
 
 function createInitialState() {
   return {
-    version: 'V22.11.4 DB STABLE',
+    version: 'V22.11.5 POSTGRES HARD LOCK',
 
     system: {
       status: 'READY',
@@ -350,21 +415,35 @@ function getPersistableState() {
 
 async function flushStateNow() {
   const payload = getPersistableState();
-  let ok = false;
 
   try {
-    if (DB_ENABLED && dbReady) {
-      ok = await dbSaveState(payload);
+    if (POSTGRES_HARD_MODE) {
+      if (!DB_ENABLED) {
+        state.session.syncOk = false;
+        dbLastError = 'DATABASE_URL missing in postgres mode';
+        return false;
+      }
+
+      const ok = await dbSaveState(payload);
+      state.session.syncOk = ok;
+      return ok;
     }
 
-    if (!ok) {
-      safeWriteJson(CONFIG.persist.file, payload);
-      ok = true;
+    if (DB_ENABLED) {
+      const ok = await dbSaveState(payload);
+      if (ok) {
+        state.session.syncOk = true;
+        return true;
+      }
     }
 
-    state.session.syncOk = ok;
-  } catch {
+    safeWriteJson(CONFIG.persist.file, payload);
+    state.session.syncOk = true;
+    return true;
+  } catch (err) {
     state.session.syncOk = false;
+    dbLastError = err?.message || 'flush failed';
+    return false;
   }
 }
 
@@ -436,7 +515,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V22.11.4 DB STABLE';
+  target.version = 'V22.11.5 POSTGRES HARD LOCK';
 
   if (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0) {
     target.symbol = {
@@ -461,20 +540,58 @@ async function hydrateState() {
   let loaded = null;
   let source = 'NEW';
 
-  if (DB_ENABLED) {
-    await dbInit();
+  console.log('====================================================');
+  console.log(`[boot] version: V22.11.5 POSTGRES HARD LOCK`);
+  console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
+  console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
+  console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
+  console.log(`[boot] DATABASE_URL masked: ${maskDbUrl(DATABASE_URL)}`);
+  console.log('====================================================');
 
-    if (dbReady) {
-      loaded = await dbLoadState();
-      if (loaded) source = 'DB';
+  if (POSTGRES_HARD_MODE) {
+    if (DB_ENABLED) {
+      const initOk = await dbInit(true);
+      console.log(`[boot] DB INIT: ${initOk ? 'OK' : 'FAIL'}`);
+
+      if (initOk) {
+        loaded = await dbLoadState();
+        if (loaded) {
+          source = 'DB';
+          console.log('[boot] DB LOAD: FOUND');
+        } else {
+          console.log(`[boot] DB LOAD: ${dbLastError ? 'ERROR' : 'EMPTY'}`);
+        }
+      }
+    } else {
+      dbLastError = 'DATABASE_URL missing in postgres mode';
+      console.log('[boot] DB INIT: FAIL');
+      console.log('[boot] DB LOAD: ERROR');
     }
-  }
+  } else {
+    if (DB_ENABLED) {
+      const initOk = await dbInit(true);
+      console.log(`[boot] DB INIT: ${initOk ? 'OK' : 'FAIL'}`);
 
-  if (!loaded) {
-    const fileLoaded = safeReadJson(CONFIG.persist.file);
-    if (fileLoaded) {
-      loaded = fileLoaded;
-      source = 'FILE';
+      if (initOk) {
+        loaded = await dbLoadState();
+        if (loaded) {
+          source = 'DB';
+          console.log('[boot] DB LOAD: FOUND');
+        } else {
+          console.log(`[boot] DB LOAD: ${dbLastError ? 'ERROR' : 'EMPTY'}`);
+        }
+      }
+    }
+
+    if (!loaded) {
+      const fileLoaded = safeReadJson(CONFIG.persist.file);
+      if (fileLoaded) {
+        loaded = fileLoaded;
+        source = 'FILE';
+        console.log('[boot] FILE LOAD: FOUND');
+      } else {
+        console.log('[boot] FILE LOAD: EMPTY');
+      }
     }
   }
 
@@ -1415,9 +1532,14 @@ function processAiTick() {
 function getPublicState() {
   const tags = state.ai.reasons.map(normalizeTag);
 
-  const syncLabel = state.session.syncOk
-    ? (DB_ENABLED && dbReady ? 'SYNC DB OK' : 'SYNC FILE OK')
-    : 'SYNC FAIL';
+  let syncLabel = 'SYNC FAIL';
+  if (state.session.syncOk) {
+    if (POSTGRES_HARD_MODE) {
+      syncLabel = dbReady ? 'SYNC DB OK' : 'SYNC DB FAIL';
+    } else {
+      syncLabel = DB_ENABLED && dbReady ? 'SYNC DB OK' : 'SYNC FILE OK';
+    }
+  }
 
   return {
     ok: true,
@@ -1501,10 +1623,13 @@ function getPublicState() {
     },
 
     persist: {
+      persistMode: EFFECTIVE_PERSIST_MODE,
+      postgresHardMode: POSTGRES_HARD_MODE,
       dbEnabled: DB_ENABLED,
       dbReady,
       dbLastError,
-      mode: DB_ENABLED && dbReady ? 'postgres' : 'file',
+      databaseUrlFound: DB_URL_FOUND,
+      mode: POSTGRES_HARD_MODE ? 'postgres-only' : (DB_ENABLED && dbReady ? 'postgres' : 'file'),
       file: CONFIG.persist.file,
     },
 
@@ -1598,9 +1723,12 @@ app.get('/health', (_req, res) => {
     version: state.version,
     uptime: process.uptime(),
     symbol: state.symbol.active,
+    persistMode: EFFECTIVE_PERSIST_MODE,
+    postgresHardMode: POSTGRES_HARD_MODE,
     dbEnabled: DB_ENABLED,
     dbReady,
     dbLastError,
+    databaseUrlFound: DB_URL_FOUND,
   });
 });
 
@@ -1625,6 +1753,6 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log(`V22.11.4 DB STABLE listening on :${PORT}`);
+    console.log(`V22.11.5 POSTGRES HARD LOCK listening on :${PORT}`);
   });
 })();
