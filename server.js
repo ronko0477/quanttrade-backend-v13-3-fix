@@ -12,13 +12,12 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.11.6 POSTGRES FULL LIVE
-   - full frontend + api + postgres
-   - postgres hard mode via PERSIST_MODE=postgres
-   - no silent file fallback in postgres mode
-   - db reconnect / retry on every load/save
-   - deploy-safe restore
-   - "/" fallback if public/index.html missing
+   V22.11.7 ALPACA PAPER CONNECT
+   - postgres persist full live
+   - alpaca paper account connect
+   - paper orders via Alpaca
+   - broker status / account / positions endpoints
+   - frontend route kept alive
    ========================================================= */
 
 const CONFIG = {
@@ -73,15 +72,24 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v22.11.6.json'),
+    file: path.join(process.cwd(), 'data', 'state.v22.11.7.json'),
     flushDebounceMs: 150,
     dbKey: 'global',
     tableName: 'app_state',
   },
+
+  broker: {
+    alpacaPaperBaseUrl: 'https://paper-api.alpaca.markets',
+    accountRefreshMs: 30000,
+    positionsRefreshMs: 15000,
+    orderQty: 1,
+    orderType: 'market',
+    orderTif: 'day',
+  },
 };
 
 /* =========================================================
-   Env / Persist mode
+   Env / Persist / Broker mode
    ========================================================= */
 
 const RAW_PERSIST_MODE = String(process.env.PERSIST_MODE || 'file').trim().toLowerCase();
@@ -95,13 +103,20 @@ const DATABASE_URL =
 const DB_URL_FOUND = !!DATABASE_URL;
 const POSTGRES_HARD_MODE = RAW_PERSIST_MODE === 'postgres';
 const FILE_MODE = RAW_PERSIST_MODE === 'file';
+const DB_ENABLED = DB_URL_FOUND;
 
 if (!POSTGRES_HARD_MODE && !FILE_MODE) {
   console.log(`[persist] unknown PERSIST_MODE="${RAW_PERSIST_MODE}", fallback -> file`);
 }
 
 const EFFECTIVE_PERSIST_MODE = POSTGRES_HARD_MODE ? 'postgres' : 'file';
-const DB_ENABLED = DB_URL_FOUND;
+
+const RAW_BROKER_MODE = String(process.env.BROKER_MODE || 'off').trim().toLowerCase();
+const APCA_API_KEY_ID = String(process.env.APCA_API_KEY_ID || '').trim();
+const APCA_API_SECRET_KEY = String(process.env.APCA_API_SECRET_KEY || '').trim();
+
+const BROKER_ALPACA_PAPER = RAW_BROKER_MODE === 'alpaca-paper';
+const BROKER_ENABLED = BROKER_ALPACA_PAPER && !!APCA_API_KEY_ID && !!APCA_API_SECRET_KEY;
 
 /* =========================================================
    Helpers
@@ -165,6 +180,12 @@ function maskDbUrl(url) {
   } catch {
     return 'SET_BUT_INVALID_FORMAT';
   }
+}
+
+function maskKey(value) {
+  if (!value) return 'NO';
+  if (value.length <= 6) return 'SET';
+  return `${value.slice(0, 3)}***${value.slice(-3)}`;
 }
 
 /* =========================================================
@@ -290,12 +311,124 @@ async function dbSaveState(payload) {
 }
 
 /* =========================================================
+   Broker state
+   ========================================================= */
+
+const broker = {
+  connected: false,
+  lastError: '',
+  lastCheckAt: 0,
+  lastAccountAt: 0,
+  lastPositionsAt: 0,
+  account: null,
+  positions: [],
+  lastOrder: null,
+};
+
+async function alpacaRequest(endpoint, method = 'GET', body = null) {
+  if (!BROKER_ENABLED) {
+    broker.connected = false;
+    broker.lastError = 'broker disabled or api keys missing';
+    return null;
+  }
+
+  try {
+    const res = await fetch(`${CONFIG.broker.alpacaPaperBaseUrl}${endpoint}`, {
+      method,
+      headers: {
+        'APCA-API-KEY-ID': APCA_API_KEY_ID,
+        'APCA-API-SECRET-KEY': APCA_API_SECRET_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    const text = await res.text();
+    let data = null;
+
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = { raw: text };
+    }
+
+    if (!res.ok) {
+      broker.connected = false;
+      broker.lastError = data?.message || `${res.status} ${res.statusText}`;
+      console.error('[broker] request FAIL:', method, endpoint, broker.lastError);
+      return null;
+    }
+
+    broker.connected = true;
+    broker.lastError = '';
+    broker.lastCheckAt = Date.now();
+    return data;
+  } catch (err) {
+    broker.connected = false;
+    broker.lastError = err?.message || 'broker request failed';
+    console.error('[broker] request ERROR:', method, endpoint, broker.lastError);
+    return null;
+  }
+}
+
+async function brokerRefreshAccount(force = false) {
+  if (!BROKER_ENABLED) return null;
+  if (!force && broker.account && Date.now() - broker.lastAccountAt < CONFIG.broker.accountRefreshMs) {
+    return broker.account;
+  }
+
+  const data = await alpacaRequest('/v2/account', 'GET');
+  if (data) {
+    broker.account = data;
+    broker.lastAccountAt = Date.now();
+  }
+  return broker.account;
+}
+
+async function brokerRefreshPositions(force = false) {
+  if (!BROKER_ENABLED) return [];
+  if (!force && Array.isArray(broker.positions) && Date.now() - broker.lastPositionsAt < CONFIG.broker.positionsRefreshMs) {
+    return broker.positions;
+  }
+
+  const data = await alpacaRequest('/v2/positions', 'GET');
+  if (Array.isArray(data)) {
+    broker.positions = data;
+    broker.lastPositionsAt = Date.now();
+  }
+  return broker.positions;
+}
+
+async function brokerPlacePaperOrder(side, symbol, qty = CONFIG.broker.orderQty) {
+  if (!BROKER_ENABLED) {
+    broker.connected = false;
+    broker.lastError = 'BROKER_MODE off or api keys missing';
+    return null;
+  }
+
+  const order = await alpacaRequest('/v2/orders', 'POST', {
+    symbol,
+    qty: String(qty),
+    side: String(side || '').toLowerCase(),
+    type: CONFIG.broker.orderType,
+    time_in_force: CONFIG.broker.orderTif,
+  });
+
+  if (order) {
+    broker.lastOrder = order;
+    broker.lastCheckAt = Date.now();
+  }
+
+  return order;
+}
+
+/* =========================================================
    State factory
    ========================================================= */
 
 function createInitialState() {
   return {
-    version: 'V22.11.6 POSTGRES FULL LIVE',
+    version: 'V22.11.7 ALPACA PAPER CONNECT',
 
     system: {
       status: 'READY',
@@ -515,7 +648,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V22.11.6 POSTGRES FULL LIVE';
+  target.version = 'V22.11.7 ALPACA PAPER CONNECT';
 
   if (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0) {
     target.symbol = {
@@ -541,11 +674,15 @@ async function hydrateState() {
   let source = 'NEW';
 
   console.log('====================================================');
-  console.log(`[boot] version: V22.11.6 POSTGRES FULL LIVE`);
+  console.log('[boot] version: V22.11.7 ALPACA PAPER CONNECT');
   console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
   console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
   console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
   console.log(`[boot] DATABASE_URL masked: ${maskDbUrl(DATABASE_URL)}`);
+  console.log(`[boot] BROKER_MODE raw: ${RAW_BROKER_MODE}`);
+  console.log(`[boot] BROKER_ENABLED: ${BROKER_ENABLED ? 'YES' : 'NO'}`);
+  console.log(`[boot] APCA_API_KEY_ID: ${maskKey(APCA_API_KEY_ID)}`);
+  console.log(`[boot] APCA_API_SECRET_KEY: ${maskKey(APCA_API_SECRET_KEY)}`);
   console.log('====================================================');
 
   if (POSTGRES_HARD_MODE) {
@@ -1304,7 +1441,7 @@ function mapHero(stage, signal, confidence, detail) {
 }
 
 /* =========================================================
-   Fire / order simulation
+   Fire / order simulation / broker
    ========================================================= */
 
 function canFire() {
@@ -1361,7 +1498,7 @@ async function afterTradeResult(pnl, symbolUsed) {
   await forcePersistNow();
 }
 
-function fireOrder(side) {
+async function fireOrder(side) {
   if (state.session.processing) return;
 
   const symbolUsed = state.symbol.active;
@@ -1371,17 +1508,43 @@ function fireOrder(side) {
   state.session.lastOrderSide = side;
   state.engine.lastFireAt = Date.now();
 
-  addLog(`AI FIRE ${side} (${symbolUsed})`, { force: true, signature: `ai-fire-${symbolUsed}-${side}-${Date.now()}` });
+  addLog(`AI FIRE ${side} (${symbolUsed})`, {
+    force: true,
+    signature: `ai-fire-${symbolUsed}-${side}-${Date.now()}`,
+  });
+
   addLog(`Order wird verarbeitet (${symbolUsed} ${side})`, {
     force: true,
     signature: `order-processing-${symbolUsed}-${side}-${Date.now()}`,
   });
+
   addLog(`Order queued (${symbolUsed} ${side})`, {
     force: true,
     signature: `order-queued-${symbolUsed}-${side}-${Date.now()}`,
   });
 
-  forcePersistNow();
+  await forcePersistNow();
+
+  if (BROKER_ENABLED) {
+    const order = await brokerPlacePaperOrder(side, symbolUsed, CONFIG.broker.orderQty);
+
+    if (!order) {
+      addLog(`BROKER FAIL ${symbolUsed} ${side} (${broker.lastError || 'unknown'})`, {
+        force: true,
+        signature: `broker-fail-${symbolUsed}-${side}-${Date.now()}`,
+      });
+
+      state.session.processing = false;
+      state.session.queue = 0;
+      await forcePersistNow();
+      return;
+    }
+
+    addLog(`BROKER SENT ${side} ${symbolUsed}`, {
+      force: true,
+      signature: `broker-sent-${symbolUsed}-${side}-${order.id || Date.now()}`,
+    });
+  }
 
   setTimeout(async () => {
     addLog(`Order ausgeführt (${symbolUsed} ${side})`, {
@@ -1396,7 +1559,12 @@ function fireOrder(side) {
 
     const pnl = simulateTradeOutcome(side);
     await afterTradeResult(pnl, symbolUsed);
-  }, 900);
+
+    if (BROKER_ENABLED) {
+      await brokerRefreshAccount(true);
+      await brokerRefreshPositions(true);
+    }
+  }, 1200);
 }
 
 /* =========================================================
@@ -1513,7 +1681,14 @@ function processAiTick() {
   );
 
   if (triggerFire && canFire()) {
-    fireOrder(stableBias);
+    fireOrder(stableBias).catch((err) => {
+      addLog(`FIRE ERROR ${err?.message || 'unknown'}`, {
+        force: true,
+        signature: `fire-error-${Date.now()}`,
+      });
+      state.session.processing = false;
+      state.session.queue = 0;
+    });
   }
 
   if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
@@ -1633,6 +1808,19 @@ function getPublicState() {
       file: CONFIG.persist.file,
     },
 
+    broker: {
+      mode: RAW_BROKER_MODE,
+      enabled: BROKER_ENABLED,
+      connected: broker.connected,
+      lastError: broker.lastError,
+      lastCheckAt: broker.lastCheckAt,
+      lastOrderId: broker.lastOrder?.id || null,
+      accountStatus: broker.account?.status || null,
+      buyingPower: broker.account?.buying_power || null,
+      cash: broker.account?.cash || null,
+      positionsCount: Array.isArray(broker.positions) ? broker.positions.length : 0,
+    },
+
     logs: state.logs,
   };
 }
@@ -1677,21 +1865,21 @@ app.post('/api/reset', async (_req, res) => {
   res.json(getPublicState());
 });
 
-app.post('/api/manual/buy', (_req, res) => {
+app.post('/api/manual/buy', async (_req, res) => {
   if (state.session.processing) {
     return res.status(409).json({ ok: false, error: 'Processing active' });
   }
 
-  fireOrder('BUY');
+  await fireOrder('BUY');
   res.json(getPublicState());
 });
 
-app.post('/api/manual/sell', (_req, res) => {
+app.post('/api/manual/sell', async (_req, res) => {
   if (state.session.processing) {
     return res.status(409).json({ ok: false, error: 'Processing active' });
   }
 
-  fireOrder('SELL');
+  await fireOrder('SELL');
   res.json(getPublicState());
 });
 
@@ -1703,6 +1891,39 @@ app.post('/api/manual/win', async (_req, res) => {
 app.post('/api/manual/loss', async (_req, res) => {
   await afterTradeResult(-4, state.symbol.active);
   res.json(getPublicState());
+});
+
+/* =========================================================
+   Broker endpoints
+   ========================================================= */
+
+app.get('/api/broker/status', async (_req, res) => {
+  if (BROKER_ENABLED) {
+    await brokerRefreshAccount(true);
+    await brokerRefreshPositions(true);
+  }
+
+  res.json({
+    ok: true,
+    mode: RAW_BROKER_MODE,
+    enabled: BROKER_ENABLED,
+    connected: broker.connected,
+    lastError: broker.lastError,
+    lastCheckAt: broker.lastCheckAt,
+    lastOrder: broker.lastOrder,
+    account: broker.account,
+    positionsCount: Array.isArray(broker.positions) ? broker.positions.length : 0,
+  });
+});
+
+app.get('/api/broker/account', async (_req, res) => {
+  const account = await brokerRefreshAccount(true);
+  res.json(account || { ok: false, error: broker.lastError || 'broker not ready' });
+});
+
+app.get('/api/broker/positions', async (_req, res) => {
+  const positions = await brokerRefreshPositions(true);
+  res.json(Array.isArray(positions) ? positions : []);
 });
 
 /* =========================================================
@@ -1729,6 +1950,10 @@ app.get('/health', (_req, res) => {
     dbReady,
     dbLastError,
     databaseUrlFound: DB_URL_FOUND,
+    brokerMode: RAW_BROKER_MODE,
+    brokerEnabled: BROKER_ENABLED,
+    brokerConnected: broker.connected,
+    brokerLastError: broker.lastError,
   });
 });
 
@@ -1737,67 +1962,51 @@ app.get('/health', (_req, res) => {
    ========================================================= */
 
 const publicDir = path.join(process.cwd(), 'public');
-const indexFile = path.join(publicDir, 'index.html');
 
-app.use(express.static(publicDir));
+if (fs.existsSync(publicDir)) {
+  app.use(express.static(publicDir));
+}
 
 app.get('/', (_req, res) => {
+  const indexFile = path.join(publicDir, 'index.html');
+
   if (fs.existsSync(indexFile)) {
     return res.sendFile(indexFile);
   }
 
-  return res.status(200).send(`
+  return res
+    .status(200)
+    .send(`
 <!doctype html>
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>V22.11.6 POSTGRES FULL LIVE</title>
+  <title>V22.11.7 ALPACA PAPER CONNECT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0b1020;
-      color: #fff;
-      margin: 0;
-      padding: 24px;
-    }
-    .card {
-      max-width: 720px;
-      margin: 40px auto;
-      padding: 24px;
-      border-radius: 16px;
-      background: #171f3a;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-    }
-    h1 { margin-top: 0; }
-    code {
-      background: rgba(255,255,255,0.08);
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-    a { color: #9ecbff; }
+    body{font-family:Arial,sans-serif;background:#0b1020;color:#fff;padding:24px}
+    .card{max-width:860px;margin:0 auto;background:#161d35;padding:24px;border-radius:16px}
+    pre{white-space:pre-wrap;word-break:break-word;background:#0f1530;padding:12px;border-radius:12px}
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>V22.11.6 POSTGRES FULL LIVE</h1>
-    <p>Server läuft, aber <code>public/index.html</code> wurde nicht gefunden.</p>
-    <p>API-Test:</p>
-    <ul>
-      <li><a href="/health">/health</a></li>
-      <li><a href="/api/state">/api/state</a></li>
-    </ul>
-    <p>Wenn deine App-Oberfläche fehlen sollte, prüfe bitte den <code>public</code>-Ordner im Repo.</p>
+    <h1>V22.11.7 ALPACA PAPER CONNECT</h1>
+    <p>Server läuft. Frontend-Dateien in <code>/public</code> fehlen oder wurden nicht mitdeployt.</p>
+    <p>Teste:</p>
+    <pre>/health
+/api/state
+/api/broker/status
+/api/broker/account
+/api/broker/positions</pre>
   </div>
 </body>
 </html>
-  `);
+    `);
 });
 
-app.get('*', (_req, res, next) => {
-  if (_req.path.startsWith('/api/') || _req.path === '/health') {
-    return next();
-  }
+app.get('*', (_req, res) => {
+  const indexFile = path.join(publicDir, 'index.html');
 
   if (fs.existsSync(indexFile)) {
     return res.sendFile(indexFile);
@@ -1812,10 +2021,30 @@ app.get('*', (_req, res, next) => {
 
 (async () => {
   await hydrateState();
+
+  if (BROKER_ENABLED) {
+    await brokerRefreshAccount(true);
+    await brokerRefreshPositions(true);
+
+    if (broker.connected) {
+      console.log('[broker] alpaca paper connected');
+    } else {
+      console.log(`[broker] alpaca paper fail: ${broker.lastError || 'unknown'}`);
+    }
+  } else {
+    console.log('[broker] disabled');
+  }
+
   processAiTick();
   setInterval(processAiTick, CONFIG.tickMs);
 
+  setInterval(async () => {
+    if (!BROKER_ENABLED) return;
+    await brokerRefreshAccount(false);
+    await brokerRefreshPositions(false);
+  }, 10000);
+
   app.listen(PORT, () => {
-    console.log(`V22.11.6 POSTGRES FULL LIVE listening on :${PORT}`);
+    console.log(`V22.11.7 ALPACA PAPER CONNECT listening on :${PORT}`);
   });
 })();
