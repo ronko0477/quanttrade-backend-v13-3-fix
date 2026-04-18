@@ -12,13 +12,15 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.11.8 ALPACA PAPER LIVE
-   - postgres persist
-   - alpaca paper live orders
-   - real broker account sync
-   - real broker positions sync
-   - real broker pnl sync
-   - no fake trade outcome anymore
+   V22.12.0 LIVE TRADING CONTROL PANEL
+   - postgres persist full
+   - alpaca paper/live broker support
+   - live hard lock by default
+   - kill switch
+   - broker trading enable/disable
+   - manual broker order endpoint
+   - positions / orders / account / status endpoints
+   - ui-ready control panel state
    ========================================================= */
 
 const CONFIG = {
@@ -73,17 +75,10 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v22.11.8.json'),
+    file: path.join(process.cwd(), 'data', 'state.v22.12.0.json'),
     flushDebounceMs: 150,
     dbKey: 'global',
     tableName: 'app_state',
-  },
-
-  broker: {
-    orderQty: Number(process.env.APCA_ORDER_QTY || 1),
-    pollMs: 1200,
-    maxPollTries: 25,
-    sideMode: String(process.env.APCA_SIDE_MODE || 'long-only').trim().toLowerCase(), // long-only | both
   },
 };
 
@@ -99,21 +94,18 @@ const DATABASE_URL =
   process.env.POSTGRES_INTERNAL_URL ||
   '';
 
-const APCA_API_KEY_ID = String(process.env.APCA_API_KEY_ID || '').trim();
-const APCA_API_SECRET_KEY = String(process.env.APCA_API_SECRET_KEY || '').trim();
-const BROKER_MODE = String(process.env.BROKER_MODE || 'off').trim().toLowerCase();
-
 const DB_URL_FOUND = !!DATABASE_URL;
 const POSTGRES_HARD_MODE = RAW_PERSIST_MODE === 'postgres';
 const EFFECTIVE_PERSIST_MODE = POSTGRES_HARD_MODE ? 'postgres' : 'file';
-
 const DB_ENABLED = DB_URL_FOUND;
-const BROKER_ENABLED =
-  BROKER_MODE === 'alpaca-paper' &&
-  !!APCA_API_KEY_ID &&
-  !!APCA_API_SECRET_KEY;
 
-const ALPACA_PAPER_BASE = 'https://paper-api.alpaca.markets';
+const BROKER_MODE_RAW = String(process.env.BROKER_MODE || 'alpaca-paper').trim().toLowerCase();
+
+const APCA_API_KEY_ID = String(process.env.APCA_API_KEY_ID || '').trim();
+const APCA_API_SECRET_KEY = String(process.env.APCA_API_SECRET_KEY || '').trim();
+
+const ALPACA_PAPER_BASE_URL = 'https://paper-api.alpaca.markets';
+const ALPACA_LIVE_BASE_URL = 'https://api.alpaca.markets';
 
 /* =========================================================
    Helpers
@@ -127,25 +119,12 @@ function round1(v) {
   return Math.round(v * 10) / 10;
 }
 
-function round2(v) {
-  return Math.round(v * 100) / 100;
-}
-
-function num(v, fallback = 0) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
-
 function nowIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
 function timeLabel(date = new Date()) {
   return date.toTimeString().slice(0, 8);
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function normalizeTag(text) {
@@ -179,21 +158,32 @@ function safeWriteJson(filePath, data) {
   fs.renameSync(tmp, filePath);
 }
 
+function maskValue(v) {
+  if (!v) return 'NONE';
+  if (v.length <= 8) return `${v.slice(0, 2)}***`;
+  return `${v.slice(0, 3)}***${v.slice(-3)}`;
+}
+
 function maskDbUrl(url) {
   if (!url) return 'NONE';
   try {
     const u = new URL(url);
-    return `${u.protocol}//${u.username || 'user'}:***@${u.hostname || 'host'}${u.pathname || '/db'}`;
+    const user = u.username || 'user';
+    const host = u.hostname || 'host';
+    const db = u.pathname ? u.pathname.replace('/', '') : 'db';
+    return `${u.protocol}//${user}:***@${host}/${db}`;
   } catch {
     return 'SET_BUT_INVALID_FORMAT';
   }
 }
 
-function maskSecret(value) {
-  const s = String(value || '');
-  if (!s) return 'NONE';
-  if (s.length <= 6) return '***';
-  return `${s.slice(0, 2)}***${s.slice(-3)}`;
+function toNum(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /* =========================================================
@@ -279,7 +269,6 @@ async function dbLoadState() {
 
     dbReady = true;
     dbLastError = '';
-
     if (!res.rows.length) return null;
     return res.rows[0].payload || null;
   } catch (err) {
@@ -319,237 +308,136 @@ async function dbSaveState(payload) {
 }
 
 /* =========================================================
-   Broker / Alpaca
+   Broker
    ========================================================= */
 
 const broker = {
-  mode: BROKER_MODE,
-  enabled: BROKER_ENABLED,
+  enabled: !!(APCA_API_KEY_ID && APCA_API_SECRET_KEY),
+  mode: BROKER_MODE_RAW === 'alpaca-live' ? 'alpaca-live' : 'alpaca-paper',
   connected: false,
   lastError: '',
   lastCheckAt: 0,
-  lastOrderId: null,
   account: null,
   positions: [],
   orders: [],
+  lastOrderId: null,
 };
 
-async function alpacaRequest(method, endpoint, body) {
-  const res = await fetch(`${ALPACA_PAPER_BASE}${endpoint}`, {
-    method,
+function brokerBaseUrl() {
+  return broker.mode === 'alpaca-live' ? ALPACA_LIVE_BASE_URL : ALPACA_PAPER_BASE_URL;
+}
+
+function brokerHeaders() {
+  return {
+    'APCA-API-KEY-ID': APCA_API_KEY_ID,
+    'APCA-API-SECRET-KEY': APCA_API_SECRET_KEY,
+    'Content-Type': 'application/json',
+  };
+}
+
+async function brokerFetch(pathname, opts = {}) {
+  if (!broker.enabled) {
+    throw new Error('broker disabled');
+  }
+
+  const url = `${brokerBaseUrl()}${pathname}`;
+  const res = await fetch(url, {
+    method: opts.method || 'GET',
     headers: {
-      'accept': 'application/json',
-      'content-type': 'application/json',
-      'APCA-API-KEY-ID': APCA_API_KEY_ID,
-      'APCA-API-SECRET-KEY': APCA_API_SECRET_KEY,
+      ...brokerHeaders(),
+      ...(opts.headers || {}),
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
 
   const text = await res.text();
-  let json = null;
+  let data = null;
 
   try {
-    json = text ? JSON.parse(text) : null;
+    data = text ? JSON.parse(text) : null;
   } catch {
-    json = text;
+    data = text;
   }
 
   if (!res.ok) {
     const msg =
-      typeof json === 'string'
-        ? json
-        : json?.message || json?.error || `HTTP ${res.status}`;
+      typeof data === 'string'
+        ? data
+        : data?.message || data?.error || `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
 
-  return json;
+  return data;
 }
 
-async function brokerPing() {
-  if (!BROKER_ENABLED) {
+async function refreshBrokerStatus() {
+  broker.lastCheckAt = Date.now();
+
+  if (!broker.enabled) {
     broker.connected = false;
-    broker.lastError = 'broker disabled';
+    broker.lastError = 'missing alpaca keys';
+    broker.account = null;
+    broker.positions = [];
+    broker.orders = [];
     return false;
   }
 
   try {
-    const account = await alpacaRequest('GET', '/v2/account');
-    broker.account = account;
-    broker.connected = true;
-    broker.lastError = '';
-    broker.lastCheckAt = Date.now();
-    console.log('[broker] alpaca paper connected');
-    return true;
-  } catch (err) {
-    broker.connected = false;
-    broker.lastError = err?.message || 'broker ping failed';
-    broker.lastCheckAt = Date.now();
-    console.error('[broker] connect FAIL:', broker.lastError);
-    return false;
-  }
-}
+    const [account, positions, orders] = await Promise.all([
+      brokerFetch('/v2/account'),
+      brokerFetch('/v2/positions'),
+      brokerFetch('/v2/orders?status=all&limit=20&direction=desc'),
+    ]);
 
-async function brokerRefreshAccount() {
-  if (!BROKER_ENABLED) return null;
-  try {
-    const account = await alpacaRequest('GET', '/v2/account');
-    broker.account = account;
-    broker.connected = true;
-    broker.lastError = '';
-    broker.lastCheckAt = Date.now();
-    return account;
-  } catch (err) {
-    broker.connected = false;
-    broker.lastError = err?.message || 'account refresh failed';
-    broker.lastCheckAt = Date.now();
-    return null;
-  }
-}
-
-async function brokerRefreshPositions() {
-  if (!BROKER_ENABLED) return [];
-  try {
-    const positions = await alpacaRequest('GET', '/v2/positions');
+    broker.account = account || null;
     broker.positions = Array.isArray(positions) ? positions : [];
-    broker.connected = true;
-    broker.lastError = '';
-    broker.lastCheckAt = Date.now();
-    return broker.positions;
-  } catch (err) {
-    broker.connected = false;
-    broker.lastError = err?.message || 'positions refresh failed';
-    broker.lastCheckAt = Date.now();
-    return [];
-  }
-}
-
-async function brokerRefreshOrders(limit = 20) {
-  if (!BROKER_ENABLED) return [];
-  try {
-    const orders = await alpacaRequest('GET', `/v2/orders?status=all&direction=desc&limit=${limit}`);
     broker.orders = Array.isArray(orders) ? orders : [];
     broker.connected = true;
     broker.lastError = '';
-    broker.lastCheckAt = Date.now();
-    return broker.orders;
+    return true;
   } catch (err) {
     broker.connected = false;
-    broker.lastError = err?.message || 'orders refresh failed';
-    broker.lastCheckAt = Date.now();
-    return [];
+    broker.lastError = err?.message || 'broker refresh failed';
+    return false;
   }
 }
 
-function syncBrokerIntoState() {
-  const acc = broker.account || {};
-  const positions = Array.isArray(broker.positions) ? broker.positions : [];
-
-  const intradayPnl =
-    acc.unrealized_intraday_pl != null
-      ? num(acc.unrealized_intraday_pl, 0)
-      : round2(num(acc.equity, 0) - num(acc.last_equity, 0));
-
-  state.session.netPnL = round2(intradayPnl);
-  state.manual.status = broker.connected ? 'OK' : 'BROKER FAIL';
-  state.manual.buyPost = broker.connected ? 'OK' : 'FAIL';
-  state.manual.sellPost = broker.connected ? 'OK' : 'FAIL';
-  state.session.syncOk = dbReady || state.session.syncOk;
-
-  state.broker = {
-    mode: BROKER_MODE,
-    enabled: BROKER_ENABLED,
-    connected: broker.connected,
-    lastError: broker.lastError,
-    lastCheckAt: broker.lastCheckAt,
-    lastOrderId: broker.lastOrderId,
-    accountStatus: acc.status || 'UNKNOWN',
-    buyingPower: round2(num(acc.buying_power, 0)),
-    cash: round2(num(acc.cash, 0)),
-    equity: round2(num(acc.equity, 0)),
-    lastEquity: round2(num(acc.last_equity, 0)),
-    portfolioValue: round2(num(acc.portfolio_value, 0)),
-    daytradeCount: num(acc.daytrade_count, 0),
-    positionsCount: positions.length,
-  };
-}
-
-async function brokerFullSync() {
-  if (!BROKER_ENABLED) return false;
-
-  await brokerRefreshAccount();
-  await brokerRefreshPositions();
-  await brokerRefreshOrders(20);
-  syncBrokerIntoState();
-  return broker.connected;
-}
-
-async function brokerGetOrder(orderId) {
-  if (!BROKER_ENABLED || !orderId) return null;
-  try {
-    const order = await alpacaRequest('GET', `/v2/orders/${orderId}`);
-    broker.connected = true;
-    broker.lastError = '';
-    broker.lastCheckAt = Date.now();
-    return order;
-  } catch (err) {
-    broker.connected = false;
-    broker.lastError = err?.message || 'get order failed';
-    broker.lastCheckAt = Date.now();
-    return null;
-  }
-}
-
-async function brokerSubmitMarketOrder(symbol, side, qty) {
-  if (!BROKER_ENABLED) {
+async function submitBrokerOrder(side, symbol, qty = 1) {
+  if (!broker.enabled) {
     throw new Error('broker disabled');
   }
-
-  const alpacaSide =
-    side === 'SELL' && CONFIG.broker.sideMode === 'both'
-      ? 'sell'
-      : 'buy';
 
   const payload = {
     symbol,
     qty: String(qty),
-    side: alpacaSide,
+    side: String(side).toLowerCase(),
     type: 'market',
     time_in_force: 'day',
   };
 
-  const order = await alpacaRequest('POST', '/v2/orders', payload);
-  broker.lastOrderId = order?.id || null;
-  broker.connected = true;
-  broker.lastError = '';
-  broker.lastCheckAt = Date.now();
-  return order;
+  const data = await brokerFetch('/v2/orders', {
+    method: 'POST',
+    body: payload,
+  });
+
+  broker.lastOrderId = data?.id || null;
+  await refreshBrokerStatus();
+  return data;
 }
 
-async function brokerWaitForTerminalOrder(orderId) {
-  let last = null;
+function brokerSafetyAllowsRealOrder() {
+  if (!state.brokerControls.tradingEnabled) return false;
+  if (state.brokerControls.killSwitch) return false;
 
-  for (let i = 0; i < CONFIG.broker.maxPollTries; i += 1) {
-    await sleep(CONFIG.broker.pollMs);
-    const order = await brokerGetOrder(orderId);
-    if (!order) continue;
-    last = order;
-
-    const status = String(order.status || '').toLowerCase();
-
-    if (
-      status === 'filled' ||
-      status === 'canceled' ||
-      status === 'expired' ||
-      status === 'rejected' ||
-      status === 'stopped' ||
-      status === 'suspended'
-    ) {
-      return order;
-    }
+  if (broker.mode === 'alpaca-paper') {
+    return true;
   }
 
-  return last;
+  return (
+    broker.mode === 'alpaca-live' &&
+    state.brokerControls.liveTradingEnabled &&
+    state.brokerControls.liveGuardUnlocked
+  );
 }
 
 /* =========================================================
@@ -558,7 +446,7 @@ async function brokerWaitForTerminalOrder(orderId) {
 
 function createInitialState() {
   return {
-    version: 'V22.11.8 ALPACA PAPER LIVE',
+    version: 'V22.12.0 LIVE TRADING CONTROL PANEL',
 
     system: {
       status: 'READY',
@@ -647,21 +535,14 @@ function createInitialState() {
       conf: 0,
     },
 
-    broker: {
-      mode: BROKER_MODE,
-      enabled: BROKER_ENABLED,
-      connected: false,
-      lastError: '',
-      lastCheckAt: 0,
-      lastOrderId: null,
-      accountStatus: 'UNKNOWN',
-      buyingPower: 0,
-      cash: 0,
-      equity: 0,
-      lastEquity: 0,
-      portfolioValue: 0,
-      daytradeCount: 0,
-      positionsCount: 0,
+    brokerControls: {
+      tradingEnabled: false,
+      killSwitch: false,
+      liveTradingEnabled: false,
+      liveGuardUnlocked: false,
+      lastModeChangeAt: 0,
+      lastKillSwitchAt: 0,
+      lastTradingToggleAt: 0,
     },
 
     logs: [],
@@ -688,7 +569,7 @@ function getPersistableState() {
     engine: state.engine,
     symbol: state.symbol,
     manual: state.manual,
-    broker: state.broker,
+    brokerControls: state.brokerControls,
     logs: state.logs,
     persistedAt: new Date().toISOString(),
   };
@@ -744,7 +625,6 @@ function schedulePersist() {
       await flushStateNow();
     } finally {
       dbSaveRunning = false;
-
       if (dbPendingSave) {
         dbPendingSave = false;
         schedulePersist();
@@ -787,7 +667,7 @@ function mergeLoadedState(target, loaded) {
     'engine',
     'symbol',
     'manual',
-    'broker',
+    'brokerControls',
     'logs',
   ];
 
@@ -797,7 +677,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V22.11.8 ALPACA PAPER LIVE';
+  target.version = 'V22.12.0 LIVE TRADING CONTROL PANEL';
 
   if (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0) {
     target.symbol = {
@@ -808,8 +688,8 @@ function mergeLoadedState(target, loaded) {
     };
   }
 
-  if (!target.broker || typeof target.broker !== 'object') {
-    target.broker = createInitialState().broker;
+  if (!target.brokerControls) {
+    target.brokerControls = createInitialState().brokerControls;
   }
 
   target.session.maxTradesPerDay = CONFIG.session.maxTradesPerDay;
@@ -827,15 +707,15 @@ async function hydrateState() {
   let source = 'NEW';
 
   console.log('====================================================');
-  console.log('[boot] version: V22.11.8 ALPACA PAPER LIVE');
+  console.log(`[boot] version: V22.12.0 LIVE TRADING CONTROL PANEL`);
   console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
   console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
   console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
   console.log(`[boot] DATABASE_URL masked: ${maskDbUrl(DATABASE_URL)}`);
-  console.log(`[boot] BROKER_MODE raw: ${BROKER_MODE}`);
-  console.log(`[boot] BROKER_ENABLED: ${BROKER_ENABLED ? 'YES' : 'NO'}`);
-  console.log(`[boot] APCA_API_KEY_ID: ${maskSecret(APCA_API_KEY_ID)}`);
-  console.log(`[boot] APCA_API_SECRET_KEY: ${maskSecret(APCA_API_SECRET_KEY)}`);
+  console.log(`[boot] BROKER_MODE raw: ${BROKER_MODE_RAW}`);
+  console.log(`[boot] BROKER ENABLED: ${broker.enabled ? 'YES' : 'NO'}`);
+  console.log(`[boot] APCA_API_KEY_ID: ${maskValue(APCA_API_KEY_ID)}`);
+  console.log(`[boot] APCA_API_SECRET_KEY: ${maskValue(APCA_API_SECRET_KEY)}`);
   console.log('====================================================');
 
   if (POSTGRES_HARD_MODE) {
@@ -889,26 +769,21 @@ async function hydrateState() {
     mergeLoadedState(state, loaded);
 
     if (source === 'DB') {
-      addLog(`STATE RESTORED FROM DB ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
-        force: true,
-        signature: `state-restored-db-${Date.now()}`,
-      });
+      addLog(
+        `STATE RESTORED FROM DB ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`,
+        { force: true, signature: `state-restored-db-${Date.now()}` }
+      );
     } else {
-      addLog(`STATE LOADED FROM FILE ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
-        force: true,
-        signature: `state-loaded-file-${Date.now()}`,
-      });
+      addLog(
+        `STATE LOADED FROM FILE ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`,
+        { force: true, signature: `state-loaded-file-${Date.now()}` }
+      );
     }
   } else {
     addLog('STATE INIT NEW', {
       force: true,
       signature: `state-init-new-${Date.now()}`,
     });
-  }
-
-  if (BROKER_ENABLED) {
-    await brokerPing();
-    await brokerFullSync();
   }
 
   isHydrated = true;
@@ -929,6 +804,10 @@ process.on('SIGTERM', async () => {
   } finally {
     process.exit(0);
   }
+});
+
+process.on('beforeExit', async () => {
+  await forcePersistNow();
 });
 
 /* =========================================================
@@ -968,6 +847,7 @@ function resetDayIfNeeded() {
 
   state.session.date = today;
   state.session.tradesToday = 0;
+  state.session.netPnL = 0;
   state.session.cooldownUntil = 0;
   state.session.processing = false;
   state.session.queue = 0;
@@ -992,7 +872,9 @@ function resetDayIfNeeded() {
 
   state.system.status = 'READY';
   state.system.subtitle = 'System bereit.';
-  state.system.detail = state.session.autoMode ? `AI bereit für Entry. • ${state.symbol.active}` : 'Bereit für manuellen Modus.';
+  state.system.detail = state.session.autoMode
+    ? `AI bereit für Entry. • ${state.symbol.active}`
+    : 'Bereit für manuellen Modus.';
   state.system.liveBadge = state.session.autoMode ? 'AI AUTO ON' : 'LIVE';
 
   addLog(`Day reset ${today}`, { force: true, signature: `day-reset-${today}` });
@@ -1173,14 +1055,34 @@ function getAdaptiveThresholds() {
   };
 }
 
-function learnFromBrokerPnl(currentPnl) {
+function learnFromOutcome(outcome) {
   if (!CONFIG.ai.enableLearning) return;
 
-  if (currentPnl >= state.session.winTarget) {
-    state.learning.lastOutcome = 'WIN_TARGET';
-  } else if (currentPnl <= state.session.lossLimit) {
-    state.learning.lastOutcome = 'LOSS_LIMIT';
+  if (outcome === 'WIN') {
+    state.learning.winCount += 1;
+    state.learning.lastOutcome = 'WIN';
+    state.learning.drift = clamp(
+      state.learning.drift - CONFIG.ai.thresholdAdjustStep,
+      -CONFIG.ai.maxThresholdDrift,
+      CONFIG.ai.maxThresholdDrift
+    );
+    addLog(`Learning WIN | drift ${state.learning.drift}`, {
+      signature: `learn-win-${state.learning.winCount}-${state.learning.drift}`,
+    });
+  } else if (outcome === 'LOSS') {
+    state.learning.lossCount += 1;
+    state.learning.lastOutcome = 'LOSS';
+    state.learning.drift = clamp(
+      state.learning.drift + CONFIG.ai.thresholdAdjustStep,
+      -CONFIG.ai.maxThresholdDrift,
+      CONFIG.ai.maxThresholdDrift
+    );
+    addLog(`Learning LOSS | drift ${state.learning.drift}`, {
+      signature: `learn-loss-${state.learning.lossCount}-${state.learning.drift}`,
+    });
   }
+
+  schedulePersist();
 }
 
 /* =========================================================
@@ -1514,6 +1416,15 @@ function buildAiReasons(metrics, confidence) {
 }
 
 function mapHero(stage, signal, confidence, detail) {
+  if (state.brokerControls.killSwitch) {
+    return {
+      status: 'LOCKED',
+      subtitle: 'Kill Switch aktiv.',
+      detail: `Broker Trading gesperrt. • ${state.symbol.active}`,
+      liveBadge: 'KILL SWITCH',
+    };
+  }
+
   if (state.ai.paused) {
     if (state.ai.pauseReason === 'WIN_TARGET') {
       return {
@@ -1574,7 +1485,7 @@ function mapHero(stage, signal, confidence, detail) {
 }
 
 /* =========================================================
-   Broker trading
+   Fire / order simulation / broker integration
    ========================================================= */
 
 function canFire() {
@@ -1585,13 +1496,34 @@ function canFire() {
   if (state.session.tradesToday >= state.session.maxTradesPerDay) return false;
   if (state.session.netPnL >= state.session.winTarget) return false;
   if (state.session.netPnL <= state.session.lossLimit) return false;
-  if (!BROKER_ENABLED) return false;
-  if (!broker.connected) return false;
   return true;
 }
 
-async function refreshRiskFromBroker() {
-  await brokerFullSync();
+function simulateTradeOutcome(side) {
+  const conf = state.ai.confidence;
+  const edge = side === 'BUY' ? state.ai.buyEdge : state.ai.sellEdge;
+  const score = state.ai.score;
+  const volPenalty = Math.max(0, state.market.volatility - 55) * 0.35;
+  const liqPenalty = Math.max(0, 56 - state.market.liquidity) * 0.25;
+  const sessionPenalty = Math.max(0, 48 - state.market.session) * 0.20;
+
+  const quality = conf * 0.40 + edge * 0.38 + score * 0.22 - volPenalty - liqPenalty - sessionPenalty;
+  const winChance = clamp(quality / 100, 0.28, 0.78);
+  const isWin = Math.random() < winChance;
+
+  return isWin ? 4 : -4;
+}
+
+async function afterTradeResult(pnl) {
+  state.session.netPnL += pnl;
+
+  if (pnl > 0) {
+    addLog(`WIN PnL +${pnl}`, { signature: `win-${Date.now()}` });
+    learnFromOutcome('WIN');
+  } else {
+    addLog(`LOSS PnL ${pnl}`, { signature: `loss-${Date.now()}` });
+    learnFromOutcome('LOSS');
+  }
 
   if (state.session.netPnL >= state.session.winTarget) {
     state.ai.paused = true;
@@ -1607,12 +1539,11 @@ async function refreshRiskFromBroker() {
     addLog('AI pausiert wegen Tageslimit', { force: true, signature: 'pause-day-limit' });
   }
 
-  learnFromBrokerPnl(state.session.netPnL);
+  await forcePersistNow();
 }
 
-async function fireOrder(side) {
+async function executeOrderLifecycle(side, source = 'AI') {
   if (state.session.processing) return;
-  if (!BROKER_ENABLED) return;
 
   const symbolUsed = state.symbol.active;
 
@@ -1621,82 +1552,74 @@ async function fireOrder(side) {
   state.session.lastOrderSide = side;
   state.engine.lastFireAt = Date.now();
 
-  addLog(`AI FIRE ${side} (${symbolUsed})`, {
+  addLog(`${source} FIRE ${side} (${symbolUsed})`, {
     force: true,
-    signature: `ai-fire-${symbolUsed}-${side}-${Date.now()}`,
+    signature: `${source.toLowerCase()}-fire-${symbolUsed}-${side}-${Date.now()}`,
   });
-
-  addLog(`Broker order send (${symbolUsed} ${side})`, {
+  addLog(`Order wird verarbeitet (${symbolUsed} ${side})`, {
     force: true,
-    signature: `broker-send-${symbolUsed}-${side}-${Date.now()}`,
+    signature: `order-processing-${symbolUsed}-${side}-${Date.now()}`,
+  });
+  addLog(`Order queued (${symbolUsed} ${side})`, {
+    force: true,
+    signature: `order-queued-${symbolUsed}-${side}-${Date.now()}`,
   });
 
   await forcePersistNow();
+  await sleep(900);
 
-  try {
-    const order = await brokerSubmitMarketOrder(
-      symbolUsed,
-      side,
-      CONFIG.broker.orderQty
-    );
+  let brokerOrderPlaced = false;
+  let brokerOrderId = null;
 
-    broker.lastOrderId = order?.id || null;
-
-    addLog(`Order submitted (${symbolUsed} ${side})`, {
-      force: true,
-      signature: `order-submitted-${broker.lastOrderId || Date.now()}`,
-    });
-
-    const terminalOrder = await brokerWaitForTerminalOrder(order.id);
-    const status = String(terminalOrder?.status || '').toLowerCase();
-
-    if (status === 'filled') {
-      addLog(`Order filled (${symbolUsed} ${side})`, {
+  if (brokerSafetyAllowsRealOrder()) {
+    try {
+      const order = await submitBrokerOrder(side, symbolUsed, 1);
+      brokerOrderPlaced = true;
+      brokerOrderId = order?.id || null;
+      addLog(`Broker order sent ${side} (${symbolUsed})`, {
         force: true,
-        signature: `order-filled-${terminalOrder.id}`,
+        signature: `broker-order-sent-${symbolUsed}-${side}-${Date.now()}`,
       });
-
-      state.session.tradesToday += 1;
-      state.session.cooldownUntil = Date.now() + CONFIG.session.cooldownMs;
-
-      await refreshRiskFromBroker();
-    } else if (status) {
-      addLog(`Order ${status} (${symbolUsed} ${side})`, {
+    } catch (err) {
+      broker.lastError = err?.message || 'broker order failed';
+      addLog(`Broker order FAIL (${symbolUsed} ${side})`, {
         force: true,
-        signature: `order-${status}-${terminalOrder?.id || Date.now()}`,
+        signature: `broker-order-fail-${symbolUsed}-${side}-${Date.now()}`,
       });
-      await brokerFullSync();
-    } else {
-      addLog(`Order status unknown (${symbolUsed} ${side})`, {
-        force: true,
-        signature: `order-unknown-${Date.now()}`,
-      });
-      await brokerFullSync();
     }
-  } catch (err) {
-    broker.connected = false;
-    broker.lastError = err?.message || 'broker order failed';
-
-    addLog(`Broker FAIL ${broker.lastError}`, {
+  } else {
+    addLog(`Broker order blocked (${symbolUsed} ${side})`, {
       force: true,
-      signature: `broker-fail-${Date.now()}`,
+      signature: `broker-order-blocked-${symbolUsed}-${side}-${Date.now()}`,
     });
-
-    await brokerFullSync();
-  } finally {
-    state.session.processing = false;
-    state.session.queue = 0;
-    await forcePersistNow();
   }
+
+  addLog(`Order ausgeführt (${symbolUsed} ${side})`, {
+    force: true,
+    signature: `order-filled-${symbolUsed}-${side}-${Date.now()}`,
+  });
+
+  state.session.processing = false;
+  state.session.queue = 0;
+  state.session.tradesToday += 1;
+  state.session.cooldownUntil = Date.now() + CONFIG.session.cooldownMs;
+
+  const pnl = simulateTradeOutcome(side);
+  await afterTradeResult(pnl);
+
+  if (brokerOrderPlaced && brokerOrderId) {
+    broker.lastOrderId = brokerOrderId;
+  }
+
+  await refreshBrokerStatus();
+  await forcePersistNow();
 }
 
 /* =========================================================
    Main AI loop
    ========================================================= */
 
-let brokerSyncEveryTicks = 0;
-
-async function processAiTick() {
+function processAiTick() {
   resetDayIfNeeded();
   rotateSymbolIfNeeded();
   generateMarket();
@@ -1756,16 +1679,6 @@ async function processAiTick() {
             : 'AI Hold';
   state.ai.watchMode = stage === 'WATCH';
 
-  if (BROKER_ENABLED) {
-    brokerSyncEveryTicks += 1;
-    if (brokerSyncEveryTicks >= 10) {
-      brokerSyncEveryTicks = 0;
-      await brokerFullSync();
-    } else {
-      syncBrokerIntoState();
-    }
-  }
-
   const hero = mapHero(stage, signal, confidence, evaluated.detail);
   state.system.status = hero.status;
   state.system.subtitle = hero.subtitle;
@@ -1795,9 +1708,15 @@ async function processAiTick() {
         `state-fire-${state.symbol.active}-${signal}-${evaluated.premiumSetup ? 'premium' : 'normal'}`
       );
     } else if (stage === 'READY') {
-      addStateLog(`AI Ready ${state.ai.bias} (${state.symbol.active})`, `state-ready-${state.symbol.active}-${state.ai.bias}-${evaluated.detail}`);
+      addStateLog(
+        `AI Ready ${state.ai.bias} (${state.symbol.active})`,
+        `state-ready-${state.symbol.active}-${state.ai.bias}-${evaluated.detail}`
+      );
     } else if (stage === 'WATCH') {
-      addStateLog(`AI Watch ${state.ai.bias} (${state.symbol.active})`, `state-watch-${state.symbol.active}-${state.ai.bias}-${evaluated.detail}`);
+      addStateLog(
+        `AI Watch ${state.ai.bias} (${state.symbol.active})`,
+        `state-watch-${state.symbol.active}-${state.ai.bias}-${evaluated.detail}`
+      );
     } else {
       const holdSignature = `state-hold-${state.symbol.active}-${state.ai.bias}-${reasons.join('-')}-${evaluated.detail}`;
       if (holdSignature !== state.engine.lastHoldReason) {
@@ -1816,10 +1735,10 @@ async function processAiTick() {
   );
 
   if (triggerFire && canFire()) {
-    fireOrder(stableBias).catch((err) => {
-      addLog(`fireOrder FAIL ${err?.message || 'unknown'}`, {
+    executeOrderLifecycle(stableBias, 'AI').catch((err) => {
+      addLog(`Order lifecycle FAIL ${err?.message || 'unknown'}`, {
         force: true,
-        signature: `fire-order-fail-${Date.now()}`,
+        signature: `order-lifecycle-fail-${Date.now()}`,
       });
     });
   }
@@ -1837,14 +1756,20 @@ async function processAiTick() {
    Public state
    ========================================================= */
 
-function getSyncLabel() {
-  if (!state.session.syncOk) return 'SYNC FAIL';
-  if (POSTGRES_HARD_MODE) return dbReady ? 'SYNC DB OK' : 'SYNC DB FAIL';
-  return DB_ENABLED && dbReady ? 'SYNC DB OK' : 'SYNC FILE OK';
-}
-
 function getPublicState() {
   const tags = state.ai.reasons.map(normalizeTag);
+
+  let syncLabel = 'SYNC FAIL';
+  if (state.session.syncOk) {
+    if (POSTGRES_HARD_MODE) syncLabel = dbReady ? 'SYNC DB OK' : 'SYNC DB FAIL';
+    else syncLabel = DB_ENABLED && dbReady ? 'SYNC DB OK' : 'SYNC FILE OK';
+  }
+
+  const account = broker.account || {};
+  const positions = Array.isArray(broker.positions) ? broker.positions : [];
+  const orders = Array.isArray(broker.orders) ? broker.orders : [];
+
+  const lastOrder = orders[0] || null;
 
   return {
     ok: true,
@@ -1884,7 +1809,7 @@ function getPublicState() {
       queue: state.session.queue,
       processing: state.session.processing ? 'ON' : 'OFF',
       autoMode: state.session.autoMode ? 'ON' : 'OFF',
-      sync: getSyncLabel(),
+      sync: syncLabel,
       cooldownActive: Date.now() < state.session.cooldownUntil,
       cooldownLeftSec: Math.max(
         0,
@@ -1945,16 +1870,42 @@ function getPublicState() {
       lastError: broker.lastError,
       lastCheckAt: broker.lastCheckAt,
       lastOrderId: broker.lastOrderId,
-      accountStatus: state.broker.accountStatus,
-      buyingPower: state.broker.buyingPower,
-      cash: state.broker.cash,
-      equity: state.broker.equity,
-      lastEquity: state.broker.lastEquity,
-      portfolioValue: state.broker.portfolioValue,
-      daytradeCount: state.broker.daytradeCount,
-      positionsCount: state.broker.positionsCount,
-      orderQty: CONFIG.broker.orderQty,
-      sideMode: CONFIG.broker.sideMode,
+      accountStatus: account.status || '-',
+      buyingPower: account.buying_power || '-',
+      cash: account.cash || '-',
+      equity: account.equity || '-',
+      portfolioValue: account.portfolio_value || '-',
+      positionsCount: positions.length,
+      lastOrder: lastOrder
+        ? {
+            id: lastOrder.id,
+            symbol: lastOrder.symbol,
+            side: lastOrder.side,
+            status: lastOrder.status,
+            qty: lastOrder.qty,
+            filled_qty: lastOrder.filled_qty,
+            created_at: lastOrder.created_at,
+          }
+        : null,
+      controls: {
+        tradingEnabled: state.brokerControls.tradingEnabled,
+        killSwitch: state.brokerControls.killSwitch,
+        liveTradingEnabled: state.brokerControls.liveTradingEnabled,
+        liveGuardUnlocked: state.brokerControls.liveGuardUnlocked,
+        realOrderAllowed: brokerSafetyAllowsRealOrder(),
+      },
+      account,
+      positions: positions.slice(0, 20),
+      orders: orders.slice(0, 20).map((o) => ({
+        id: o.id,
+        symbol: o.symbol,
+        side: o.side,
+        qty: o.qty,
+        filled_qty: o.filled_qty,
+        status: o.status,
+        created_at: o.created_at,
+        filled_at: o.filled_at,
+      })),
     },
 
     logs: state.logs,
@@ -1962,7 +1913,7 @@ function getPublicState() {
 }
 
 /* =========================================================
-   Manual actions
+   Manual / control actions
    ========================================================= */
 
 app.post('/api/auto/toggle', async (_req, res) => {
@@ -1994,17 +1945,8 @@ app.post('/api/reset', async (_req, res) => {
   state.engine = fresh.engine;
   state.symbol = fresh.symbol;
   state.manual = fresh.manual;
-  state.broker = {
-    ...fresh.broker,
-    connected: broker.connected,
-    enabled: broker.enabled,
-    mode: broker.mode,
-  };
+  state.brokerControls = fresh.brokerControls;
   state.logs = [];
-
-  if (BROKER_ENABLED) {
-    await brokerFullSync();
-  }
 
   addLog('Manual reset', { force: true, signature: `manual-reset-${Date.now()}` });
   await forcePersistNow();
@@ -2016,7 +1958,7 @@ app.post('/api/manual/buy', async (_req, res) => {
     return res.status(409).json({ ok: false, error: 'Processing active' });
   }
 
-  await fireOrder('BUY');
+  executeOrderLifecycle('BUY', 'MANUAL').catch(() => {});
   res.json(getPublicState());
 });
 
@@ -2025,71 +1967,162 @@ app.post('/api/manual/sell', async (_req, res) => {
     return res.status(409).json({ ok: false, error: 'Processing active' });
   }
 
-  await fireOrder('SELL');
+  executeOrderLifecycle('SELL', 'MANUAL').catch(() => {});
   res.json(getPublicState());
 });
 
-/* =========================================================
-   Broker endpoints
-   ========================================================= */
+app.post('/api/manual/win', async (_req, res) => {
+  await afterTradeResult(4);
+  res.json(getPublicState());
+});
 
-app.get('/api/broker/status', async (_req, res) => {
-  if (BROKER_ENABLED) {
-    await brokerFullSync();
+app.post('/api/manual/loss', async (_req, res) => {
+  await afterTradeResult(-4);
+  res.json(getPublicState());
+});
+
+app.post('/api/broker/status/refresh', async (_req, res) => {
+  await refreshBrokerStatus();
+  await forcePersistNow();
+  res.json(getPublicState());
+});
+
+app.post('/api/broker/trading/toggle', async (_req, res) => {
+  state.brokerControls.tradingEnabled = !state.brokerControls.tradingEnabled;
+  state.brokerControls.lastTradingToggleAt = Date.now();
+
+  addLog(`Broker trading ${state.brokerControls.tradingEnabled ? 'EIN' : 'AUS'}`, {
+    force: true,
+    signature: `broker-trading-toggle-${state.brokerControls.tradingEnabled}-${Date.now()}`,
+  });
+
+  await forcePersistNow();
+  res.json(getPublicState());
+});
+
+app.post('/api/broker/kill-switch/toggle', async (_req, res) => {
+  state.brokerControls.killSwitch = !state.brokerControls.killSwitch;
+  state.brokerControls.lastKillSwitchAt = Date.now();
+
+  if (state.brokerControls.killSwitch) {
+    state.brokerControls.liveGuardUnlocked = false;
+    state.brokerControls.liveTradingEnabled = false;
   }
 
-  res.json({
-    ok: true,
-    mode: broker.mode,
-    enabled: broker.enabled,
-    connected: broker.connected,
-    lastError: broker.lastError,
-    lastCheckAt: broker.lastCheckAt,
-    lastOrderId: broker.lastOrderId,
-    account: broker.account
-      ? {
-          id: broker.account.id,
-          account_number: broker.account.account_number,
-          status: broker.account.status,
-          buying_power: broker.account.buying_power,
-          cash: broker.account.cash,
-          equity: broker.account.equity,
-          last_equity: broker.account.last_equity,
-          portfolio_value: broker.account.portfolio_value,
-          daytrade_count: broker.account.daytrade_count,
-        }
-      : null,
-    positionsCount: Array.isArray(broker.positions) ? broker.positions.length : 0,
+  addLog(`Kill Switch ${state.brokerControls.killSwitch ? 'AKTIV' : 'AUS'}`, {
+    force: true,
+    signature: `kill-switch-${state.brokerControls.killSwitch}-${Date.now()}`,
   });
+
+  await forcePersistNow();
+  res.json(getPublicState());
 });
 
-app.get('/api/broker/account', async (_req, res) => {
-  const account = await brokerRefreshAccount();
-  await brokerRefreshPositions();
-  syncBrokerIntoState();
+app.post('/api/broker/live-trading/toggle', async (_req, res) => {
+  if (broker.mode !== 'alpaca-live') {
+    return res.status(409).json({
+      ok: false,
+      error: 'Live trading toggle only works in alpaca-live mode',
+    });
+  }
 
-  res.json({
-    ok: !!account,
-    mode: broker.mode,
-    enabled: broker.enabled,
-    connected: broker.connected,
-    lastError: broker.lastError,
-    lastCheckAt: broker.lastCheckAt,
-    lastOrderId: broker.lastOrderId,
-    account,
-    positionsCount: broker.positions.length,
+  state.brokerControls.liveTradingEnabled = !state.brokerControls.liveTradingEnabled;
+
+  if (!state.brokerControls.liveTradingEnabled) {
+    state.brokerControls.liveGuardUnlocked = false;
+  }
+
+  addLog(`Live trading ${state.brokerControls.liveTradingEnabled ? 'EIN' : 'AUS'}`, {
+    force: true,
+    signature: `live-trading-toggle-${state.brokerControls.liveTradingEnabled}-${Date.now()}`,
   });
+
+  await forcePersistNow();
+  res.json(getPublicState());
 });
 
-app.get('/api/broker/positions', async (_req, res) => {
-  const positions = await brokerRefreshPositions();
-  syncBrokerIntoState();
-  res.json(positions);
+app.post('/api/broker/live-guard/unlock', async (_req, res) => {
+  if (broker.mode !== 'alpaca-live') {
+    return res.status(409).json({
+      ok: false,
+      error: 'Live guard only works in alpaca-live mode',
+    });
+  }
+
+  if (state.brokerControls.killSwitch) {
+    return res.status(409).json({
+      ok: false,
+      error: 'Kill switch active',
+    });
+  }
+
+  if (!state.brokerControls.liveTradingEnabled) {
+    return res.status(409).json({
+      ok: false,
+      error: 'Live trading disabled',
+    });
+  }
+
+  state.brokerControls.liveGuardUnlocked = true;
+
+  addLog('Live guard UNLOCKED', {
+    force: true,
+    signature: `live-guard-unlocked-${Date.now()}`,
+  });
+
+  await forcePersistNow();
+  res.json(getPublicState());
 });
 
-app.get('/api/broker/orders', async (_req, res) => {
-  const orders = await brokerRefreshOrders(30);
-  res.json(orders);
+app.post('/api/broker/live-guard/lock', async (_req, res) => {
+  state.brokerControls.liveGuardUnlocked = false;
+
+  addLog('Live guard LOCKED', {
+    force: true,
+    signature: `live-guard-locked-${Date.now()}`,
+  });
+
+  await forcePersistNow();
+  res.json(getPublicState());
+});
+
+app.post('/api/broker/order/manual', async (req, res) => {
+  const side = String(req.body?.side || '').toUpperCase();
+  const symbol = String(req.body?.symbol || state.symbol.active).toUpperCase();
+  const qty = Math.max(1, Math.floor(toNum(req.body?.qty, 1)));
+
+  if (!['BUY', 'SELL'].includes(side)) {
+    return res.status(400).json({ ok: false, error: 'Invalid side' });
+  }
+
+  if (!brokerSafetyAllowsRealOrder()) {
+    return res.status(409).json({
+      ok: false,
+      error: 'Broker safety lock active',
+      controls: state.brokerControls,
+      brokerMode: broker.mode,
+    });
+  }
+
+  try {
+    const order = await submitBrokerOrder(side, symbol, qty);
+
+    addLog(`Manual broker ${side} ${symbol} x${qty}`, {
+      force: true,
+      signature: `manual-broker-order-${symbol}-${side}-${qty}-${Date.now()}`,
+    });
+
+    await forcePersistNow();
+    res.json({
+      ok: true,
+      order,
+      state: getPublicState(),
+    });
+  } catch (err) {
+    broker.lastError = err?.message || 'manual broker order failed';
+    await forcePersistNow();
+    res.status(500).json({ ok: false, error: broker.lastError });
+  }
 });
 
 /* =========================================================
@@ -2104,6 +2137,44 @@ app.get('/api/status', (_req, res) => {
   res.json(getPublicState());
 });
 
+app.get('/api/broker/status', async (_req, res) => {
+  await refreshBrokerStatus();
+  res.json({
+    ok: true,
+    mode: broker.mode,
+    enabled: broker.enabled,
+    connected: broker.connected,
+    lastError: broker.lastError,
+    lastCheckAt: broker.lastCheckAt,
+    controls: state.brokerControls,
+    realOrderAllowed: brokerSafetyAllowsRealOrder(),
+  });
+});
+
+app.get('/api/broker/account', async (_req, res) => {
+  await refreshBrokerStatus();
+  res.json({
+    ok: true,
+    mode: broker.mode,
+    enabled: broker.enabled,
+    connected: broker.connected,
+    lastError: broker.lastError,
+    lastCheckAt: broker.lastCheckAt,
+    account: broker.account,
+    positionsCount: Array.isArray(broker.positions) ? broker.positions.length : 0,
+  });
+});
+
+app.get('/api/broker/positions', async (_req, res) => {
+  await refreshBrokerStatus();
+  res.json(Array.isArray(broker.positions) ? broker.positions : []);
+});
+
+app.get('/api/broker/orders', async (_req, res) => {
+  await refreshBrokerStatus();
+  res.json(Array.isArray(broker.orders) ? broker.orders : []);
+});
+
 app.get('/health', (_req, res) => {
   res.json({
     ok: true,
@@ -2116,8 +2187,8 @@ app.get('/health', (_req, res) => {
     dbReady,
     dbLastError,
     databaseUrlFound: DB_URL_FOUND,
-    brokerMode: BROKER_MODE,
-    brokerEnabled: BROKER_ENABLED,
+    brokerMode: broker.mode,
+    brokerEnabled: broker.enabled,
     brokerConnected: broker.connected,
     brokerLastError: broker.lastError,
   });
@@ -2130,50 +2201,8 @@ app.get('/health', (_req, res) => {
 const publicDir = path.join(process.cwd(), 'public');
 app.use(express.static(publicDir));
 
-app.get('/', (_req, res) => {
-  const indexFile = path.join(publicDir, 'index.html');
-  if (fs.existsSync(indexFile)) {
-    return res.sendFile(indexFile);
-  }
-
-  return res
-    .status(200)
-    .send(`
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>QuantTrade AI</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: Arial, sans-serif; background:#0b1020; color:#fff; padding:24px; }
-    .card { background:#1a2250; padding:20px; border-radius:16px; max-width:720px; margin:auto; }
-    pre { white-space:pre-wrap; word-break:break-word; }
-    a { color:#9fd3ff; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>QuantTrade AI</h1>
-    <p>Frontend fehlt oder public/index.html ist nicht vorhanden.</p>
-    <p>Teste:</p>
-    <pre>/health
-/api/state
-/api/broker/status
-/api/broker/account
-/api/broker/positions</pre>
-  </div>
-</body>
-</html>
-    `);
-});
-
 app.get('*', (_req, res) => {
-  const indexFile = path.join(publicDir, 'index.html');
-  if (fs.existsSync(indexFile)) {
-    return res.sendFile(indexFile);
-  }
-  return res.redirect('/');
+  res.sendFile(path.join(publicDir, 'index.html'));
 });
 
 /* =========================================================
@@ -2181,26 +2210,23 @@ app.get('*', (_req, res) => {
    ========================================================= */
 
 (async () => {
-  try {
-    await hydrateState();
+  await hydrateState();
+  await refreshBrokerStatus();
 
-    console.log('========================================');
-    console.log('🚀 V22.11.8 ALPACA PAPER LIVE STARTING');
-    console.log('========================================');
-
-    setInterval(() => {
-      processAiTick().catch((err) => {
-        console.error('[tick] FAIL:', err?.message || err);
-      });
-    }, CONFIG.tickMs);
-
-    await processAiTick();
-
-    app.listen(PORT, () => {
-      console.log(`V22.11.8 ALPACA PAPER LIVE listening on :${PORT}`);
-    });
-  } catch (err) {
-    console.error('[boot] fatal:', err?.message || err);
-    process.exit(1);
+  if (broker.enabled) {
+    console.log(`[broker] ${broker.mode} ${broker.connected ? 'connected' : 'not connected'}`);
+    if (broker.lastError) console.log(`[broker] error: ${broker.lastError}`);
+  } else {
+    console.log('[broker] disabled');
   }
+
+  processAiTick();
+  setInterval(processAiTick, CONFIG.tickMs);
+  setInterval(() => {
+    refreshBrokerStatus().catch(() => {});
+  }, 15000);
+
+  app.listen(PORT, () => {
+    console.log(`V22.12.0 LIVE TRADING CONTROL PANEL listening on :${PORT}`);
+  });
 })();
