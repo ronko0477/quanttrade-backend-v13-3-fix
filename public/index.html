@@ -1,919 +1,826 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QuantTrade V22.12.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>V22.12.1 Live Trading Control Panel</title>
   <style>
-    :root {
-      --bg1: #0f1230;
-      --bg2: #1a1e45;
-      --panel: rgba(173, 180, 255, 0.16);
-      --panel-2: rgba(73, 88, 240, 0.52);
-      --line: rgba(255,255,255,0.08);
-      --text: #f4f6ff;
-      --muted: rgba(255,255,255,0.8);
-      --lime: #d9eb87;
-      --pill: linear-gradient(180deg, #5665ff 0%, #4a58ef 100%);
-      --soft: rgba(255,255,255,0.08);
-      --shadow: 0 16px 48px rgba(0,0,0,0.28);
-      --ok: #aef78c;
-      --warn: #ffd86e;
-      --danger: #ff8f8f;
+    :root{
+      --bg1:#0a1027;
+      --bg2:#171f49;
+      --panel:#4857ea;
+      --panel-soft:rgba(196,200,255,.18);
+      --panel-card:rgba(115,129,255,.22);
+      --panel-line:rgba(255,255,255,.08);
+      --text:#f6f7ff;
+      --muted:#dce2ff;
+      --lime:#d6ea82;
+      --btn:#4b5af1;
+      --btn2:#6f7dff;
+      --danger:#ef646b;
+      --warn:#f2bf54;
+      --ok:#8ce08f;
+      --shadow:0 20px 50px rgba(5,10,30,.35);
+      --radius:28px;
+      --radius2:22px;
     }
 
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Inter, Arial, Helvetica, sans-serif;
-      color: var(--text);
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#dfe3ff;color:var(--text)}
+    body{
+      min-height:100vh;
       background:
-        radial-gradient(circle at top right, rgba(204,255,146,0.18), transparent 16%),
-        linear-gradient(180deg, #e7e7f1 0%, #cfd0ec 8%, #1a1f4d 24%, #0b0f25 100%);
-      min-height: 100vh;
+        radial-gradient(circle at 88% 7%, rgba(197,255,123,.26) 0%, rgba(197,255,123,.07) 4%, transparent 10%),
+        linear-gradient(180deg, #ced3ff 0%, #c7ccef 34%, #c2c7df 100%);
     }
 
-    .page {
-      max-width: 920px;
-      margin: 0 auto;
-      padding: 28px 18px 60px;
+    .app{
+      width:100%;
+      max-width:860px;
+      margin:0 auto;
+      padding-bottom:40px;
     }
 
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      margin-bottom: 20px;
-      font-weight: 900;
-      letter-spacing: 0.4px;
-      font-size: clamp(24px, 4vw, 42px);
-      text-align: center;
-      color: #fff;
+    .top-hero{
+      padding:34px 14px 18px;
+      background:
+        radial-gradient(circle at 89% 18%, rgba(197,255,123,.20) 0%, rgba(197,255,123,.05) 9%, transparent 17%),
+        linear-gradient(180deg, #091026 0%, #141b3f 48%, #242a58 100%);
+      border-bottom-left-radius:34px;
+      border-bottom-right-radius:34px;
+      box-shadow:0 10px 30px rgba(0,0,0,.18);
     }
 
-    .dot {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: #c8ff93;
-      box-shadow: 0 0 24px rgba(200,255,147,0.95);
-      flex: 0 0 auto;
+    .top-title-row{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:14px;
+      margin-bottom:18px;
+      text-align:center;
     }
 
-    .section {
-      background: rgba(183, 189, 255, 0.16);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 38px;
-      padding: 22px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(16px);
-      margin-bottom: 22px;
+    .top-title{
+      font-size:24px;
+      line-height:1.1;
+      font-weight:900;
+      letter-spacing:.5px;
+      color:#f8fbff;
+      text-transform:uppercase;
     }
 
-    .hero {
-      padding: 28px 24px 24px;
-      background: rgba(197, 201, 255, 0.28);
+    .top-dot{
+      width:22px;
+      height:22px;
+      border-radius:50%;
+      background:#c7f97f;
+      box-shadow:0 0 0 10px rgba(199,249,127,.12), 0 0 20px rgba(199,249,127,.45);
+      flex:0 0 auto;
     }
 
-    .hero-inner {
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 30px;
-      padding: 26px 18px 22px;
-      background: rgba(255,255,255,0.02);
+    .hero-card{
+      border-radius:34px;
+      padding:18px 18px 20px;
+      background:linear-gradient(180deg, rgba(206,211,255,.82) 0%, rgba(170,178,243,.76) 100%);
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.14);
+      position:relative;
+      overflow:hidden;
     }
 
-    .hero-title {
-      font-size: clamp(56px, 11vw, 112px);
-      font-weight: 1000;
-      line-height: 0.92;
-      text-align: center;
-      color: var(--lime);
-      margin: 0 0 12px;
+    .hero-card:before{
+      content:'';
+      position:absolute;
+      inset:12px;
+      border-radius:28px;
+      border:1px solid rgba(255,255,255,.08);
+      pointer-events:none;
     }
 
-    .hero-subtitle {
-      font-size: clamp(18px, 4vw, 30px);
-      font-weight: 900;
-      text-align: center;
-      margin-bottom: 10px;
+    .hero-title{
+      text-align:center;
+      font-size:86px;
+      line-height:1;
+      margin:12px 0 6px;
+      color:var(--lime);
+      font-weight:900;
+      text-transform:uppercase;
+      text-shadow:0 2px 14px rgba(0,0,0,.12);
     }
 
-    .hero-detail {
-      font-size: clamp(16px, 3.6vw, 24px);
-      font-weight: 800;
-      text-align: center;
-      color: var(--text);
-      opacity: 0.96;
-      margin-bottom: 10px;
+    .hero-subtitle{
+      text-align:center;
+      font-size:28px;
+      font-weight:900;
+      color:#f5f7ff;
+      margin-bottom:12px;
     }
 
-    .hero-reasons {
-      text-align: center;
-      color: var(--muted);
-      font-size: clamp(14px, 3vw, 18px);
-      font-weight: 800;
-      line-height: 1.35;
-      margin-bottom: 18px;
+    .hero-detail{
+      text-align:center;
+      font-size:25px;
+      line-height:1.25;
+      color:#f4f6ff;
+      font-weight:800;
+      margin:0 8px 10px;
     }
 
-    .hero-pnl {
-      text-align: center;
-      font-size: clamp(72px, 12vw, 126px);
-      font-weight: 1000;
-      line-height: 1;
-      margin: 6px 0;
+    .hero-reasons{
+      text-align:center;
+      font-size:20px;
+      line-height:1.3;
+      color:#f0f3ff;
+      font-weight:800;
+      margin:0 6px 16px;
     }
 
-    .hero-pnl-label {
-      text-align: center;
-      font-size: clamp(18px, 4vw, 34px);
-      font-weight: 900;
-      margin-bottom: 16px;
+    .hero-pnl-stack{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
+      margin:6px 0 18px;
     }
 
-    .pill {
-      background: var(--pill);
-      color: white;
-      border: 0;
-      border-radius: 999px;
-      min-height: 58px;
-      font-weight: 1000;
-      font-size: 18px;
-      letter-spacing: 0.2px;
-      padding: 12px 22px;
-      box-shadow: inset 0 8px 18px rgba(255,255,255,0.08), 0 10px 22px rgba(74,88,239,0.24);
+    .hero-big{
+      font-size:96px;
+      line-height:1;
+      font-weight:900;
+      color:#ffffff;
     }
 
-    .pill.small {
-      min-height: 42px;
-      font-size: 14px;
-      padding: 8px 16px;
+    .hero-pnl-label{
+      font-size:26px;
+      font-weight:900;
+      color:#f5f7ff;
     }
 
-    .pill.warn {
-      background: linear-gradient(180deg, #ffc861 0%, #ffae3d 100%);
-      color: #1d1d1d;
+    .hero-pnl-mini-row{
+      width:100%;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:6px;
     }
 
-    .pill.danger {
-      background: linear-gradient(180deg, #ff6c78 0%, #ff4757 100%);
+    .hero-pnl-mini{
+      background:rgba(67,82,223,.16);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      padding:10px 12px;
+      text-align:center;
     }
 
-    .pill.ok {
-      background: linear-gradient(180deg, #69c98c 0%, #3ab970 100%);
+    .hero-pnl-mini span{
+      display:block;
+      font-size:13px;
+      color:#eef2ff;
+      margin-bottom:4px;
+      font-weight:700;
     }
 
-    .hero-pills {
-      display: grid;
-      gap: 14px;
-      margin-bottom: 20px;
+    .hero-pnl-mini strong{
+      font-size:20px;
+      color:#fff;
+      font-weight:900;
     }
 
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.45fr;
-      gap: 18px;
+    .pill-stack{
+      display:grid;
+      gap:12px;
+      margin-top:16px;
     }
 
-    .card {
-      background: rgba(73, 88, 240, 0.52);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 28px;
-      padding: 18px;
-      box-shadow: inset 0 6px 20px rgba(255,255,255,0.03);
+    .pill{
+      width:100%;
+      border:none;
+      border-radius:999px;
+      padding:18px 20px;
+      font-size:24px;
+      font-weight:900;
+      text-transform:uppercase;
+      color:#fff;
+      background:linear-gradient(180deg, #5e6cff 0%, #4352ee 100%);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
     }
 
-    .label {
-      font-size: clamp(16px, 2vw, 18px);
-      font-weight: 900;
-      color: white;
-      margin-bottom: 8px;
-      opacity: 0.96;
+    .content{
+      padding:16px 14px 30px;
+      display:grid;
+      gap:16px;
     }
 
-    .big {
-      font-size: clamp(38px, 7vw, 70px);
-      font-weight: 1000;
-      line-height: 1;
-      color: var(--lime);
+    .panel{
+      background:linear-gradient(180deg, rgba(71,87,234,.90) 0%, rgba(75,90,241,.88) 100%);
+      border-radius:32px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(255,255,255,.08);
     }
 
-    .metric-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      margin-top: 18px;
+    .panel h3{
+      margin:0 0 16px;
+      font-size:28px;
+      font-weight:900;
+      text-transform:uppercase;
+      color:#f8fbff;
     }
 
-    .value-box {
-      min-height: 128px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+    .badge-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      justify-content:flex-end;
+      margin-bottom:16px;
     }
 
-    .value-box .small-label {
-      font-size: 15px;
-      font-weight: 900;
-      margin-bottom: 8px;
-      opacity: 0.95;
+    .badge{
+      padding:12px 18px;
+      border-radius:999px;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.08);
+      font-size:18px;
+      font-weight:900;
+      color:#f6f8ff;
+      text-transform:uppercase;
     }
 
-    .value-box .value {
-      font-size: clamp(34px, 5vw, 52px);
-      font-weight: 1000;
-      color: var(--lime);
-      line-height: 1;
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
     }
 
-    .tags {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
-      margin-top: 18px;
+    .mini-card{
+      background:rgba(31,46,185,.18);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:22px;
+      padding:18px;
     }
 
-    .tag {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 58px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.08);
-      font-weight: 900;
-      color: var(--text);
-      text-align: center;
-      padding: 8px 12px;
+    .mini-card .k{
+      font-size:20px;
+      font-weight:800;
+      color:#f7faff;
+      margin-bottom:10px;
     }
 
-    .section-title-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 16px;
+    .mini-card .v{
+      font-size:28px;
+      line-height:1.1;
+      font-weight:900;
+      color:var(--lime);
+      word-break:break-word;
     }
 
-    .section-title {
-      font-size: clamp(24px, 4vw, 34px);
-      font-weight: 1000;
-      margin: 0;
+    .action-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:14px;
     }
 
-    .badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: flex-end;
+    .action-grid.one{
+      grid-template-columns:1fr;
     }
 
-    .badge {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 999px;
-      padding: 10px 16px;
-      font-size: 14px;
-      font-weight: 1000;
-      color: #fff;
+    button{
+      appearance:none;
+      border:none;
+      border-radius:24px;
+      padding:18px 18px;
+      font-size:22px;
+      font-weight:900;
+      color:#fff;
+      background:linear-gradient(180deg, #6f7dff 0%, #4e5cf1 100%);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
+      cursor:pointer;
     }
 
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
+    button.warn{
+      background:linear-gradient(180deg, #f7d26e 0%, #efb348 100%);
+      color:#161616;
     }
 
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
+    button.danger{
+      background:linear-gradient(180deg, #ff7f87 0%, #ec5b67 100%);
     }
 
-    .grid-4 {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 18px;
+    button.secondary{
+      background:linear-gradient(180deg, #7b87ff 0%, #5e6cff 100%);
     }
 
-    .actions {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
-      margin-top: 18px;
+    .score-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      margin-bottom:10px;
     }
 
-    .actions.single {
-      grid-template-columns: 1fr;
+    .score-head .score-num{
+      font-size:26px;
+      font-weight:900;
+      color:#f8fbff;
     }
 
-    .btn {
-      appearance: none;
-      border: 0;
-      cursor: pointer;
-      width: 100%;
+    .bar{
+      width:100%;
+      height:22px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.12);
+      margin-bottom:16px;
+      box-shadow:inset 0 2px 8px rgba(0,0,0,.08);
     }
 
-    .progress {
-      height: 22px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.12);
-      overflow: hidden;
-      margin-top: 10px;
-      box-shadow: inset 0 3px 10px rgba(0,0,0,0.15);
+    .bar > span{
+      display:block;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg, #f3d0a2 0%, #d7ea83 48%, #bfe7d7 100%);
     }
 
-    .bar {
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #ffd7b3 0%, #c8f0b1 100%);
-      width: 0%;
-      transition: width 0.45s ease;
+    .signal-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin-bottom:12px;
     }
 
-    .score-card {
-      margin-top: 0;
+    .signal-card{
+      background:rgba(115,129,255,.20);
+      border-radius:24px;
+      padding:18px;
+      border:1px solid rgba(255,255,255,.06);
     }
 
-    .score-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+    .signal-card .k{
+      font-size:18px;
+      font-weight:800;
+      margin-bottom:8px;
+      color:#f7faff;
+      text-transform:uppercase;
     }
 
-    .score-num {
-      font-size: clamp(34px, 5vw, 56px);
-      font-weight: 1000;
-      color: var(--lime);
+    .signal-card .v{
+      font-size:58px;
+      line-height:1;
+      font-weight:900;
+      color:var(--lime);
     }
 
-    .mini-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 18px;
-      margin-top: 18px;
+    .signal-card .v.small{
+      font-size:26px;
+      color:#fff;
     }
 
-    .table-box {
-      background: rgba(255,255,255,0.05);
-      border-radius: 24px;
-      padding: 14px;
-      border: 1px solid rgba(255,255,255,0.06);
-      overflow: hidden;
+    .tags{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px;
     }
 
-    .row {
-      display: grid;
-      grid-template-columns: 1.25fr 1fr;
-      gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+    .tag{
+      background:rgba(255,255,255,.10);
+      color:#f8fbff;
+      border-radius:999px;
+      text-align:center;
+      padding:12px 14px;
+      font-size:18px;
+      font-weight:800;
     }
 
-    .row:last-child {
-      border-bottom: none;
+    .rows{
+      background:rgba(34,46,165,.18);
+      border-radius:24px;
+      padding:16px;
+      border:1px solid rgba(255,255,255,.06);
     }
 
-    .row .k {
-      font-weight: 900;
-      color: rgba(255,255,255,0.95);
+    .row{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
+      align-items:center;
+      padding:12px 0;
+      border-bottom:1px solid rgba(255,255,255,.08);
     }
 
-    .row .v {
-      text-align: right;
-      font-weight: 900;
-      color: #fff;
-      word-break: break-word;
+    .row:last-child{border-bottom:none}
+    .row .rk{
+      font-size:18px;
+      font-weight:800;
+      color:#f7faff;
+    }
+    .row .rv{
+      font-size:18px;
+      font-weight:900;
+      color:#fff;
+      text-align:right;
+      word-break:break-word;
     }
 
-    .log-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
+    .log-list{
+      display:grid;
+      gap:0;
+      max-height:560px;
+      overflow:auto;
+      padding-right:4px;
     }
 
-    .log-item {
-      padding: 14px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      font-size: 15px;
-      line-height: 1.45;
-      color: rgba(255,255,255,0.92);
-      word-break: break-word;
+    .log-item{
+      padding:14px 0;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      font-size:18px;
+      line-height:1.35;
+      color:#f4f7ff;
+      word-break:break-word;
     }
 
-    .log-item:last-child {
-      border-bottom: none;
+    .log-item:last-child{border-bottom:none}
+
+    .footer-space{height:20px}
+
+    .muted{
+      opacity:.9;
     }
 
-    .muted {
-      color: rgba(255,255,255,0.72);
-    }
-
-    .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    }
-
-    .footer-space {
-      height: 30px;
-    }
-
-    @media (max-width: 760px) {
-      .page { padding: 18px 14px 42px; }
-      .hero-grid { grid-template-columns: 1fr; }
-      .metric-grid { grid-template-columns: 1fr 1fr; }
-      .grid-4 { grid-template-columns: 1fr 1fr; }
-      .grid-3 { grid-template-columns: 1fr 1fr; }
-      .grid-2 { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 520px) {
-      .metric-grid,
-      .mini-grid,
-      .tags,
-      .grid-3,
-      .grid-4,
-      .actions {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .hero-title {
-        font-size: 72px;
-      }
-
-      .hero-pnl {
-        font-size: 92px;
-      }
-
-      .big {
-        font-size: 52px;
-      }
-
-      .row {
-        grid-template-columns: 1fr 1fr;
-      }
+    @media (max-width: 640px){
+      .top-title{font-size:18px}
+      .hero-title{font-size:64px}
+      .hero-subtitle{font-size:22px}
+      .hero-detail{font-size:19px}
+      .hero-reasons{font-size:16px}
+      .hero-big{font-size:82px}
+      .hero-pnl-label{font-size:22px}
+      .hero-pnl-mini strong{font-size:18px}
+      .panel h3{font-size:22px}
+      button{font-size:18px;padding:16px}
+      .mini-card .k{font-size:17px}
+      .mini-card .v{font-size:24px}
+      .signal-card .v{font-size:46px}
+      .signal-card .v.small{font-size:22px}
+      .row .rk,.row .rv,.log-item,.tag,.badge{font-size:16px}
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="topbar">
-      <div id="versionText">V22.12.0 LIVE TRADING CONTROL PANEL</div>
-      <div class="dot" id="liveDot"></div>
-    </div>
+  <div class="app">
+    <div class="top-hero">
+      <div class="top-title-row">
+        <div class="top-title" id="versionTitle">V22.12.1 LIVE TRADING CONTROL PANEL</div>
+        <div class="top-dot"></div>
+      </div>
 
-    <section class="section hero">
-      <div class="hero-inner">
+      <div class="hero-card">
         <div class="hero-title" id="heroTitle">READY</div>
         <div class="hero-subtitle" id="heroSubtitle">AI Auto aktiv</div>
-        <div class="hero-detail" id="heroDetail">Beobachtung aktiv.</div>
-        <div class="hero-reasons" id="heroReasons">Volume OK • Liquidity OK • Volatility Mid • Session Soft</div>
+        <div class="hero-detail" id="heroDetail">Beobachtung aktiv. • AAPL</div>
+        <div class="hero-reasons" id="heroReasons">Volume OK • Liquidity OK • Volatility Mid • Session Soft • Low Confidence</div>
 
-        <div class="hero-pnl" id="heroPnL">0</div>
-        <div class="hero-pnl-label">Net PnL</div>
+        <div class="hero-pnl-stack">
+          <div class="hero-big" id="heroPnlMain">0.00</div>
+          <div class="hero-pnl-label">Bot Net PnL</div>
 
-        <div class="hero-pills">
-          <button class="pill btn" id="heroLiveBadge">AI AUTO ON</button>
-          <button class="pill btn" id="lossLimitBtn">LOSS LIMIT -20</button>
-          <button class="pill btn" id="winTargetBtn">WIN TARGET +20</button>
-        </div>
-
-        <div class="hero-grid">
-          <div class="card value-box">
-            <div class="label">AI SIGNAL</div>
-            <div class="big" id="signalValue">HOLD</div>
-          </div>
-
-          <div class="card">
-            <div class="label">AI CONFIDENCE</div>
-            <div class="big" id="confidenceValue">0%</div>
-            <div class="progress"><div class="bar" id="confidenceBar"></div></div>
+          <div class="hero-pnl-mini-row">
+            <div class="hero-pnl-mini">
+              <span>Broker Day</span>
+              <strong id="brokerDayPnl">-</strong>
+            </div>
+            <div class="hero-pnl-mini">
+              <span>Broker Total</span>
+              <strong id="brokerTotalPnl">-</strong>
+            </div>
           </div>
         </div>
 
-        <div class="metric-grid">
-          <div class="card value-box">
-            <div class="small-label">BIAS</div>
-            <div class="value" id="biasValue">BUY</div>
+        <div class="pill-stack">
+          <div class="pill" id="heroBadge">AI AUTO ON</div>
+          <div class="pill">LOSS LIMIT -20</div>
+          <div class="pill">WIN TARGET +20</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <section class="panel">
+        <h3>AI SIGNAL</h3>
+
+        <div class="signal-grid">
+          <div class="signal-card">
+            <div class="k">AI Signal</div>
+            <div class="v" id="aiSignal">HOLD</div>
           </div>
-          <div class="card value-box">
-            <div class="small-label">BUY EDGE</div>
-            <div class="value" id="buyEdgeValue">0</div>
-          </div>
-          <div class="card value-box">
-            <div class="small-label">SELL EDGE</div>
-            <div class="value" id="sellEdgeValue">0</div>
+
+          <div class="signal-card">
+            <div class="k">AI Confidence</div>
+            <div class="v" id="aiConfidence">0%</div>
+            <div class="bar" style="margin-top:14px"><span id="confidenceBar" style="width:0%"></span></div>
           </div>
         </div>
 
-        <div class="tags" id="tagsBox"></div>
-      </div>
-    </section>
+        <div class="grid-2">
+          <div class="mini-card">
+            <div class="k">Bias</div>
+            <div class="v" id="aiBias">BUY</div>
+          </div>
+          <div class="mini-card">
+            <div class="k">Buy Edge</div>
+            <div class="v" id="buyEdge">0</div>
+          </div>
+          <div class="mini-card">
+            <div class="k">Sell Edge</div>
+            <div class="v" id="sellEdge">0</div>
+          </div>
+          <div class="mini-card">
+            <div class="k">Stage</div>
+            <div class="v small" id="aiStage">WATCH</div>
+          </div>
+        </div>
 
-    <section class="section">
-      <div class="section-title-row">
-        <h2 class="section-title">STATUS</h2>
-        <div class="badges">
-          <div class="badge" id="dayBadge">DAY READY</div>
-          <div class="badge" id="syncBadge">SYNC DB OK</div>
-        </div>
-      </div>
+        <div class="tags" id="reasonTags"></div>
+      </section>
 
-      <div class="grid-2">
-        <div class="card value-box">
-          <div class="small-label">Queue</div>
-          <div class="value" id="queueValue">0</div>
+      <section class="panel">
+        <div class="score-head">
+          <h3 style="margin:0">AI SCORE</h3>
+          <div class="score-num" id="aiScore">0</div>
         </div>
-        <div class="card value-box">
-          <div class="small-label">Processing</div>
-          <div class="value" id="processingValue">OFF</div>
-        </div>
-        <div class="card value-box">
-          <div class="small-label">Auto Mode</div>
-          <div class="value" id="autoModeValue">ON</div>
-        </div>
-        <div class="card value-box">
-          <div class="small-label">Symbol</div>
-          <div class="value" id="symbolValue">AAPL</div>
-        </div>
-      </div>
+        <div class="bar"><span id="scoreBar" style="width:0%"></span></div>
 
-      <div class="actions">
-        <button class="pill btn" id="btnAutoToggle">AUTO TOGGLE</button>
-        <button class="pill btn" id="btnReset">RESET</button>
-        <button class="pill btn" id="btnManualBuy">MANUAL BUY</button>
-        <button class="pill btn" id="btnManualSell">MANUAL SELL</button>
-      </div>
-
-      <div class="actions single">
-        <button class="pill btn" id="btnRefresh">REFRESH NOW</button>
-      </div>
-    </section>
-
-    <section class="section score-card">
-      <div class="score-top">
-        <div class="section-title">AI SCORE</div>
-        <div class="score-num" id="scoreValue">0</div>
-      </div>
-
-      <div class="progress"><div class="bar" id="scoreBar"></div></div>
-
-      <div class="mini-grid">
-        <div class="card value-box">
-          <div class="small-label">Trend</div>
-          <div class="value" id="trendValue">0</div>
+        <div class="grid-2">
+          <div class="mini-card"><div class="k">Trend</div><div class="v" id="trendVal">0</div></div>
+          <div class="mini-card"><div class="k">Volume</div><div class="v" id="volumeVal">0</div></div>
+          <div class="mini-card"><div class="k">Structure</div><div class="v" id="structureVal">0</div></div>
+          <div class="mini-card"><div class="k">Volatility</div><div class="v" id="volVal">0</div></div>
+          <div class="mini-card"><div class="k">Liquidity</div><div class="v" id="liqVal">0</div></div>
+          <div class="mini-card"><div class="k">Session</div><div class="v" id="sessionVal">0</div></div>
         </div>
-        <div class="card value-box">
-          <div class="small-label">Volume</div>
-          <div class="value" id="volumeValue">0</div>
-        </div>
-        <div class="card value-box">
-          <div class="small-label">Structure</div>
-          <div class="value" id="structureValue">0</div>
-        </div>
-        <div class="card value-box">
-          <div class="small-label">Volatility</div>
-          <div class="value" id="volatilityValue">0</div>
-        </div>
-        <div class="card value-box">
-          <div class="small-label">Liquidity</div>
-          <div class="value" id="liquidityValue">0</div>
-        </div>
-        <div class="card value-box">
-          <div class="small-label">Session</div>
-          <div class="value" id="sessionMetricValue">0</div>
-        </div>
-      </div>
 
-      <div style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-        <div class="label" id="tradesLabel">Trades 0 / 50</div>
-        <div class="label" id="sessionDate">0000-00-00</div>
-      </div>
-      <div class="progress"><div class="bar" id="tradesBar"></div></div>
+        <div style="margin-top:16px">
+          <div class="row">
+            <div class="rk">Trades</div>
+            <div class="rv" id="tradesLabel">0 / 50</div>
+          </div>
+          <div class="row">
+            <div class="rk">Date</div>
+            <div class="rv" id="sessionDate">-</div>
+          </div>
+        </div>
 
-      <div class="actions single" style="margin-top:18px;">
-        <button class="pill btn" id="aiSummaryBtn">AI HOLD</button>
-      </div>
-    </section>
+        <div style="margin-top:12px" class="pill" id="summaryPill">AI HOLD</div>
+      </section>
 
-    <section class="section">
-      <div class="section-title-row">
-        <h2 class="section-title">BROKER / ALPACA</h2>
-        <div class="badges">
+      <section class="panel">
+        <h3>STATUS</h3>
+
+        <div class="badge-row">
+          <div class="badge" id="dayState">DAY READY</div>
+          <div class="badge" id="syncState">SYNC DB OK</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="mini-card"><div class="k">Queue</div><div class="v" id="queueVal">0</div></div>
+          <div class="mini-card"><div class="k">Processing</div><div class="v" id="processingVal">OFF</div></div>
+          <div class="mini-card"><div class="k">Auto Mode</div><div class="v" id="autoModeVal">ON</div></div>
+          <div class="mini-card"><div class="k">Symbol</div><div class="v" id="symbolVal">AAPL</div></div>
+        </div>
+
+        <div class="action-grid" style="margin-top:16px">
+          <button onclick="post('/api/auto/toggle')">AUTO TOGGLE</button>
+          <button onclick="post('/api/reset')">RESET</button>
+          <button onclick="post('/api/manual/buy')">MANUAL BUY</button>
+          <button onclick="post('/api/manual/sell')">MANUAL SELL</button>
+        </div>
+
+        <div class="action-grid one">
+          <button class="secondary" onclick="refreshNow()">REFRESH NOW</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="badge-row">
           <div class="badge" id="brokerModeBadge">ALPACA-PAPER</div>
-          <div class="badge" id="brokerConnBadge">CONNECTED</div>
+          <div class="badge" id="brokerConnectedBadge">CONNECTED</div>
         </div>
-      </div>
 
-      <div class="table-box">
-        <div class="row"><div class="k">Account Status</div><div class="v" id="brokerAccountStatus">-</div></div>
-        <div class="row"><div class="k">Buying Power</div><div class="v" id="brokerBuyingPower">-</div></div>
-        <div class="row"><div class="k">Cash</div><div class="v" id="brokerCash">-</div></div>
-        <div class="row"><div class="k">Equity</div><div class="v" id="brokerEquity">-</div></div>
-        <div class="row"><div class="k">Portfolio</div><div class="v" id="brokerPortfolio">-</div></div>
-        <div class="row"><div class="k">Positions</div><div class="v" id="brokerPositionsCount">0</div></div>
-        <div class="row"><div class="k">Last Order</div><div class="v" id="brokerLastOrder">-</div></div>
-        <div class="row"><div class="k">Broker Error</div><div class="v" id="brokerError">-</div></div>
-      </div>
+        <h3>BROKER / ALPACA</h3>
 
-      <div class="actions">
-        <button class="pill btn" id="btnBrokerRefresh">BROKER STATUS</button>
-        <button class="pill btn" id="btnBrokerAccount">BROKER ACCOUNT</button>
-        <button class="pill btn" id="btnBrokerPositions">BROKER POSITIONS</button>
-        <button class="pill btn" id="btnBrokerOrders">BROKER ORDERS</button>
-      </div>
-    </section>
+        <div class="rows">
+          <div class="row"><div class="rk">Account Status</div><div class="rv" id="brokerAccountStatus">-</div></div>
+          <div class="row"><div class="rk">Buying Power</div><div class="rv" id="brokerBuyingPower">-</div></div>
+          <div class="row"><div class="rk">Cash</div><div class="rv" id="brokerCash">-</div></div>
+          <div class="row"><div class="rk">Equity</div><div class="rv" id="brokerEquity">-</div></div>
+          <div class="row"><div class="rk">Portfolio</div><div class="rv" id="brokerPortfolio">-</div></div>
+          <div class="row"><div class="rk">Positions</div><div class="rv" id="brokerPositionsCount">0</div></div>
+          <div class="row"><div class="rk">Last Order</div><div class="rv" id="brokerLastOrder">-</div></div>
+          <div class="row"><div class="rk">Broker Error</div><div class="rv" id="brokerError">-</div></div>
+        </div>
 
-    <section class="section">
-      <div class="section-title-row">
-        <h2 class="section-title">LIVE CONTROL PANEL</h2>
-        <div class="badges">
-          <div class="badge" id="tradingEnabledBadge">TRADING OFF</div>
-          <div class="badge" id="killSwitchBadge">KILL SWITCH OFF</div>
+        <div class="action-grid" style="margin-top:16px">
+          <button onclick="openJson('/api/broker/status')">BROKER STATUS</button>
+          <button onclick="openJson('/api/broker/account')">BROKER ACCOUNT</button>
+          <button onclick="openJson('/api/broker/positions')">BROKER POSITIONS</button>
+          <button onclick="openJson('/api/broker/orders')">BROKER ORDERS</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="badge-row">
+          <div class="badge" id="tradingBadge">TRADING OFF</div>
+          <div class="badge" id="killBadge">KILL SWITCH OFF</div>
           <div class="badge" id="liveGuardBadge">LIVE LOCKED</div>
         </div>
-      </div>
 
-      <div class="table-box">
-        <div class="row"><div class="k">Broker Mode</div><div class="v" id="ctlBrokerMode">alpaca-paper</div></div>
-        <div class="row"><div class="k">Trading Enabled</div><div class="v" id="ctlTradingEnabled">NO</div></div>
-        <div class="row"><div class="k">Kill Switch</div><div class="v" id="ctlKillSwitch">OFF</div></div>
-        <div class="row"><div class="k">Live Trading Enabled</div><div class="v" id="ctlLiveTradingEnabled">NO</div></div>
-        <div class="row"><div class="k">Live Guard</div><div class="v" id="ctlLiveGuardUnlocked">LOCKED</div></div>
-        <div class="row"><div class="k">Real Orders Allowed</div><div class="v" id="ctlRealOrdersAllowed">NO</div></div>
-      </div>
+        <h3>LIVE CONTROL PANEL</h3>
 
-      <div class="actions">
-        <button class="pill btn" id="btnTradingToggle">BROKER TRADING</button>
-        <button class="pill danger btn" id="btnKillSwitch">KILL SWITCH</button>
-        <button class="pill warn btn" id="btnLiveTradingToggle">LIVE TRADING</button>
-        <button class="pill warn btn" id="btnLiveUnlock">UNLOCK LIVE</button>
-      </div>
+        <div class="rows">
+          <div class="row"><div class="rk">Broker Mode</div><div class="rv" id="lcBrokerMode">-</div></div>
+          <div class="row"><div class="rk">Trading Enabled</div><div class="rv" id="lcTradingEnabled">NO</div></div>
+          <div class="row"><div class="rk">Kill Switch</div><div class="rv" id="lcKillSwitch">OFF</div></div>
+          <div class="row"><div class="rk">Live Trading Enabled</div><div class="rv" id="lcLiveEnabled">NO</div></div>
+          <div class="row"><div class="rk">Live Guard</div><div class="rv" id="lcGuard">LOCKED</div></div>
+          <div class="row"><div class="rk">Real Orders Allowed</div><div class="rv" id="lcRealOrders">NO</div></div>
+        </div>
 
-      <div class="actions">
-        <button class="pill btn" id="btnLiveLock">LOCK LIVE</button>
-        <button class="pill btn" id="btnManualBrokerBuy">BROKER BUY 1</button>
-        <button class="pill btn" id="btnManualBrokerSell">BROKER SELL 1</button>
-        <button class="pill btn" id="btnRefreshAll">REFRESH ALL</button>
-      </div>
-    </section>
+        <div class="action-grid" style="margin-top:16px">
+          <button onclick="post('/api/live/broker-toggle')">BROKER TRADING</button>
+          <button class="danger" onclick="post('/api/live/kill-switch')">KILL SWITCH</button>
+          <button class="warn" onclick="post('/api/live/unlock')">LIVE TRADING</button>
+          <button class="warn" onclick="post('/api/live/unlock')">UNLOCK LIVE</button>
+          <button onclick="post('/api/live/lock')">LOCK LIVE</button>
+          <button onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
+          <button onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
+          <button class="secondary" onclick="refreshNow()">REFRESH NOW</button>
+        </div>
+      </section>
 
-    <section class="section">
-      <div class="section-title-row">
-        <h2 class="section-title">LOG</h2>
-        <div class="badges">
+      <section class="panel">
+        <div class="badge-row">
           <div class="badge" id="logDayBadge">DAY READY</div>
           <div class="badge" id="logSyncBadge">SYNC DB OK</div>
         </div>
-      </div>
-      <div class="log-list" id="logList"></div>
-    </section>
 
-    <div class="footer-space"></div>
+        <h3>LOG</h3>
+        <div class="log-list" id="logList"></div>
+      </section>
+
+      <div class="footer-space"></div>
+    </div>
   </div>
 
   <script>
-    let currentState = null;
+    let latestState = null;
 
-    function setText(id, value) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = value;
-    }
+    function q(id){ return document.getElementById(id); }
 
-    function setBar(id, value) {
-      const el = document.getElementById(id);
-      if (el) el.style.width = `${Math.max(0, Math.min(100, Number(value) || 0))}%`;
-    }
-
-    function fmtNum(v) {
-      if (v === null || v === undefined || v === '') return '-';
+    function fmtNum(v, digits = 1){
       const n = Number(v);
-      if (Number.isFinite(n)) {
-        if (Math.abs(n) >= 1000) return String(Math.round(n));
-        if (String(v).includes('.')) return n.toFixed(1).replace(/\.0$/, '');
-        return String(n);
-      }
-      return String(v);
+      if (!Number.isFinite(n)) return '-';
+      return n.toFixed(digits);
     }
 
-    function heroButtonClass(el, type) {
-      el.classList.remove('warn', 'danger', 'ok');
-      if (type) el.classList.add(type);
+    function fmtSigned(v){
+      if (v === null || v === undefined || Number.isNaN(Number(v))) return '-';
+      const n = Number(v);
+      if (n > 0) return `+${n.toFixed(2)}`;
+      if (n < 0) return `${n.toFixed(2)}`;
+      return '0.00';
     }
 
-    function renderTags(tags) {
-      const box = document.getElementById('tagsBox');
-      box.innerHTML = '';
-      (tags || []).forEach((tag) => {
-        const div = document.createElement('div');
-        div.className = 'tag';
-        div.textContent = tag;
-        box.appendChild(div);
-      });
+    function text(el, value){
+      if (!el) return;
+      el.textContent = value ?? '-';
     }
 
-    function renderLogs(logs) {
-      const box = document.getElementById('logList');
-      box.innerHTML = '';
-
-      if (!logs || !logs.length) {
-        const div = document.createElement('div');
-        div.className = 'log-item muted';
-        div.textContent = 'Keine Logs';
-        box.appendChild(div);
-        return;
-      }
-
-      logs.forEach((entry) => {
-        const div = document.createElement('div');
-        div.className = 'log-item';
-        div.textContent = entry;
-        box.appendChild(div);
-      });
-    }
-
-    function renderState(data) {
-      currentState = data;
-
-      setText('versionText', data.version || '-');
-
-      setText('heroTitle', data.hero?.title || 'READY');
-      setText('heroSubtitle', data.hero?.subtitle || '-');
-      setText('heroDetail', data.hero?.detail || '-');
-      setText('heroReasons', (data.ai?.reasons || []).join(' • '));
-      setText('heroPnL', data.hero?.netPnL ?? 0);
-      setText('heroLiveBadge', data.hero?.liveBadge || 'LIVE');
-      setText('lossLimitBtn', `LOSS LIMIT ${data.limits?.lossLimit ?? -20}`);
-      setText('winTargetBtn', `WIN TARGET +${Math.abs(data.limits?.winTarget ?? 20)}`);
-
-      const heroBadge = document.getElementById('heroLiveBadge');
-      heroButtonClass(heroBadge, null);
-
-      setText('signalValue', data.ai?.signal || '-');
-      setText('confidenceValue', `${data.ai?.confidence ?? 0}%`);
-      setBar('confidenceBar', data.ai?.confidence ?? 0);
-
-      setText('biasValue', data.ai?.bias || '-');
-      setText('buyEdgeValue', fmtNum(data.ai?.buyEdge));
-      setText('sellEdgeValue', fmtNum(data.ai?.sellEdge));
-
-      renderTags(data.ai?.reasons || []);
-
-      setText('dayBadge', data.session?.dayState || '-');
-      setText('syncBadge', data.session?.sync || '-');
-      setText('queueValue', fmtNum(data.session?.queue));
-      setText('processingValue', data.session?.processing || '-');
-      setText('autoModeValue', data.session?.autoMode || '-');
-      setText('symbolValue', data.symbol?.active || '-');
-
-      setText('scoreValue', fmtNum(data.ai?.score));
-      setBar('scoreBar', data.ai?.score ?? 0);
-
-      setText('trendValue', fmtNum(data.market?.trend));
-      setText('volumeValue', fmtNum(data.market?.volume));
-      setText('structureValue', fmtNum(data.market?.structure));
-      setText('volatilityValue', fmtNum(data.market?.volatility));
-      setText('liquidityValue', fmtNum(data.market?.liquidity));
-      setText('sessionMetricValue', fmtNum(data.market?.session));
-
-      setText('tradesLabel', `Trades ${data.session?.tradesLabel || '0 / 50'}`);
-      setText('sessionDate', data.session?.date || '-');
-      const tradeRatio = ((data.session?.tradesToday || 0) / Math.max(1, data.session?.maxTradesPerDay || 50)) * 100;
-      setBar('tradesBar', tradeRatio);
-      setText('aiSummaryBtn', (data.ai?.summary || 'AI HOLD').toUpperCase());
-
-      const broker = data.broker || {};
-      const controls = broker.controls || {};
-
-      setText('brokerModeBadge', (broker.mode || '-').toUpperCase());
-      setText('brokerConnBadge', broker.connected ? 'CONNECTED' : 'DISCONNECTED');
-      setText('brokerAccountStatus', broker.accountStatus || '-');
-      setText('brokerBuyingPower', fmtNum(broker.buyingPower));
-      setText('brokerCash', fmtNum(broker.cash));
-      setText('brokerEquity', fmtNum(broker.equity));
-      setText('brokerPortfolio', fmtNum(broker.portfolioValue));
-      setText('brokerPositionsCount', fmtNum(broker.positionsCount));
-      setText(
-        'brokerLastOrder',
-        broker.lastOrder
-          ? `${broker.lastOrder.side || '-'} ${broker.lastOrder.symbol || '-'} ${broker.lastOrder.status || '-'}`
-          : '-'
-      );
-      setText('brokerError', broker.lastError || '-');
-
-      setText('tradingEnabledBadge', controls.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
-      setText('killSwitchBadge', controls.killSwitch ? 'KILL SWITCH ON' : 'KILL SWITCH OFF');
-      setText('liveGuardBadge', controls.liveGuardUnlocked ? 'LIVE UNLOCKED' : 'LIVE LOCKED');
-
-      setText('ctlBrokerMode', broker.mode || '-');
-      setText('ctlTradingEnabled', controls.tradingEnabled ? 'YES' : 'NO');
-      setText('ctlKillSwitch', controls.killSwitch ? 'ON' : 'OFF');
-      setText('ctlLiveTradingEnabled', controls.liveTradingEnabled ? 'YES' : 'NO');
-      setText('ctlLiveGuardUnlocked', controls.liveGuardUnlocked ? 'UNLOCKED' : 'LOCKED');
-      setText('ctlRealOrdersAllowed', controls.realOrderAllowed ? 'YES' : 'NO');
-
-      setText('logDayBadge', data.session?.dayState || '-');
-      setText('logSyncBadge', data.session?.sync || '-');
-
-      renderLogs(data.logs || []);
-    }
-
-    async function apiGet(url) {
-      const res = await fetch(url);
-      const data = await res.json();
-      return data;
-    }
-
-    async function apiPost(url, body = {}) {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+    async function getJson(url){
+      const res = await fetch(url, { cache: 'no-store' });
       return res.json();
     }
 
-    async function refreshState() {
-      const data = await apiGet('/api/state');
-      renderState(data);
+    async function post(url){
+      try{
+        await fetch(url, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({})
+        });
+        await refreshNow();
+      }catch(err){
+        alert('POST Fehler');
+      }
     }
 
-    async function bindAction(id, fn) {
-      const el = document.getElementById(id);
-      el.addEventListener('click', async () => {
-        try {
-          const data = await fn();
-          if (data && data.state) renderState(data.state);
-          else if (data && data.ok !== false && data.version) renderState(data);
-          else await refreshState();
-        } catch (err) {
-          alert(err.message || 'Fehler');
-        }
+    async function openJson(url){
+      window.location.href = url;
+    }
+
+    function renderReasons(list){
+      const box = q('reasonTags');
+      box.innerHTML = '';
+      (Array.isArray(list) ? list : []).forEach(item => {
+        const d = document.createElement('div');
+        d.className = 'tag';
+        d.textContent = item;
+        box.appendChild(d);
       });
     }
 
-    async function start() {
-      await refreshState();
-
-      bindAction('btnAutoToggle', () => apiPost('/api/auto/toggle'));
-      bindAction('btnReset', () => {
-        const ok = confirm('Wirklich resetten?');
-        if (!ok) return Promise.resolve(currentState);
-        return apiPost('/api/reset');
+    function renderLogs(list){
+      const box = q('logList');
+      box.innerHTML = '';
+      (Array.isArray(list) ? list : []).forEach(item => {
+        const d = document.createElement('div');
+        d.className = 'log-item';
+        d.textContent = item;
+        box.appendChild(d);
       });
-      bindAction('btnManualBuy', () => apiPost('/api/manual/buy'));
-      bindAction('btnManualSell', () => apiPost('/api/manual/sell'));
-      bindAction('btnRefresh', () => refreshState().then(() => currentState));
-
-      bindAction('btnBrokerRefresh', () => apiPost('/api/broker/status/refresh'));
-      bindAction('btnBrokerAccount', async () => {
-        const data = await apiGet('/api/broker/account');
-        alert(JSON.stringify(data, null, 2));
-        await refreshState();
-        return currentState;
-      });
-      bindAction('btnBrokerPositions', async () => {
-        const data = await apiGet('/api/broker/positions');
-        alert(JSON.stringify(data, null, 2));
-        await refreshState();
-        return currentState;
-      });
-      bindAction('btnBrokerOrders', async () => {
-        const data = await apiGet('/api/broker/orders');
-        alert(JSON.stringify(data, null, 2));
-        await refreshState();
-        return currentState;
-      });
-
-      bindAction('btnTradingToggle', () => apiPost('/api/broker/trading/toggle'));
-      bindAction('btnKillSwitch', () => apiPost('/api/broker/kill-switch/toggle'));
-      bindAction('btnLiveTradingToggle', () => apiPost('/api/broker/live-trading/toggle'));
-      bindAction('btnLiveUnlock', () => apiPost('/api/broker/live-guard/unlock'));
-      bindAction('btnLiveLock', () => apiPost('/api/broker/live-guard/lock'));
-
-      bindAction('btnManualBrokerBuy', () => {
-        const symbol = prompt('Symbol für Broker BUY', currentState?.symbol?.active || 'AAPL');
-        if (!symbol) return Promise.resolve(currentState);
-        return apiPost('/api/broker/order/manual', { side: 'BUY', symbol, qty: 1 });
-      });
-
-      bindAction('btnManualBrokerSell', () => {
-        const symbol = prompt('Symbol für Broker SELL', currentState?.symbol?.active || 'AAPL');
-        if (!symbol) return Promise.resolve(currentState);
-        return apiPost('/api/broker/order/manual', { side: 'SELL', symbol, qty: 1 });
-      });
-
-      bindAction('btnRefreshAll', async () => {
-        await apiPost('/api/broker/status/refresh');
-        await refreshState();
-        return currentState;
-      });
-
-      setInterval(refreshState, 3000);
     }
 
-    start();
+    function renderState(s){
+      latestState = s;
+
+      text(q('versionTitle'), s.version || 'V22.12.1');
+      text(q('heroTitle'), s.hero?.title || 'READY');
+      text(q('heroSubtitle'), s.hero?.subtitle || '-');
+      text(q('heroDetail'), s.hero?.detail || '-');
+      text(q('heroReasons'), (s.ai?.reasons || []).join(' • '));
+      text(q('heroPnlMain'), fmtSigned(s.pnl?.botNetPnL ?? s.hero?.netPnL ?? 0));
+      text(q('brokerDayPnl'), fmtSigned(s.pnl?.brokerDayPnL));
+      text(q('brokerTotalPnl'), fmtSigned(s.pnl?.brokerTotalPnL));
+      text(q('heroBadge'), s.hero?.liveBadge || '-');
+
+      text(q('aiSignal'), s.ai?.signal || '-');
+      text(q('aiConfidence'), `${Number(s.ai?.confidence || 0)}%`);
+      q('confidenceBar').style.width = `${Number(s.ai?.confidence || 0)}%`;
+
+      text(q('aiBias'), s.ai?.bias || '-');
+      text(q('buyEdge'), s.ai?.buyEdge ?? '-');
+      text(q('sellEdge'), s.ai?.sellEdge ?? '-');
+      text(q('aiStage'), s.ai?.stage || '-');
+
+      text(q('aiScore'), s.ai?.score ?? 0);
+      q('scoreBar').style.width = `${Number(s.ai?.score || 0)}%`;
+
+      text(q('trendVal'), fmtNum(s.market?.trend ?? 0));
+      text(q('volumeVal'), fmtNum(s.market?.volume ?? 0));
+      text(q('structureVal'), fmtNum(s.market?.structure ?? 0));
+      text(q('volVal'), fmtNum(s.market?.volatility ?? 0));
+      text(q('liqVal'), fmtNum(s.market?.liquidity ?? 0));
+      text(q('sessionVal'), fmtNum(s.market?.session ?? 0));
+
+      text(q('tradesLabel'), s.session?.tradesLabel || '-');
+      text(q('sessionDate'), s.session?.date || '-');
+      text(q('summaryPill'), (s.ai?.summary || 'AI HOLD').toUpperCase());
+
+      text(q('dayState'), s.session?.dayState || '-');
+      text(q('syncState'), s.session?.sync || '-');
+      text(q('queueVal'), s.session?.queue ?? 0);
+      text(q('processingVal'), s.session?.processing || '-');
+      text(q('autoModeVal'), s.session?.autoMode || '-');
+      text(q('symbolVal'), s.symbol?.active || '-');
+
+      text(q('brokerModeBadge'), (s.broker?.mode || '-').toUpperCase());
+      text(q('brokerConnectedBadge'), s.broker?.connected ? 'CONNECTED' : 'DISCONNECTED');
+      text(q('brokerAccountStatus'), s.broker?.accountStatus || '-');
+      text(q('brokerBuyingPower'), s.broker?.buyingPower ?? '-');
+      text(q('brokerCash'), s.broker?.cash ?? '-');
+      text(q('brokerEquity'), s.broker?.equity ?? '-');
+      text(q('brokerPortfolio'), s.broker?.portfolioValue ?? '-');
+      text(q('brokerPositionsCount'), s.broker?.positionsCount ?? 0);
+      text(q('brokerLastOrder'), s.broker?.lastOrder || '-');
+      text(q('brokerError'), s.broker?.lastError || '-');
+
+      text(q('tradingBadge'), s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
+      text(q('killBadge'), s.liveControl?.killSwitch ? 'KILL SWITCH ON' : 'KILL SWITCH OFF');
+      text(q('liveGuardBadge'), s.liveControl?.liveGuard === 'UNLOCKED' ? 'LIVE UNLOCKED' : 'LIVE LOCKED');
+
+      text(q('lcBrokerMode'), s.liveControl?.brokerMode || '-');
+      text(q('lcTradingEnabled'), s.liveControl?.tradingEnabled ? 'YES' : 'NO');
+      text(q('lcKillSwitch'), s.liveControl?.killSwitch ? 'ON' : 'OFF');
+      text(q('lcLiveEnabled'), s.liveControl?.liveTradingEnabled ? 'YES' : 'NO');
+      text(q('lcGuard'), s.liveControl?.liveGuard || '-');
+      text(q('lcRealOrders'), s.liveControl?.realOrdersAllowed ? 'YES' : 'NO');
+
+      text(q('logDayBadge'), s.session?.dayState || '-');
+      text(q('logSyncBadge'), s.session?.sync || '-');
+
+      renderReasons(s.ai?.reasons || []);
+      renderLogs(s.logs || []);
+    }
+
+    async function refreshNow(){
+      try{
+        const s = await getJson('/api/state');
+        renderState(s);
+      }catch(err){
+        console.error(err);
+      }
+    }
+
+    refreshNow();
+    setInterval(refreshNow, 3000);
   </script>
 </body>
 </html>
