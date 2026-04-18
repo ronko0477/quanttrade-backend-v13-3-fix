@@ -1,621 +1,680 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <title>QuantTrade AI V22.11.9</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuantTrade V22.12.0</title>
   <style>
-    :root{
-      --bg:#070b18;
-      --bg2:#101735;
-      --card:#5c68ff;
-      --card2:#4754f0;
-      --soft:#cbd88f;
-      --text:#f7f8ff;
-      --muted:#dfe4ff;
-      --line:rgba(255,255,255,.10);
-      --glow:0 20px 60px rgba(83,96,255,.30);
-      --radius:28px;
-      --radiusSm:18px;
-      --shadow:0 10px 30px rgba(0,0,0,.22);
+    :root {
+      --bg1: #0f1230;
+      --bg2: #1a1e45;
+      --panel: rgba(173, 180, 255, 0.16);
+      --panel-2: rgba(73, 88, 240, 0.52);
+      --line: rgba(255,255,255,0.08);
+      --text: #f4f6ff;
+      --muted: rgba(255,255,255,0.8);
+      --lime: #d9eb87;
+      --pill: linear-gradient(180deg, #5665ff 0%, #4a58ef 100%);
+      --soft: rgba(255,255,255,0.08);
+      --shadow: 0 16px 48px rgba(0,0,0,0.28);
+      --ok: #aef78c;
+      --warn: #ffd86e;
+      --danger: #ff8f8f;
     }
 
-    *{box-sizing:border-box}
-    html,body{
-      margin:0;
-      padding:0;
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--text);
       background:
-        radial-gradient(circle at top center, rgba(90,110,255,.18), transparent 32%),
-        linear-gradient(180deg, #05070f 0%, #0b1124 40%, #09101e 100%);
-      color:var(--text);
-      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      min-height:100%;
+        radial-gradient(circle at top right, rgba(204,255,146,0.18), transparent 16%),
+        linear-gradient(180deg, #e7e7f1 0%, #cfd0ec 8%, #1a1f4d 24%, #0b0f25 100%);
+      min-height: 100vh;
     }
 
-    body{
-      padding:26px 14px 40px;
+    .page {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 28px 18px 60px;
     }
 
-    .wrap{
-      width:100%;
-      max-width:760px;
-      margin:0 auto;
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      font-size: clamp(24px, 4vw, 42px);
+      text-align: center;
+      color: #fff;
     }
 
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:14px;
-      margin:8px 0 18px;
-      color:#fff;
-      font-weight:900;
-      letter-spacing:.4px;
-      text-align:center;
-      font-size:clamp(18px,4vw,28px);
+    .dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #c8ff93;
+      box-shadow: 0 0 24px rgba(200,255,147,0.95);
+      flex: 0 0 auto;
     }
 
-    .dot{
-      width:18px;
-      height:18px;
-      border-radius:50%;
-      background:#c8f39a;
-      box-shadow:0 0 0 10px rgba(200,243,154,.14), 0 0 24px rgba(200,243,154,.7);
-      flex:0 0 auto;
+    .section {
+      background: rgba(183, 189, 255, 0.16);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 38px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      margin-bottom: 22px;
     }
 
-    .card{
-      background:linear-gradient(180deg, rgba(188,193,255,.92), rgba(155,162,240,.92));
-      color:#fff;
-      border-radius:34px;
-      padding:18px;
-      box-shadow:var(--glow);
-      border:1px solid rgba(255,255,255,.10);
-      backdrop-filter: blur(10px);
-      overflow:hidden;
+    .hero {
+      padding: 28px 24px 24px;
+      background: rgba(197, 201, 255, 0.28);
     }
 
-    .hero{
-      padding:24px 20px 22px;
-      margin-bottom:18px;
+    .hero-inner {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 30px;
+      padding: 26px 18px 22px;
+      background: rgba(255,255,255,0.02);
     }
 
-    .hero-inner{
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:28px;
-      padding:22px 18px 18px;
-      background:rgba(255,255,255,.02);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+    .hero-title {
+      font-size: clamp(56px, 11vw, 112px);
+      font-weight: 1000;
+      line-height: 0.92;
+      text-align: center;
+      color: var(--lime);
+      margin: 0 0 12px;
     }
 
-    .hero-title{
-      text-align:center;
-      font-size:clamp(54px,11vw,94px);
-      font-weight:1000;
-      line-height:.95;
-      color:var(--soft);
-      margin:0 0 10px;
-      text-transform:uppercase;
+    .hero-subtitle {
+      font-size: clamp(18px, 4vw, 30px);
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 10px;
     }
 
-    .hero-sub{
-      text-align:center;
-      font-size:clamp(20px,4.4vw,34px);
-      font-weight:900;
-      margin:0 0 10px;
+    .hero-detail {
+      font-size: clamp(16px, 3.6vw, 24px);
+      font-weight: 800;
+      text-align: center;
+      color: var(--text);
+      opacity: 0.96;
+      margin-bottom: 10px;
     }
 
-    .hero-detail{
-      text-align:center;
-      font-size:clamp(18px,3.9vw,26px);
-      font-weight:800;
-      line-height:1.3;
-      margin:0 auto 10px;
-      max-width:92%;
-      color:#fff;
+    .hero-reasons {
+      text-align: center;
+      color: var(--muted);
+      font-size: clamp(14px, 3vw, 18px);
+      font-weight: 800;
+      line-height: 1.35;
+      margin-bottom: 18px;
     }
 
-    .hero-tags{
-      text-align:center;
-      font-size:clamp(14px,3.4vw,22px);
-      line-height:1.35;
-      font-weight:800;
-      color:rgba(255,255,255,.92);
-      margin-bottom:18px;
+    .hero-pnl {
+      text-align: center;
+      font-size: clamp(72px, 12vw, 126px);
+      font-weight: 1000;
+      line-height: 1;
+      margin: 6px 0;
     }
 
-    .pnl{
-      text-align:center;
-      font-weight:1000;
-      font-size:clamp(72px,16vw,132px);
-      line-height:1;
-      margin:6px 0 0;
+    .hero-pnl-label {
+      text-align: center;
+      font-size: clamp(18px, 4vw, 34px);
+      font-weight: 900;
+      margin-bottom: 16px;
     }
 
-    .pnl-label{
-      text-align:center;
-      font-size:clamp(18px,4vw,28px);
-      font-weight:900;
-      margin-top:6px;
-      margin-bottom:18px;
+    .pill {
+      background: var(--pill);
+      color: white;
+      border: 0;
+      border-radius: 999px;
+      min-height: 58px;
+      font-weight: 1000;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      padding: 12px 22px;
+      box-shadow: inset 0 8px 18px rgba(255,255,255,0.08), 0 10px 22px rgba(74,88,239,0.24);
     }
 
-    .pill-row{
-      display:flex;
-      gap:14px;
-      justify-content:center;
-      flex-wrap:wrap;
-      margin-bottom:16px;
+    .pill.small {
+      min-height: 42px;
+      font-size: 14px;
+      padding: 8px 16px;
     }
 
-    .pill{
-      background:linear-gradient(180deg, var(--card), var(--card2));
-      color:#fff;
-      border:none;
-      border-radius:999px;
-      padding:16px 28px;
-      font-weight:1000;
-      font-size:clamp(15px,3.6vw,22px);
-      box-shadow:0 10px 22px rgba(65,78,255,.30);
-      min-width:220px;
-      text-align:center;
+    .pill.warn {
+      background: linear-gradient(180deg, #ffc861 0%, #ffae3d 100%);
+      color: #1d1d1d;
     }
 
-    .grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      margin-top:14px;
+    .pill.danger {
+      background: linear-gradient(180deg, #ff6c78 0%, #ff4757 100%);
     }
 
-    .mini{
-      background:linear-gradient(180deg, rgba(70,84,240,.95), rgba(71,83,215,.95));
-      border-radius:24px;
-      padding:18px 16px;
-      box-shadow:var(--shadow);
-      min-height:120px;
-      position:relative;
+    .pill.ok {
+      background: linear-gradient(180deg, #69c98c 0%, #3ab970 100%);
     }
 
-    .mini h4{
-      margin:0 0 10px;
-      font-size:clamp(14px,3.6vw,22px);
-      line-height:1.05;
-      font-weight:1000;
-      text-transform:uppercase;
-      opacity:.96;
+    .hero-pills {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 20px;
     }
 
-    .mini .val{
-      font-size:clamp(34px,8vw,68px);
-      line-height:1;
-      font-weight:1000;
-      color:var(--soft);
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.45fr;
+      gap: 18px;
     }
 
-    .mini.signal .val{
-      font-size:clamp(34px,8vw,62px);
+    .card {
+      background: rgba(73, 88, 240, 0.52);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 28px;
+      padding: 18px;
+      box-shadow: inset 0 6px 20px rgba(255,255,255,0.03);
     }
 
-    .bar{
-      width:100%;
-      height:20px;
-      border-radius:999px;
-      background:rgba(255,255,255,.12);
-      overflow:hidden;
-      margin-top:10px;
-      box-shadow: inset 0 2px 8px rgba(0,0,0,.12);
+    .label {
+      font-size: clamp(16px, 2vw, 18px);
+      font-weight: 900;
+      color: white;
+      margin-bottom: 8px;
+      opacity: 0.96;
     }
 
-    .bar > span{
-      display:block;
-      height:100%;
-      width:0%;
-      border-radius:999px;
-      background:linear-gradient(90deg,#f2d0bc 0%, #cedb89 52%, #a8d7cf 100%);
-      transition:width .45s ease;
+    .big {
+      font-size: clamp(38px, 7vw, 70px);
+      font-weight: 1000;
+      line-height: 1;
+      color: var(--lime);
     }
 
-    .chip-wrap{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:16px;
-      justify-content:center;
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 18px;
     }
 
-    .chip{
-      border-radius:999px;
-      padding:12px 18px;
-      font-size:clamp(13px,3vw,18px);
-      font-weight:900;
-      background:rgba(93,105,255,.30);
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow: inset 0 0 10px rgba(255,255,255,.05);
+    .value-box {
+      min-height: 128px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
-    .section{
-      margin-top:18px;
+    .value-box .small-label {
+      font-size: 15px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      opacity: 0.95;
     }
 
-    .section-card{
-      background:linear-gradient(180deg, rgba(78,92,245,.96), rgba(68,80,220,.96));
-      border-radius:30px;
-      padding:18px;
-      box-shadow:var(--shadow);
-      border:1px solid rgba(255,255,255,.08);
+    .value-box .value {
+      font-size: clamp(34px, 5vw, 52px);
+      font-weight: 1000;
+      color: var(--lime);
+      line-height: 1;
     }
 
-    .section-title{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin-bottom:14px;
-      font-size:clamp(18px,4vw,28px);
-      font-weight:1000;
-      text-transform:uppercase;
+    .tags {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 18px;
     }
 
-    .section-pills{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
+    .tag {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 58px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      font-weight: 900;
+      color: var(--text);
+      text-align: center;
+      padding: 8px 12px;
     }
 
-    .small-pill{
-      border-radius:999px;
-      padding:10px 16px;
-      font-size:clamp(12px,2.8vw,16px);
-      font-weight:1000;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.08);
+    .section-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
     }
 
-    .stats{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      margin-top:12px;
+    .section-title {
+      font-size: clamp(24px, 4vw, 34px);
+      font-weight: 1000;
+      margin: 0;
     }
 
-    .stat{
-      background:rgba(0,0,0,.10);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:22px;
-      padding:16px;
-      min-height:112px;
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
     }
 
-    .stat .label{
-      font-size:clamp(14px,3.4vw,20px);
-      font-weight:900;
-      margin-bottom:12px;
+    .badge {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 1000;
+      color: #fff;
     }
 
-    .stat .num{
-      font-size:clamp(34px,7.7vw,58px);
-      font-weight:1000;
-      color:var(--soft);
-      line-height:1;
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
     }
 
-    .progress-title{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin-top:16px;
-      font-size:clamp(14px,3.4vw,22px);
-      font-weight:1000;
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
     }
 
-    .action-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-top:16px;
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
     }
 
-    button.action{
-      appearance:none;
-      border:none;
-      border-radius:18px;
-      padding:16px;
-      font-weight:1000;
-      font-size:clamp(14px,3.4vw,18px);
-      color:#fff;
-      background:linear-gradient(180deg, rgba(111,123,255,.95), rgba(79,92,228,.95));
-      box-shadow:0 8px 18px rgba(56,69,215,.32);
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 18px;
     }
 
-    button.action:active{
-      transform:scale(.985);
+    .actions.single {
+      grid-template-columns: 1fr;
     }
 
-    .full{
-      grid-column:1 / -1;
+    .btn {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      width: 100%;
     }
 
-    .broker-box{
-      background:rgba(0,0,0,.10);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:22px;
-      padding:16px;
+    .progress {
+      height: 22px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      overflow: hidden;
+      margin-top: 10px;
+      box-shadow: inset 0 3px 10px rgba(0,0,0,0.15);
     }
 
-    .broker-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-top:12px;
+    .bar {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ffd7b3 0%, #c8f0b1 100%);
+      width: 0%;
+      transition: width 0.45s ease;
     }
 
-    .broker-row{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      padding:10px 0;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:clamp(13px,3vw,17px);
-      font-weight:800;
+    .score-card {
+      margin-top: 0;
     }
 
-    .broker-row:last-child{
-      border-bottom:none;
+    .score-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
 
-    .log-list{
-      margin:0;
-      padding:0;
-      list-style:none;
-      display:flex;
-      flex-direction:column;
-      gap:0;
+    .score-num {
+      font-size: clamp(34px, 5vw, 56px);
+      font-weight: 1000;
+      color: var(--lime);
     }
 
-    .log-list li{
-      padding:14px 0;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      font-size:clamp(14px,3.35vw,18px);
-      line-height:1.35;
-      color:#f2f5ff;
-      word-break:break-word;
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-top: 18px;
     }
 
-    .log-list li:last-child{
-      border-bottom:none;
-      padding-bottom:0;
+    .table-box {
+      background: rgba(255,255,255,0.05);
+      border-radius: 24px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
     }
 
-    .footer-space{
-      height:24px;
+    .row {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
 
-    @media (max-width:560px){
-      .grid,
-      .stats,
-      .broker-grid,
-      .action-grid{
-        grid-template-columns:1fr 1fr;
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .row .k {
+      font-weight: 900;
+      color: rgba(255,255,255,0.95);
+    }
+
+    .row .v {
+      text-align: right;
+      font-weight: 900;
+      color: #fff;
+      word-break: break-word;
+    }
+
+    .log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .log-item {
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      font-size: 15px;
+      line-height: 1.45;
+      color: rgba(255,255,255,0.92);
+      word-break: break-word;
+    }
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    .muted {
+      color: rgba(255,255,255,0.72);
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .footer-space {
+      height: 30px;
+    }
+
+    @media (max-width: 760px) {
+      .page { padding: 18px 14px 42px; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .metric-grid { grid-template-columns: 1fr 1fr; }
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .metric-grid,
+      .mini-grid,
+      .tags,
+      .grid-3,
+      .grid-4,
+      .actions {
+        grid-template-columns: 1fr 1fr;
       }
 
-      .pill{
-        min-width:unset;
-        width:100%;
+      .hero-title {
+        font-size: 72px;
+      }
+
+      .hero-pnl {
+        font-size: 92px;
+      }
+
+      .big {
+        font-size: 52px;
+      }
+
+      .row {
+        grid-template-columns: 1fr 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="page">
     <div class="topbar">
-      <span id="versionLabel">V22.11.9 APP POLISH</span>
-      <span class="dot"></span>
+      <div id="versionText">V22.12.0 LIVE TRADING CONTROL PANEL</div>
+      <div class="dot" id="liveDot"></div>
     </div>
 
-    <section class="card hero">
+    <section class="section hero">
       <div class="hero-inner">
-        <h1 class="hero-title" id="heroTitle">READY</h1>
-        <div class="hero-sub" id="heroSubtitle">AI Auto aktiv</div>
-        <div class="hero-detail" id="heroDetail">Lade Status...</div>
-        <div class="hero-tags" id="heroTags">Bitte warten...</div>
+        <div class="hero-title" id="heroTitle">READY</div>
+        <div class="hero-subtitle" id="heroSubtitle">AI Auto aktiv</div>
+        <div class="hero-detail" id="heroDetail">Beobachtung aktiv.</div>
+        <div class="hero-reasons" id="heroReasons">Volume OK • Liquidity OK • Volatility Mid • Session Soft</div>
 
-        <div class="pnl" id="heroPnl">0</div>
-        <div class="pnl-label">Net PnL</div>
+        <div class="hero-pnl" id="heroPnL">0</div>
+        <div class="hero-pnl-label">Net PnL</div>
 
-        <div class="pill-row">
-          <div class="pill" id="liveBadge">AI AUTO ON</div>
+        <div class="hero-pills">
+          <button class="pill btn" id="heroLiveBadge">AI AUTO ON</button>
+          <button class="pill btn" id="lossLimitBtn">LOSS LIMIT -20</button>
+          <button class="pill btn" id="winTargetBtn">WIN TARGET +20</button>
         </div>
 
-        <div class="pill-row">
-          <div class="pill" id="lossLimit">LOSS LIMIT -20</div>
-          <div class="pill" id="winTarget">WIN TARGET +20</div>
-        </div>
-
-        <div class="grid">
-          <div class="mini signal">
-            <h4>AI SIGNAL</h4>
-            <div class="val" id="aiSignal">HOLD</div>
+        <div class="hero-grid">
+          <div class="card value-box">
+            <div class="label">AI SIGNAL</div>
+            <div class="big" id="signalValue">HOLD</div>
           </div>
 
-          <div class="mini">
-            <h4>AI CONFIDENCE</h4>
-            <div class="val" id="aiConfidence">0%</div>
-            <div class="bar"><span id="confidenceBar"></span></div>
-          </div>
-
-          <div class="mini">
-            <h4>BIAS</h4>
-            <div class="val" id="aiBias">BUY</div>
-          </div>
-
-          <div class="mini">
-            <h4>BUY EDGE</h4>
-            <div class="val" id="buyEdge">0</div>
-          </div>
-
-          <div class="mini">
-            <h4>SELL EDGE</h4>
-            <div class="val" id="sellEdge">0</div>
-          </div>
-
-          <div class="mini">
-            <h4>BROKER</h4>
-            <div class="val" id="brokerState">OFF</div>
+          <div class="card">
+            <div class="label">AI CONFIDENCE</div>
+            <div class="big" id="confidenceValue">0%</div>
+            <div class="progress"><div class="bar" id="confidenceBar"></div></div>
           </div>
         </div>
 
-        <div class="chip-wrap" id="reasonChips"></div>
+        <div class="metric-grid">
+          <div class="card value-box">
+            <div class="small-label">BIAS</div>
+            <div class="value" id="biasValue">BUY</div>
+          </div>
+          <div class="card value-box">
+            <div class="small-label">BUY EDGE</div>
+            <div class="value" id="buyEdgeValue">0</div>
+          </div>
+          <div class="card value-box">
+            <div class="small-label">SELL EDGE</div>
+            <div class="value" id="sellEdgeValue">0</div>
+          </div>
+        </div>
+
+        <div class="tags" id="tagsBox"></div>
       </div>
     </section>
 
     <section class="section">
-      <div class="section-card">
-        <div class="section-title">
-          <span>STATUS</span>
-          <div class="section-pills">
-            <span class="small-pill" id="dayState">DAY READY</span>
-            <span class="small-pill" id="syncState">SYNC</span>
-          </div>
+      <div class="section-title-row">
+        <h2 class="section-title">STATUS</h2>
+        <div class="badges">
+          <div class="badge" id="dayBadge">DAY READY</div>
+          <div class="badge" id="syncBadge">SYNC DB OK</div>
         </div>
+      </div>
 
-        <div class="stats">
-          <div class="stat">
-            <div class="label">Queue</div>
-            <div class="num" id="queueVal">0</div>
-          </div>
-
-          <div class="stat">
-            <div class="label">Processing</div>
-            <div class="num" id="processingVal">OFF</div>
-          </div>
-
-          <div class="stat">
-            <div class="label">Auto Mode</div>
-            <div class="num" id="autoModeVal">ON</div>
-          </div>
-
-          <div class="stat">
-            <div class="label">Symbol</div>
-            <div class="num" id="activeSymbol">AAPL</div>
-          </div>
+      <div class="grid-2">
+        <div class="card value-box">
+          <div class="small-label">Queue</div>
+          <div class="value" id="queueValue">0</div>
         </div>
-
-        <div class="action-grid">
-          <button class="action" onclick="postAction('/api/auto/toggle')">AUTO TOGGLE</button>
-          <button class="action" onclick="postAction('/api/reset')">RESET</button>
-          <button class="action" onclick="postAction('/api/manual/buy')">MANUAL BUY</button>
-          <button class="action" onclick="postAction('/api/manual/sell')">MANUAL SELL</button>
-          <button class="action full" onclick="refreshAll()">REFRESH NOW</button>
+        <div class="card value-box">
+          <div class="small-label">Processing</div>
+          <div class="value" id="processingValue">OFF</div>
         </div>
+        <div class="card value-box">
+          <div class="small-label">Auto Mode</div>
+          <div class="value" id="autoModeValue">ON</div>
+        </div>
+        <div class="card value-box">
+          <div class="small-label">Symbol</div>
+          <div class="value" id="symbolValue">AAPL</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="pill btn" id="btnAutoToggle">AUTO TOGGLE</button>
+        <button class="pill btn" id="btnReset">RESET</button>
+        <button class="pill btn" id="btnManualBuy">MANUAL BUY</button>
+        <button class="pill btn" id="btnManualSell">MANUAL SELL</button>
+      </div>
+
+      <div class="actions single">
+        <button class="pill btn" id="btnRefresh">REFRESH NOW</button>
+      </div>
+    </section>
+
+    <section class="section score-card">
+      <div class="score-top">
+        <div class="section-title">AI SCORE</div>
+        <div class="score-num" id="scoreValue">0</div>
+      </div>
+
+      <div class="progress"><div class="bar" id="scoreBar"></div></div>
+
+      <div class="mini-grid">
+        <div class="card value-box">
+          <div class="small-label">Trend</div>
+          <div class="value" id="trendValue">0</div>
+        </div>
+        <div class="card value-box">
+          <div class="small-label">Volume</div>
+          <div class="value" id="volumeValue">0</div>
+        </div>
+        <div class="card value-box">
+          <div class="small-label">Structure</div>
+          <div class="value" id="structureValue">0</div>
+        </div>
+        <div class="card value-box">
+          <div class="small-label">Volatility</div>
+          <div class="value" id="volatilityValue">0</div>
+        </div>
+        <div class="card value-box">
+          <div class="small-label">Liquidity</div>
+          <div class="value" id="liquidityValue">0</div>
+        </div>
+        <div class="card value-box">
+          <div class="small-label">Session</div>
+          <div class="value" id="sessionMetricValue">0</div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div class="label" id="tradesLabel">Trades 0 / 50</div>
+        <div class="label" id="sessionDate">0000-00-00</div>
+      </div>
+      <div class="progress"><div class="bar" id="tradesBar"></div></div>
+
+      <div class="actions single" style="margin-top:18px;">
+        <button class="pill btn" id="aiSummaryBtn">AI HOLD</button>
       </div>
     </section>
 
     <section class="section">
-      <div class="section-card">
-        <div class="section-title">
-          <span>AI SCORE</span>
-          <span id="aiScoreBig">0</span>
+      <div class="section-title-row">
+        <h2 class="section-title">BROKER / ALPACA</h2>
+        <div class="badges">
+          <div class="badge" id="brokerModeBadge">ALPACA-PAPER</div>
+          <div class="badge" id="brokerConnBadge">CONNECTED</div>
         </div>
+      </div>
 
-        <div class="bar"><span id="scoreBar"></span></div>
+      <div class="table-box">
+        <div class="row"><div class="k">Account Status</div><div class="v" id="brokerAccountStatus">-</div></div>
+        <div class="row"><div class="k">Buying Power</div><div class="v" id="brokerBuyingPower">-</div></div>
+        <div class="row"><div class="k">Cash</div><div class="v" id="brokerCash">-</div></div>
+        <div class="row"><div class="k">Equity</div><div class="v" id="brokerEquity">-</div></div>
+        <div class="row"><div class="k">Portfolio</div><div class="v" id="brokerPortfolio">-</div></div>
+        <div class="row"><div class="k">Positions</div><div class="v" id="brokerPositionsCount">0</div></div>
+        <div class="row"><div class="k">Last Order</div><div class="v" id="brokerLastOrder">-</div></div>
+        <div class="row"><div class="k">Broker Error</div><div class="v" id="brokerError">-</div></div>
+      </div>
 
-        <div class="stats">
-          <div class="stat">
-            <div class="label">Trend</div>
-            <div class="num" id="trendVal">0</div>
-          </div>
-          <div class="stat">
-            <div class="label">Volume</div>
-            <div class="num" id="volumeVal">0</div>
-          </div>
-          <div class="stat">
-            <div class="label">Structure</div>
-            <div class="num" id="structureVal">0</div>
-          </div>
-          <div class="stat">
-            <div class="label">Volatility</div>
-            <div class="num" id="volatilityVal">0</div>
-          </div>
-          <div class="stat">
-            <div class="label">Liquidity</div>
-            <div class="num" id="liquidityVal">0</div>
-          </div>
-          <div class="stat">
-            <div class="label">Session</div>
-            <div class="num" id="sessionVal">0</div>
-          </div>
-        </div>
-
-        <div class="progress-title">
-          <span id="tradesLabel">Trades 0 / 50</span>
-          <span id="sessionDate">0000-00-00</span>
-        </div>
-        <div class="bar"><span id="tradeBar"></span></div>
-
-        <div class="pill-row" style="margin-top:16px;margin-bottom:0;">
-          <div class="pill" id="summaryBadge">AI HOLD</div>
-        </div>
+      <div class="actions">
+        <button class="pill btn" id="btnBrokerRefresh">BROKER STATUS</button>
+        <button class="pill btn" id="btnBrokerAccount">BROKER ACCOUNT</button>
+        <button class="pill btn" id="btnBrokerPositions">BROKER POSITIONS</button>
+        <button class="pill btn" id="btnBrokerOrders">BROKER ORDERS</button>
       </div>
     </section>
 
     <section class="section">
-      <div class="section-card">
-        <div class="section-title">
-          <span>BROKER / ALPACA</span>
-          <div class="section-pills">
-            <span class="small-pill" id="brokerMode">OFF</span>
-            <span class="small-pill" id="brokerConn">DISCONNECTED</span>
-          </div>
+      <div class="section-title-row">
+        <h2 class="section-title">LIVE CONTROL PANEL</h2>
+        <div class="badges">
+          <div class="badge" id="tradingEnabledBadge">TRADING OFF</div>
+          <div class="badge" id="killSwitchBadge">KILL SWITCH OFF</div>
+          <div class="badge" id="liveGuardBadge">LIVE LOCKED</div>
         </div>
+      </div>
 
-        <div class="broker-box">
-          <div class="broker-row"><span>Account Status</span><span id="accountStatus">-</span></div>
-          <div class="broker-row"><span>Buying Power</span><span id="buyingPower">-</span></div>
-          <div class="broker-row"><span>Cash</span><span id="cashVal">-</span></div>
-          <div class="broker-row"><span>Equity</span><span id="equityVal">-</span></div>
-          <div class="broker-row"><span>Portfolio</span><span id="portfolioVal">-</span></div>
-          <div class="broker-row"><span>Positions</span><span id="positionsCount">0</span></div>
-          <div class="broker-row"><span>Last Order</span><span id="lastOrderId">-</span></div>
-          <div class="broker-row"><span>Broker Error</span><span id="brokerError">-</span></div>
-        </div>
+      <div class="table-box">
+        <div class="row"><div class="k">Broker Mode</div><div class="v" id="ctlBrokerMode">alpaca-paper</div></div>
+        <div class="row"><div class="k">Trading Enabled</div><div class="v" id="ctlTradingEnabled">NO</div></div>
+        <div class="row"><div class="k">Kill Switch</div><div class="v" id="ctlKillSwitch">OFF</div></div>
+        <div class="row"><div class="k">Live Trading Enabled</div><div class="v" id="ctlLiveTradingEnabled">NO</div></div>
+        <div class="row"><div class="k">Live Guard</div><div class="v" id="ctlLiveGuardUnlocked">LOCKED</div></div>
+        <div class="row"><div class="k">Real Orders Allowed</div><div class="v" id="ctlRealOrdersAllowed">NO</div></div>
+      </div>
 
-        <div class="action-grid">
-          <button class="action" onclick="openJson('/api/broker/status')">BROKER STATUS</button>
-          <button class="action" onclick="openJson('/api/broker/account')">BROKER ACCOUNT</button>
-          <button class="action full" onclick="openJson('/api/broker/positions')">BROKER POSITIONS</button>
-        </div>
+      <div class="actions">
+        <button class="pill btn" id="btnTradingToggle">BROKER TRADING</button>
+        <button class="pill danger btn" id="btnKillSwitch">KILL SWITCH</button>
+        <button class="pill warn btn" id="btnLiveTradingToggle">LIVE TRADING</button>
+        <button class="pill warn btn" id="btnLiveUnlock">UNLOCK LIVE</button>
+      </div>
+
+      <div class="actions">
+        <button class="pill btn" id="btnLiveLock">LOCK LIVE</button>
+        <button class="pill btn" id="btnManualBrokerBuy">BROKER BUY 1</button>
+        <button class="pill btn" id="btnManualBrokerSell">BROKER SELL 1</button>
+        <button class="pill btn" id="btnRefreshAll">REFRESH ALL</button>
       </div>
     </section>
 
     <section class="section">
-      <div class="section-card">
-        <div class="section-title">
-          <span>LOG</span>
-          <div class="section-pills">
-            <span class="small-pill" id="logDayState">DAY READY</span>
-            <span class="small-pill" id="logSyncState">SYNC</span>
-          </div>
+      <div class="section-title-row">
+        <h2 class="section-title">LOG</h2>
+        <div class="badges">
+          <div class="badge" id="logDayBadge">DAY READY</div>
+          <div class="badge" id="logSyncBadge">SYNC DB OK</div>
         </div>
-        <ul class="log-list" id="logList"></ul>
       </div>
+      <div class="log-list" id="logList"></div>
     </section>
 
     <div class="footer-space"></div>
   </div>
 
   <script>
-    const fmtMoney = (v) => {
-      const n = Number(v || 0);
-      const sign = n > 0 ? '+' : '';
-      return sign + n.toFixed(2).replace(/\.00$/, '');
-    };
-
-    const fmtNum = (v) => {
-      const n = Number(v || 0);
-      return n.toFixed(1);
-    };
+    let currentState = null;
 
     function setText(id, value) {
       const el = document.getElementById(id);
@@ -624,127 +683,237 @@
 
     function setBar(id, value) {
       const el = document.getElementById(id);
-      if (el) el.style.width = `${Math.max(0, Math.min(100, Number(value || 0)))}%`;
+      if (el) el.style.width = `${Math.max(0, Math.min(100, Number(value) || 0))}%`;
     }
 
-    async function fetchJson(url) {
-      const res = await fetch(url, { cache: 'no-store' });
-      return res.json();
-    }
-
-    async function postAction(url) {
-      try {
-        await fetch(url, { method: 'POST' });
-        await refreshAll();
-      } catch (e) {
-        console.error(e);
+    function fmtNum(v) {
+      if (v === null || v === undefined || v === '') return '-';
+      const n = Number(v);
+      if (Number.isFinite(n)) {
+        if (Math.abs(n) >= 1000) return String(Math.round(n));
+        if (String(v).includes('.')) return n.toFixed(1).replace(/\.0$/, '');
+        return String(n);
       }
+      return String(v);
     }
 
-    function openJson(url) {
-      window.location.href = url;
+    function heroButtonClass(el, type) {
+      el.classList.remove('warn', 'danger', 'ok');
+      if (type) el.classList.add(type);
     }
 
-    function renderReasons(reasons) {
-      const wrap = document.getElementById('reasonChips');
-      wrap.innerHTML = '';
-      (reasons || []).forEach(r => {
-        const chip = document.createElement('div');
-        chip.className = 'chip';
-        chip.textContent = r;
-        wrap.appendChild(chip);
+    function renderTags(tags) {
+      const box = document.getElementById('tagsBox');
+      box.innerHTML = '';
+      (tags || []).forEach((tag) => {
+        const div = document.createElement('div');
+        div.className = 'tag';
+        div.textContent = tag;
+        box.appendChild(div);
       });
     }
 
     function renderLogs(logs) {
-      const list = document.getElementById('logList');
-      list.innerHTML = '';
+      const box = document.getElementById('logList');
+      box.innerHTML = '';
 
-      const items = (logs || []).slice(0, 40);
-      items.forEach(line => {
-        const li = document.createElement('li');
-        li.textContent = line;
-        list.appendChild(li);
+      if (!logs || !logs.length) {
+        const div = document.createElement('div');
+        div.className = 'log-item muted';
+        div.textContent = 'Keine Logs';
+        box.appendChild(div);
+        return;
+      }
+
+      logs.forEach((entry) => {
+        const div = document.createElement('div');
+        div.className = 'log-item';
+        div.textContent = entry;
+        box.appendChild(div);
       });
     }
 
-    function applyState(data) {
-      setText('versionLabel', data.version || 'V22.11.9 APP POLISH');
+    function renderState(data) {
+      currentState = data;
+
+      setText('versionText', data.version || '-');
 
       setText('heroTitle', data.hero?.title || 'READY');
       setText('heroSubtitle', data.hero?.subtitle || '-');
       setText('heroDetail', data.hero?.detail || '-');
-      setText('heroTags', (data.ai?.reasons || []).join(' • ') || '-');
-      setText('heroPnl', fmtMoney(data.hero?.netPnL || 0));
-      setText('liveBadge', data.hero?.liveBadge || 'LIVE');
+      setText('heroReasons', (data.ai?.reasons || []).join(' • '));
+      setText('heroPnL', data.hero?.netPnL ?? 0);
+      setText('heroLiveBadge', data.hero?.liveBadge || 'LIVE');
+      setText('lossLimitBtn', `LOSS LIMIT ${data.limits?.lossLimit ?? -20}`);
+      setText('winTargetBtn', `WIN TARGET +${Math.abs(data.limits?.winTarget ?? 20)}`);
 
-      setText('lossLimit', `LOSS LIMIT ${fmtMoney(data.limits?.lossLimit || -20)}`);
-      setText('winTarget', `WIN TARGET ${fmtMoney(data.limits?.winTarget || 20)}`);
+      const heroBadge = document.getElementById('heroLiveBadge');
+      heroButtonClass(heroBadge, null);
 
-      setText('aiSignal', data.ai?.signal || 'HOLD');
-      setText('aiConfidence', `${data.ai?.confidence || 0}%`);
-      setText('aiBias', data.ai?.bias || '-');
-      setText('buyEdge', data.ai?.buyEdge ?? 0);
-      setText('sellEdge', data.ai?.sellEdge ?? 0);
-      setText('brokerState', data.broker?.connected ? 'LIVE' : 'OFF');
+      setText('signalValue', data.ai?.signal || '-');
+      setText('confidenceValue', `${data.ai?.confidence ?? 0}%`);
+      setBar('confidenceBar', data.ai?.confidence ?? 0);
 
-      setBar('confidenceBar', data.ai?.confidence || 0);
+      setText('biasValue', data.ai?.bias || '-');
+      setText('buyEdgeValue', fmtNum(data.ai?.buyEdge));
+      setText('sellEdgeValue', fmtNum(data.ai?.sellEdge));
 
-      setText('dayState', data.session?.dayState || 'DAY READY');
-      setText('syncState', data.session?.sync || 'SYNC');
-      setText('logDayState', data.session?.dayState || 'DAY READY');
-      setText('logSyncState', data.session?.sync || 'SYNC');
+      renderTags(data.ai?.reasons || []);
 
-      setText('queueVal', data.session?.queue ?? 0);
-      setText('processingVal', data.session?.processing || 'OFF');
-      setText('autoModeVal', data.session?.autoMode || 'OFF');
-      setText('activeSymbol', data.symbol?.active || '-');
+      setText('dayBadge', data.session?.dayState || '-');
+      setText('syncBadge', data.session?.sync || '-');
+      setText('queueValue', fmtNum(data.session?.queue));
+      setText('processingValue', data.session?.processing || '-');
+      setText('autoModeValue', data.session?.autoMode || '-');
+      setText('symbolValue', data.symbol?.active || '-');
 
-      setText('aiScoreBig', data.ai?.score ?? 0);
-      setBar('scoreBar', data.ai?.score || 0);
+      setText('scoreValue', fmtNum(data.ai?.score));
+      setBar('scoreBar', data.ai?.score ?? 0);
 
-      setText('trendVal', fmtNum(data.market?.trend || 0));
-      setText('volumeVal', fmtNum(data.market?.volume || 0));
-      setText('structureVal', fmtNum(data.market?.structure || 0));
-      setText('volatilityVal', fmtNum(data.market?.volatility || 0));
-      setText('liquidityVal', fmtNum(data.market?.liquidity || 0));
-      setText('sessionVal', fmtNum(data.market?.session || 0));
+      setText('trendValue', fmtNum(data.market?.trend));
+      setText('volumeValue', fmtNum(data.market?.volume));
+      setText('structureValue', fmtNum(data.market?.structure));
+      setText('volatilityValue', fmtNum(data.market?.volatility));
+      setText('liquidityValue', fmtNum(data.market?.liquidity));
+      setText('sessionMetricValue', fmtNum(data.market?.session));
 
       setText('tradesLabel', `Trades ${data.session?.tradesLabel || '0 / 50'}`);
       setText('sessionDate', data.session?.date || '-');
-      const maxTrades = Number(data.session?.maxTradesPerDay || 50);
-      const trades = Number(data.session?.tradesToday || 0);
-      setBar('tradeBar', maxTrades > 0 ? (trades / maxTrades) * 100 : 0);
+      const tradeRatio = ((data.session?.tradesToday || 0) / Math.max(1, data.session?.maxTradesPerDay || 50)) * 100;
+      setBar('tradesBar', tradeRatio);
+      setText('aiSummaryBtn', (data.ai?.summary || 'AI HOLD').toUpperCase());
 
-      setText('summaryBadge', (data.ai?.summary || 'AI HOLD').toUpperCase());
+      const broker = data.broker || {};
+      const controls = broker.controls || {};
 
-      setText('brokerMode', (data.broker?.mode || 'off').toUpperCase());
-      setText('brokerConn', data.broker?.connected ? 'CONNECTED' : 'DISCONNECTED');
-      setText('accountStatus', data.broker?.accountStatus || '-');
-      setText('buyingPower', data.broker?.buyingPower ?? '-');
-      setText('cashVal', data.broker?.cash ?? '-');
-      setText('equityVal', data.broker?.equity ?? '-');
-      setText('portfolioVal', data.broker?.portfolioValue ?? '-');
-      setText('positionsCount', data.broker?.positionsCount ?? 0);
-      setText('lastOrderId', data.broker?.lastOrderId || '-');
-      setText('brokerError', data.broker?.lastError || '-');
+      setText('brokerModeBadge', (broker.mode || '-').toUpperCase());
+      setText('brokerConnBadge', broker.connected ? 'CONNECTED' : 'DISCONNECTED');
+      setText('brokerAccountStatus', broker.accountStatus || '-');
+      setText('brokerBuyingPower', fmtNum(broker.buyingPower));
+      setText('brokerCash', fmtNum(broker.cash));
+      setText('brokerEquity', fmtNum(broker.equity));
+      setText('brokerPortfolio', fmtNum(broker.portfolioValue));
+      setText('brokerPositionsCount', fmtNum(broker.positionsCount));
+      setText(
+        'brokerLastOrder',
+        broker.lastOrder
+          ? `${broker.lastOrder.side || '-'} ${broker.lastOrder.symbol || '-'} ${broker.lastOrder.status || '-'}`
+          : '-'
+      );
+      setText('brokerError', broker.lastError || '-');
 
-      renderReasons(data.ai?.reasons || []);
+      setText('tradingEnabledBadge', controls.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
+      setText('killSwitchBadge', controls.killSwitch ? 'KILL SWITCH ON' : 'KILL SWITCH OFF');
+      setText('liveGuardBadge', controls.liveGuardUnlocked ? 'LIVE UNLOCKED' : 'LIVE LOCKED');
+
+      setText('ctlBrokerMode', broker.mode || '-');
+      setText('ctlTradingEnabled', controls.tradingEnabled ? 'YES' : 'NO');
+      setText('ctlKillSwitch', controls.killSwitch ? 'ON' : 'OFF');
+      setText('ctlLiveTradingEnabled', controls.liveTradingEnabled ? 'YES' : 'NO');
+      setText('ctlLiveGuardUnlocked', controls.liveGuardUnlocked ? 'UNLOCKED' : 'LOCKED');
+      setText('ctlRealOrdersAllowed', controls.realOrderAllowed ? 'YES' : 'NO');
+
+      setText('logDayBadge', data.session?.dayState || '-');
+      setText('logSyncBadge', data.session?.sync || '-');
+
       renderLogs(data.logs || []);
     }
 
-    async function refreshAll() {
-      try {
-        const state = await fetchJson('/api/state');
-        applyState(state);
-      } catch (e) {
-        console.error(e);
-        setText('heroDetail', 'Fehler beim Laden von /api/state');
-      }
+    async function apiGet(url) {
+      const res = await fetch(url);
+      const data = await res.json();
+      return data;
     }
 
-    refreshAll();
-    setInterval(refreshAll, 2500);
+    async function apiPost(url, body = {}) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      return res.json();
+    }
+
+    async function refreshState() {
+      const data = await apiGet('/api/state');
+      renderState(data);
+    }
+
+    async function bindAction(id, fn) {
+      const el = document.getElementById(id);
+      el.addEventListener('click', async () => {
+        try {
+          const data = await fn();
+          if (data && data.state) renderState(data.state);
+          else if (data && data.ok !== false && data.version) renderState(data);
+          else await refreshState();
+        } catch (err) {
+          alert(err.message || 'Fehler');
+        }
+      });
+    }
+
+    async function start() {
+      await refreshState();
+
+      bindAction('btnAutoToggle', () => apiPost('/api/auto/toggle'));
+      bindAction('btnReset', () => {
+        const ok = confirm('Wirklich resetten?');
+        if (!ok) return Promise.resolve(currentState);
+        return apiPost('/api/reset');
+      });
+      bindAction('btnManualBuy', () => apiPost('/api/manual/buy'));
+      bindAction('btnManualSell', () => apiPost('/api/manual/sell'));
+      bindAction('btnRefresh', () => refreshState().then(() => currentState));
+
+      bindAction('btnBrokerRefresh', () => apiPost('/api/broker/status/refresh'));
+      bindAction('btnBrokerAccount', async () => {
+        const data = await apiGet('/api/broker/account');
+        alert(JSON.stringify(data, null, 2));
+        await refreshState();
+        return currentState;
+      });
+      bindAction('btnBrokerPositions', async () => {
+        const data = await apiGet('/api/broker/positions');
+        alert(JSON.stringify(data, null, 2));
+        await refreshState();
+        return currentState;
+      });
+      bindAction('btnBrokerOrders', async () => {
+        const data = await apiGet('/api/broker/orders');
+        alert(JSON.stringify(data, null, 2));
+        await refreshState();
+        return currentState;
+      });
+
+      bindAction('btnTradingToggle', () => apiPost('/api/broker/trading/toggle'));
+      bindAction('btnKillSwitch', () => apiPost('/api/broker/kill-switch/toggle'));
+      bindAction('btnLiveTradingToggle', () => apiPost('/api/broker/live-trading/toggle'));
+      bindAction('btnLiveUnlock', () => apiPost('/api/broker/live-guard/unlock'));
+      bindAction('btnLiveLock', () => apiPost('/api/broker/live-guard/lock'));
+
+      bindAction('btnManualBrokerBuy', () => {
+        const symbol = prompt('Symbol für Broker BUY', currentState?.symbol?.active || 'AAPL');
+        if (!symbol) return Promise.resolve(currentState);
+        return apiPost('/api/broker/order/manual', { side: 'BUY', symbol, qty: 1 });
+      });
+
+      bindAction('btnManualBrokerSell', () => {
+        const symbol = prompt('Symbol für Broker SELL', currentState?.symbol?.active || 'AAPL');
+        if (!symbol) return Promise.resolve(currentState);
+        return apiPost('/api/broker/order/manual', { side: 'SELL', symbol, qty: 1 });
+      });
+
+      bindAction('btnRefreshAll', async () => {
+        await apiPost('/api/broker/status/refresh');
+        await refreshState();
+        return currentState;
+      });
+
+      setInterval(refreshState, 3000);
+    }
+
+    start();
   </script>
 </body>
 </html>
