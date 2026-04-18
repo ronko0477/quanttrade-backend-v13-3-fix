@@ -12,12 +12,13 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.12.1 PNL SPLIT + HERO FIX
+   V22.12.2 LIMIT STABILITY + PAUSE LOG FIX
+   - pause log spam fixed
+   - stable win/loss/day-limit transitions
+   - reset cleanup improved
    - postgres persist stable
    - alpaca paper broker connected
    - bot pnl and broker pnl separated
-   - darker hero / cleaner state payload
-   - live control panel remains locked-safe
    ========================================================= */
 
 const CONFIG = {
@@ -72,7 +73,7 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v22.12.1.json'),
+    file: path.join(process.cwd(), 'data', 'state.v22.12.2.json'),
     flushDebounceMs: 150,
     dbKey: 'global',
     tableName: 'app_state',
@@ -497,7 +498,7 @@ async function brokerSubmitPaperOrder(side, symbol, qty = 1) {
 
 function createInitialState() {
   return {
-    version: 'V22.12.1 PNL SPLIT + HERO FIX',
+    version: 'V22.12.2 LIMIT STABILITY + PAUSE LOG FIX',
 
     system: {
       status: 'READY',
@@ -570,6 +571,7 @@ function createInitialState() {
       lastLoggedAt: 0,
       lastLogSignature: '',
       lastHoldReason: '',
+      lastPauseLogKey: '',
     },
 
     symbol: {
@@ -736,7 +738,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V22.12.1 PNL SPLIT + HERO FIX';
+  target.version = 'V22.12.2 LIMIT STABILITY + PAUSE LOG FIX';
 
   if (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0) {
     target.symbol = {
@@ -758,6 +760,14 @@ function mergeLoadedState(target, loaded) {
     };
   }
 
+  if (!target.engine || typeof target.engine !== 'object') {
+    target.engine = createInitialState().engine;
+  }
+
+  if (typeof target.engine.lastPauseLogKey !== 'string') {
+    target.engine.lastPauseLogKey = '';
+  }
+
   ensureBrokerStateShape();
 
   target.session.maxTradesPerDay = CONFIG.session.maxTradesPerDay;
@@ -775,7 +785,7 @@ async function hydrateState() {
   let source = 'NEW';
 
   console.log('====================================================');
-  console.log(`[boot] version: V22.12.1 PNL SPLIT + HERO FIX`);
+  console.log('[boot] version: V22.12.2 LIMIT STABILITY + PAUSE LOG FIX');
   console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
   console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
   console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
@@ -910,6 +920,44 @@ function addStateLog(text, signature) {
   addLog(text, { signature: signature || text });
 }
 
+function pauseLogIfChanged(reason) {
+  const key = `${state.session.date}|${reason}|${state.session.netPnL}|${state.session.tradesToday}`;
+  if (state.engine.lastPauseLogKey === key) return;
+
+  state.engine.lastPauseLogKey = key;
+
+  if (reason === 'WIN_TARGET') {
+    addLog('AI pausiert wegen Win Target', { force: true, signature: `pause-win-target-${key}` });
+    return;
+  }
+
+  if (reason === 'LOSS_LIMIT') {
+    addLog('AI pausiert wegen Loss Limit', { force: true, signature: `pause-loss-limit-${key}` });
+    return;
+  }
+
+  if (reason === 'DAY_LIMIT') {
+    addLog('AI pausiert wegen Tageslimit', { force: true, signature: `pause-day-limit-${key}` });
+  }
+}
+
+function setPauseReason(reason) {
+  if (state.ai.paused && state.ai.pauseReason === reason) {
+    pauseLogIfChanged(reason);
+    return;
+  }
+
+  state.ai.paused = true;
+  state.ai.pauseReason = reason;
+  pauseLogIfChanged(reason);
+}
+
+function clearPauseState() {
+  state.ai.paused = false;
+  state.ai.pauseReason = '';
+  state.engine.lastPauseLogKey = '';
+}
+
 /* =========================================================
    Session reset
    ========================================================= */
@@ -926,8 +974,7 @@ function resetDayIfNeeded() {
   state.session.queue = 0;
   state.session.lastOrderSide = null;
 
-  state.ai.paused = false;
-  state.ai.pauseReason = '';
+  clearPauseState();
 
   state.learning.lastOutcome = null;
 
@@ -942,6 +989,7 @@ function resetDayIfNeeded() {
   state.engine.lastFireAt = 0;
   state.engine.lastDecisionKey = '';
   state.engine.lastHoldReason = '';
+  state.engine.lastPauseLogKey = '';
 
   state.system.status = 'READY';
   state.system.subtitle = 'System bereit.';
@@ -1588,17 +1636,11 @@ async function afterTradeResult(pnl) {
   }
 
   if (state.session.netPnL >= state.session.winTarget) {
-    state.ai.paused = true;
-    state.ai.pauseReason = 'WIN_TARGET';
-    addLog('AI pausiert wegen Win Target', { force: true, signature: 'pause-win-target' });
+    setPauseReason('WIN_TARGET');
   } else if (state.session.netPnL <= state.session.lossLimit) {
-    state.ai.paused = true;
-    state.ai.pauseReason = 'LOSS_LIMIT';
-    addLog('AI pausiert wegen Loss Limit', { force: true, signature: 'pause-loss-limit' });
+    setPauseReason('LOSS_LIMIT');
   } else if (state.session.tradesToday >= state.session.maxTradesPerDay) {
-    state.ai.paused = true;
-    state.ai.pauseReason = 'DAY_LIMIT';
-    addLog('AI pausiert wegen Tageslimit', { force: true, signature: 'pause-day-limit' });
+    setPauseReason('DAY_LIMIT');
   }
 
   await forcePersistNow();
@@ -1818,7 +1860,9 @@ async function processAiTick() {
     state.engine.lastDecisionKey = decisionKey;
 
     if (signal === 'PAUSED') {
-      addStateLog('AI Paused', `state-paused-${state.ai.pauseReason}-${state.symbol.active}`);
+      const pauseStateKey = `${state.session.date}|${state.ai.pauseReason}|${state.symbol.active}|${state.session.netPnL}|${state.session.tradesToday}`;
+      const pauseSig = `state-paused-${pauseStateKey}`;
+      addStateLog('AI Paused', pauseSig);
     } else if (stage === 'FIRE') {
       addStateLog(
         `AI FIRE ${signal} (${state.symbol.active})`,
@@ -1850,9 +1894,9 @@ async function processAiTick() {
   }
 
   if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
-    state.ai.paused = true;
-    state.ai.pauseReason = 'DAY_LIMIT';
-    addLog('AI pausiert wegen Tageslimit', { force: true, signature: 'pause-day-limit' });
+    setPauseReason('DAY_LIMIT');
+  } else if (state.ai.paused && state.ai.pauseReason) {
+    pauseLogIfChanged(state.ai.pauseReason);
   }
 
   if (BROKER_ENABLED && Date.now() - brokerLastCheckAt > 15000) {
@@ -2035,6 +2079,7 @@ app.post('/api/auto/toggle', async (_req, res) => {
 
 app.post('/api/reset', async (_req, res) => {
   const fresh = createInitialState();
+  const keepBroker = deepClone(state.broker || fresh.broker);
 
   state.version = fresh.version;
   state.system = fresh.system;
@@ -2046,7 +2091,7 @@ app.post('/api/reset', async (_req, res) => {
   state.symbol = fresh.symbol;
   state.manual = fresh.manual;
   state.liveControl = fresh.liveControl;
-  state.broker = state.broker || fresh.broker;
+  state.broker = keepBroker;
   state.logs = [];
 
   addLog('Manual reset', { force: true, signature: `manual-reset-${Date.now()}` });
@@ -2268,6 +2313,6 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log(`V22.12.1 PNL SPLIT + HERO FIX listening on :${PORT}`);
+    console.log('V22.12.2 LIMIT STABILITY + PAUSE LOG FIX listening on :' + PORT);
   });
 })();
