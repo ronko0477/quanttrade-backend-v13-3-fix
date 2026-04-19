@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>V22.12.1 Live Trading Control Panel</title>
+  <title>V22.12.2 Limit Stability + Pause Log Fix</title>
   <style>
     :root{
       --bg1:#0a1027;
@@ -23,10 +23,22 @@
       --shadow:0 20px 50px rgba(5,10,30,.35);
       --radius:28px;
       --radius2:22px;
+      --hero-dark-1:#081024;
+      --hero-dark-2:#18204b;
+      --hero-card-1:rgba(206,211,255,.82);
+      --hero-card-2:rgba(170,178,243,.76);
     }
 
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#dfe3ff;color:var(--text)}
+
+    html,body{
+      margin:0;
+      padding:0;
+      font-family:Arial,Helvetica,sans-serif;
+      background:#dfe3ff;
+      color:var(--text);
+    }
+
     body{
       min-height:100vh;
       background:
@@ -45,10 +57,29 @@
       padding:34px 14px 18px;
       background:
         radial-gradient(circle at 89% 18%, rgba(197,255,123,.20) 0%, rgba(197,255,123,.05) 9%, transparent 17%),
-        linear-gradient(180deg, #091026 0%, #141b3f 48%, #242a58 100%);
+        linear-gradient(180deg, var(--hero-dark-1) 0%, #141b3f 48%, #242a58 100%);
       border-bottom-left-radius:34px;
       border-bottom-right-radius:34px;
       box-shadow:0 10px 30px rgba(0,0,0,.18);
+      transition:background .25s ease;
+    }
+
+    .top-hero.is-target{
+      background:
+        radial-gradient(circle at 89% 18%, rgba(197,255,123,.18) 0%, rgba(197,255,123,.05) 9%, transparent 17%),
+        linear-gradient(180deg, #0a132a 0%, #1a234f 48%, #27346b 100%);
+    }
+
+    .top-hero.is-limit{
+      background:
+        radial-gradient(circle at 89% 18%, rgba(255,135,135,.18) 0%, rgba(255,135,135,.05) 9%, transparent 17%),
+        linear-gradient(180deg, #191026 0%, #3a1b3f 48%, #522658 100%);
+    }
+
+    .top-hero.is-locked{
+      background:
+        radial-gradient(circle at 89% 18%, rgba(255,222,138,.18) 0%, rgba(255,222,138,.05) 9%, transparent 17%),
+        linear-gradient(180deg, #11162c 0%, #232b4f 48%, #37406a 100%);
     }
 
     .top-title-row{
@@ -76,16 +107,40 @@
       background:#c7f97f;
       box-shadow:0 0 0 10px rgba(199,249,127,.12), 0 0 20px rgba(199,249,127,.45);
       flex:0 0 auto;
+      transition:all .2s ease;
+    }
+
+    .top-dot.is-warn{
+      background:#ffd976;
+      box-shadow:0 0 0 10px rgba(255,217,118,.12), 0 0 20px rgba(255,217,118,.45);
+    }
+
+    .top-dot.is-danger{
+      background:#ff858d;
+      box-shadow:0 0 0 10px rgba(255,133,141,.12), 0 0 20px rgba(255,133,141,.45);
     }
 
     .hero-card{
       border-radius:34px;
       padding:18px 18px 20px;
-      background:linear-gradient(180deg, rgba(206,211,255,.82) 0%, rgba(170,178,243,.76) 100%);
+      background:linear-gradient(180deg, var(--hero-card-1) 0%, var(--hero-card-2) 100%);
       border:1px solid rgba(255,255,255,.10);
       box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.14);
       position:relative;
       overflow:hidden;
+      transition:background .25s ease, box-shadow .25s ease;
+    }
+
+    .hero-card.is-target{
+      background:linear-gradient(180deg, rgba(202,210,255,.82) 0%, rgba(155,170,238,.78) 100%);
+    }
+
+    .hero-card.is-limit{
+      background:linear-gradient(180deg, rgba(212,198,255,.84) 0%, rgba(180,154,230,.78) 100%);
+    }
+
+    .hero-card.is-locked{
+      background:linear-gradient(180deg, rgba(214,219,255,.84) 0%, rgba(170,179,236,.78) 100%);
     }
 
     .hero-card:before{
@@ -106,6 +161,16 @@
       font-weight:900;
       text-transform:uppercase;
       text-shadow:0 2px 14px rgba(0,0,0,.12);
+      word-break:break-word;
+      overflow-wrap:anywhere;
+    }
+
+    .hero-title.small{
+      font-size:64px;
+    }
+
+    .hero-title.xsmall{
+      font-size:52px;
     }
 
     .hero-subtitle{
@@ -132,6 +197,7 @@
       color:#f0f3ff;
       font-weight:800;
       margin:0 6px 16px;
+      min-height:52px;
     }
 
     .hero-pnl-stack{
@@ -147,7 +213,11 @@
       line-height:1;
       font-weight:900;
       color:#ffffff;
+      letter-spacing:-1px;
     }
+
+    .hero-big.is-pos{ color:#ffffff; }
+    .hero-big.is-neg{ color:#ffffff; }
 
     .hero-pnl-label{
       font-size:26px;
@@ -202,6 +272,20 @@
       color:#fff;
       background:linear-gradient(180deg, #5e6cff 0%, #4352ee 100%);
       box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+      text-align:center;
+    }
+
+    .pill.warn{
+      background:linear-gradient(180deg, #f7d26e 0%, #efb348 100%);
+      color:#171717;
+    }
+
+    .pill.danger{
+      background:linear-gradient(180deg, #ff7f87 0%, #ec5b67 100%);
+    }
+
+    .pill.good{
+      background:linear-gradient(180deg, #6f7dff 0%, #4e5cf1 100%);
     }
 
     .content{
@@ -245,6 +329,30 @@
       text-transform:uppercase;
     }
 
+    .badge.good{
+      background:rgba(140,224,143,.16);
+      border-color:rgba(140,224,143,.26);
+      color:#efffee;
+    }
+
+    .badge.warn{
+      background:rgba(242,191,84,.18);
+      border-color:rgba(242,191,84,.26);
+      color:#fff7df;
+    }
+
+    .badge.danger{
+      background:rgba(239,100,107,.18);
+      border-color:rgba(239,100,107,.26);
+      color:#fff0f1;
+    }
+
+    .badge.neutral{
+      background:rgba(255,255,255,.10);
+      border-color:rgba(255,255,255,.08);
+      color:#f6f8ff;
+    }
+
     .grid-2{
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -271,6 +379,11 @@
       font-weight:900;
       color:var(--lime);
       word-break:break-word;
+    }
+
+    .mini-card .v.small-white{
+      font-size:22px;
+      color:#fff;
     }
 
     .action-grid{
@@ -367,6 +480,8 @@
       line-height:1;
       font-weight:900;
       color:var(--lime);
+      word-break:break-word;
+      overflow-wrap:anywhere;
     }
 
     .signal-card .v.small{
@@ -408,11 +523,13 @@
     }
 
     .row:last-child{border-bottom:none}
+
     .row .rk{
       font-size:18px;
       font-weight:800;
       color:#f7faff;
     }
+
     .row .rv{
       font-size:18px;
       font-weight:900;
@@ -440,18 +557,21 @@
 
     .log-item:last-child{border-bottom:none}
 
-    .footer-space{height:20px}
+    .log-item.is-good{ color:#eefee8; }
+    .log-item.is-warn{ color:#fff2cf; }
+    .log-item.is-danger{ color:#ffd8da; }
+    .log-item.is-accent{ color:#e9eeff; }
 
-    .muted{
-      opacity:.9;
-    }
+    .footer-space{height:20px}
 
     @media (max-width: 640px){
       .top-title{font-size:18px}
       .hero-title{font-size:64px}
+      .hero-title.small{font-size:50px}
+      .hero-title.xsmall{font-size:42px}
       .hero-subtitle{font-size:22px}
       .hero-detail{font-size:19px}
-      .hero-reasons{font-size:16px}
+      .hero-reasons{font-size:16px;min-height:42px}
       .hero-big{font-size:82px}
       .hero-pnl-label{font-size:22px}
       .hero-pnl-mini strong{font-size:18px}
@@ -467,13 +587,13 @@
 </head>
 <body>
   <div class="app">
-    <div class="top-hero">
+    <div class="top-hero" id="topHero">
       <div class="top-title-row">
-        <div class="top-title" id="versionTitle">V22.12.1 LIVE TRADING CONTROL PANEL</div>
-        <div class="top-dot"></div>
+        <div class="top-title" id="versionTitle">V22.12.2 LIMIT STABILITY + PAUSE LOG FIX</div>
+        <div class="top-dot" id="topDot"></div>
       </div>
 
-      <div class="hero-card">
+      <div class="hero-card" id="heroCard">
         <div class="hero-title" id="heroTitle">READY</div>
         <div class="hero-subtitle" id="heroSubtitle">AI Auto aktiv</div>
         <div class="hero-detail" id="heroDetail">Beobachtung aktiv. • AAPL</div>
@@ -496,7 +616,7 @@
         </div>
 
         <div class="pill-stack">
-          <div class="pill" id="heroBadge">AI AUTO ON</div>
+          <div class="pill good" id="heroBadge">AI AUTO ON</div>
           <div class="pill">LOSS LIMIT -20</div>
           <div class="pill">WIN TARGET +20</div>
         </div>
@@ -535,7 +655,7 @@
           </div>
           <div class="mini-card">
             <div class="k">Stage</div>
-            <div class="v small" id="aiStage">WATCH</div>
+            <div class="v small-white" id="aiStage">WATCH</div>
           </div>
         </div>
 
@@ -576,8 +696,8 @@
         <h3>STATUS</h3>
 
         <div class="badge-row">
-          <div class="badge" id="dayState">DAY READY</div>
-          <div class="badge" id="syncState">SYNC DB OK</div>
+          <div class="badge neutral" id="dayState">DAY READY</div>
+          <div class="badge neutral" id="syncState">SYNC DB OK</div>
         </div>
 
         <div class="grid-2">
@@ -601,8 +721,8 @@
 
       <section class="panel">
         <div class="badge-row">
-          <div class="badge" id="brokerModeBadge">ALPACA-PAPER</div>
-          <div class="badge" id="brokerConnectedBadge">CONNECTED</div>
+          <div class="badge neutral" id="brokerModeBadge">ALPACA-PAPER</div>
+          <div class="badge neutral" id="brokerConnectedBadge">CONNECTED</div>
         </div>
 
         <h3>BROKER / ALPACA</h3>
@@ -628,9 +748,9 @@
 
       <section class="panel">
         <div class="badge-row">
-          <div class="badge" id="tradingBadge">TRADING OFF</div>
-          <div class="badge" id="killBadge">KILL SWITCH OFF</div>
-          <div class="badge" id="liveGuardBadge">LIVE LOCKED</div>
+          <div class="badge neutral" id="tradingBadge">TRADING OFF</div>
+          <div class="badge neutral" id="killBadge">KILL SWITCH OFF</div>
+          <div class="badge neutral" id="liveGuardBadge">LIVE LOCKED</div>
         </div>
 
         <h3>LIVE CONTROL PANEL</h3>
@@ -647,7 +767,7 @@
         <div class="action-grid" style="margin-top:16px">
           <button onclick="post('/api/live/broker-toggle')">BROKER TRADING</button>
           <button class="danger" onclick="post('/api/live/kill-switch')">KILL SWITCH</button>
-          <button class="warn" onclick="post('/api/live/unlock')">LIVE TRADING</button>
+          <button class="warn" onclick="post('/api/live/unlock')">ARM LIVE</button>
           <button class="warn" onclick="post('/api/live/unlock')">UNLOCK LIVE</button>
           <button onclick="post('/api/live/lock')">LOCK LIVE</button>
           <button onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
@@ -658,8 +778,8 @@
 
       <section class="panel">
         <div class="badge-row">
-          <div class="badge" id="logDayBadge">DAY READY</div>
-          <div class="badge" id="logSyncBadge">SYNC DB OK</div>
+          <div class="badge neutral" id="logDayBadge">DAY READY</div>
+          <div class="badge neutral" id="logSyncBadge">SYNC DB OK</div>
         </div>
 
         <h3>LOG</h3>
@@ -681,6 +801,12 @@
       return n.toFixed(digits);
     }
 
+    function fmtMoney(v){
+      const n = Number(v);
+      if (!Number.isFinite(n)) return '-';
+      return n.toFixed(2);
+    }
+
     function fmtSigned(v){
       if (v === null || v === undefined || Number.isNaN(Number(v))) return '-';
       const n = Number(v);
@@ -692,6 +818,59 @@
     function text(el, value){
       if (!el) return;
       el.textContent = value ?? '-';
+    }
+
+    function setBadgeState(el, kind, label){
+      if (!el) return;
+      el.className = 'badge';
+      if (kind) el.classList.add(kind);
+      el.textContent = label ?? '-';
+    }
+
+    function setPillState(el, kind, label){
+      if (!el) return;
+      el.className = 'pill';
+      if (kind) el.classList.add(kind);
+      el.textContent = label ?? '-';
+    }
+
+    function heroTone(title){
+      const t = String(title || '').toUpperCase();
+      if (t === 'TARGET') return 'target';
+      if (t === 'SESSION_LIMIT') return 'limit';
+      if (t === 'LOCKED') return 'locked';
+      return 'ready';
+    }
+
+    function applyHeroTone(s){
+      const topHero = q('topHero');
+      const heroCard = q('heroCard');
+      const topDot = q('topDot');
+      const heroTitle = q('heroTitle');
+
+      topHero.classList.remove('is-target','is-limit','is-locked');
+      heroCard.classList.remove('is-target','is-limit','is-locked');
+      topDot.classList.remove('is-warn','is-danger');
+
+      const tone = heroTone(s.hero?.title);
+
+      if (tone === 'target') {
+        topHero.classList.add('is-target');
+        heroCard.classList.add('is-target');
+      } else if (tone === 'limit') {
+        topHero.classList.add('is-limit');
+        heroCard.classList.add('is-limit');
+        topDot.classList.add('is-danger');
+      } else if (tone === 'locked') {
+        topHero.classList.add('is-locked');
+        heroCard.classList.add('is-locked');
+        topDot.classList.add('is-warn');
+      }
+
+      heroTitle.classList.remove('small','xsmall');
+      const len = String(s.hero?.title || '').length;
+      if (len >= 12) heroTitle.classList.add('xsmall');
+      else if (len >= 9) heroTitle.classList.add('small');
     }
 
     async function getJson(url){
@@ -719,7 +898,8 @@
     function renderReasons(list){
       const box = q('reasonTags');
       box.innerHTML = '';
-      (Array.isArray(list) ? list : []).forEach(item => {
+
+      (Array.isArray(list) ? list : []).slice(0, 6).forEach(item => {
         const d = document.createElement('div');
         d.className = 'tag';
         d.textContent = item;
@@ -727,12 +907,21 @@
       });
     }
 
+    function getLogClass(item){
+      const t = String(item || '');
+      if (t.includes('WIN PnL') || t.includes('Broker order accepted') || t.includes('SYNC DB OK')) return 'is-good';
+      if (t.includes('Loss Limit') || t.includes('LOSS PnL') || t.includes('Kill Switch ON') || t.includes('failed')) return 'is-danger';
+      if (t.includes('TARGET') || t.includes('Live Unlock') || t.includes('Cooldown') || t.includes('Order wird verarbeitet') || t.includes('Order queued')) return 'is-warn';
+      return 'is-accent';
+    }
+
     function renderLogs(list){
       const box = q('logList');
       box.innerHTML = '';
-      (Array.isArray(list) ? list : []).forEach(item => {
+
+      (Array.isArray(list) ? list : []).slice(0, 60).forEach(item => {
         const d = document.createElement('div');
-        d.className = 'log-item';
+        d.className = `log-item ${getLogClass(item)}`;
         d.textContent = item;
         box.appendChild(d);
       });
@@ -741,7 +930,7 @@
     function renderState(s){
       latestState = s;
 
-      text(q('versionTitle'), s.version || 'V22.12.1');
+      text(q('versionTitle'), s.version || 'V22.12.2');
       text(q('heroTitle'), s.hero?.title || 'READY');
       text(q('heroSubtitle'), s.hero?.subtitle || '-');
       text(q('heroDetail'), s.hero?.detail || '-');
@@ -749,7 +938,11 @@
       text(q('heroPnlMain'), fmtSigned(s.pnl?.botNetPnL ?? s.hero?.netPnL ?? 0));
       text(q('brokerDayPnl'), fmtSigned(s.pnl?.brokerDayPnL));
       text(q('brokerTotalPnl'), fmtSigned(s.pnl?.brokerTotalPnL));
-      text(q('heroBadge'), s.hero?.liveBadge || '-');
+
+      const badgeText = s.hero?.liveBadge || '-';
+      if (badgeText.includes('LOSS')) setPillState(q('heroBadge'), 'danger', badgeText);
+      else if (badgeText.includes('TARGET') || badgeText.includes('COOLDOWN') || badgeText.includes('PROCESSING')) setPillState(q('heroBadge'), 'warn', badgeText);
+      else setPillState(q('heroBadge'), 'good', badgeText);
 
       text(q('aiSignal'), s.ai?.signal || '-');
       text(q('aiConfidence'), `${Number(s.ai?.confidence || 0)}%`);
@@ -774,27 +967,47 @@
       text(q('sessionDate'), s.session?.date || '-');
       text(q('summaryPill'), (s.ai?.summary || 'AI HOLD').toUpperCase());
 
-      text(q('dayState'), s.session?.dayState || '-');
-      text(q('syncState'), s.session?.sync || '-');
+      const dayState = s.session?.dayState || '-';
+      if (dayState === 'WIN TARGET') {
+        setBadgeState(q('dayState'), 'warn', dayState);
+        setBadgeState(q('logDayBadge'), 'warn', dayState);
+      } else if (dayState === 'LOSS LIMIT' || dayState === 'DAY LIMIT') {
+        setBadgeState(q('dayState'), 'danger', dayState);
+        setBadgeState(q('logDayBadge'), 'danger', dayState);
+      } else {
+        setBadgeState(q('dayState'), 'good', dayState);
+        setBadgeState(q('logDayBadge'), 'good', dayState);
+      }
+
+      const syncText = s.session?.sync || '-';
+      if (String(syncText).includes('FAIL')) {
+        setBadgeState(q('syncState'), 'danger', syncText);
+        setBadgeState(q('logSyncBadge'), 'danger', syncText);
+      } else {
+        setBadgeState(q('syncState'), 'good', syncText);
+        setBadgeState(q('logSyncBadge'), 'good', syncText);
+      }
+
       text(q('queueVal'), s.session?.queue ?? 0);
       text(q('processingVal'), s.session?.processing || '-');
       text(q('autoModeVal'), s.session?.autoMode || '-');
       text(q('symbolVal'), s.symbol?.active || '-');
 
       text(q('brokerModeBadge'), (s.broker?.mode || '-').toUpperCase());
-      text(q('brokerConnectedBadge'), s.broker?.connected ? 'CONNECTED' : 'DISCONNECTED');
+      setBadgeState(q('brokerConnectedBadge'), s.broker?.connected ? 'good' : 'danger', s.broker?.connected ? 'CONNECTED' : 'DISCONNECTED');
+
       text(q('brokerAccountStatus'), s.broker?.accountStatus || '-');
-      text(q('brokerBuyingPower'), s.broker?.buyingPower ?? '-');
-      text(q('brokerCash'), s.broker?.cash ?? '-');
-      text(q('brokerEquity'), s.broker?.equity ?? '-');
-      text(q('brokerPortfolio'), s.broker?.portfolioValue ?? '-');
+      text(q('brokerBuyingPower'), fmtMoney(s.broker?.buyingPower));
+      text(q('brokerCash'), fmtMoney(s.broker?.cash));
+      text(q('brokerEquity'), fmtMoney(s.broker?.equity));
+      text(q('brokerPortfolio'), fmtMoney(s.broker?.portfolioValue));
       text(q('brokerPositionsCount'), s.broker?.positionsCount ?? 0);
       text(q('brokerLastOrder'), s.broker?.lastOrder || '-');
       text(q('brokerError'), s.broker?.lastError || '-');
 
-      text(q('tradingBadge'), s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
-      text(q('killBadge'), s.liveControl?.killSwitch ? 'KILL SWITCH ON' : 'KILL SWITCH OFF');
-      text(q('liveGuardBadge'), s.liveControl?.liveGuard === 'UNLOCKED' ? 'LIVE UNLOCKED' : 'LIVE LOCKED');
+      setBadgeState(q('tradingBadge'), s.liveControl?.tradingEnabled ? 'warn' : 'neutral', s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
+      setBadgeState(q('killBadge'), s.liveControl?.killSwitch ? 'danger' : 'neutral', s.liveControl?.killSwitch ? 'KILL SWITCH ON' : 'KILL SWITCH OFF');
+      setBadgeState(q('liveGuardBadge'), s.liveControl?.liveGuard === 'UNLOCKED' ? 'warn' : 'neutral', s.liveControl?.liveGuard === 'UNLOCKED' ? 'LIVE UNLOCKED' : 'LIVE LOCKED');
 
       text(q('lcBrokerMode'), s.liveControl?.brokerMode || '-');
       text(q('lcTradingEnabled'), s.liveControl?.tradingEnabled ? 'YES' : 'NO');
@@ -803,11 +1016,9 @@
       text(q('lcGuard'), s.liveControl?.liveGuard || '-');
       text(q('lcRealOrders'), s.liveControl?.realOrdersAllowed ? 'YES' : 'NO');
 
-      text(q('logDayBadge'), s.session?.dayState || '-');
-      text(q('logSyncBadge'), s.session?.sync || '-');
-
       renderReasons(s.ai?.reasons || []);
       renderLogs(s.logs || []);
+      applyHeroTone(s);
     }
 
     async function refreshNow(){
