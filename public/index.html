@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>V22.12.2 Limit Stability + Pause Log Fix</title>
+  <title>V22.12.3 Live Arm + Control Safety</title>
   <style>
     :root{
       --bg1:#0a1027;
@@ -215,9 +215,6 @@
       color:#ffffff;
       letter-spacing:-1px;
     }
-
-    .hero-big.is-pos{ color:#ffffff; }
-    .hero-big.is-neg{ color:#ffffff; }
 
     .hero-pnl-label{
       font-size:26px;
@@ -556,7 +553,6 @@
     }
 
     .log-item:last-child{border-bottom:none}
-
     .log-item.is-good{ color:#eefee8; }
     .log-item.is-warn{ color:#fff2cf; }
     .log-item.is-danger{ color:#ffd8da; }
@@ -589,7 +585,7 @@
   <div class="app">
     <div class="top-hero" id="topHero">
       <div class="top-title-row">
-        <div class="top-title" id="versionTitle">V22.12.2 LIMIT STABILITY + PAUSE LOG FIX</div>
+        <div class="top-title" id="versionTitle">V22.12.3 LIVE ARM + CONTROL SAFETY</div>
         <div class="top-dot" id="topDot"></div>
       </div>
 
@@ -751,6 +747,7 @@
           <div class="badge neutral" id="tradingBadge">TRADING OFF</div>
           <div class="badge neutral" id="killBadge">KILL SWITCH OFF</div>
           <div class="badge neutral" id="liveGuardBadge">LIVE LOCKED</div>
+          <div class="badge neutral" id="liveArmBadge">ARM OFF</div>
         </div>
 
         <h3>LIVE CONTROL PANEL</h3>
@@ -760,6 +757,8 @@
           <div class="row"><div class="rk">Trading Enabled</div><div class="rv" id="lcTradingEnabled">NO</div></div>
           <div class="row"><div class="rk">Kill Switch</div><div class="rv" id="lcKillSwitch">OFF</div></div>
           <div class="row"><div class="rk">Live Trading Enabled</div><div class="rv" id="lcLiveEnabled">NO</div></div>
+          <div class="row"><div class="rk">Live Unlock Armed</div><div class="rv" id="lcUnlockArmed">NO</div></div>
+          <div class="row"><div class="rk">Live Arm Enabled</div><div class="rv" id="lcArmEnabled">NO</div></div>
           <div class="row"><div class="rk">Live Guard</div><div class="rv" id="lcGuard">LOCKED</div></div>
           <div class="row"><div class="rk">Real Orders Allowed</div><div class="rv" id="lcRealOrders">NO</div></div>
         </div>
@@ -767,8 +766,8 @@
         <div class="action-grid" style="margin-top:16px">
           <button onclick="post('/api/live/broker-toggle')">BROKER TRADING</button>
           <button class="danger" onclick="post('/api/live/kill-switch')">KILL SWITCH</button>
-          <button class="warn" onclick="post('/api/live/unlock')">ARM LIVE</button>
           <button class="warn" onclick="post('/api/live/unlock')">UNLOCK LIVE</button>
+          <button class="warn" onclick="post('/api/live/arm')">ARM LIVE</button>
           <button onclick="post('/api/live/lock')">LOCK LIVE</button>
           <button onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
           <button onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
@@ -910,8 +909,8 @@
     function getLogClass(item){
       const t = String(item || '');
       if (t.includes('WIN PnL') || t.includes('Broker order accepted') || t.includes('SYNC DB OK')) return 'is-good';
-      if (t.includes('Loss Limit') || t.includes('LOSS PnL') || t.includes('Kill Switch ON') || t.includes('failed')) return 'is-danger';
-      if (t.includes('TARGET') || t.includes('Live Unlock') || t.includes('Cooldown') || t.includes('Order wird verarbeitet') || t.includes('Order queued')) return 'is-warn';
+      if (t.includes('Loss Limit') || t.includes('LOSS PnL') || t.includes('Kill Switch ON') || t.includes('failed') || t.includes('blocked')) return 'is-danger';
+      if (t.includes('TARGET') || t.includes('Live Unlock') || t.includes('Live Arm') || t.includes('Cooldown') || t.includes('Order wird verarbeitet') || t.includes('Order queued')) return 'is-warn';
       return 'is-accent';
     }
 
@@ -930,7 +929,7 @@
     function renderState(s){
       latestState = s;
 
-      text(q('versionTitle'), s.version || 'V22.12.2');
+      text(q('versionTitle'), s.version || 'V22.12.3');
       text(q('heroTitle'), s.hero?.title || 'READY');
       text(q('heroSubtitle'), s.hero?.subtitle || '-');
       text(q('heroDetail'), s.hero?.detail || '-');
@@ -1008,11 +1007,14 @@
       setBadgeState(q('tradingBadge'), s.liveControl?.tradingEnabled ? 'warn' : 'neutral', s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
       setBadgeState(q('killBadge'), s.liveControl?.killSwitch ? 'danger' : 'neutral', s.liveControl?.killSwitch ? 'KILL SWITCH ON' : 'KILL SWITCH OFF');
       setBadgeState(q('liveGuardBadge'), s.liveControl?.liveGuard === 'UNLOCKED' ? 'warn' : 'neutral', s.liveControl?.liveGuard === 'UNLOCKED' ? 'LIVE UNLOCKED' : 'LIVE LOCKED');
+      setBadgeState(q('liveArmBadge'), s.liveControl?.liveArmEnabled ? 'warn' : 'neutral', s.liveControl?.liveArmEnabled ? 'ARM ON' : 'ARM OFF');
 
       text(q('lcBrokerMode'), s.liveControl?.brokerMode || '-');
       text(q('lcTradingEnabled'), s.liveControl?.tradingEnabled ? 'YES' : 'NO');
       text(q('lcKillSwitch'), s.liveControl?.killSwitch ? 'ON' : 'OFF');
       text(q('lcLiveEnabled'), s.liveControl?.liveTradingEnabled ? 'YES' : 'NO');
+      text(q('lcUnlockArmed'), s.liveControl?.liveUnlockArmed ? 'YES' : 'NO');
+      text(q('lcArmEnabled'), s.liveControl?.liveArmEnabled ? 'YES' : 'NO');
       text(q('lcGuard'), s.liveControl?.liveGuard || '-');
       text(q('lcRealOrders'), s.liveControl?.realOrdersAllowed ? 'YES' : 'NO');
 
