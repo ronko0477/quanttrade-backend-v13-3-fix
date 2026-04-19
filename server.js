@@ -12,9 +12,10 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.12.2 LIMIT STABILITY + PAUSE LOG FIX
-   - pause log spam fixed
-   - stable win/loss/day-limit transitions
+   V22.12.3 LIVE ARM + CONTROL SAFETY
+   - live arm state added
+   - live control sync hardened
+   - pause log spam stays fixed
    - reset cleanup improved
    - postgres persist stable
    - alpaca paper broker connected
@@ -73,7 +74,7 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v22.12.2.json'),
+    file: path.join(process.cwd(), 'data', 'state.v22.12.3.json'),
     flushDebounceMs: 150,
     dbKey: 'global',
     tableName: 'app_state',
@@ -185,6 +186,52 @@ function maskDbUrl(url) {
   } catch {
     return 'SET_BUT_INVALID_FORMAT';
   }
+}
+
+function ensureLiveControlShape() {
+  if (!state.liveControl || typeof state.liveControl !== 'object') {
+    state.liveControl = {
+      tradingEnabled: false,
+      killSwitch: false,
+      liveTradingEnabled: false,
+      liveUnlockArmed: false,
+      liveArmEnabled: false,
+      liveGuard: 'LOCKED',
+      realOrdersAllowed: false,
+    };
+  }
+
+  if (typeof state.liveControl.liveArmEnabled !== 'boolean') {
+    state.liveControl.liveArmEnabled = false;
+  }
+
+  syncLiveControlState();
+}
+
+function syncLiveControlState() {
+  ensureLiveControlBaseShapeOnly();
+
+  state.liveControl.liveGuard =
+    state.liveControl.liveUnlockArmed && state.liveControl.liveTradingEnabled
+      ? 'UNLOCKED'
+      : 'LOCKED';
+
+  // In paper mode no real orders are ever allowed.
+  state.liveControl.realOrdersAllowed = false;
+}
+
+function ensureLiveControlBaseShapeOnly() {
+  if (!state.liveControl || typeof state.liveControl !== 'object') {
+    state.liveControl = {};
+  }
+
+  if (typeof state.liveControl.tradingEnabled !== 'boolean') state.liveControl.tradingEnabled = false;
+  if (typeof state.liveControl.killSwitch !== 'boolean') state.liveControl.killSwitch = false;
+  if (typeof state.liveControl.liveTradingEnabled !== 'boolean') state.liveControl.liveTradingEnabled = false;
+  if (typeof state.liveControl.liveUnlockArmed !== 'boolean') state.liveControl.liveUnlockArmed = false;
+  if (typeof state.liveControl.liveArmEnabled !== 'boolean') state.liveControl.liveArmEnabled = false;
+  if (typeof state.liveControl.liveGuard !== 'string') state.liveControl.liveGuard = 'LOCKED';
+  if (typeof state.liveControl.realOrdersAllowed !== 'boolean') state.liveControl.realOrdersAllowed = false;
 }
 
 /* =========================================================
@@ -498,7 +545,7 @@ async function brokerSubmitPaperOrder(side, symbol, qty = 1) {
 
 function createInitialState() {
   return {
-    version: 'V22.12.2 LIMIT STABILITY + PAUSE LOG FIX',
+    version: 'V22.12.3 LIVE ARM + CONTROL SAFETY',
 
     system: {
       status: 'READY',
@@ -593,6 +640,7 @@ function createInitialState() {
       killSwitch: false,
       liveTradingEnabled: false,
       liveUnlockArmed: false,
+      liveArmEnabled: false,
       liveGuard: 'LOCKED',
       realOrdersAllowed: false,
     },
@@ -738,7 +786,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V22.12.2 LIMIT STABILITY + PAUSE LOG FIX';
+  target.version = 'V22.12.3 LIVE ARM + CONTROL SAFETY';
 
   if (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0) {
     target.symbol = {
@@ -755,6 +803,7 @@ function mergeLoadedState(target, loaded) {
       killSwitch: false,
       liveTradingEnabled: false,
       liveUnlockArmed: false,
+      liveArmEnabled: false,
       liveGuard: 'LOCKED',
       realOrdersAllowed: false,
     };
@@ -769,6 +818,7 @@ function mergeLoadedState(target, loaded) {
   }
 
   ensureBrokerStateShape();
+  ensureLiveControlShape();
 
   target.session.maxTradesPerDay = CONFIG.session.maxTradesPerDay;
   target.session.winTarget = CONFIG.session.winTarget;
@@ -785,7 +835,7 @@ async function hydrateState() {
   let source = 'NEW';
 
   console.log('====================================================');
-  console.log('[boot] version: V22.12.2 LIMIT STABILITY + PAUSE LOG FIX');
+  console.log('[boot] version: V22.12.3 LIVE ARM + CONTROL SAFETY');
   console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
   console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
   console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
@@ -868,6 +918,8 @@ async function hydrateState() {
     await brokerConnect();
     await brokerRefreshAll();
   }
+
+  ensureLiveControlShape();
 
   isHydrated = true;
   await forcePersistNow();
@@ -995,6 +1047,8 @@ function resetDayIfNeeded() {
   state.system.subtitle = 'System bereit.';
   state.system.detail = state.session.autoMode ? `AI bereit für Entry. • ${state.symbol.active}` : 'Bereit für manuellen Modus.';
   state.system.liveBadge = state.session.autoMode ? 'AI AUTO ON' : 'LIVE';
+
+  ensureLiveControlShape();
 
   addLog(`Day reset ${today}`, { force: true, signature: `day-reset-${today}` });
   schedulePersist();
@@ -2048,6 +2102,7 @@ function getPublicState() {
       killSwitch: !!state.liveControl.killSwitch,
       liveTradingEnabled: !!state.liveControl.liveTradingEnabled,
       liveUnlockArmed: !!state.liveControl.liveUnlockArmed,
+      liveArmEnabled: !!state.liveControl.liveArmEnabled,
       liveGuard: state.liveControl.liveGuard || 'LOCKED',
       realOrdersAllowed: !!state.liveControl.realOrdersAllowed,
     },
@@ -2094,36 +2149,47 @@ app.post('/api/reset', async (_req, res) => {
   state.broker = keepBroker;
   state.logs = [];
 
+  ensureLiveControlShape();
+
   addLog('Manual reset', { force: true, signature: `manual-reset-${Date.now()}` });
   await forcePersistNow();
   res.json(getPublicState());
 });
 
 app.post('/api/live/broker-toggle', async (_req, res) => {
+  ensureLiveControlShape();
   state.liveControl.tradingEnabled = !state.liveControl.tradingEnabled;
+  syncLiveControlState();
+
   addLog(`Broker Trading ${state.liveControl.tradingEnabled ? 'ON' : 'OFF'}`, {
     force: true,
     signature: `broker-toggle-${state.liveControl.tradingEnabled}-${Date.now()}`,
   });
+
   await forcePersistNow();
   res.json(getPublicState());
 });
 
 app.post('/api/live/kill-switch', async (_req, res) => {
+  ensureLiveControlShape();
   state.liveControl.killSwitch = !state.liveControl.killSwitch;
+  syncLiveControlState();
+
   addLog(`Kill Switch ${state.liveControl.killSwitch ? 'ON' : 'OFF'}`, {
     force: true,
     signature: `kill-switch-${state.liveControl.killSwitch}-${Date.now()}`,
   });
+
   await forcePersistNow();
   res.json(getPublicState());
 });
 
 app.post('/api/live/unlock', async (_req, res) => {
+  ensureLiveControlShape();
+
   state.liveControl.liveUnlockArmed = true;
   state.liveControl.liveTradingEnabled = true;
-  state.liveControl.liveGuard = 'UNLOCKED';
-  state.liveControl.realOrdersAllowed = false;
+  syncLiveControlState();
 
   addLog('Live Unlock armed', {
     force: true,
@@ -2135,10 +2201,12 @@ app.post('/api/live/unlock', async (_req, res) => {
 });
 
 app.post('/api/live/lock', async (_req, res) => {
+  ensureLiveControlShape();
+
   state.liveControl.liveUnlockArmed = false;
   state.liveControl.liveTradingEnabled = false;
-  state.liveControl.liveGuard = 'LOCKED';
-  state.liveControl.realOrdersAllowed = false;
+  state.liveControl.liveArmEnabled = false;
+  syncLiveControlState();
 
   addLog('Live Lock active', {
     force: true,
@@ -2149,7 +2217,47 @@ app.post('/api/live/lock', async (_req, res) => {
   res.json(getPublicState());
 });
 
+app.post('/api/live/arm', async (_req, res) => {
+  ensureLiveControlShape();
+
+  const canArm =
+    state.liveControl.tradingEnabled &&
+    !state.liveControl.killSwitch &&
+    state.liveControl.liveTradingEnabled &&
+    state.liveControl.liveUnlockArmed &&
+    state.liveControl.liveGuard === 'UNLOCKED';
+
+  if (canArm) {
+    state.liveControl.liveArmEnabled = !state.liveControl.liveArmEnabled;
+    addLog(`Live Arm ${state.liveControl.liveArmEnabled ? 'ON' : 'OFF'}`, {
+      force: true,
+      signature: `live-arm-${state.liveControl.liveArmEnabled}-${Date.now()}`,
+    });
+  } else {
+    state.liveControl.liveArmEnabled = false;
+    addLog('Live Arm blocked', {
+      force: true,
+      signature: `live-arm-blocked-${Date.now()}`,
+    });
+  }
+
+  syncLiveControlState();
+  await forcePersistNow();
+  res.json(getPublicState());
+});
+
 app.post('/api/broker/manual-buy', async (_req, res) => {
+  ensureLiveControlShape();
+
+  if (!state.liveControl.tradingEnabled || state.liveControl.killSwitch) {
+    addLog(`Broker manual BUY blocked (${state.symbol.active})`, {
+      force: true,
+      signature: `broker-manual-buy-blocked-${state.symbol.active}-${Date.now()}`,
+    });
+    await forcePersistNow();
+    return res.json(getPublicState());
+  }
+
   const result = await brokerSubmitPaperOrder('buy', state.symbol.active, 1);
 
   if (result.ok) {
@@ -2174,6 +2282,17 @@ app.post('/api/broker/manual-buy', async (_req, res) => {
 });
 
 app.post('/api/broker/manual-sell', async (_req, res) => {
+  ensureLiveControlShape();
+
+  if (!state.liveControl.tradingEnabled || state.liveControl.killSwitch) {
+    addLog(`Broker manual SELL blocked (${state.symbol.active})`, {
+      force: true,
+      signature: `broker-manual-sell-blocked-${state.symbol.active}-${Date.now()}`,
+    });
+    await forcePersistNow();
+    return res.json(getPublicState());
+  }
+
   const result = await brokerSubmitPaperOrder('sell', state.symbol.active, 1);
 
   if (result.ok) {
@@ -2313,6 +2432,6 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log('V22.12.2 LIMIT STABILITY + PAUSE LOG FIX listening on :' + PORT);
+    console.log('V22.12.3 LIVE ARM + CONTROL SAFETY listening on :' + PORT);
   });
 })();
