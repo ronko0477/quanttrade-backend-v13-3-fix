@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>V22.12.3 Live Arm + Control Safety</title>
+  <title>V22.12.4 Live Ready Gate + Button Safety</title>
   <style>
     :root{
       --bg1:#0a1027;
@@ -405,6 +405,7 @@
       background:linear-gradient(180deg, #6f7dff 0%, #4e5cf1 100%);
       box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
       cursor:pointer;
+      transition:opacity .2s ease, filter .2s ease;
     }
 
     button.warn{
@@ -418,6 +419,12 @@
 
     button.secondary{
       background:linear-gradient(180deg, #7b87ff 0%, #5e6cff 100%);
+    }
+
+    button:disabled{
+      opacity:.42;
+      cursor:not-allowed;
+      filter:grayscale(.15);
     }
 
     .score-head{
@@ -585,7 +592,7 @@
   <div class="app">
     <div class="top-hero" id="topHero">
       <div class="top-title-row">
-        <div class="top-title" id="versionTitle">V22.12.3 LIVE ARM + CONTROL SAFETY</div>
+        <div class="top-title" id="versionTitle">V22.12.4 LIVE READY GATE + BUTTON SAFETY</div>
         <div class="top-dot" id="topDot"></div>
       </div>
 
@@ -694,6 +701,7 @@
         <div class="badge-row">
           <div class="badge neutral" id="dayState">DAY READY</div>
           <div class="badge neutral" id="syncState">SYNC DB OK</div>
+          <div class="badge neutral" id="liveStatusBadge">BLOCKED</div>
         </div>
 
         <div class="grid-2">
@@ -706,8 +714,8 @@
         <div class="action-grid" style="margin-top:16px">
           <button onclick="post('/api/auto/toggle')">AUTO TOGGLE</button>
           <button onclick="post('/api/reset')">RESET</button>
-          <button onclick="post('/api/manual/buy')">MANUAL BUY</button>
-          <button onclick="post('/api/manual/sell')">MANUAL SELL</button>
+          <button id="btnManualBuy" onclick="post('/api/manual/buy')">MANUAL BUY</button>
+          <button id="btnManualSell" onclick="post('/api/manual/sell')">MANUAL SELL</button>
         </div>
 
         <div class="action-grid one">
@@ -761,6 +769,7 @@
           <div class="row"><div class="rk">Live Arm Enabled</div><div class="rv" id="lcArmEnabled">NO</div></div>
           <div class="row"><div class="rk">Live Guard</div><div class="rv" id="lcGuard">LOCKED</div></div>
           <div class="row"><div class="rk">Real Orders Allowed</div><div class="rv" id="lcRealOrders">NO</div></div>
+          <div class="row"><div class="rk">Live Status</div><div class="rv" id="lcLiveStatus">BLOCKED</div></div>
         </div>
 
         <div class="action-grid" style="margin-top:16px">
@@ -769,8 +778,8 @@
           <button class="warn" onclick="post('/api/live/unlock')">UNLOCK LIVE</button>
           <button class="warn" onclick="post('/api/live/arm')">ARM LIVE</button>
           <button onclick="post('/api/live/lock')">LOCK LIVE</button>
-          <button onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
-          <button onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
+          <button id="btnBrokerBuy" onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
+          <button id="btnBrokerSell" onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
           <button class="secondary" onclick="refreshNow()">REFRESH NOW</button>
         </div>
       </section>
@@ -837,7 +846,7 @@
       const t = String(title || '').toUpperCase();
       if (t === 'TARGET') return 'target';
       if (t === 'SESSION_LIMIT') return 'limit';
-      if (t === 'LOCKED') return 'locked';
+      if (t === 'LOCKED' || t === 'BLOCKED' || t === 'ARMED') return 'locked';
       return 'ready';
     }
 
@@ -870,6 +879,32 @@
       const len = String(s.hero?.title || '').length;
       if (len >= 12) heroTitle.classList.add('xsmall');
       else if (len >= 9) heroTitle.classList.add('small');
+    }
+
+    function getLiveStatus(s){
+      const lc = s.liveControl || {};
+
+      if (lc.killSwitch) return { state:'BLOCKED', reason:'KILL SWITCH' };
+      if (!lc.tradingEnabled) return { state:'BLOCKED', reason:'TRADING OFF' };
+      if (!lc.liveTradingEnabled) return { state:'BLOCKED', reason:'LIVE DISABLED' };
+      if (lc.liveGuard !== 'UNLOCKED') return { state:'BLOCKED', reason:'LIVE LOCKED' };
+      if (!lc.liveUnlockArmed) return { state:'BLOCKED', reason:'UNLOCK OFF' };
+      if (!lc.liveArmEnabled) return { state:'ARMED', reason:'ARM LIVE NEEDED' };
+      if (!lc.realOrdersAllowed) return { state:'ARMED', reason:'REAL ORDERS OFF' };
+
+      return { state:'READY', reason:'LIVE READY' };
+    }
+
+    function applyTradeButtonState(live){
+      const allow = live.state === 'READY';
+      const ids = ['btnManualBuy','btnManualSell','btnBrokerBuy','btnBrokerSell'];
+
+      ids.forEach(id => {
+        const el = q(id);
+        if (!el) return;
+        el.disabled = !allow;
+        el.title = allow ? '' : live.reason;
+      });
     }
 
     async function getJson(url){
@@ -929,16 +964,24 @@
     function renderState(s){
       latestState = s;
 
-      text(q('versionTitle'), s.version || 'V22.12.3');
-      text(q('heroTitle'), s.hero?.title || 'READY');
-      text(q('heroSubtitle'), s.hero?.subtitle || '-');
-      text(q('heroDetail'), s.hero?.detail || '-');
+      const live = getLiveStatus(s);
+      const heroView = { ...(s.hero || {}) };
+
+      if (live.state === 'BLOCKED' || live.state === 'ARMED') {
+        heroView.title = live.state;
+        heroView.subtitle = live.reason;
+      }
+
+      text(q('versionTitle'), s.version || 'V22.12.4');
+      text(q('heroTitle'), heroView.title || 'READY');
+      text(q('heroSubtitle'), heroView.subtitle || '-');
+      text(q('heroDetail'), heroView.detail || '-');
       text(q('heroReasons'), (s.ai?.reasons || []).join(' • '));
       text(q('heroPnlMain'), fmtSigned(s.pnl?.botNetPnL ?? s.hero?.netPnL ?? 0));
       text(q('brokerDayPnl'), fmtSigned(s.pnl?.brokerDayPnL));
       text(q('brokerTotalPnl'), fmtSigned(s.pnl?.brokerTotalPnL));
 
-      const badgeText = s.hero?.liveBadge || '-';
+      const badgeText = heroView.liveBadge || '-';
       if (badgeText.includes('LOSS')) setPillState(q('heroBadge'), 'danger', badgeText);
       else if (badgeText.includes('TARGET') || badgeText.includes('COOLDOWN') || badgeText.includes('PROCESSING')) setPillState(q('heroBadge'), 'warn', badgeText);
       else setPillState(q('heroBadge'), 'good', badgeText);
@@ -987,12 +1030,16 @@
         setBadgeState(q('logSyncBadge'), 'good', syncText);
       }
 
+      if (live.state === 'READY') setBadgeState(q('liveStatusBadge'), 'good', live.state);
+      else if (live.state === 'ARMED') setBadgeState(q('liveStatusBadge'), 'warn', live.state);
+      else setBadgeState(q('liveStatusBadge'), 'danger', live.state);
+
       text(q('queueVal'), s.session?.queue ?? 0);
       text(q('processingVal'), s.session?.processing || '-');
       text(q('autoModeVal'), s.session?.autoMode || '-');
       text(q('symbolVal'), s.symbol?.active || '-');
 
-      text(q('brokerModeBadge'), (s.broker?.mode || '-').toUpperCase());
+      setBadgeState(q('brokerModeBadge'), 'neutral', (s.broker?.mode || '-').toUpperCase());
       setBadgeState(q('brokerConnectedBadge'), s.broker?.connected ? 'good' : 'danger', s.broker?.connected ? 'CONNECTED' : 'DISCONNECTED');
 
       text(q('brokerAccountStatus'), s.broker?.accountStatus || '-');
@@ -1017,10 +1064,12 @@
       text(q('lcArmEnabled'), s.liveControl?.liveArmEnabled ? 'YES' : 'NO');
       text(q('lcGuard'), s.liveControl?.liveGuard || '-');
       text(q('lcRealOrders'), s.liveControl?.realOrdersAllowed ? 'YES' : 'NO');
+      text(q('lcLiveStatus'), `${live.state} • ${live.reason}`);
 
       renderReasons(s.ai?.reasons || []);
       renderLogs(s.logs || []);
-      applyHeroTone(s);
+      applyHeroTone({ hero: heroView });
+      applyTradeButtonState(live);
     }
 
     async function refreshNow(){
