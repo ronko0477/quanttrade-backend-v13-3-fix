@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>V23 No Spam + Pause Lock</title>
+  <title>V23.1 No Spam + Pause Lock + Hold Throttle</title>
   <style>
     :root{
       --bg1:#0a1027;
@@ -84,8 +84,8 @@
 
     .top-hero.is-armed{
       background:
-        radial-gradient(circle at 89% 18%, rgba(255,214,120,.18) 0%, rgba(255,214,120,.05) 9%, transparent 17%),
-        linear-gradient(180deg, #0d142d 0%, #1d2857 48%, #34417c 100%);
+        radial-gradient(circle at 89% 18%, rgba(255,215,110,.18) 0%, rgba(255,215,110,.05) 9%, transparent 17%),
+        linear-gradient(180deg, #0d122c 0%, #263066 48%, #33408a 100%);
     }
 
     .top-title-row{
@@ -150,7 +150,7 @@
     }
 
     .hero-card.is-armed{
-      background:linear-gradient(180deg, rgba(214,219,255,.84) 0%, rgba(171,182,244,.80) 100%);
+      background:linear-gradient(180deg, rgba(212,216,255,.84) 0%, rgba(168,178,242,.80) 100%);
     }
 
     .hero-card:before{
@@ -415,11 +415,6 @@
       background:linear-gradient(180deg, #6f7dff 0%, #4e5cf1 100%);
       box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
       cursor:pointer;
-      transition:opacity .15s ease, transform .05s ease;
-    }
-
-    button:active{
-      transform:scale(.99);
     }
 
     button.warn{
@@ -436,9 +431,8 @@
     }
 
     button:disabled{
-      opacity:.35;
+      opacity:.45;
       cursor:not-allowed;
-      transform:none;
     }
 
     .score-head{
@@ -606,7 +600,7 @@
   <div class="app">
     <div class="top-hero" id="topHero">
       <div class="top-title-row">
-        <div class="top-title" id="versionTitle">V23 NO SPAM + PAUSE LOCK</div>
+        <div class="top-title" id="versionTitle">V23.1 NO SPAM + PAUSE LOCK + HOLD THROTTLE</div>
         <div class="top-dot" id="topDot"></div>
       </div>
 
@@ -715,7 +709,7 @@
         <div class="badge-row">
           <div class="badge neutral" id="dayState">DAY READY</div>
           <div class="badge neutral" id="syncState">SYNC DB OK</div>
-          <div class="badge neutral" id="statusModeBadge">READY</div>
+          <div class="badge neutral" id="blockedBadge">DAY READY</div>
         </div>
 
         <div class="grid-2">
@@ -783,17 +777,17 @@
           <div class="row"><div class="rk">Live Arm Enabled</div><div class="rv" id="lcArmEnabled">NO</div></div>
           <div class="row"><div class="rk">Live Guard</div><div class="rv" id="lcGuard">LOCKED</div></div>
           <div class="row"><div class="rk">Real Orders Allowed</div><div class="rv" id="lcRealOrders">NO</div></div>
-          <div class="row"><div class="rk">Live Status</div><div class="rv" id="lcLiveStatus">BLOCKED • LIVE DISABLED</div></div>
+          <div class="row"><div class="rk">Live Status</div><div class="rv" id="lcStatus">BLOCKED • LIVE DISABLED</div></div>
         </div>
 
         <div class="action-grid" style="margin-top:16px">
-          <button id="btnBrokerTrading" onclick="post('/api/live/broker-toggle')">BROKER TRADING</button>
-          <button id="btnKillSwitch" class="danger" onclick="post('/api/live/kill-switch')">KILL SWITCH</button>
-          <button id="btnUnlockLive" class="warn" onclick="post('/api/live/unlock')">UNLOCK LIVE</button>
-          <button id="btnArmLive" class="warn" onclick="post('/api/live/arm')">ARM LIVE</button>
-          <button id="btnLockLive" onclick="post('/api/live/lock')">LOCK LIVE</button>
-          <button id="btnBrokerBuy1" onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
-          <button id="btnBrokerSell1" onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
+          <button onclick="post('/api/live/broker-toggle')">BROKER TRADING</button>
+          <button class="danger" onclick="post('/api/live/kill-switch')">KILL SWITCH</button>
+          <button class="warn" onclick="post('/api/live/unlock')">UNLOCK LIVE</button>
+          <button class="warn" onclick="post('/api/live/arm')">ARM LIVE</button>
+          <button onclick="post('/api/live/lock')">LOCK LIVE</button>
+          <button id="btnBrokerBuy" onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
+          <button id="btnBrokerSell" onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
           <button class="secondary" onclick="refreshNow()">REFRESH NOW</button>
         </div>
       </section>
@@ -856,7 +850,7 @@
       el.textContent = label ?? '-';
     }
 
-    function setDisabled(id, disabled){
+    function setBtnDisabled(id, disabled){
       const el = q(id);
       if (!el) return;
       el.disabled = !!disabled;
@@ -866,8 +860,9 @@
       const t = String(title || '').toUpperCase();
       if (t === 'TARGET') return 'target';
       if (t === 'SESSION_LIMIT') return 'limit';
-      if (t === 'LOCKED' || t === 'BLOCKED') return 'locked';
+      if (t === 'LOCKED') return 'locked';
       if (t === 'ARMED') return 'armed';
+      if (t === 'BLOCKED') return 'locked';
       return 'ready';
     }
 
@@ -913,23 +908,11 @@
 
     async function post(url){
       try{
-        const res = await fetch(url, {
+        await fetch(url, {
           method:'POST',
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify({})
         });
-
-        let data = null;
-        try{
-          data = await res.json();
-        }catch(_err){
-          data = null;
-        }
-
-        if (!res.ok && data && data.error) {
-          alert(data.error);
-        }
-
         await refreshNow();
       }catch(err){
         alert('POST Fehler');
@@ -954,8 +937,8 @@
 
     function getLogClass(item){
       const t = String(item || '');
-      if (t.includes('WIN PnL') || t.includes('Broker order accepted') || t.includes('SYNC DB OK')) return 'is-good';
-      if (t.includes('Loss Limit') || t.includes('LOSS PnL') || t.includes('Kill Switch ON') || t.includes('failed') || t.includes('blocked')) return 'is-danger';
+      if (t.includes('WIN PnL') || t.includes('Broker order accepted') || t.includes('SYNC DB OK') || t.includes('Learning WIN')) return 'is-good';
+      if (t.includes('Loss Limit') || t.includes('LOSS PnL') || t.includes('Kill Switch ON') || t.includes('failed') || t.includes('blocked') || t.includes('Learning LOSS')) return 'is-danger';
       if (t.includes('TARGET') || t.includes('Live Unlock') || t.includes('Live Arm') || t.includes('Cooldown') || t.includes('Order wird verarbeitet') || t.includes('Order queued')) return 'is-warn';
       return 'is-accent';
     }
@@ -972,32 +955,22 @@
       });
     }
 
-    function applyButtons(s){
+    function applyButtonLocks(s){
       const paused = !!s.ai?.paused;
-      const processing = String(s.session?.processing || '').toUpperCase() === 'ON';
+      const processing = String(s.session?.processing || 'OFF') === 'ON';
+      const brokerEnabled = !!s.broker?.enabled;
+      const brokerConnected = !!s.broker?.connected;
 
-      const tradingEnabled = !!s.liveControl?.tradingEnabled;
-      const killSwitch = !!s.liveControl?.killSwitch;
-      const liveEnabled = !!s.liveControl?.liveTradingEnabled;
-      const unlockArmed = !!s.liveControl?.liveUnlockArmed;
-      const armEnabled = !!s.liveControl?.liveArmEnabled;
-      const realOrdersAllowed = !!s.liveControl?.realOrdersAllowed;
-
-      setDisabled('btnManualBuy', paused || processing);
-      setDisabled('btnManualSell', paused || processing);
-
-      setDisabled('btnBrokerBuy1', !realOrdersAllowed || processing);
-      setDisabled('btnBrokerSell1', !realOrdersAllowed || processing);
-
-      setDisabled('btnUnlockLive', !tradingEnabled || killSwitch);
-      setDisabled('btnArmLive', !tradingEnabled || killSwitch || !liveEnabled || !unlockArmed);
-      setDisabled('btnLockLive', !liveEnabled && !unlockArmed && !armEnabled);
+      setBtnDisabled('btnManualBuy', paused || processing);
+      setBtnDisabled('btnManualSell', paused || processing);
+      setBtnDisabled('btnBrokerBuy', !brokerEnabled || !brokerConnected);
+      setBtnDisabled('btnBrokerSell', !brokerEnabled || !brokerConnected);
     }
 
     function renderState(s){
       latestState = s;
 
-      text(q('versionTitle'), s.version || 'V23');
+      text(q('versionTitle'), s.version || 'V23.1');
       text(q('heroTitle'), s.hero?.title || 'READY');
       text(q('heroSubtitle'), s.hero?.subtitle || '-');
       text(q('heroDetail'), s.hero?.detail || '-');
@@ -1008,7 +981,7 @@
 
       const badgeText = s.hero?.liveBadge || '-';
       if (badgeText.includes('LOSS')) setPillState(q('heroBadge'), 'danger', badgeText);
-      else if (badgeText.includes('TARGET') || badgeText.includes('COOLDOWN') || badgeText.includes('PROCESSING')) setPillState(q('heroBadge'), 'warn', badgeText);
+      else if (badgeText.includes('TARGET') || badgeText.includes('COOLDOWN') || badgeText.includes('PROCESSING') || badgeText.includes('SESSION')) setPillState(q('heroBadge'), 'warn', badgeText);
       else setPillState(q('heroBadge'), 'good', badgeText);
 
       text(q('aiSignal'), s.ai?.signal || '-');
@@ -1038,24 +1011,12 @@
       if (dayState === 'WIN TARGET') {
         setBadgeState(q('dayState'), 'warn', dayState);
         setBadgeState(q('logDayBadge'), 'warn', dayState);
-      } else if (dayState === 'LOSS LIMIT' || dayState === 'DAY LIMIT' || dayState === 'BLOCKED') {
+      } else if (dayState === 'LOSS LIMIT' || dayState === 'DAY LIMIT') {
         setBadgeState(q('dayState'), 'danger', dayState);
         setBadgeState(q('logDayBadge'), 'danger', dayState);
-      } else if (dayState === 'ARMED') {
-        setBadgeState(q('dayState'), 'warn', dayState);
-        setBadgeState(q('logDayBadge'), 'warn', dayState);
       } else {
         setBadgeState(q('dayState'), 'good', dayState);
         setBadgeState(q('logDayBadge'), 'good', dayState);
-      }
-
-      const statusTitle = String(s.hero?.title || 'READY').toUpperCase();
-      if (statusTitle === 'BLOCKED' || statusTitle === 'SESSION_LIMIT') {
-        setBadgeState(q('statusModeBadge'), 'danger', statusTitle);
-      } else if (statusTitle === 'ARMED' || statusTitle === 'TARGET' || statusTitle === 'LOCKED') {
-        setBadgeState(q('statusModeBadge'), 'warn', statusTitle);
-      } else {
-        setBadgeState(q('statusModeBadge'), 'good', statusTitle);
       }
 
       const syncText = s.session?.sync || '-';
@@ -1066,6 +1027,11 @@
         setBadgeState(q('syncState'), 'good', syncText);
         setBadgeState(q('logSyncBadge'), 'good', syncText);
       }
+
+      const blocked = String(s.session?.blockedBadge || '-').toUpperCase();
+      if (blocked.includes('BLOCK')) setBadgeState(q('blockedBadge'), 'danger', blocked);
+      else if (blocked.includes('ARM')) setBadgeState(q('blockedBadge'), 'warn', blocked);
+      else setBadgeState(q('blockedBadge'), 'good', blocked);
 
       text(q('queueVal'), s.session?.queue ?? 0);
       text(q('processingVal'), s.session?.processing || '-');
@@ -1097,12 +1063,12 @@
       text(q('lcArmEnabled'), s.liveControl?.liveArmEnabled ? 'YES' : 'NO');
       text(q('lcGuard'), s.liveControl?.liveGuard || '-');
       text(q('lcRealOrders'), s.liveControl?.realOrdersAllowed ? 'YES' : 'NO');
-      text(q('lcLiveStatus'), s.liveControl?.liveStatus || '-');
+      text(q('lcStatus'), s.liveControl?.liveStatus || '-');
 
       renderReasons(s.ai?.reasons || []);
       renderLogs(s.logs || []);
       applyHeroTone(s);
-      applyButtons(s);
+      applyButtonLocks(s);
     }
 
     async function refreshNow(){
