@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>V23.1 No Spam + Pause Lock + Hold Throttle</title>
+  <title>V23.3 PRO FULL</title>
   <style>
     :root{
       --bg1:#0a1027;
@@ -84,8 +84,14 @@
 
     .top-hero.is-armed{
       background:
-        radial-gradient(circle at 89% 18%, rgba(255,215,110,.18) 0%, rgba(255,215,110,.05) 9%, transparent 17%),
-        linear-gradient(180deg, #0d122c 0%, #263066 48%, #33408a 100%);
+        radial-gradient(circle at 89% 18%, rgba(242,191,84,.18) 0%, rgba(242,191,84,.05) 9%, transparent 17%),
+        linear-gradient(180deg, #1b1730 0%, #2e2f62 48%, #41458a 100%);
+    }
+
+    .top-hero.is-live{
+      background:
+        radial-gradient(circle at 89% 18%, rgba(140,224,143,.22) 0%, rgba(140,224,143,.05) 9%, transparent 17%),
+        linear-gradient(180deg, #0c1a22 0%, #18384b 48%, #275869 100%);
     }
 
     .top-title-row{
@@ -126,6 +132,11 @@
       box-shadow:0 0 0 10px rgba(255,133,141,.12), 0 0 20px rgba(255,133,141,.45);
     }
 
+    .top-dot.is-live{
+      background:#8ce08f;
+      box-shadow:0 0 0 10px rgba(140,224,143,.12), 0 0 20px rgba(140,224,143,.45);
+    }
+
     .hero-card{
       border-radius:34px;
       padding:18px 18px 20px;
@@ -150,7 +161,11 @@
     }
 
     .hero-card.is-armed{
-      background:linear-gradient(180deg, rgba(212,216,255,.84) 0%, rgba(168,178,242,.80) 100%);
+      background:linear-gradient(180deg, rgba(223,214,255,.84) 0%, rgba(175,169,241,.78) 100%);
+    }
+
+    .hero-card.is-live{
+      background:linear-gradient(180deg, rgba(190,238,216,.84) 0%, rgba(133,205,172,.78) 100%);
     }
 
     .hero-card:before{
@@ -175,13 +190,8 @@
       overflow-wrap:anywhere;
     }
 
-    .hero-title.small{
-      font-size:64px;
-    }
-
-    .hero-title.xsmall{
-      font-size:52px;
-    }
+    .hero-title.small{font-size:64px}
+    .hero-title.xsmall{font-size:52px}
 
     .hero-subtitle{
       text-align:center;
@@ -295,6 +305,11 @@
       background:linear-gradient(180deg, #6f7dff 0%, #4e5cf1 100%);
     }
 
+    .pill.live{
+      background:linear-gradient(180deg, #8ce08f 0%, #57c96d 100%);
+      color:#102414;
+    }
+
     .content{
       padding:16px 14px 30px;
       display:grid;
@@ -358,6 +373,12 @@
       background:rgba(255,255,255,.10);
       border-color:rgba(255,255,255,.08);
       color:#f6f8ff;
+    }
+
+    .badge.live{
+      background:rgba(140,224,143,.18);
+      border-color:rgba(140,224,143,.30);
+      color:#efffee;
     }
 
     .grid-2{
@@ -430,9 +451,9 @@
       background:linear-gradient(180deg, #7b87ff 0%, #5e6cff 100%);
     }
 
-    button:disabled{
-      opacity:.45;
-      cursor:not-allowed;
+    button.live{
+      background:linear-gradient(180deg, #8ce08f 0%, #57c96d 100%);
+      color:#102414;
     }
 
     .score-head{
@@ -600,7 +621,7 @@
   <div class="app">
     <div class="top-hero" id="topHero">
       <div class="top-title-row">
-        <div class="top-title" id="versionTitle">V23.1 NO SPAM + PAUSE LOCK + HOLD THROTTLE</div>
+        <div class="top-title" id="versionTitle">V23.3 PRO FULL</div>
         <div class="top-dot" id="topDot"></div>
       </div>
 
@@ -709,7 +730,6 @@
         <div class="badge-row">
           <div class="badge neutral" id="dayState">DAY READY</div>
           <div class="badge neutral" id="syncState">SYNC DB OK</div>
-          <div class="badge neutral" id="blockedBadge">DAY READY</div>
         </div>
 
         <div class="grid-2">
@@ -720,10 +740,10 @@
         </div>
 
         <div class="action-grid" style="margin-top:16px">
-          <button id="btnAutoToggle" onclick="post('/api/auto/toggle')">AUTO TOGGLE</button>
-          <button id="btnReset" onclick="post('/api/reset')">RESET</button>
-          <button id="btnManualBuy" onclick="post('/api/manual/buy')">MANUAL BUY</button>
-          <button id="btnManualSell" onclick="post('/api/manual/sell')">MANUAL SELL</button>
+          <button onclick="post('/api/auto/toggle')">AUTO TOGGLE</button>
+          <button onclick="post('/api/reset')">RESET</button>
+          <button onclick="post('/api/manual/buy')">MANUAL BUY</button>
+          <button onclick="post('/api/manual/sell')">MANUAL SELL</button>
         </div>
 
         <div class="action-grid one">
@@ -764,6 +784,7 @@
           <div class="badge neutral" id="killBadge">KILL SWITCH OFF</div>
           <div class="badge neutral" id="liveGuardBadge">LIVE LOCKED</div>
           <div class="badge neutral" id="liveArmBadge">ARM OFF</div>
+          <div class="badge neutral" id="liveStatusBadge">BLOCKED</div>
         </div>
 
         <h3>LIVE CONTROL PANEL</h3>
@@ -777,7 +798,7 @@
           <div class="row"><div class="rk">Live Arm Enabled</div><div class="rv" id="lcArmEnabled">NO</div></div>
           <div class="row"><div class="rk">Live Guard</div><div class="rv" id="lcGuard">LOCKED</div></div>
           <div class="row"><div class="rk">Real Orders Allowed</div><div class="rv" id="lcRealOrders">NO</div></div>
-          <div class="row"><div class="rk">Live Status</div><div class="rv" id="lcStatus">BLOCKED • LIVE DISABLED</div></div>
+          <div class="row"><div class="rk">Live Status</div><div class="rv" id="lcLiveStatus">BLOCKED • LIVE DISABLED</div></div>
         </div>
 
         <div class="action-grid" style="margin-top:16px">
@@ -786,8 +807,8 @@
           <button class="warn" onclick="post('/api/live/unlock')">UNLOCK LIVE</button>
           <button class="warn" onclick="post('/api/live/arm')">ARM LIVE</button>
           <button onclick="post('/api/live/lock')">LOCK LIVE</button>
-          <button id="btnBrokerBuy" onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
-          <button id="btnBrokerSell" onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
+          <button class="live" onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
+          <button class="live" onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
           <button class="secondary" onclick="refreshNow()">REFRESH NOW</button>
         </div>
       </section>
@@ -850,19 +871,13 @@
       el.textContent = label ?? '-';
     }
 
-    function setBtnDisabled(id, disabled){
-      const el = q(id);
-      if (!el) return;
-      el.disabled = !!disabled;
-    }
-
     function heroTone(title){
       const t = String(title || '').toUpperCase();
       if (t === 'TARGET') return 'target';
       if (t === 'SESSION_LIMIT') return 'limit';
       if (t === 'LOCKED') return 'locked';
       if (t === 'ARMED') return 'armed';
-      if (t === 'BLOCKED') return 'locked';
+      if (t === 'LIVE') return 'live';
       return 'ready';
     }
 
@@ -872,9 +887,9 @@
       const topDot = q('topDot');
       const heroTitle = q('heroTitle');
 
-      topHero.classList.remove('is-target','is-limit','is-locked','is-armed');
-      heroCard.classList.remove('is-target','is-limit','is-locked','is-armed');
-      topDot.classList.remove('is-warn','is-danger');
+      topHero.classList.remove('is-target','is-limit','is-locked','is-armed','is-live');
+      heroCard.classList.remove('is-target','is-limit','is-locked','is-armed','is-live');
+      topDot.classList.remove('is-warn','is-danger','is-live');
 
       const tone = heroTone(s.hero?.title);
 
@@ -893,6 +908,10 @@
         topHero.classList.add('is-armed');
         heroCard.classList.add('is-armed');
         topDot.classList.add('is-warn');
+      } else if (tone === 'live') {
+        topHero.classList.add('is-live');
+        heroCard.classList.add('is-live');
+        topDot.classList.add('is-live');
       }
 
       heroTitle.classList.remove('small','xsmall');
@@ -908,11 +927,21 @@
 
     async function post(url){
       try{
-        await fetch(url, {
+        const res = await fetch(url, {
           method:'POST',
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify({})
         });
+
+        if (!res.ok) {
+          const maybe = await res.json().catch(() => null);
+          if (maybe?.error) {
+            alert(maybe.error);
+          } else {
+            alert('POST Fehler');
+          }
+        }
+
         await refreshNow();
       }catch(err){
         alert('POST Fehler');
@@ -937,9 +966,9 @@
 
     function getLogClass(item){
       const t = String(item || '');
-      if (t.includes('WIN PnL') || t.includes('Broker order accepted') || t.includes('SYNC DB OK') || t.includes('Learning WIN')) return 'is-good';
-      if (t.includes('Loss Limit') || t.includes('LOSS PnL') || t.includes('Kill Switch ON') || t.includes('failed') || t.includes('blocked') || t.includes('Learning LOSS')) return 'is-danger';
-      if (t.includes('TARGET') || t.includes('Live Unlock') || t.includes('Live Arm') || t.includes('Cooldown') || t.includes('Order wird verarbeitet') || t.includes('Order queued')) return 'is-warn';
+      if (t.includes('WIN PnL') || t.includes('Broker order accepted') || t.includes('SYNC DB OK') || t.includes('LIVE • REAL ORDERS ON')) return 'is-good';
+      if (t.includes('Loss Limit') || t.includes('LOSS PnL') || t.includes('Kill Switch ON') || t.includes('failed') || t.includes('blocked')) return 'is-danger';
+      if (t.includes('TARGET') || t.includes('Live Unlock') || t.includes('Live Arm') || t.includes('Cooldown') || t.includes('Order wird verarbeitet') || t.includes('Order queued') || t.includes('ARMED')) return 'is-warn';
       return 'is-accent';
     }
 
@@ -955,22 +984,31 @@
       });
     }
 
-    function applyButtonLocks(s){
-      const paused = !!s.ai?.paused;
-      const processing = String(s.session?.processing || 'OFF') === 'ON';
-      const brokerEnabled = !!s.broker?.enabled;
-      const brokerConnected = !!s.broker?.connected;
+    function applyLiveStatusBadge(textValue){
+      const t = String(textValue || '').toUpperCase();
 
-      setBtnDisabled('btnManualBuy', paused || processing);
-      setBtnDisabled('btnManualSell', paused || processing);
-      setBtnDisabled('btnBrokerBuy', !brokerEnabled || !brokerConnected);
-      setBtnDisabled('btnBrokerSell', !brokerEnabled || !brokerConnected);
+      if (t.includes('REAL ORDERS ON') || t.startsWith('LIVE')) {
+        setBadgeState(q('liveStatusBadge'), 'live', 'LIVE ON');
+        return;
+      }
+
+      if (t.startsWith('ARMED')) {
+        setBadgeState(q('liveStatusBadge'), 'warn', 'ARMED');
+        return;
+      }
+
+      if (t.includes('KILL SWITCH')) {
+        setBadgeState(q('liveStatusBadge'), 'danger', 'KILL BLOCK');
+        return;
+      }
+
+      setBadgeState(q('liveStatusBadge'), 'neutral', 'BLOCKED');
     }
 
     function renderState(s){
       latestState = s;
 
-      text(q('versionTitle'), s.version || 'V23.1');
+      text(q('versionTitle'), s.version || 'V23.3 PRO FULL');
       text(q('heroTitle'), s.hero?.title || 'READY');
       text(q('heroSubtitle'), s.hero?.subtitle || '-');
       text(q('heroDetail'), s.hero?.detail || '-');
@@ -981,7 +1019,8 @@
 
       const badgeText = s.hero?.liveBadge || '-';
       if (badgeText.includes('LOSS')) setPillState(q('heroBadge'), 'danger', badgeText);
-      else if (badgeText.includes('TARGET') || badgeText.includes('COOLDOWN') || badgeText.includes('PROCESSING') || badgeText.includes('SESSION')) setPillState(q('heroBadge'), 'warn', badgeText);
+      else if (badgeText.includes('TARGET') || badgeText.includes('COOLDOWN') || badgeText.includes('PROCESSING') || badgeText.includes('WIN TARGET')) setPillState(q('heroBadge'), 'warn', badgeText);
+      else if (String(s.liveControl?.liveStatus || '').includes('REAL ORDERS ON')) setPillState(q('heroBadge'), 'live', badgeText);
       else setPillState(q('heroBadge'), 'good', badgeText);
 
       text(q('aiSignal'), s.ai?.signal || '-');
@@ -1014,6 +1053,12 @@
       } else if (dayState === 'LOSS LIMIT' || dayState === 'DAY LIMIT') {
         setBadgeState(q('dayState'), 'danger', dayState);
         setBadgeState(q('logDayBadge'), 'danger', dayState);
+      } else if (dayState === 'ARMED') {
+        setBadgeState(q('dayState'), 'warn', dayState);
+        setBadgeState(q('logDayBadge'), 'warn', dayState);
+      } else if (dayState === 'BLOCKED') {
+        setBadgeState(q('dayState'), 'neutral', dayState);
+        setBadgeState(q('logDayBadge'), 'neutral', dayState);
       } else {
         setBadgeState(q('dayState'), 'good', dayState);
         setBadgeState(q('logDayBadge'), 'good', dayState);
@@ -1028,17 +1073,12 @@
         setBadgeState(q('logSyncBadge'), 'good', syncText);
       }
 
-      const blocked = String(s.session?.blockedBadge || '-').toUpperCase();
-      if (blocked.includes('BLOCK')) setBadgeState(q('blockedBadge'), 'danger', blocked);
-      else if (blocked.includes('ARM')) setBadgeState(q('blockedBadge'), 'warn', blocked);
-      else setBadgeState(q('blockedBadge'), 'good', blocked);
-
       text(q('queueVal'), s.session?.queue ?? 0);
       text(q('processingVal'), s.session?.processing || '-');
       text(q('autoModeVal'), s.session?.autoMode || '-');
       text(q('symbolVal'), s.symbol?.active || '-');
 
-      text(q('brokerModeBadge'), (s.broker?.mode || '-').toUpperCase());
+      setBadgeState(q('brokerModeBadge'), 'neutral', (s.broker?.mode || '-').toUpperCase());
       setBadgeState(q('brokerConnectedBadge'), s.broker?.connected ? 'good' : 'danger', s.broker?.connected ? 'CONNECTED' : 'DISCONNECTED');
 
       text(q('brokerAccountStatus'), s.broker?.accountStatus || '-');
@@ -1050,10 +1090,18 @@
       text(q('brokerLastOrder'), s.broker?.lastOrder || '-');
       text(q('brokerError'), s.broker?.lastError || '-');
 
-      setBadgeState(q('tradingBadge'), s.liveControl?.tradingEnabled ? 'warn' : 'neutral', s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
+      const liveStatus = s.liveControl?.liveStatus || '-';
+
+      if (String(liveStatus).includes('REAL ORDERS ON')) {
+        setBadgeState(q('tradingBadge'), 'live', s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
+      } else {
+        setBadgeState(q('tradingBadge'), s.liveControl?.tradingEnabled ? 'warn' : 'neutral', s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
+      }
+
       setBadgeState(q('killBadge'), s.liveControl?.killSwitch ? 'danger' : 'neutral', s.liveControl?.killSwitch ? 'KILL SWITCH ON' : 'KILL SWITCH OFF');
       setBadgeState(q('liveGuardBadge'), s.liveControl?.liveGuard === 'UNLOCKED' ? 'warn' : 'neutral', s.liveControl?.liveGuard === 'UNLOCKED' ? 'LIVE UNLOCKED' : 'LIVE LOCKED');
       setBadgeState(q('liveArmBadge'), s.liveControl?.liveArmEnabled ? 'warn' : 'neutral', s.liveControl?.liveArmEnabled ? 'ARM ON' : 'ARM OFF');
+      applyLiveStatusBadge(liveStatus);
 
       text(q('lcBrokerMode'), s.liveControl?.brokerMode || '-');
       text(q('lcTradingEnabled'), s.liveControl?.tradingEnabled ? 'YES' : 'NO');
@@ -1063,12 +1111,11 @@
       text(q('lcArmEnabled'), s.liveControl?.liveArmEnabled ? 'YES' : 'NO');
       text(q('lcGuard'), s.liveControl?.liveGuard || '-');
       text(q('lcRealOrders'), s.liveControl?.realOrdersAllowed ? 'YES' : 'NO');
-      text(q('lcStatus'), s.liveControl?.liveStatus || '-');
+      text(q('lcLiveStatus'), liveStatus);
 
       renderReasons(s.ai?.reasons || []);
       renderLogs(s.logs || []);
       applyHeroTone(s);
-      applyButtonLocks(s);
     }
 
     async function refreshNow(){
