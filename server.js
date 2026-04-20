@@ -12,12 +12,11 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V22.12.3 LIVE ARM + CONTROL SAFETY
-   - live arm state added
-   - live control sync hardened
-   - pause log spam stays fixed
-   - reset cleanup improved
-   - postgres persist stable
+   V23 NO SPAM + PAUSE LOCK
+   - AI Paused log spam fixed
+   - pause state logs only once per pause-state
+   - restore + persist stable
+   - live arm / unlock safety kept
    - alpaca paper broker connected
    - bot pnl and broker pnl separated
    ========================================================= */
@@ -74,7 +73,7 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v22.12.3.json'),
+    file: path.join(process.cwd(), 'data', 'state.v23.json'),
     flushDebounceMs: 150,
     dbKey: 'global',
     tableName: 'app_state',
@@ -186,52 +185,6 @@ function maskDbUrl(url) {
   } catch {
     return 'SET_BUT_INVALID_FORMAT';
   }
-}
-
-function ensureLiveControlShape() {
-  if (!state.liveControl || typeof state.liveControl !== 'object') {
-    state.liveControl = {
-      tradingEnabled: false,
-      killSwitch: false,
-      liveTradingEnabled: false,
-      liveUnlockArmed: false,
-      liveArmEnabled: false,
-      liveGuard: 'LOCKED',
-      realOrdersAllowed: false,
-    };
-  }
-
-  if (typeof state.liveControl.liveArmEnabled !== 'boolean') {
-    state.liveControl.liveArmEnabled = false;
-  }
-
-  syncLiveControlState();
-}
-
-function syncLiveControlState() {
-  ensureLiveControlBaseShapeOnly();
-
-  state.liveControl.liveGuard =
-    state.liveControl.liveUnlockArmed && state.liveControl.liveTradingEnabled
-      ? 'UNLOCKED'
-      : 'LOCKED';
-
-  // In paper mode no real orders are ever allowed.
-  state.liveControl.realOrdersAllowed = false;
-}
-
-function ensureLiveControlBaseShapeOnly() {
-  if (!state.liveControl || typeof state.liveControl !== 'object') {
-    state.liveControl = {};
-  }
-
-  if (typeof state.liveControl.tradingEnabled !== 'boolean') state.liveControl.tradingEnabled = false;
-  if (typeof state.liveControl.killSwitch !== 'boolean') state.liveControl.killSwitch = false;
-  if (typeof state.liveControl.liveTradingEnabled !== 'boolean') state.liveControl.liveTradingEnabled = false;
-  if (typeof state.liveControl.liveUnlockArmed !== 'boolean') state.liveControl.liveUnlockArmed = false;
-  if (typeof state.liveControl.liveArmEnabled !== 'boolean') state.liveControl.liveArmEnabled = false;
-  if (typeof state.liveControl.liveGuard !== 'string') state.liveControl.liveGuard = 'LOCKED';
-  if (typeof state.liveControl.realOrdersAllowed !== 'boolean') state.liveControl.realOrdersAllowed = false;
 }
 
 /* =========================================================
@@ -540,12 +493,69 @@ async function brokerSubmitPaperOrder(side, symbol, qty = 1) {
 }
 
 /* =========================================================
+   Live control helpers
+   ========================================================= */
+
+function refreshLiveControlState() {
+  if (!state.liveControl || typeof state.liveControl !== 'object') {
+    state.liveControl = {
+      tradingEnabled: false,
+      killSwitch: false,
+      liveTradingEnabled: false,
+      liveUnlockArmed: false,
+      liveArmEnabled: false,
+      liveGuard: 'LOCKED',
+      realOrdersAllowed: false,
+      liveStatus: 'BLOCKED • LIVE DISABLED',
+    };
+  }
+
+  if (state.liveControl.killSwitch) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'BLOCKED • KILL SWITCH';
+    return;
+  }
+
+  if (!state.liveControl.tradingEnabled) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'BLOCKED • TRADING OFF';
+    return;
+  }
+
+  if (!state.liveControl.liveTradingEnabled) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'BLOCKED • LIVE DISABLED';
+    return;
+  }
+
+  if (state.liveControl.liveGuard !== 'UNLOCKED' || !state.liveControl.liveUnlockArmed) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'BLOCKED • LIVE LOCKED';
+    return;
+  }
+
+  if (!state.liveControl.liveArmEnabled) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'ARMED • REAL ORDERS OFF';
+    return;
+  }
+
+  state.liveControl.realOrdersAllowed = true;
+  state.liveControl.liveStatus = 'LIVE • REAL ORDERS ON';
+}
+
+function clearLiveArmOnly() {
+  state.liveControl.liveArmEnabled = false;
+  refreshLiveControlState();
+}
+
+/* =========================================================
    State factory
    ========================================================= */
 
 function createInitialState() {
   return {
-    version: 'V22.12.3 LIVE ARM + CONTROL SAFETY',
+    version: 'V23 NO SPAM + PAUSE LOCK',
 
     system: {
       status: 'READY',
@@ -619,6 +629,7 @@ function createInitialState() {
       lastLogSignature: '',
       lastHoldReason: '',
       lastPauseLogKey: '',
+      pauseStateLoggedKey: '',
     },
 
     symbol: {
@@ -643,6 +654,7 @@ function createInitialState() {
       liveArmEnabled: false,
       liveGuard: 'LOCKED',
       realOrdersAllowed: false,
+      liveStatus: 'BLOCKED • LIVE DISABLED',
     },
 
     broker: {
@@ -786,7 +798,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V22.12.3 LIVE ARM + CONTROL SAFETY';
+  target.version = 'V23 NO SPAM + PAUSE LOCK';
 
   if (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0) {
     target.symbol = {
@@ -806,7 +818,12 @@ function mergeLoadedState(target, loaded) {
       liveArmEnabled: false,
       liveGuard: 'LOCKED',
       realOrdersAllowed: false,
+      liveStatus: 'BLOCKED • LIVE DISABLED',
     };
+  }
+
+  if (typeof target.liveControl.liveArmEnabled !== 'boolean') {
+    target.liveControl.liveArmEnabled = false;
   }
 
   if (!target.engine || typeof target.engine !== 'object') {
@@ -817,8 +834,12 @@ function mergeLoadedState(target, loaded) {
     target.engine.lastPauseLogKey = '';
   }
 
+  if (typeof target.engine.pauseStateLoggedKey !== 'string') {
+    target.engine.pauseStateLoggedKey = '';
+  }
+
   ensureBrokerStateShape();
-  ensureLiveControlShape();
+  refreshLiveControlState();
 
   target.session.maxTradesPerDay = CONFIG.session.maxTradesPerDay;
   target.session.winTarget = CONFIG.session.winTarget;
@@ -835,7 +856,7 @@ async function hydrateState() {
   let source = 'NEW';
 
   console.log('====================================================');
-  console.log('[boot] version: V22.12.3 LIVE ARM + CONTROL SAFETY');
+  console.log('[boot] version: V23 NO SPAM + PAUSE LOCK');
   console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
   console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
   console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
@@ -919,7 +940,7 @@ async function hydrateState() {
     await brokerRefreshAll();
   }
 
-  ensureLiveControlShape();
+  refreshLiveControlState();
 
   isHydrated = true;
   await forcePersistNow();
@@ -1001,6 +1022,7 @@ function setPauseReason(reason) {
 
   state.ai.paused = true;
   state.ai.pauseReason = reason;
+  state.engine.pauseStateLoggedKey = '';
   pauseLogIfChanged(reason);
 }
 
@@ -1008,6 +1030,7 @@ function clearPauseState() {
   state.ai.paused = false;
   state.ai.pauseReason = '';
   state.engine.lastPauseLogKey = '';
+  state.engine.pauseStateLoggedKey = '';
 }
 
 /* =========================================================
@@ -1042,13 +1065,12 @@ function resetDayIfNeeded() {
   state.engine.lastDecisionKey = '';
   state.engine.lastHoldReason = '';
   state.engine.lastPauseLogKey = '';
+  state.engine.pauseStateLoggedKey = '';
 
   state.system.status = 'READY';
   state.system.subtitle = 'System bereit.';
   state.system.detail = state.session.autoMode ? `AI bereit für Entry. • ${state.symbol.active}` : 'Bereit für manuellen Modus.';
   state.system.liveBadge = state.session.autoMode ? 'AI AUTO ON' : 'LIVE';
-
-  ensureLiveControlShape();
 
   addLog(`Day reset ${today}`, { force: true, signature: `day-reset-${today}` });
   schedulePersist();
@@ -1589,11 +1611,13 @@ function buildAiReasons(metrics, confidence) {
 }
 
 function mapHero(stage, signal, confidence, detail) {
+  refreshLiveControlState();
+
   if (state.ai.paused) {
     if (state.ai.pauseReason === 'WIN_TARGET') {
       return {
-        status: 'TARGET',
-        subtitle: 'Win Target erreicht.',
+        status: state.liveControl.liveArmEnabled ? 'ARMED' : 'BLOCKED',
+        subtitle: state.liveControl.liveArmEnabled ? 'REAL ORDERS OFF' : 'LIVE DISABLED',
         detail: `AI pausiert wegen Win Target • ${state.symbol.active}`,
         liveBadge: 'WIN TARGET',
       };
@@ -1629,6 +1653,19 @@ function mapHero(stage, signal, confidence, detail) {
       subtitle: signal === 'SELL' ? 'SELL Auto gesendet' : 'BUY Auto gesendet',
       detail: `Order wird verarbeitet • ${state.symbol.active}`,
       liveBadge: 'PROCESSING',
+    };
+  }
+
+  if (state.liveControl.liveArmEnabled && !state.ai.paused) {
+    return {
+      status: 'ARMED',
+      subtitle: state.liveControl.realOrdersAllowed ? 'REAL ORDERS ON' : 'REAL ORDERS OFF',
+      detail:
+        detail ||
+        (confidence < 34
+          ? `Markt zu schwach für Entry. • ${state.symbol.active}`
+          : `Beobachtung aktiv. • ${state.symbol.active}`),
+      liveBadge: state.session.autoMode ? 'AI AUTO ON' : 'LIVE',
     };
   }
 
@@ -1702,6 +1739,7 @@ async function afterTradeResult(pnl) {
 
 async function maybeSendBrokerPaperOrder(side, symbol) {
   const live = state.liveControl || {};
+  refreshLiveControlState();
 
   if (!BROKER_ENABLED) {
     addLog(`Broker order blocked (${symbol} ${side})`, {
@@ -1719,10 +1757,18 @@ async function maybeSendBrokerPaperOrder(side, symbol) {
     return;
   }
 
-  if (!live.tradingEnabled || live.killSwitch) {
+  if (!live.tradingEnabled || live.killSwitch || !live.liveTradingEnabled || !live.liveUnlockArmed) {
     addLog(`Broker order blocked (${symbol} ${side})`, {
       force: true,
       signature: `broker-block-guard-${symbol}-${side}-${Date.now()}`,
+    });
+    return;
+  }
+
+  if (!live.liveArmEnabled) {
+    addLog(`Broker order blocked (${symbol} ${side})`, {
+      force: true,
+      signature: `broker-block-arm-${symbol}-${side}-${Date.now()}`,
     });
     return;
   }
@@ -1834,6 +1880,7 @@ function getBrokerPnlSnapshot() {
 
 async function processAiTick() {
   resetDayIfNeeded();
+  refreshLiveControlState();
   rotateSymbolIfNeeded();
   generateMarket();
 
@@ -1915,22 +1962,28 @@ async function processAiTick() {
 
     if (signal === 'PAUSED') {
       const pauseStateKey = `${state.session.date}|${state.ai.pauseReason}|${state.symbol.active}|${state.session.netPnL}|${state.session.tradesToday}`;
-      const pauseSig = `state-paused-${pauseStateKey}`;
-      addStateLog('AI Paused', pauseSig);
-    } else if (stage === 'FIRE') {
-      addStateLog(
-        `AI FIRE ${signal} (${state.symbol.active})`,
-        `state-fire-${state.symbol.active}-${signal}-${evaluated.premiumSetup ? 'premium' : 'normal'}`
-      );
-    } else if (stage === 'READY') {
-      addStateLog(`AI Ready ${state.ai.bias} (${state.symbol.active})`, `state-ready-${state.symbol.active}-${state.ai.bias}-${evaluated.detail}`);
-    } else if (stage === 'WATCH') {
-      addStateLog(`AI Watch ${state.ai.bias} (${state.symbol.active})`, `state-watch-${state.symbol.active}-${state.ai.bias}-${evaluated.detail}`);
+      if (state.engine.pauseStateLoggedKey !== pauseStateKey) {
+        state.engine.pauseStateLoggedKey = pauseStateKey;
+        addStateLog('AI Paused', `state-paused-${pauseStateKey}`);
+      }
     } else {
-      const holdSignature = `state-hold-${state.symbol.active}-${state.ai.bias}-${reasons.join('-')}-${evaluated.detail}`;
-      if (holdSignature !== state.engine.lastHoldReason) {
-        state.engine.lastHoldReason = holdSignature;
-        addStateLog(`AI Hold • ${reasons.join(' • ')} (${state.symbol.active})`, holdSignature);
+      state.engine.pauseStateLoggedKey = '';
+
+      if (stage === 'FIRE') {
+        addStateLog(
+          `AI FIRE ${signal} (${state.symbol.active})`,
+          `state-fire-${state.symbol.active}-${signal}-${evaluated.premiumSetup ? 'premium' : 'normal'}`
+        );
+      } else if (stage === 'READY') {
+        addStateLog(`AI Ready ${state.ai.bias} (${state.symbol.active})`, `state-ready-${state.symbol.active}-${state.ai.bias}-${evaluated.detail}`);
+      } else if (stage === 'WATCH') {
+        addStateLog(`AI Watch ${state.ai.bias} (${state.symbol.active})`, `state-watch-${state.symbol.active}-${state.ai.bias}-${evaluated.detail}`);
+      } else {
+        const holdSignature = `state-hold-${state.symbol.active}-${state.ai.bias}-${reasons.join('-')}-${evaluated.detail}`;
+        if (holdSignature !== state.engine.lastHoldReason) {
+          state.engine.lastHoldReason = holdSignature;
+          addStateLog(`AI Hold • ${reasons.join(' • ')} (${state.symbol.active})`, holdSignature);
+        }
       }
     }
   }
@@ -1965,6 +2018,8 @@ async function processAiTick() {
    ========================================================= */
 
 function getPublicState() {
+  refreshLiveControlState();
+
   const tags = state.ai.reasons.map(normalizeTag);
   const brokerPnl = getBrokerPnlSnapshot();
   const botPnl = round2(state.session.netPnL || 0);
@@ -1976,6 +2031,17 @@ function getPublicState() {
     } else {
       syncLabel = DB_URL_FOUND && dbReady ? 'SYNC DB OK' : 'SYNC FILE OK';
     }
+  }
+
+  let dayState = 'DAY READY';
+  if (state.ai.paused && state.ai.pauseReason === 'DAY_LIMIT') dayState = 'DAY LIMIT';
+  if (state.ai.paused && state.ai.pauseReason === 'WIN_TARGET') dayState = 'WIN TARGET';
+  if (state.ai.paused && state.ai.pauseReason === 'LOSS_LIMIT') dayState = 'LOSS LIMIT';
+
+  if (!state.ai.paused && !state.liveControl.tradingEnabled) {
+    dayState = 'BLOCKED';
+  } else if (!state.ai.paused && state.liveControl.liveArmEnabled) {
+    dayState = 'ARMED';
   }
 
   return {
@@ -2019,14 +2085,7 @@ function getPublicState() {
       sync: syncLabel,
       cooldownActive: Date.now() < state.session.cooldownUntil,
       cooldownLeftSec: Math.max(0, Math.ceil((state.session.cooldownUntil - Date.now()) / 1000)),
-      dayState:
-        state.ai.paused && state.ai.pauseReason === 'DAY_LIMIT'
-          ? 'DAY LIMIT'
-          : state.ai.paused && state.ai.pauseReason === 'WIN_TARGET'
-            ? 'WIN TARGET'
-            : state.ai.paused && state.ai.pauseReason === 'LOSS_LIMIT'
-              ? 'LOSS LIMIT'
-              : 'DAY READY',
+      dayState,
     },
 
     symbol: {
@@ -2105,6 +2164,7 @@ function getPublicState() {
       liveArmEnabled: !!state.liveControl.liveArmEnabled,
       liveGuard: state.liveControl.liveGuard || 'LOCKED',
       realOrdersAllowed: !!state.liveControl.realOrdersAllowed,
+      liveStatus: state.liveControl.liveStatus || 'BLOCKED • LIVE DISABLED',
     },
 
     logs: state.logs,
@@ -2135,6 +2195,7 @@ app.post('/api/auto/toggle', async (_req, res) => {
 app.post('/api/reset', async (_req, res) => {
   const fresh = createInitialState();
   const keepBroker = deepClone(state.broker || fresh.broker);
+  const keepLive = deepClone(state.liveControl || fresh.liveControl);
 
   state.version = fresh.version;
   state.system = fresh.system;
@@ -2145,11 +2206,12 @@ app.post('/api/reset', async (_req, res) => {
   state.engine = fresh.engine;
   state.symbol = fresh.symbol;
   state.manual = fresh.manual;
-  state.liveControl = fresh.liveControl;
+  state.liveControl = keepLive;
   state.broker = keepBroker;
   state.logs = [];
 
-  ensureLiveControlShape();
+  clearPauseState();
+  refreshLiveControlState();
 
   addLog('Manual reset', { force: true, signature: `manual-reset-${Date.now()}` });
   await forcePersistNow();
@@ -2157,9 +2219,16 @@ app.post('/api/reset', async (_req, res) => {
 });
 
 app.post('/api/live/broker-toggle', async (_req, res) => {
-  ensureLiveControlShape();
   state.liveControl.tradingEnabled = !state.liveControl.tradingEnabled;
-  syncLiveControlState();
+
+  if (!state.liveControl.tradingEnabled) {
+    state.liveControl.liveTradingEnabled = false;
+    state.liveControl.liveUnlockArmed = false;
+    state.liveControl.liveArmEnabled = false;
+    state.liveControl.liveGuard = 'LOCKED';
+  }
+
+  refreshLiveControlState();
 
   addLog(`Broker Trading ${state.liveControl.tradingEnabled ? 'ON' : 'OFF'}`, {
     force: true,
@@ -2171,9 +2240,13 @@ app.post('/api/live/broker-toggle', async (_req, res) => {
 });
 
 app.post('/api/live/kill-switch', async (_req, res) => {
-  ensureLiveControlShape();
   state.liveControl.killSwitch = !state.liveControl.killSwitch;
-  syncLiveControlState();
+
+  if (state.liveControl.killSwitch) {
+    state.liveControl.liveArmEnabled = false;
+  }
+
+  refreshLiveControlState();
 
   addLog(`Kill Switch ${state.liveControl.killSwitch ? 'ON' : 'OFF'}`, {
     force: true,
@@ -2185,11 +2258,11 @@ app.post('/api/live/kill-switch', async (_req, res) => {
 });
 
 app.post('/api/live/unlock', async (_req, res) => {
-  ensureLiveControlShape();
-
   state.liveControl.liveUnlockArmed = true;
   state.liveControl.liveTradingEnabled = true;
-  syncLiveControlState();
+  state.liveControl.liveGuard = 'UNLOCKED';
+
+  refreshLiveControlState();
 
   addLog('Live Unlock armed', {
     force: true,
@@ -2200,13 +2273,26 @@ app.post('/api/live/unlock', async (_req, res) => {
   res.json(getPublicState());
 });
 
-app.post('/api/live/lock', async (_req, res) => {
-  ensureLiveControlShape();
+app.post('/api/live/arm', async (_req, res) => {
+  state.liveControl.liveArmEnabled = true;
+  refreshLiveControlState();
 
+  addLog('Live Arm enabled', {
+    force: true,
+    signature: `live-arm-${Date.now()}`,
+  });
+
+  await forcePersistNow();
+  res.json(getPublicState());
+});
+
+app.post('/api/live/lock', async (_req, res) => {
   state.liveControl.liveUnlockArmed = false;
   state.liveControl.liveTradingEnabled = false;
   state.liveControl.liveArmEnabled = false;
-  syncLiveControlState();
+  state.liveControl.liveGuard = 'LOCKED';
+
+  refreshLiveControlState();
 
   addLog('Live Lock active', {
     force: true,
@@ -2217,45 +2303,16 @@ app.post('/api/live/lock', async (_req, res) => {
   res.json(getPublicState());
 });
 
-app.post('/api/live/arm', async (_req, res) => {
-  ensureLiveControlShape();
-
-  const canArm =
-    state.liveControl.tradingEnabled &&
-    !state.liveControl.killSwitch &&
-    state.liveControl.liveTradingEnabled &&
-    state.liveControl.liveUnlockArmed &&
-    state.liveControl.liveGuard === 'UNLOCKED';
-
-  if (canArm) {
-    state.liveControl.liveArmEnabled = !state.liveControl.liveArmEnabled;
-    addLog(`Live Arm ${state.liveControl.liveArmEnabled ? 'ON' : 'OFF'}`, {
-      force: true,
-      signature: `live-arm-${state.liveControl.liveArmEnabled}-${Date.now()}`,
-    });
-  } else {
-    state.liveControl.liveArmEnabled = false;
-    addLog('Live Arm blocked', {
-      force: true,
-      signature: `live-arm-blocked-${Date.now()}`,
-    });
-  }
-
-  syncLiveControlState();
-  await forcePersistNow();
-  res.json(getPublicState());
-});
-
 app.post('/api/broker/manual-buy', async (_req, res) => {
-  ensureLiveControlShape();
+  refreshLiveControlState();
 
-  if (!state.liveControl.tradingEnabled || state.liveControl.killSwitch) {
+  if (!state.liveControl.tradingEnabled || state.liveControl.killSwitch || !state.liveControl.liveTradingEnabled || !state.liveControl.liveUnlockArmed || !state.liveControl.liveArmEnabled) {
     addLog(`Broker manual BUY blocked (${state.symbol.active})`, {
       force: true,
-      signature: `broker-manual-buy-blocked-${state.symbol.active}-${Date.now()}`,
+      signature: `broker-manual-buy-block-${state.symbol.active}-${Date.now()}`,
     });
     await forcePersistNow();
-    return res.json(getPublicState());
+    return res.status(409).json({ ok: false, error: 'Live control blocks broker manual buy', state: getPublicState() });
   }
 
   const result = await brokerSubmitPaperOrder('buy', state.symbol.active, 1);
@@ -2282,15 +2339,15 @@ app.post('/api/broker/manual-buy', async (_req, res) => {
 });
 
 app.post('/api/broker/manual-sell', async (_req, res) => {
-  ensureLiveControlShape();
+  refreshLiveControlState();
 
-  if (!state.liveControl.tradingEnabled || state.liveControl.killSwitch) {
+  if (!state.liveControl.tradingEnabled || state.liveControl.killSwitch || !state.liveControl.liveTradingEnabled || !state.liveControl.liveUnlockArmed || !state.liveControl.liveArmEnabled) {
     addLog(`Broker manual SELL blocked (${state.symbol.active})`, {
       force: true,
-      signature: `broker-manual-sell-blocked-${state.symbol.active}-${Date.now()}`,
+      signature: `broker-manual-sell-block-${state.symbol.active}-${Date.now()}`,
     });
     await forcePersistNow();
-    return res.json(getPublicState());
+    return res.status(409).json({ ok: false, error: 'Live control blocks broker manual sell', state: getPublicState() });
   }
 
   const result = await brokerSubmitPaperOrder('sell', state.symbol.active, 1);
@@ -2321,6 +2378,10 @@ app.post('/api/manual/buy', (_req, res) => {
     return res.status(409).json({ ok: false, error: 'Processing active' });
   }
 
+  if (state.ai.paused) {
+    return res.status(409).json({ ok: false, error: 'AI paused' });
+  }
+
   fireOrder('BUY');
   res.json(getPublicState());
 });
@@ -2328,6 +2389,10 @@ app.post('/api/manual/buy', (_req, res) => {
 app.post('/api/manual/sell', (_req, res) => {
   if (state.session.processing) {
     return res.status(409).json({ ok: false, error: 'Processing active' });
+  }
+
+  if (state.ai.paused) {
+    return res.status(409).json({ ok: false, error: 'AI paused' });
   }
 
   fireOrder('SELL');
@@ -2393,6 +2458,8 @@ app.get('/api/status', (_req, res) => {
 });
 
 app.get('/health', (_req, res) => {
+  refreshLiveControlState();
+
   res.json({
     ok: true,
     version: state.version,
@@ -2408,6 +2475,7 @@ app.get('/health', (_req, res) => {
     brokerEnabled: BROKER_ENABLED,
     brokerConnected,
     brokerLastError,
+    liveStatus: state.liveControl.liveStatus,
   });
 });
 
@@ -2432,6 +2500,6 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log('V22.12.3 LIVE ARM + CONTROL SAFETY listening on :' + PORT);
+    console.log('V23 NO SPAM + PAUSE LOCK listening on :' + PORT);
   });
 })();
