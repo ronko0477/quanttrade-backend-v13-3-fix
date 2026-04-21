@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>V23.5 PRO</title>
+  <title>V23.6 PRO</title>
   <style>
     :root{
       --bg1:#0a1027;
@@ -23,20 +23,10 @@
       --shadow:0 20px 50px rgba(5,10,30,.35);
       --radius:28px;
       --radius2:22px;
-
       --hero-dark-1:#081024;
       --hero-dark-2:#18204b;
       --hero-card-1:rgba(206,211,255,.82);
       --hero-card-2:rgba(170,178,243,.76);
-
-      --good-1:#98d987;
-      --good-2:#7dcb74;
-      --good-text:#111111;
-
-      --soft-green:rgba(152,217,135,.22);
-      --soft-red:rgba(239,100,107,.18);
-      --soft-yellow:rgba(242,191,84,.18);
-      --soft-blue:rgba(150,170,255,.16);
     }
 
     *{box-sizing:border-box}
@@ -52,8 +42,8 @@
     body{
       min-height:100vh;
       background:
-        radial-gradient(circle at 88% 7%, rgba(197,255,123,.20) 0%, rgba(197,255,123,.05) 4%, transparent 10%),
-        linear-gradient(180deg, #d9ddf6 0%, #cdd3ef 34%, #c6cbdf 100%);
+        radial-gradient(circle at 88% 7%, rgba(197,255,123,.26) 0%, rgba(197,255,123,.07) 4%, transparent 10%),
+        linear-gradient(180deg, #ced3ff 0%, #c7ccef 34%, #c2c7df 100%);
     }
 
     .app{
@@ -66,8 +56,8 @@
     .top-hero{
       padding:34px 14px 18px;
       background:
-        radial-gradient(circle at 89% 18%, rgba(151,224,142,.18) 0%, rgba(151,224,142,.05) 9%, transparent 17%),
-        linear-gradient(180deg, var(--hero-dark-1) 0%, #141b3f 48%, #1c2844 100%);
+        radial-gradient(circle at 89% 18%, rgba(197,255,123,.20) 0%, rgba(197,255,123,.05) 9%, transparent 17%),
+        linear-gradient(180deg, var(--hero-dark-1) 0%, #141b3f 48%, #242a58 100%);
       border-bottom-left-radius:34px;
       border-bottom-right-radius:34px;
       box-shadow:0 10px 30px rgba(0,0,0,.18);
@@ -76,8 +66,8 @@
 
     .top-hero.is-target{
       background:
-        radial-gradient(circle at 89% 18%, rgba(133,255,173,.18) 0%, rgba(133,255,173,.05) 9%, transparent 17%),
-        linear-gradient(180deg, #081228 0%, #173155 48%, #24466f 100%);
+        radial-gradient(circle at 89% 18%, rgba(197,255,123,.18) 0%, rgba(197,255,123,.05) 9%, transparent 17%),
+        linear-gradient(180deg, #0a132a 0%, #1a234f 48%, #27346b 100%);
     }
 
     .top-hero.is-limit{
@@ -90,6 +80,12 @@
       background:
         radial-gradient(circle at 89% 18%, rgba(255,222,138,.18) 0%, rgba(255,222,138,.05) 9%, transparent 17%),
         linear-gradient(180deg, #11162c 0%, #232b4f 48%, #37406a 100%);
+    }
+
+    .top-hero.is-live{
+      background:
+        radial-gradient(circle at 89% 18%, rgba(140,224,143,.22) 0%, rgba(140,224,143,.05) 9%, transparent 17%),
+        linear-gradient(180deg, #071325 0%, #102342 48%, #17345a 100%);
     }
 
     .top-title-row{
@@ -114,8 +110,8 @@
       width:22px;
       height:22px;
       border-radius:50%;
-      background:#9ad87f;
-      box-shadow:0 0 0 10px rgba(154,216,127,.12), 0 0 20px rgba(154,216,127,.42);
+      background:#c7f97f;
+      box-shadow:0 0 0 10px rgba(199,249,127,.12), 0 0 20px rgba(199,249,127,.45);
       flex:0 0 auto;
       transition:all .2s ease;
     }
@@ -130,6 +126,11 @@
       box-shadow:0 0 0 10px rgba(255,133,141,.12), 0 0 20px rgba(255,133,141,.45);
     }
 
+    .top-dot.is-live{
+      background:#9be084;
+      box-shadow:0 0 0 10px rgba(155,224,132,.14), 0 0 22px rgba(155,224,132,.55);
+    }
+
     .hero-card{
       border-radius:34px;
       padding:18px 18px 20px;
@@ -142,7 +143,7 @@
     }
 
     .hero-card.is-target{
-      background:linear-gradient(180deg, rgba(206,222,255,.86) 0%, rgba(166,195,236,.80) 100%);
+      background:linear-gradient(180deg, rgba(202,210,255,.82) 0%, rgba(155,170,238,.78) 100%);
     }
 
     .hero-card.is-limit{
@@ -151,6 +152,11 @@
 
     .hero-card.is-locked{
       background:linear-gradient(180deg, rgba(214,219,255,.84) 0%, rgba(170,179,236,.78) 100%);
+    }
+
+    .hero-card.is-live{
+      background:linear-gradient(180deg, rgba(205,219,255,.84) 0%, rgba(166,184,238,.79) 100%);
+      box-shadow:0 24px 56px rgba(8,22,42,.42), inset 0 1px 0 rgba(255,255,255,.18);
     }
 
     .hero-card:before{
@@ -175,8 +181,8 @@
       overflow-wrap:anywhere;
     }
 
-    .hero-title.small{ font-size:64px; }
-    .hero-title.xsmall{ font-size:52px; }
+    .hero-title.small{font-size:64px}
+    .hero-title.xsmall{font-size:52px}
 
     .hero-subtitle{
       text-align:center;
@@ -221,6 +227,9 @@
       letter-spacing:-1px;
     }
 
+    .hero-big.is-pos{color:#ffffff}
+    .hero-big.is-neg{color:#ffd7da}
+
     .hero-pnl-label{
       font-size:26px;
       font-weight:900;
@@ -236,8 +245,8 @@
     }
 
     .hero-pnl-mini{
-      background:rgba(67,82,223,.12);
-      border:1px solid rgba(255,255,255,.06);
+      background:rgba(67,82,223,.16);
+      border:1px solid rgba(255,255,255,.08);
       border-radius:18px;
       padding:10px 12px;
       text-align:center;
@@ -256,6 +265,9 @@
       color:#fff;
       font-weight:900;
     }
+
+    .hero-pnl-mini strong.pos{color:#eaffdd}
+    .hero-pnl-mini strong.neg{color:#ffd8da}
 
     .pill-stack{
       display:grid;
@@ -287,8 +299,12 @@
     }
 
     .pill.good{
-      background:linear-gradient(180deg, var(--good-1) 0%, var(--good-2) 100%);
-      color:var(--good-text);
+      background:linear-gradient(180deg, #6f7dff 0%, #4e5cf1 100%);
+    }
+
+    .pill.live{
+      background:linear-gradient(180deg, #9be084 0%, #7dcc74 100%);
+      color:#111;
     }
 
     .content{
@@ -298,7 +314,7 @@
     }
 
     .panel{
-      background:linear-gradient(180deg, rgba(82,98,238,.94) 0%, rgba(92,108,246,.90) 100%);
+      background:linear-gradient(180deg, rgba(71,87,234,.90) 0%, rgba(75,90,241,.88) 100%);
       border-radius:32px;
       padding:18px;
       box-shadow:var(--shadow);
@@ -356,6 +372,12 @@
       color:#f6f8ff;
     }
 
+    .badge.live{
+      background:rgba(140,224,143,.22);
+      border-color:rgba(140,224,143,.30);
+      color:#111;
+    }
+
     .grid-2{
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -363,8 +385,8 @@
     }
 
     .mini-card{
-      background:rgba(31,46,185,.16);
-      border:1px solid rgba(255,255,255,.05);
+      background:rgba(31,46,185,.18);
+      border:1px solid rgba(255,255,255,.06);
       border-radius:22px;
       padding:18px;
     }
@@ -411,12 +433,10 @@
       background:linear-gradient(180deg, #6f7dff 0%, #4e5cf1 100%);
       box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
       cursor:pointer;
-      transition:transform .08s ease, filter .15s ease, opacity .15s ease;
+      transition:transform .12s ease, opacity .12s ease, filter .12s ease;
     }
 
-    button:active{
-      transform:scale(.985);
-    }
+    button:active{transform:scale(.985)}
 
     button.warn{
       background:linear-gradient(180deg, #f7d26e 0%, #efb348 100%);
@@ -424,16 +444,21 @@
     }
 
     button.danger{
-      background:linear-gradient(180deg, #ff8a92 0%, #e56872 100%);
+      background:linear-gradient(180deg, #ff7f87 0%, #ec5b67 100%);
     }
 
     button.secondary{
       background:linear-gradient(180deg, #7b87ff 0%, #5e6cff 100%);
     }
 
-    button.good{
-      background:linear-gradient(180deg, var(--good-1) 0%, var(--good-2) 100%);
+    button.live{
+      background:linear-gradient(180deg, #9be084 0%, #7dcc74 100%);
       color:#111;
+    }
+
+    button.dim{
+      opacity:.48;
+      filter:saturate(.82);
     }
 
     .score-head{
@@ -454,7 +479,7 @@
       height:22px;
       border-radius:999px;
       overflow:hidden;
-      background:rgba(255,255,255,.10);
+      background:rgba(255,255,255,.12);
       margin-bottom:16px;
       box-shadow:inset 0 2px 8px rgba(0,0,0,.08);
     }
@@ -474,10 +499,10 @@
     }
 
     .signal-card{
-      background:rgba(115,129,255,.16);
+      background:rgba(115,129,255,.20);
       border-radius:24px;
       padding:18px;
-      border:1px solid rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
     }
 
     .signal-card .k{
@@ -520,10 +545,10 @@
     }
 
     .rows{
-      background:rgba(34,46,165,.14);
+      background:rgba(34,46,165,.18);
       border-radius:24px;
       padding:16px;
-      border:1px solid rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
     }
 
     .row{
@@ -554,26 +579,10 @@
     .log-list{
       display:grid;
       gap:0;
-      max-height:620px;
+      max-height:560px;
       overflow:auto;
       padding-right:4px;
-      scrollbar-width:thin;
-      scrollbar-color:rgba(214,234,130,.75) rgba(255,255,255,.06);
-    }
-
-    .log-list::-webkit-scrollbar{
-      width:10px;
-    }
-
-    .log-list::-webkit-scrollbar-track{
-      background:rgba(255,255,255,.06);
-      border-radius:999px;
-    }
-
-    .log-list::-webkit-scrollbar-thumb{
-      background:linear-gradient(180deg, rgba(214,234,130,.95) 0%, rgba(191,231,215,.90) 100%);
-      border-radius:999px;
-      border:2px solid rgba(255,255,255,.08);
+      scroll-behavior:smooth;
     }
 
     .log-item{
@@ -618,7 +627,7 @@
   <div class="app">
     <div class="top-hero" id="topHero">
       <div class="top-title-row">
-        <div class="top-title" id="versionTitle">V23.5 PRO</div>
+        <div class="top-title" id="versionTitle">V23.6 PRO</div>
         <div class="top-dot" id="topDot"></div>
       </div>
 
@@ -646,8 +655,8 @@
 
         <div class="pill-stack">
           <div class="pill good" id="heroBadge">AI AUTO ON</div>
-          <div class="pill" id="lossPill">LOSS LIMIT -20</div>
-          <div class="pill" id="winPill">WIN TARGET +20</div>
+          <div class="pill">LOSS LIMIT -20</div>
+          <div class="pill">WIN TARGET +20</div>
         </div>
       </div>
     </div>
@@ -722,12 +731,12 @@
       </section>
 
       <section class="panel">
+        <h3>STATUS</h3>
+
         <div class="badge-row">
           <div class="badge neutral" id="dayState">DAY READY</div>
           <div class="badge neutral" id="syncState">SYNC DB OK</div>
         </div>
-
-        <h3>STATUS</h3>
 
         <div class="grid-2">
           <div class="mini-card"><div class="k">Queue</div><div class="v" id="queueVal">0</div></div>
@@ -739,8 +748,8 @@
         <div class="action-grid" style="margin-top:16px">
           <button onclick="post('/api/auto/toggle')">AUTO TOGGLE</button>
           <button onclick="post('/api/reset')">RESET</button>
-          <button onclick="post('/api/manual/buy')">MANUAL BUY</button>
-          <button onclick="post('/api/manual/sell')">MANUAL SELL</button>
+          <button onclick="post('/api/manual/buy')" id="manualBuyBtn">MANUAL BUY</button>
+          <button onclick="post('/api/manual/sell')" id="manualSellBtn">MANUAL SELL</button>
         </div>
 
         <div class="action-grid one">
@@ -795,17 +804,17 @@
           <div class="row"><div class="rk">Live Arm Enabled</div><div class="rv" id="lcArmEnabled">NO</div></div>
           <div class="row"><div class="rk">Live Guard</div><div class="rv" id="lcGuard">LOCKED</div></div>
           <div class="row"><div class="rk">Real Orders Allowed</div><div class="rv" id="lcRealOrders">NO</div></div>
-          <div class="row"><div class="rk">Live Status</div><div class="rv" id="lcLiveStatus">BLOCKED • LIVE DISABLED</div></div>
+          <div class="row"><div class="rk">Live Status</div><div class="rv" id="lcStatus">BLOCKED • LIVE DISABLED</div></div>
         </div>
 
         <div class="action-grid" style="margin-top:16px">
-          <button onclick="post('/api/live/broker-toggle')">BROKER TRADING</button>
-          <button class="danger" onclick="post('/api/live/kill-switch')">KILL SWITCH</button>
-          <button class="warn" onclick="post('/api/live/unlock')">UNLOCK LIVE</button>
-          <button class="warn" onclick="post('/api/live/arm')">ARM LIVE</button>
-          <button onclick="post('/api/live/lock')">LOCK LIVE</button>
-          <button class="good" onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
-          <button class="good" onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
+          <button onclick="post('/api/live/broker-toggle')" id="brokerToggleBtn">BROKER TRADING</button>
+          <button class="danger" onclick="post('/api/live/kill-switch')" id="killSwitchBtn">KILL SWITCH</button>
+          <button class="warn" onclick="post('/api/live/unlock')" id="unlockLiveBtn">UNLOCK LIVE</button>
+          <button class="warn" onclick="post('/api/live/arm')" id="armLiveBtn">ARM LIVE</button>
+          <button onclick="post('/api/live/lock')" id="lockLiveBtn">LOCK LIVE</button>
+          <button onclick="post('/api/broker/manual-buy')" id="brokerBuyBtn">BROKER BUY 1</button>
+          <button onclick="post('/api/broker/manual-sell')" id="brokerSellBtn">BROKER SELL 1</button>
           <button class="secondary" onclick="refreshNow()">REFRESH NOW</button>
         </div>
       </section>
@@ -868,11 +877,30 @@
       el.textContent = label ?? '-';
     }
 
-    function heroTone(title){
-      const t = String(title || '').toUpperCase();
-      if (t === 'TARGET') return 'target';
-      if (t === 'SESSION_LIMIT') return 'limit';
-      if (t === 'LOCKED') return 'locked';
+    function setButtonState(el, enabled, live = false){
+      if (!el) return;
+      el.classList.remove('dim','live');
+      if (!enabled) el.classList.add('dim');
+      if (enabled && live) el.classList.add('live');
+    }
+
+    function setSignedClass(el, value){
+      if (!el) return;
+      el.classList.remove('pos','neg','is-pos','is-neg');
+      const n = Number(value);
+      if (!Number.isFinite(n)) return;
+      if (n > 0) el.classList.add(el.id === 'heroPnlMain' ? 'is-pos' : 'pos');
+      if (n < 0) el.classList.add(el.id === 'heroPnlMain' ? 'is-neg' : 'neg');
+    }
+
+    function heroTone(s){
+      const title = String(s.hero?.title || '').toUpperCase();
+      const live = !!s.liveControl?.realOrdersAllowed;
+
+      if (title === 'TARGET') return 'target';
+      if (title === 'SESSION_LIMIT') return 'limit';
+      if (title === 'LOCKED') return 'locked';
+      if (live) return 'live';
       return 'ready';
     }
 
@@ -882,11 +910,11 @@
       const topDot = q('topDot');
       const heroTitle = q('heroTitle');
 
-      topHero.classList.remove('is-target','is-limit','is-locked');
-      heroCard.classList.remove('is-target','is-limit','is-locked');
-      topDot.classList.remove('is-warn','is-danger');
+      topHero.classList.remove('is-target','is-limit','is-locked','is-live');
+      heroCard.classList.remove('is-target','is-limit','is-locked','is-live');
+      topDot.classList.remove('is-warn','is-danger','is-live');
 
-      const tone = heroTone(s.hero?.title);
+      const tone = heroTone(s);
 
       if (tone === 'target') {
         topHero.classList.add('is-target');
@@ -899,18 +927,16 @@
         topHero.classList.add('is-locked');
         heroCard.classList.add('is-locked');
         topDot.classList.add('is-warn');
+      } else if (tone === 'live') {
+        topHero.classList.add('is-live');
+        heroCard.classList.add('is-live');
+        topDot.classList.add('is-live');
       }
 
       heroTitle.classList.remove('small','xsmall');
       const len = String(s.hero?.title || '').length;
       if (len >= 12) heroTitle.classList.add('xsmall');
       else if (len >= 9) heroTitle.classList.add('small');
-
-      if (s.hero?.dot === false) {
-        topDot.style.opacity = '.35';
-      } else {
-        topDot.style.opacity = '1';
-      }
     }
 
     async function getJson(url){
@@ -949,36 +975,9 @@
 
     function getLogClass(item){
       const t = String(item || '');
-      if (
-        t.includes('WIN PnL') ||
-        t.includes('Broker order accepted') ||
-        t.includes('SYNC DB OK') ||
-        t.includes('LIVE • REAL ORDERS ON') ||
-        t.includes('Broker manual BUY') ||
-        t.includes('Broker manual SELL')
-      ) return 'is-good';
-
-      if (
-        t.includes('Loss Limit') ||
-        t.includes('LOSS PnL') ||
-        t.includes('Kill Switch ON') ||
-        t.includes('failed') ||
-        t.includes('blocked')
-      ) return 'is-danger';
-
-      if (
-        t.includes('TARGET') ||
-        t.includes('Live Unlock') ||
-        t.includes('Live Arm') ||
-        t.includes('Cooldown') ||
-        t.includes('Order wird verarbeitet') ||
-        t.includes('Order queued') ||
-        t.includes('AI Ready') ||
-        t.includes('AI Watch') ||
-        t.includes('AI Setup FIRE') ||
-        t.includes('AI FIRE')
-      ) return 'is-warn';
-
+      if (t.includes('WIN PnL') || t.includes('Broker order accepted') || t.includes('SYNC DB OK') || t.includes('SYNC FILE OK') || t.includes('LIVE ON')) return 'is-good';
+      if (t.includes('Loss Limit') || t.includes('LOSS PnL') || t.includes('Kill Switch ON') || t.includes('failed') || t.includes('blocked')) return 'is-danger';
+      if (t.includes('TARGET') || t.includes('Live Unlock') || t.includes('Live Arm') || t.includes('Cooldown') || t.includes('Order wird verarbeitet') || t.includes('Order queued') || t.includes('AI FIRE') || t.includes('AI Setup FIRE')) return 'is-warn';
       return 'is-accent';
     }
 
@@ -986,7 +985,7 @@
       const box = q('logList');
       box.innerHTML = '';
 
-      (Array.isArray(list) ? list : []).slice(0, 80).forEach(item => {
+      (Array.isArray(list) ? list : []).slice(0, 60).forEach(item => {
         const d = document.createElement('div');
         d.className = `log-item ${getLogClass(item)}`;
         d.textContent = item;
@@ -997,24 +996,25 @@
     function renderState(s){
       latestState = s;
 
-      text(q('versionTitle'), s.version || 'V23.5 PRO');
+      text(q('versionTitle'), s.version || 'V23.6 PRO');
       text(q('heroTitle'), s.hero?.title || 'READY');
       text(q('heroSubtitle'), s.hero?.subtitle || '-');
       text(q('heroDetail'), s.hero?.detail || '-');
       text(q('heroReasons'), (s.ai?.reasons || []).join(' • '));
+
       text(q('heroPnlMain'), fmtSigned(s.pnl?.botNetPnL ?? s.hero?.netPnL ?? 0));
+      setSignedClass(q('heroPnlMain'), s.pnl?.botNetPnL ?? s.hero?.netPnL ?? 0);
+
       text(q('brokerDayPnl'), fmtSigned(s.pnl?.brokerDayPnL));
       text(q('brokerTotalPnl'), fmtSigned(s.pnl?.brokerTotalPnL));
+      setSignedClass(q('brokerDayPnl'), s.pnl?.brokerDayPnL);
+      setSignedClass(q('brokerTotalPnl'), s.pnl?.brokerTotalPnL);
 
       const badgeText = s.hero?.liveBadge || '-';
-      if (badgeText.includes('LOSS')) setPillState(q('heroBadge'), 'danger', badgeText);
+      if (String(s.liveControl?.liveStatus || '').includes('LIVE • REAL ORDERS ON')) setPillState(q('heroBadge'), 'live', badgeText || 'LIVE ON');
+      else if (badgeText.includes('LOSS')) setPillState(q('heroBadge'), 'danger', badgeText);
       else if (badgeText.includes('TARGET') || badgeText.includes('COOLDOWN') || badgeText.includes('PROCESSING')) setPillState(q('heroBadge'), 'warn', badgeText);
       else setPillState(q('heroBadge'), 'good', badgeText);
-
-      const lossLimit = Number(s.limits?.lossLimit ?? -20);
-      const winTarget = Number(s.limits?.winTarget ?? 20);
-      text(q('lossPill'), `LOSS LIMIT ${lossLimit}`);
-      text(q('winPill'), `WIN TARGET +${winTarget}`);
 
       text(q('aiSignal'), s.ai?.signal || '-');
       text(q('aiConfidence'), `${Number(s.ai?.confidence || 0)}%`);
@@ -1039,9 +1039,11 @@
       text(q('sessionDate'), s.session?.date || '-');
       text(q('summaryPill'), (s.ai?.summary || 'AI HOLD').toUpperCase());
 
-      if ((s.ai?.summary || '').toUpperCase().includes('PAUSED')) setPillState(q('summaryPill'), 'warn', (s.ai?.summary || 'AI HOLD').toUpperCase());
-      else if ((s.ai?.summary || '').toUpperCase().includes('READY')) setPillState(q('summaryPill'), 'good', (s.ai?.summary || 'AI HOLD').toUpperCase());
-      else setPillState(q('summaryPill'), '', (s.ai?.summary || 'AI HOLD').toUpperCase());
+      const summary = String(s.ai?.summary || '').toUpperCase();
+      if (summary.includes('FIRE')) setPillState(q('summaryPill'), 'warn', summary);
+      else if (summary.includes('READY')) setPillState(q('summaryPill'), 'good', summary);
+      else if (summary.includes('PAUSED')) setPillState(q('summaryPill'), 'danger', summary);
+      else setPillState(q('summaryPill'), '', summary);
 
       const dayState = s.session?.dayState || '-';
       if (dayState === 'WIN TARGET') {
@@ -1087,21 +1089,39 @@
       text(q('brokerLastOrder'), s.broker?.lastOrder || '-');
       text(q('brokerError'), s.broker?.lastError || '-');
 
-      setBadgeState(q('tradingBadge'), s.liveControl?.tradingEnabled ? 'warn' : 'neutral', s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
-      setBadgeState(q('killBadge'), s.liveControl?.killSwitch ? 'danger' : 'neutral', s.liveControl?.killSwitch ? 'KILL SWITCH ON' : 'KILL SWITCH OFF');
-      setBadgeState(q('liveGuardBadge'), s.liveControl?.liveGuard === 'UNLOCKED' ? 'warn' : 'neutral', s.liveControl?.liveGuard === 'UNLOCKED' ? 'LIVE UNLOCKED' : 'LIVE LOCKED');
-      setBadgeState(q('liveArmBadge'), s.liveControl?.liveArmEnabled ? 'warn' : 'neutral', s.liveControl?.liveArmEnabled ? 'ARM ON' : 'ARM OFF');
-      setBadgeState(q('liveOnBadge'), s.liveControl?.realOrdersAllowed ? 'good' : 'neutral', s.liveControl?.realOrdersAllowed ? 'LIVE ON' : 'LIVE OFF');
+      const tradingEnabled = !!s.liveControl?.tradingEnabled;
+      const killSwitch = !!s.liveControl?.killSwitch;
+      const liveGuardUnlocked = s.liveControl?.liveGuard === 'UNLOCKED';
+      const armEnabled = !!s.liveControl?.liveArmEnabled;
+      const realOrders = !!s.liveControl?.realOrdersAllowed;
+      const liveEnabled = !!s.liveControl?.liveTradingEnabled;
+
+      setBadgeState(q('tradingBadge'), tradingEnabled ? 'warn' : 'neutral', tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
+      setBadgeState(q('killBadge'), killSwitch ? 'danger' : 'neutral', killSwitch ? 'KILL SWITCH ON' : 'KILL SWITCH OFF');
+      setBadgeState(q('liveGuardBadge'), liveGuardUnlocked ? 'warn' : 'neutral', liveGuardUnlocked ? 'LIVE UNLOCKED' : 'LIVE LOCKED');
+      setBadgeState(q('liveArmBadge'), armEnabled ? 'warn' : 'neutral', armEnabled ? 'ARM ON' : 'ARM OFF');
+      setBadgeState(q('liveOnBadge'), realOrders ? 'live' : 'neutral', realOrders ? 'LIVE ON' : 'LIVE OFF');
 
       text(q('lcBrokerMode'), s.liveControl?.brokerMode || '-');
-      text(q('lcTradingEnabled'), s.liveControl?.tradingEnabled ? 'YES' : 'NO');
-      text(q('lcKillSwitch'), s.liveControl?.killSwitch ? 'ON' : 'OFF');
-      text(q('lcLiveEnabled'), s.liveControl?.liveTradingEnabled ? 'YES' : 'NO');
+      text(q('lcTradingEnabled'), tradingEnabled ? 'YES' : 'NO');
+      text(q('lcKillSwitch'), killSwitch ? 'ON' : 'OFF');
+      text(q('lcLiveEnabled'), liveEnabled ? 'YES' : 'NO');
       text(q('lcUnlockArmed'), s.liveControl?.liveUnlockArmed ? 'YES' : 'NO');
-      text(q('lcArmEnabled'), s.liveControl?.liveArmEnabled ? 'YES' : 'NO');
+      text(q('lcArmEnabled'), armEnabled ? 'YES' : 'NO');
       text(q('lcGuard'), s.liveControl?.liveGuard || '-');
-      text(q('lcRealOrders'), s.liveControl?.realOrdersAllowed ? 'YES' : 'NO');
-      text(q('lcLiveStatus'), s.liveControl?.liveStatus || '-');
+      text(q('lcRealOrders'), realOrders ? 'YES' : 'NO');
+      text(q('lcStatus'), s.liveControl?.liveStatus || '-');
+
+      setButtonState(q('manualBuyBtn'), !s.ai?.paused && !String(s.session?.processing).includes('ON'));
+      setButtonState(q('manualSellBtn'), !s.ai?.paused && !String(s.session?.processing).includes('ON'));
+
+      setButtonState(q('brokerToggleBtn'), true);
+      setButtonState(q('killSwitchBtn'), true);
+      setButtonState(q('unlockLiveBtn'), tradingEnabled && !killSwitch);
+      setButtonState(q('armLiveBtn'), tradingEnabled && !killSwitch && liveEnabled);
+      setButtonState(q('lockLiveBtn'), true);
+      setButtonState(q('brokerBuyBtn'), realOrders, realOrders);
+      setButtonState(q('brokerSellBtn'), realOrders, realOrders);
 
       renderReasons(s.ai?.reasons || []);
       renderLogs(s.logs || []);
