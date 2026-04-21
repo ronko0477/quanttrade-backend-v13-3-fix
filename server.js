@@ -12,13 +12,14 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V23.5 PRO
-   - quieter AI log
+   V23.6 PRO PAPER PREP
+   - quieter AI log kept
    - no duplicate FIRE state logs
    - HOLD / WATCH / READY throttled
    - symbol change log kept
-   - live / broker logic kept
-   - bot pnl and broker pnl separated
+   - SIM / PAPER / HYBRID trade mode added
+   - bot pnl and broker pnl cleanly separated
+   - paper trading prep for 1-2 day forward test
    ========================================================= */
 
 const CONFIG = {
@@ -79,7 +80,7 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v23.5.json'),
+    file: path.join(process.cwd(), 'data', 'state.v23.6.json'),
     flushDebounceMs: 150,
     dbKey: 'global',
     tableName: 'app_state',
@@ -89,6 +90,15 @@ const CONFIG = {
     baseUrlPaper: 'https://paper-api.alpaca.markets',
   },
 };
+
+/* =========================================================
+   V23.6 TRADE MODE
+   - sim    = only bot simulation
+   - paper  = only alpaca paper orders
+   - hybrid = simulation + alpaca paper orders
+   ========================================================= */
+
+const TRADE_MODE = String(process.env.TRADE_MODE || 'sim').trim().toLowerCase();
 
 /* =========================================================
    Env / Modes
@@ -565,7 +575,7 @@ function clearLiveArmOnly() {
 
 function createInitialState() {
   return {
-    version: 'V23.5 PRO',
+    version: 'V23.6 PRO PAPER PREP',
 
     system: {
       status: 'READY',
@@ -814,7 +824,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V23.5 PRO';
+  target.version = 'V23.6 PRO PAPER PREP';
 
   const fresh = createInitialState();
 
@@ -852,9 +862,10 @@ async function hydrateState() {
   let source = 'NEW';
 
   console.log('====================================================');
-  console.log('[boot] version: V23.5 PRO');
+  console.log('[boot] version: V23.6 PRO PAPER PREP');
   console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
   console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
+  console.log(`[boot] TRADE_MODE: ${TRADE_MODE}`);
   console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
   console.log(`[boot] DATABASE_URL masked: ${maskDbUrl(DATABASE_URL)}`);
   console.log(`[boot] BROKER_MODE raw: ${BROKER_MODE}`);
@@ -1855,7 +1866,24 @@ function fireOrder(side) {
   forcePersistNow();
 
   setTimeout(async () => {
-    await maybeSendBrokerPaperOrder(side, symbolUsed);
+    // =========================================================
+    // V23.6 TRADE MODE EXECUTION
+    // =========================================================
+    if (TRADE_MODE === 'sim') {
+      const pnl = simulateTradeOutcome(side);
+      await afterTradeResult(pnl);
+    }
+
+    if (TRADE_MODE === 'paper') {
+      await maybeSendBrokerPaperOrder(side, symbolUsed);
+    }
+
+    if (TRADE_MODE === 'hybrid') {
+      const pnl = simulateTradeOutcome(side);
+      await afterTradeResult(pnl);
+      await maybeSendBrokerPaperOrder(side, symbolUsed);
+    }
+    // =========================================================
 
     addLog(`Order ausgeführt (${symbolUsed} ${side})`, {
       force: true,
@@ -1867,10 +1895,7 @@ function fireOrder(side) {
     state.session.tradesToday += 1;
     state.session.cooldownUntil = Date.now() + CONFIG.session.cooldownMs;
 
-    const pnl = simulateTradeOutcome(side);
-    await afterTradeResult(pnl);
-
-    if (BROKER_ENABLED) {
+    if (BROKER_ENABLED && TRADE_MODE !== 'sim') {
       await brokerRefreshAll();
     }
   }, 900);
@@ -2079,6 +2104,7 @@ function getPublicState() {
   return {
     ok: true,
     version: state.version,
+    tradeMode: TRADE_MODE,
 
     hero: {
       title: state.system.status,
@@ -2495,6 +2521,7 @@ app.get('/health', (_req, res) => {
   res.json({
     ok: true,
     version: state.version,
+    tradeMode: TRADE_MODE,
     uptime: process.uptime(),
     symbol: state.symbol.active,
     persistMode: EFFECTIVE_PERSIST_MODE,
@@ -2532,6 +2559,6 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log('V23.5 PRO listening on :' + PORT);
+    console.log('V23.6 PRO PAPER PREP listening on :' + PORT);
   });
 })();
