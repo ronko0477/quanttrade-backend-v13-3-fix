@@ -12,17 +12,13 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V23.3 PRO FULL
-   - full architecture kept
-   - postgres persist stable
-   - alpaca paper broker connected
-   - live unlock + arm + control safety
-   - pause / session lock stable
-   - lower log spam
-   - cleaner AI engine
-   - stronger fire gating
-   - symbol rotation safer
-   - broker/manual blocking consistent
+   V23.5 PRO
+   - quieter AI log
+   - no duplicate FIRE state logs
+   - HOLD / WATCH / READY throttled
+   - symbol change log kept
+   - live / broker logic kept
+   - bot pnl and broker pnl separated
    ========================================================= */
 
 const CONFIG = {
@@ -32,48 +28,49 @@ const CONFIG = {
     maxTradesPerDay: 50,
     winTarget: 20,
     lossLimit: -20,
-    cooldownMs: 12000,
+    cooldownMs: 10000,
   },
 
   ai: {
     enableLearning: true,
 
-    watchScoreMin: 57,
-    readyScoreMin: 66,
-    fireScoreMin: 76,
+    watchScoreMin: 56,
+    readyScoreMin: 64,
+    fireScoreMin: 74,
 
-    buyEdgeMinWatch: 20,
-    buyEdgeMinReady: 34,
-    buyEdgeMinFire: 56,
+    buyEdgeMinWatch: 18,
+    buyEdgeMinReady: 32,
+    buyEdgeMinFire: 54,
 
-    sellEdgeMinWatch: 20,
-    sellEdgeMinReady: 34,
-    sellEdgeMinFire: 56,
+    sellEdgeMinWatch: 18,
+    sellEdgeMinReady: 32,
+    sellEdgeMinFire: 54,
 
-    confidenceMinWatch: 36,
-    confidenceMinReady: 48,
-    confidenceMinFire: 62,
+    confidenceMinWatch: 34,
+    confidenceMinReady: 46,
+    confidenceMinFire: 60,
 
     stateConfirmTicks: 2,
     regimeConfirmTicks: 2,
     fireConfirmTicks: 2,
 
-    maxVolatilityForFire: 66,
-    minLiquidityForFire: 56,
+    maxVolatilityForFire: 68,
+    minLiquidityForFire: 54,
     minSessionForFire: 46,
 
     thresholdAdjustStep: 1,
     maxThresholdDrift: 8,
-
-    minScoreDeltaForBiasFlip: 3.2,
-    premiumEdgeMin: 72,
-    premiumScoreMin: 67,
-    premiumConfidenceMin: 38,
   },
 
   log: {
-    maxEntries: 240,
+    maxEntries: 260,
     suppressRepeatWithinMs: 12000,
+
+    holdStateMinMs: 12000,
+    watchStateMinMs: 7000,
+    readyStateMinMs: 7000,
+    fireStateMinMs: 8000,
+    symbolLogMinMs: 12000,
   },
 
   symbols: {
@@ -82,15 +79,14 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v23.3.full.json'),
-    flushDebounceMs: 180,
+    file: path.join(process.cwd(), 'data', 'state.v23.5.json'),
+    flushDebounceMs: 150,
     dbKey: 'global',
     tableName: 'app_state',
   },
 
   broker: {
     baseUrlPaper: 'https://paper-api.alpaca.markets',
-    refreshMs: 15000,
   },
 };
 
@@ -195,6 +191,10 @@ function maskDbUrl(url) {
   } catch {
     return 'SET_BUT_INVALID_FORMAT';
   }
+}
+
+function canLogAfter(lastAt, minMs) {
+  return Date.now() - toNum(lastAt, 0) >= minMs;
 }
 
 /* =========================================================
@@ -565,7 +565,7 @@ function clearLiveArmOnly() {
 
 function createInitialState() {
   return {
-    version: 'V23.3 PRO FULL',
+    version: 'V23.5 PRO',
 
     system: {
       status: 'READY',
@@ -640,6 +640,12 @@ function createInitialState() {
       lastHoldReason: '',
       lastPauseLogKey: '',
       pauseStateLoggedKey: '',
+
+      lastHoldStateAt: 0,
+      lastWatchStateAt: 0,
+      lastReadyStateAt: 0,
+      lastFireStateAt: 0,
+      lastSymbolLogAt: 0,
     },
 
     symbol: {
@@ -808,44 +814,24 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V23.3 PRO FULL';
+  target.version = 'V23.5 PRO';
+
+  const fresh = createInitialState();
 
   if (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0) {
-    target.symbol = {
-      active: CONFIG.symbols.list[0],
-      index: 0,
-      lastRotateAt: Date.now(),
-      list: [...CONFIG.symbols.list],
-    };
+    target.symbol = deepClone(fresh.symbol);
   }
 
-  if (!target.liveControl) {
-    target.liveControl = {
-      tradingEnabled: false,
-      killSwitch: false,
-      liveTradingEnabled: false,
-      liveUnlockArmed: false,
-      liveArmEnabled: false,
-      liveGuard: 'LOCKED',
-      realOrdersAllowed: false,
-      liveStatus: 'BLOCKED • LIVE DISABLED',
-    };
-  }
-
-  if (typeof target.liveControl.liveArmEnabled !== 'boolean') {
-    target.liveControl.liveArmEnabled = false;
+  if (!target.liveControl || typeof target.liveControl !== 'object') {
+    target.liveControl = deepClone(fresh.liveControl);
+  } else {
+    target.liveControl = { ...fresh.liveControl, ...target.liveControl };
   }
 
   if (!target.engine || typeof target.engine !== 'object') {
-    target.engine = createInitialState().engine;
-  }
-
-  if (typeof target.engine.lastPauseLogKey !== 'string') {
-    target.engine.lastPauseLogKey = '';
-  }
-
-  if (typeof target.engine.pauseStateLoggedKey !== 'string') {
-    target.engine.pauseStateLoggedKey = '';
+    target.engine = deepClone(fresh.engine);
+  } else {
+    target.engine = { ...fresh.engine, ...target.engine };
   }
 
   ensureBrokerStateShape();
@@ -866,7 +852,7 @@ async function hydrateState() {
   let source = 'NEW';
 
   console.log('====================================================');
-  console.log('[boot] version: V23.3 PRO FULL');
+  console.log('[boot] version: V23.5 PRO');
   console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
   console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
   console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
@@ -1043,6 +1029,47 @@ function clearPauseState() {
   state.engine.pauseStateLoggedKey = '';
 }
 
+function logSymbolChange(symbol) {
+  const sig = `symbol-${symbol}`;
+  if (!canLogAfter(state.engine.lastSymbolLogAt, CONFIG.log.symbolLogMinMs)) return;
+
+  state.engine.lastSymbolLogAt = Date.now();
+
+  addLog(`Symbol aktiv ${symbol}`, {
+    force: true,
+    signature: `${sig}-${Date.now()}`,
+  });
+}
+
+function maybeLogAiStage(stage, symbol, bias, reasons, detail) {
+  const reasonText = reasons.join(' • ');
+  const detailSig = `${stage}|${symbol}|${bias}|${reasonText}|${detail}`;
+
+  if (stage === 'READY') {
+    if (!canLogAfter(state.engine.lastReadyStateAt, CONFIG.log.readyStateMinMs)) return;
+    state.engine.lastReadyStateAt = Date.now();
+    addStateLog(`AI Ready ${bias} (${symbol})`, `state-ready-${detailSig}`);
+    return;
+  }
+
+  if (stage === 'WATCH') {
+    if (!canLogAfter(state.engine.lastWatchStateAt, CONFIG.log.watchStateMinMs)) return;
+    state.engine.lastWatchStateAt = Date.now();
+    addStateLog(`AI Watch ${bias} (${symbol})`, `state-watch-${detailSig}`);
+    return;
+  }
+
+  if (stage === 'HOLD') {
+    const holdSignature = `state-hold-${symbol}-${bias}-${reasonText}-${detail}`;
+    if (holdSignature === state.engine.lastHoldReason) return;
+    if (!canLogAfter(state.engine.lastHoldStateAt, CONFIG.log.holdStateMinMs)) return;
+
+    state.engine.lastHoldReason = holdSignature;
+    state.engine.lastHoldStateAt = Date.now();
+    addStateLog(`AI Hold • ${reasonText} (${symbol})`, holdSignature);
+  }
+}
+
 /* =========================================================
    Session reset
    ========================================================= */
@@ -1076,12 +1103,15 @@ function resetDayIfNeeded() {
   state.engine.lastHoldReason = '';
   state.engine.lastPauseLogKey = '';
   state.engine.pauseStateLoggedKey = '';
+  state.engine.lastHoldStateAt = 0;
+  state.engine.lastWatchStateAt = 0;
+  state.engine.lastReadyStateAt = 0;
+  state.engine.lastFireStateAt = 0;
+  state.engine.lastSymbolLogAt = 0;
 
   state.system.status = 'READY';
   state.system.subtitle = 'System bereit.';
-  state.system.detail = state.session.autoMode
-    ? `AI bereit für Entry. • ${state.symbol.active}`
-    : 'Bereit für manuellen Modus.';
+  state.system.detail = state.session.autoMode ? `AI bereit für Entry. • ${state.symbol.active}` : 'Bereit für manuellen Modus.';
   state.system.liveBadge = state.session.autoMode ? 'AI AUTO ON' : 'LIVE';
 
   addLog(`Day reset ${today}`, { force: true, signature: `day-reset-${today}` });
@@ -1124,23 +1154,23 @@ function generateMarket() {
   let liquidityTarget = 60;
   let sessionTarget = 52;
 
-  if (phase < 0.14) {
-    trendTarget = 86;
-    structureTarget = 87;
-    volumeTarget = 76;
-    volatilityTarget = 32;
-    liquidityTarget = 80;
-    sessionTarget = 66;
-  } else if (phase < 0.32) {
-    trendTarget = 75;
-    structureTarget = 79;
-    volumeTarget = 68;
-    volatilityTarget = 42;
-    liquidityTarget = 73;
-    sessionTarget = 59;
+  if (phase < 0.16) {
+    trendTarget = 84;
+    structureTarget = 86;
+    volumeTarget = 74;
+    volatilityTarget = 34;
+    liquidityTarget = 78;
+    sessionTarget = 64;
+  } else if (phase < 0.34) {
+    trendTarget = 74;
+    structureTarget = 78;
+    volumeTarget = 66;
+    volatilityTarget = 44;
+    liquidityTarget = 72;
+    sessionTarget = 58;
   } else if (phase < 0.58) {
     trendTarget = 58;
-    structureTarget = 63;
+    structureTarget = 62;
     volumeTarget = 58;
     volatilityTarget = 52;
     liquidityTarget = 62;
@@ -1148,17 +1178,17 @@ function generateMarket() {
   } else if (phase < 0.80) {
     trendTarget = 42;
     structureTarget = 46;
-    volumeTarget = 47;
-    volatilityTarget = 69;
+    volumeTarget = 46;
+    volatilityTarget = 70;
     liquidityTarget = 48;
     sessionTarget = 42;
   } else {
     trendTarget = 30;
-    structureTarget = 35;
-    volumeTarget = 61;
-    volatilityTarget = 61;
-    liquidityTarget = 57;
-    sessionTarget = 49;
+    structureTarget = 36;
+    volumeTarget = 62;
+    volatilityTarget = 60;
+    liquidityTarget = 58;
+    sessionTarget = 50;
   }
 
   const p = symbolProfile(state.symbol.active);
@@ -1194,11 +1224,7 @@ function rotateSymbolIfNeeded() {
   state.symbol.active = list[nextIndex];
   state.symbol.lastRotateAt = now;
 
-  addLog(`Symbol aktiv ${state.symbol.active}`, {
-    force: true,
-    signature: `symbol-${state.symbol.active}-${now}`,
-  });
-
+  logSymbolChange(state.symbol.active);
   schedulePersist();
 }
 
@@ -1346,12 +1372,7 @@ function computeAiMetrics() {
     (m.session - 50) * 0.28
   );
 
-  let rawBias = buyComposite >= sellComposite ? 'BUY' : 'SELL';
-  const scoreDelta = Math.abs(buyComposite - sellComposite);
-
-  if (scoreDelta < CONFIG.ai.minScoreDeltaForBiasFlip) {
-    rawBias = state.engine.stableBias || rawBias;
-  }
+  const rawBias = buyComposite >= sellComposite ? 'BUY' : 'SELL';
 
   return {
     buyComposite,
@@ -1438,9 +1459,9 @@ function getSetupQuality(metrics, confidence, score) {
     liquidityOk &&
     volatilityMid &&
     sessionSoft &&
-    edge >= CONFIG.ai.premiumEdgeMin &&
-    score >= CONFIG.ai.premiumScoreMin &&
-    confidence >= CONFIG.ai.premiumConfidenceMin;
+    edge >= 72 &&
+    score >= 66 &&
+    confidence >= 36;
 
   const premiumSell =
     bias === 'SELL' &&
@@ -1450,9 +1471,9 @@ function getSetupQuality(metrics, confidence, score) {
     liquidityOk &&
     volatilityMid &&
     sessionSoft &&
-    edge >= CONFIG.ai.premiumEdgeMin &&
-    score >= CONFIG.ai.premiumScoreMin &&
-    confidence >= CONFIG.ai.premiumConfidenceMin;
+    edge >= 72 &&
+    score >= 66 &&
+    confidence >= 36;
 
   const weakMarket =
     m.volume < 54 ||
@@ -1503,9 +1524,9 @@ function evaluateStage(metrics, confidence, score) {
   const passesPremiumFire =
     setup.premiumSetup &&
     blockers.length === 0 &&
-    edge >= CONFIG.ai.premiumEdgeMin &&
-    score >= CONFIG.ai.premiumScoreMin &&
-    confidence >= CONFIG.ai.premiumConfidenceMin;
+    edge >= 72 &&
+    score >= 66 &&
+    confidence >= 36;
 
   const passesFire = passesNormalFire || passesPremiumFire;
 
@@ -1543,7 +1564,6 @@ function evaluateStage(metrics, confidence, score) {
   }
 
   if (confidence < 34 && candidateStage !== 'FIRE') {
-    candidateStage = 'HOLD';
     signal = 'HOLD';
     setupConfirmed = false;
     detail = `Markt zu schwach für Entry. • ${state.symbol.active}`;
@@ -1722,7 +1742,6 @@ function simulateTradeOutcome(side) {
   const conf = state.ai.confidence;
   const edge = side === 'BUY' ? state.ai.buyEdge : state.ai.sellEdge;
   const score = state.ai.score;
-
   const volPenalty = Math.max(0, state.market.volatility - 55) * 0.35;
   const liqPenalty = Math.max(0, 56 - state.market.liquidity) * 0.25;
   const sessionPenalty = Math.max(0, 48 - state.market.session) * 0.20;
@@ -1730,14 +1749,6 @@ function simulateTradeOutcome(side) {
   const quality = conf * 0.40 + edge * 0.38 + score * 0.22 - volPenalty - liqPenalty - sessionPenalty;
   const winChance = clamp(quality / 100, 0.28, 0.78);
   const isWin = Math.random() < winChance;
-
-  if (score >= 82 && conf >= 72 && edge >= 68) {
-    return isWin ? 5 : -4;
-  }
-
-  if (score <= 60 || conf <= 42) {
-    return isWin ? 3 : -4;
-  }
 
   return isWin ? 4 : -4;
 }
@@ -1765,8 +1776,8 @@ async function afterTradeResult(pnl) {
 }
 
 async function maybeSendBrokerPaperOrder(side, symbol) {
-  refreshLiveControlState();
   const live = state.liveControl || {};
+  refreshLiveControlState();
 
   if (!BROKER_ENABLED) {
     addLog(`Broker order blocked (${symbol} ${side})`, {
@@ -1979,9 +1990,8 @@ async function processAiTick() {
     stage,
     signal,
     state.ai.bias,
-    state.ai.confidence,
     evaluated.detail,
-    ...reasons,
+    reasons.join('|'),
   ].join('|');
 
   if (decisionKey !== state.engine.lastDecisionKey) {
@@ -1997,26 +2007,15 @@ async function processAiTick() {
       state.engine.pauseStateLoggedKey = '';
 
       if (stage === 'FIRE') {
-        addStateLog(
-          `AI FIRE ${signal} (${state.symbol.active})`,
-          `state-fire-${state.symbol.active}-${signal}-${evaluated.premiumSetup ? 'premium' : 'normal'}`
-        );
-      } else if (stage === 'READY') {
-        addStateLog(
-          `AI Ready ${state.ai.bias} (${state.symbol.active})`,
-          `state-ready-${state.symbol.active}-${state.ai.bias}-${evaluated.detail}`
-        );
-      } else if (stage === 'WATCH') {
-        addStateLog(
-          `AI Watch ${state.ai.bias} (${state.symbol.active})`,
-          `state-watch-${state.symbol.active}-${state.ai.bias}-${evaluated.detail}`
-        );
-      } else {
-        const holdSignature = `state-hold-${state.symbol.active}-${state.ai.bias}-${reasons.join('-')}-${evaluated.detail}`;
-        if (holdSignature !== state.engine.lastHoldReason) {
-          state.engine.lastHoldReason = holdSignature;
-          addStateLog(`AI Hold • ${reasons.join(' • ')} (${state.symbol.active})`, holdSignature);
+        if (canLogAfter(state.engine.lastFireStateAt, CONFIG.log.fireStateMinMs)) {
+          state.engine.lastFireStateAt = Date.now();
+          addStateLog(
+            `AI Setup FIRE ${stableBias} (${state.symbol.active})`,
+            `state-fire-ready-${state.symbol.active}-${stableBias}-${evaluated.premiumSetup ? 'premium' : 'normal'}`
+          );
         }
+      } else {
+        maybeLogAiStage(stage, state.symbol.active, state.ai.bias, reasons, evaluated.detail);
       }
     }
   }
@@ -2039,7 +2038,7 @@ async function processAiTick() {
     pauseLogIfChanged(state.ai.pauseReason);
   }
 
-  if (BROKER_ENABLED && Date.now() - brokerLastCheckAt > CONFIG.broker.refreshMs) {
+  if (BROKER_ENABLED && Date.now() - brokerLastCheckAt > 15000) {
     await brokerRefreshAll();
   }
 
@@ -2339,23 +2338,13 @@ app.post('/api/live/lock', async (_req, res) => {
 app.post('/api/broker/manual-buy', async (_req, res) => {
   refreshLiveControlState();
 
-  if (
-    !state.liveControl.tradingEnabled ||
-    state.liveControl.killSwitch ||
-    !state.liveControl.liveTradingEnabled ||
-    !state.liveControl.liveUnlockArmed ||
-    !state.liveControl.liveArmEnabled
-  ) {
+  if (!state.liveControl.tradingEnabled || state.liveControl.killSwitch || !state.liveControl.liveTradingEnabled || !state.liveControl.liveUnlockArmed || !state.liveControl.liveArmEnabled) {
     addLog(`Broker manual BUY blocked (${state.symbol.active})`, {
       force: true,
       signature: `broker-manual-buy-block-${state.symbol.active}-${Date.now()}`,
     });
     await forcePersistNow();
-    return res.status(409).json({
-      ok: false,
-      error: 'Live control blocks broker manual buy',
-      state: getPublicState(),
-    });
+    return res.status(409).json({ ok: false, error: 'Live control blocks broker manual buy', state: getPublicState() });
   }
 
   const result = await brokerSubmitPaperOrder('buy', state.symbol.active, 1);
@@ -2384,23 +2373,13 @@ app.post('/api/broker/manual-buy', async (_req, res) => {
 app.post('/api/broker/manual-sell', async (_req, res) => {
   refreshLiveControlState();
 
-  if (
-    !state.liveControl.tradingEnabled ||
-    state.liveControl.killSwitch ||
-    !state.liveControl.liveTradingEnabled ||
-    !state.liveControl.liveUnlockArmed ||
-    !state.liveControl.liveArmEnabled
-  ) {
+  if (!state.liveControl.tradingEnabled || state.liveControl.killSwitch || !state.liveControl.liveTradingEnabled || !state.liveControl.liveUnlockArmed || !state.liveControl.liveArmEnabled) {
     addLog(`Broker manual SELL blocked (${state.symbol.active})`, {
       force: true,
       signature: `broker-manual-sell-block-${state.symbol.active}-${Date.now()}`,
     });
     await forcePersistNow();
-    return res.status(409).json({
-      ok: false,
-      error: 'Live control blocks broker manual sell',
-      state: getPublicState(),
-    });
+    return res.status(409).json({ ok: false, error: 'Live control blocks broker manual sell', state: getPublicState() });
   }
 
   const result = await brokerSubmitPaperOrder('sell', state.symbol.active, 1);
@@ -2553,6 +2532,6 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log('V23.3 PRO FULL listening on :' + PORT);
+    console.log('V23.5 PRO listening on :' + PORT);
   });
 })();
