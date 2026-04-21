@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>V23.3 PRO FULL</title>
+  <title>V23.4 PRO LIVE COLORS + PNL STATE</title>
   <style>
     :root{
       --bg1:#0a1027;
@@ -27,6 +27,17 @@
       --hero-dark-2:#18204b;
       --hero-card-1:rgba(206,211,255,.82);
       --hero-card-2:rgba(170,178,243,.76);
+
+      --good1:#9ad98a;
+      --good2:#78cd72;
+      --danger1:#f08b90;
+      --danger2:#df666d;
+      --warn1:#f2d27a;
+      --warn2:#e7bc5a;
+      --live1:#88d88a;
+      --live2:#6ecb72;
+      --blue1:#6f7dff;
+      --blue2:#4e5cf1;
     }
 
     *{box-sizing:border-box}
@@ -82,16 +93,10 @@
         linear-gradient(180deg, #11162c 0%, #232b4f 48%, #37406a 100%);
     }
 
-    .top-hero.is-armed{
-      background:
-        radial-gradient(circle at 89% 18%, rgba(242,191,84,.18) 0%, rgba(242,191,84,.05) 9%, transparent 17%),
-        linear-gradient(180deg, #1b1730 0%, #2e2f62 48%, #41458a 100%);
-    }
-
     .top-hero.is-live{
       background:
-        radial-gradient(circle at 89% 18%, rgba(140,224,143,.22) 0%, rgba(140,224,143,.05) 9%, transparent 17%),
-        linear-gradient(180deg, #0c1a22 0%, #18384b 48%, #275869 100%);
+        radial-gradient(circle at 89% 18%, rgba(132,223,138,.22) 0%, rgba(132,223,138,.06) 9%, transparent 17%),
+        linear-gradient(180deg, #081224 0%, #122b38 48%, #1a3e48 100%);
     }
 
     .top-title-row{
@@ -116,8 +121,8 @@
       width:22px;
       height:22px;
       border-radius:50%;
-      background:#c7f97f;
-      box-shadow:0 0 0 10px rgba(199,249,127,.12), 0 0 20px rgba(199,249,127,.45);
+      background:#f1d375;
+      box-shadow:0 0 0 10px rgba(241,211,117,.12), 0 0 20px rgba(241,211,117,.45);
       flex:0 0 auto;
       transition:all .2s ease;
     }
@@ -133,8 +138,8 @@
     }
 
     .top-dot.is-live{
-      background:#8ce08f;
-      box-shadow:0 0 0 10px rgba(140,224,143,.12), 0 0 20px rgba(140,224,143,.45);
+      background:#92e18c;
+      box-shadow:0 0 0 10px rgba(146,225,140,.13), 0 0 22px rgba(146,225,140,.48);
     }
 
     .hero-card{
@@ -160,12 +165,8 @@
       background:linear-gradient(180deg, rgba(214,219,255,.84) 0%, rgba(170,179,236,.78) 100%);
     }
 
-    .hero-card.is-armed{
-      background:linear-gradient(180deg, rgba(223,214,255,.84) 0%, rgba(175,169,241,.78) 100%);
-    }
-
     .hero-card.is-live{
-      background:linear-gradient(180deg, rgba(190,238,216,.84) 0%, rgba(133,205,172,.78) 100%);
+      background:linear-gradient(180deg, rgba(205,224,255,.84) 0%, rgba(164,189,233,.78) 100%);
     }
 
     .hero-card:before{
@@ -234,6 +235,21 @@
       font-weight:900;
       color:#ffffff;
       letter-spacing:-1px;
+      transition:color .18s ease, text-shadow .18s ease;
+    }
+
+    .hero-big.is-pos{
+      color:#ffffff;
+      text-shadow:0 0 18px rgba(140,224,143,.14);
+    }
+
+    .hero-big.is-neg{
+      color:#fff4f5;
+      text-shadow:0 0 18px rgba(239,100,107,.14);
+    }
+
+    .hero-big.is-flat{
+      color:#ffffff;
     }
 
     .hero-pnl-label{
@@ -293,21 +309,21 @@
     }
 
     .pill.warn{
-      background:linear-gradient(180deg, #f7d26e 0%, #efb348 100%);
+      background:linear-gradient(180deg, var(--warn1) 0%, var(--warn2) 100%);
       color:#171717;
     }
 
     .pill.danger{
-      background:linear-gradient(180deg, #ff7f87 0%, #ec5b67 100%);
+      background:linear-gradient(180deg, var(--danger1) 0%, var(--danger2) 100%);
     }
 
     .pill.good{
-      background:linear-gradient(180deg, #6f7dff 0%, #4e5cf1 100%);
+      background:linear-gradient(180deg, var(--blue1) 0%, var(--blue2) 100%);
     }
 
     .pill.live{
-      background:linear-gradient(180deg, #8ce08f 0%, #57c96d 100%);
-      color:#102414;
+      background:linear-gradient(180deg, var(--live1) 0%, var(--live2) 100%);
+      color:#151515;
     }
 
     .content{
@@ -377,8 +393,8 @@
 
     .badge.live{
       background:rgba(140,224,143,.18);
-      border-color:rgba(140,224,143,.30);
-      color:#efffee;
+      border-color:rgba(140,224,143,.28);
+      color:#102212;
     }
 
     .grid-2{
@@ -414,6 +430,10 @@
       color:#fff;
     }
 
+    .mini-card .v.p-pos{ color:#eefee8; }
+    .mini-card .v.p-neg{ color:#ffd8da; }
+    .mini-card .v.p-flat{ color:#fff; }
+
     .action-grid{
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -436,7 +456,10 @@
       background:linear-gradient(180deg, #6f7dff 0%, #4e5cf1 100%);
       box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
       cursor:pointer;
+      transition:transform .08s ease, opacity .15s ease, filter .15s ease;
     }
+
+    button:active{ transform:scale(.985); }
 
     button.warn{
       background:linear-gradient(180deg, #f7d26e 0%, #efb348 100%);
@@ -452,8 +475,8 @@
     }
 
     button.live{
-      background:linear-gradient(180deg, #8ce08f 0%, #57c96d 100%);
-      color:#102414;
+      background:linear-gradient(180deg, var(--good1) 0%, var(--good2) 100%);
+      color:#161616;
     }
 
     .score-head{
@@ -571,13 +594,22 @@
       word-break:break-word;
     }
 
+    .row .rv.p-pos{ color:#eefee8; }
+    .row .rv.p-neg{ color:#ffd8da; }
+    .row .rv.p-flat{ color:#fff; }
+
     .log-list{
       display:grid;
       gap:0;
-      max-height:560px;
+      max-height:620px;
       overflow:auto;
       padding-right:4px;
+      scroll-behavior:smooth;
     }
+
+    .log-list::-webkit-scrollbar{ width:8px; }
+    .log-list::-webkit-scrollbar-track{ background:rgba(255,255,255,.06); border-radius:999px; }
+    .log-list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.22); border-radius:999px; }
 
     .log-item{
       padding:14px 0;
@@ -593,6 +625,7 @@
     .log-item.is-warn{ color:#fff2cf; }
     .log-item.is-danger{ color:#ffd8da; }
     .log-item.is-accent{ color:#e9eeff; }
+    .log-item.is-live{ color:#dfffe3; }
 
     .footer-space{height:20px}
 
@@ -621,7 +654,7 @@
   <div class="app">
     <div class="top-hero" id="topHero">
       <div class="top-title-row">
-        <div class="top-title" id="versionTitle">V23.3 PRO FULL</div>
+        <div class="top-title" id="versionTitle">V23.4 PRO LIVE COLORS + PNL STATE</div>
         <div class="top-dot" id="topDot"></div>
       </div>
 
@@ -784,7 +817,7 @@
           <div class="badge neutral" id="killBadge">KILL SWITCH OFF</div>
           <div class="badge neutral" id="liveGuardBadge">LIVE LOCKED</div>
           <div class="badge neutral" id="liveArmBadge">ARM OFF</div>
-          <div class="badge neutral" id="liveStatusBadge">BLOCKED</div>
+          <div class="badge neutral" id="liveOnBadge">LIVE OFF</div>
         </div>
 
         <h3>LIVE CONTROL PANEL</h3>
@@ -807,8 +840,8 @@
           <button class="warn" onclick="post('/api/live/unlock')">UNLOCK LIVE</button>
           <button class="warn" onclick="post('/api/live/arm')">ARM LIVE</button>
           <button onclick="post('/api/live/lock')">LOCK LIVE</button>
-          <button class="live" onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
-          <button class="live" onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
+          <button id="brokerBuyBtn" onclick="post('/api/broker/manual-buy')">BROKER BUY 1</button>
+          <button id="brokerSellBtn" onclick="post('/api/broker/manual-sell')">BROKER SELL 1</button>
           <button class="secondary" onclick="refreshNow()">REFRESH NOW</button>
         </div>
       </section>
@@ -871,13 +904,35 @@
       el.textContent = label ?? '-';
     }
 
-    function heroTone(title){
-      const t = String(title || '').toUpperCase();
+    function setPnlClass(el, value, baseClass){
+      if (!el) return;
+      if (baseClass) el.className = baseClass;
+      const n = Number(value);
+      el.classList.remove('p-pos','p-neg','p-flat','is-pos','is-neg','is-flat');
+
+      if (!Number.isFinite(n) || n === 0) {
+        if (baseClass === 'hero-big') el.classList.add('is-flat');
+        else el.classList.add('p-flat');
+        return;
+      }
+
+      if (n > 0) {
+        if (baseClass === 'hero-big') el.classList.add('is-pos');
+        else el.classList.add('p-pos');
+      } else {
+        if (baseClass === 'hero-big') el.classList.add('is-neg');
+        else el.classList.add('p-neg');
+      }
+    }
+
+    function heroTone(s){
+      const t = String(s.hero?.title || '').toUpperCase();
+      const live = !!s.liveControl?.realOrdersAllowed;
+
+      if (live && t === 'ARMED') return 'live';
       if (t === 'TARGET') return 'target';
       if (t === 'SESSION_LIMIT') return 'limit';
       if (t === 'LOCKED') return 'locked';
-      if (t === 'ARMED') return 'armed';
-      if (t === 'LIVE') return 'live';
       return 'ready';
     }
 
@@ -887,11 +942,11 @@
       const topDot = q('topDot');
       const heroTitle = q('heroTitle');
 
-      topHero.classList.remove('is-target','is-limit','is-locked','is-armed','is-live');
-      heroCard.classList.remove('is-target','is-limit','is-locked','is-armed','is-live');
+      topHero.classList.remove('is-target','is-limit','is-locked','is-live');
+      heroCard.classList.remove('is-target','is-limit','is-locked','is-live');
       topDot.classList.remove('is-warn','is-danger','is-live');
 
-      const tone = heroTone(s.hero?.title);
+      const tone = heroTone(s);
 
       if (tone === 'target') {
         topHero.classList.add('is-target');
@@ -903,10 +958,6 @@
       } else if (tone === 'locked') {
         topHero.classList.add('is-locked');
         heroCard.classList.add('is-locked');
-        topDot.classList.add('is-warn');
-      } else if (tone === 'armed') {
-        topHero.classList.add('is-armed');
-        heroCard.classList.add('is-armed');
         topDot.classList.add('is-warn');
       } else if (tone === 'live') {
         topHero.classList.add('is-live');
@@ -927,21 +978,11 @@
 
     async function post(url){
       try{
-        const res = await fetch(url, {
+        await fetch(url, {
           method:'POST',
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify({})
         });
-
-        if (!res.ok) {
-          const maybe = await res.json().catch(() => null);
-          if (maybe?.error) {
-            alert(maybe.error);
-          } else {
-            alert('POST Fehler');
-          }
-        }
-
         await refreshNow();
       }catch(err){
         alert('POST Fehler');
@@ -966,9 +1007,38 @@
 
     function getLogClass(item){
       const t = String(item || '');
-      if (t.includes('WIN PnL') || t.includes('Broker order accepted') || t.includes('SYNC DB OK') || t.includes('LIVE • REAL ORDERS ON')) return 'is-good';
-      if (t.includes('Loss Limit') || t.includes('LOSS PnL') || t.includes('Kill Switch ON') || t.includes('failed') || t.includes('blocked')) return 'is-danger';
-      if (t.includes('TARGET') || t.includes('Live Unlock') || t.includes('Live Arm') || t.includes('Cooldown') || t.includes('Order wird verarbeitet') || t.includes('Order queued') || t.includes('ARMED')) return 'is-warn';
+
+      if (
+        t.includes('WIN PnL') ||
+        t.includes('Broker order accepted') ||
+        t.includes('SYNC DB OK') ||
+        t.includes('LIVE • REAL ORDERS ON')
+      ) return 'is-live';
+
+      if (
+        t.includes('Loss Limit') ||
+        t.includes('LOSS PnL') ||
+        t.includes('Kill Switch ON') ||
+        t.includes('failed') ||
+        t.includes('blocked')
+      ) return 'is-danger';
+
+      if (
+        t.includes('TARGET') ||
+        t.includes('Live Unlock') ||
+        t.includes('Live Arm') ||
+        t.includes('Cooldown') ||
+        t.includes('Order wird verarbeitet') ||
+        t.includes('Order queued') ||
+        t.includes('AI FIRE')
+      ) return 'is-warn';
+
+      if (
+        t.includes('STATE RESTORED') ||
+        t.includes('STATE LOADED') ||
+        t.includes('Day reset')
+      ) return 'is-good';
+
       return 'is-accent';
     }
 
@@ -976,7 +1046,7 @@
       const box = q('logList');
       box.innerHTML = '';
 
-      (Array.isArray(list) ? list : []).slice(0, 60).forEach(item => {
+      (Array.isArray(list) ? list : []).slice(0, 80).forEach(item => {
         const d = document.createElement('div');
         d.className = `log-item ${getLogClass(item)}`;
         d.textContent = item;
@@ -984,42 +1054,43 @@
       });
     }
 
-    function applyLiveStatusBadge(textValue){
-      const t = String(textValue || '').toUpperCase();
+    function applyBrokerButtonsState(s){
+      const allow = !!s.liveControl?.realOrdersAllowed;
+      const buyBtn = q('brokerBuyBtn');
+      const sellBtn = q('brokerSellBtn');
 
-      if (t.includes('REAL ORDERS ON') || t.startsWith('LIVE')) {
-        setBadgeState(q('liveStatusBadge'), 'live', 'LIVE ON');
-        return;
+      if (buyBtn) {
+        buyBtn.classList.remove('live');
+        if (allow) buyBtn.classList.add('live');
       }
 
-      if (t.startsWith('ARMED')) {
-        setBadgeState(q('liveStatusBadge'), 'warn', 'ARMED');
-        return;
+      if (sellBtn) {
+        sellBtn.classList.remove('live');
+        if (allow) sellBtn.classList.add('live');
       }
-
-      if (t.includes('KILL SWITCH')) {
-        setBadgeState(q('liveStatusBadge'), 'danger', 'KILL BLOCK');
-        return;
-      }
-
-      setBadgeState(q('liveStatusBadge'), 'neutral', 'BLOCKED');
     }
 
     function renderState(s){
       latestState = s;
 
-      text(q('versionTitle'), s.version || 'V23.3 PRO FULL');
+      text(q('versionTitle'), s.version || 'V23.4 PRO');
       text(q('heroTitle'), s.hero?.title || 'READY');
       text(q('heroSubtitle'), s.hero?.subtitle || '-');
       text(q('heroDetail'), s.hero?.detail || '-');
       text(q('heroReasons'), (s.ai?.reasons || []).join(' • '));
+
       text(q('heroPnlMain'), fmtSigned(s.pnl?.botNetPnL ?? s.hero?.netPnL ?? 0));
+      setPnlClass(q('heroPnlMain'), s.pnl?.botNetPnL ?? s.hero?.netPnL ?? 0, 'hero-big');
+
       text(q('brokerDayPnl'), fmtSigned(s.pnl?.brokerDayPnL));
+      setPnlClass(q('brokerDayPnl'), s.pnl?.brokerDayPnL, '');
+
       text(q('brokerTotalPnl'), fmtSigned(s.pnl?.brokerTotalPnL));
+      setPnlClass(q('brokerTotalPnl'), s.pnl?.brokerTotalPnL, '');
 
       const badgeText = s.hero?.liveBadge || '-';
       if (badgeText.includes('LOSS')) setPillState(q('heroBadge'), 'danger', badgeText);
-      else if (badgeText.includes('TARGET') || badgeText.includes('COOLDOWN') || badgeText.includes('PROCESSING') || badgeText.includes('WIN TARGET')) setPillState(q('heroBadge'), 'warn', badgeText);
+      else if (badgeText.includes('WIN TARGET') || badgeText.includes('TARGET') || badgeText.includes('COOLDOWN') || badgeText.includes('PROCESSING')) setPillState(q('heroBadge'), 'warn', badgeText);
       else if (String(s.liveControl?.liveStatus || '').includes('REAL ORDERS ON')) setPillState(q('heroBadge'), 'live', badgeText);
       else setPillState(q('heroBadge'), 'good', badgeText);
 
@@ -1050,15 +1121,12 @@
       if (dayState === 'WIN TARGET') {
         setBadgeState(q('dayState'), 'warn', dayState);
         setBadgeState(q('logDayBadge'), 'warn', dayState);
-      } else if (dayState === 'LOSS LIMIT' || dayState === 'DAY LIMIT') {
+      } else if (dayState === 'LOSS LIMIT' || dayState === 'DAY LIMIT' || dayState === 'BLOCKED') {
         setBadgeState(q('dayState'), 'danger', dayState);
         setBadgeState(q('logDayBadge'), 'danger', dayState);
       } else if (dayState === 'ARMED') {
         setBadgeState(q('dayState'), 'warn', dayState);
         setBadgeState(q('logDayBadge'), 'warn', dayState);
-      } else if (dayState === 'BLOCKED') {
-        setBadgeState(q('dayState'), 'neutral', dayState);
-        setBadgeState(q('logDayBadge'), 'neutral', dayState);
       } else {
         setBadgeState(q('dayState'), 'good', dayState);
         setBadgeState(q('logDayBadge'), 'good', dayState);
@@ -1078,7 +1146,7 @@
       text(q('autoModeVal'), s.session?.autoMode || '-');
       text(q('symbolVal'), s.symbol?.active || '-');
 
-      setBadgeState(q('brokerModeBadge'), 'neutral', (s.broker?.mode || '-').toUpperCase());
+      text(q('brokerModeBadge'), (s.broker?.mode || '-').toUpperCase());
       setBadgeState(q('brokerConnectedBadge'), s.broker?.connected ? 'good' : 'danger', s.broker?.connected ? 'CONNECTED' : 'DISCONNECTED');
 
       text(q('brokerAccountStatus'), s.broker?.accountStatus || '-');
@@ -1090,18 +1158,16 @@
       text(q('brokerLastOrder'), s.broker?.lastOrder || '-');
       text(q('brokerError'), s.broker?.lastError || '-');
 
-      const liveStatus = s.liveControl?.liveStatus || '-';
+      setPnlClass(q('brokerBuyingPower'), null, 'rv');
+      setPnlClass(q('brokerCash'), null, 'rv');
+      setPnlClass(q('brokerEquity'), s.broker?.equity, 'rv');
+      setPnlClass(q('brokerPortfolio'), s.broker?.portfolioValue, 'rv');
 
-      if (String(liveStatus).includes('REAL ORDERS ON')) {
-        setBadgeState(q('tradingBadge'), 'live', s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
-      } else {
-        setBadgeState(q('tradingBadge'), s.liveControl?.tradingEnabled ? 'warn' : 'neutral', s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
-      }
-
+      setBadgeState(q('tradingBadge'), s.liveControl?.tradingEnabled ? 'warn' : 'neutral', s.liveControl?.tradingEnabled ? 'TRADING ON' : 'TRADING OFF');
       setBadgeState(q('killBadge'), s.liveControl?.killSwitch ? 'danger' : 'neutral', s.liveControl?.killSwitch ? 'KILL SWITCH ON' : 'KILL SWITCH OFF');
       setBadgeState(q('liveGuardBadge'), s.liveControl?.liveGuard === 'UNLOCKED' ? 'warn' : 'neutral', s.liveControl?.liveGuard === 'UNLOCKED' ? 'LIVE UNLOCKED' : 'LIVE LOCKED');
       setBadgeState(q('liveArmBadge'), s.liveControl?.liveArmEnabled ? 'warn' : 'neutral', s.liveControl?.liveArmEnabled ? 'ARM ON' : 'ARM OFF');
-      applyLiveStatusBadge(liveStatus);
+      setBadgeState(q('liveOnBadge'), s.liveControl?.realOrdersAllowed ? 'live' : 'neutral', s.liveControl?.realOrdersAllowed ? 'LIVE ON' : 'LIVE OFF');
 
       text(q('lcBrokerMode'), s.liveControl?.brokerMode || '-');
       text(q('lcTradingEnabled'), s.liveControl?.tradingEnabled ? 'YES' : 'NO');
@@ -1111,11 +1177,12 @@
       text(q('lcArmEnabled'), s.liveControl?.liveArmEnabled ? 'YES' : 'NO');
       text(q('lcGuard'), s.liveControl?.liveGuard || '-');
       text(q('lcRealOrders'), s.liveControl?.realOrdersAllowed ? 'YES' : 'NO');
-      text(q('lcLiveStatus'), liveStatus);
+      text(q('lcLiveStatus'), s.liveControl?.liveStatus || '-');
 
       renderReasons(s.ai?.reasons || []);
       renderLogs(s.logs || []);
       applyHeroTone(s);
+      applyBrokerButtonsState(s);
     }
 
     async function refreshNow(){
