@@ -1383,8 +1383,8 @@ function getLearningAdjustments() {
   const setupBias = getBucketBias(setupStats) * CONFIG.ai.setupLearningWeight;
   const timeBias = getBucketBias(timeStats) * CONFIG.ai.timeBucketLearningWeight;
 
-  const consecutiveLossPenalty = state.session.consecutiveLosses * CONFIG.ai.lossPenaltyWeight;
-  const consecutiveWinBoost = state.session.consecutiveWins * CONFIG.ai.winBoostWeight;
+  const consecutiveLossPenalty = Math.min(6, state.session.consecutiveLosses * 0.8);
+  const consecutiveWinBoost = Math.min(6, state.session.consecutiveWins * 1.2);
 
   const totalBias =
     symbolBias +
@@ -1590,22 +1590,28 @@ function computeConfidence(metrics) {
   const m = state.market;
   const learn = getLearningAdjustments();
 
-  let confidence =
-    dominant * 0.44 +
-    spread * 0.48 +
-    (100 - m.volatility) * 0.12 +
-    learn.totalBias * 1.15;
+  let baseConfidence =
+  dominant * 0.44 +
+  spread * 0.48 +
+  (100 - m.volatility) * 0.12 +
+  learn.totalBias * 1.15;
 
-  if (m.volume < 52) confidence -= 9;
-  if (m.liquidity < 56) confidence -= 10;
-  if (m.volatility > 62) confidence -= 12;
-  if (m.session < 46) confidence -= 8;
+// 🔥 BOOST
+if (score >= 65) baseConfidence += 6;
+if (learn.totalBias > 2) baseConfidence += 4;
+if (state.session.consecutiveWins >= 2) baseConfidence += 3;
 
-  if (state.session.consecutiveLosses >= 2) confidence -= 4 * state.session.consecutiveLosses;
-  if (state.session.consecutiveWins >= 2) confidence += Math.min(4, state.session.consecutiveWins);
+// penalties
+if (m.volume < 52) baseConfidence -= 9;
+if (m.liquidity < 56) baseConfidence -= 10;
+if (m.volatility > 62) baseConfidence -= 12;
+if (m.session < 46) baseConfidence -= 8;
 
-  return Math.round(clamp(confidence / 1.18, 20, 95));
+if (state.session.consecutiveLosses >= 2) {
+  baseConfidence -= 3 * state.session.consecutiveLosses;
 }
+
+return Math.round(clamp(baseConfidence / 1.12, 24, 96));
 
 function computeScore() {
   const m = state.market;
@@ -1746,7 +1752,14 @@ function evaluateStage(metrics, confidence, score) {
     score >= 69 &&
     confidence >= 40;
 
-  const passesFire = passesNormalFire || passesPremiumFire;
+  const adaptiveFire =
+  score >= th.fireScoreMin - 4 &&
+  confidence >= th.confidenceMinFire - 6 &&
+  edge >= (bias === 'BUY' ? th.buyEdgeMinFire - 6 : th.sellEdgeMinFire - 6) &&
+  blockers.length === 0 &&
+  learn.totalBias > -2;
+
+const passesFire = passesNormalFire || passesPremiumFire || adaptiveFire;
 
   if (passesFire) {
     candidateStage = 'FIRE';
@@ -1981,7 +1994,13 @@ function simulateTradeOutcome(side) {
     lossStreakPenalty;
 
   let winChance = quality / 100;
-  winChance = clamp(winChance, 0.24, 0.80);
+
+// 🔥 smarter bias
+if (state.engine.currentLearningBias > 2) winChance += 0.05;
+if (state.session.consecutiveWins >= 2) winChance += 0.04;
+if (state.session.consecutiveLosses >= 2) winChance -= 0.03;
+
+winChance = clamp(winChance, 0.28, 0.84);
 
   const isWin = Math.random() < winChance;
   const positive = round2(3 + Math.random() * 2.5);
