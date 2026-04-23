@@ -12,52 +12,52 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V23.7 PRO PAPER STABLE
+   V23.8 PRO PAPER STABLE
    - quieter AI log
-   - pause duplicate fixed harder
-   - less watch/hold spam
-   - fire stricter
-   - paper test limits widened
+   - no duplicate FIRE state logs
+   - HOLD / WATCH / READY throttled
+   - symbol change log kept
+   - paper-first stable mode
    - bot pnl and broker pnl separated
-   - live / broker logic kept
+   - manual / broker guard kept
    ========================================================= */
 
 const CONFIG = {
   tickMs: 1000,
 
   session: {
-    maxTradesPerDay: 20,
-    winTarget: 50,
-    lossLimit: -30,
-    cooldownMs: 20000,
+    maxTradesPerDay: 50,
+    winTarget: 20,
+    lossLimit: -20,
+    cooldownMs: 10000,
   },
 
   ai: {
     enableLearning: true,
 
-    watchScoreMin: 58,
-    readyScoreMin: 67,
-    fireScoreMin: 78,
+    watchScoreMin: 56,
+    readyScoreMin: 64,
+    fireScoreMin: 74,
 
-    buyEdgeMinWatch: 22,
-    buyEdgeMinReady: 38,
-    buyEdgeMinFire: 60,
+    buyEdgeMinWatch: 18,
+    buyEdgeMinReady: 32,
+    buyEdgeMinFire: 54,
 
-    sellEdgeMinWatch: 22,
-    sellEdgeMinReady: 38,
-    sellEdgeMinFire: 60,
+    sellEdgeMinWatch: 18,
+    sellEdgeMinReady: 32,
+    sellEdgeMinFire: 54,
 
-    confidenceMinWatch: 38,
-    confidenceMinReady: 50,
-    confidenceMinFire: 64,
+    confidenceMinWatch: 34,
+    confidenceMinReady: 46,
+    confidenceMinFire: 60,
 
-    stateConfirmTicks: 3,
-    regimeConfirmTicks: 3,
-    fireConfirmTicks: 3,
+    stateConfirmTicks: 2,
+    regimeConfirmTicks: 2,
+    fireConfirmTicks: 2,
 
-    maxVolatilityForFire: 64,
-    minLiquidityForFire: 58,
-    minSessionForFire: 48,
+    maxVolatilityForFire: 68,
+    minLiquidityForFire: 54,
+    minSessionForFire: 46,
 
     thresholdAdjustStep: 1,
     maxThresholdDrift: 8,
@@ -65,24 +65,23 @@ const CONFIG = {
 
   log: {
     maxEntries: 260,
-    suppressRepeatWithinMs: 14000,
+    suppressRepeatWithinMs: 12000,
 
     holdStateMinMs: 18000,
-    watchStateMinMs: 15000,
-    readyStateMinMs: 12000,
-    fireStateMinMs: 12000,
-    symbolLogMinMs: 20000,
-    pauseStateMinMs: 60000,
+    watchStateMinMs: 12000,
+    readyStateMinMs: 10000,
+    fireStateMinMs: 10000,
+    symbolLogMinMs: 15000,
   },
 
   symbols: {
-    rotateEveryMs: 35000,
+    rotateEveryMs: 25000,
     list: ['AAPL', 'NVDA', 'META', 'AMZN', 'TSLA'],
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v23.7.json'),
-    flushDebounceMs: 180,
+    file: path.join(process.cwd(), 'data', 'state.v23.8.json'),
+    flushDebounceMs: 150,
     dbKey: 'global',
     tableName: 'app_state',
   },
@@ -338,14 +337,8 @@ async function alpacaRequest(method, endpoint, body = null) {
     'Content-Type': 'application/json',
   };
 
-  const options = {
-    method,
-    headers,
-  };
-
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
+  const options = { method, headers };
+  if (body) options.body = JSON.stringify(body);
 
   const res = await fetch(url, options);
   const text = await res.text();
@@ -522,6 +515,12 @@ function refreshLiveControlState() {
     };
   }
 
+  if (state.ai?.paused) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'PAPER PREP • AI PAUSED';
+    return;
+  }
+
   if (state.liveControl.killSwitch) {
     state.liveControl.realOrdersAllowed = false;
     state.liveControl.liveStatus = 'BLOCKED • KILL SWITCH';
@@ -548,7 +547,7 @@ function refreshLiveControlState() {
 
   if (!state.liveControl.liveArmEnabled) {
     state.liveControl.realOrdersAllowed = false;
-    state.liveControl.liveStatus = 'ARMED • REAL ORDERS OFF';
+    state.liveControl.liveStatus = 'PAPER PREP • REAL ORDERS OFF';
     return;
   }
 
@@ -567,7 +566,7 @@ function clearLiveArmOnly() {
 
 function createInitialState() {
   return {
-    version: 'V23.7 PRO PAPER STABLE',
+    version: 'V23.8 PRO PAPER STABLE',
 
     system: {
       status: 'READY',
@@ -648,8 +647,6 @@ function createInitialState() {
       lastReadyStateAt: 0,
       lastFireStateAt: 0,
       lastSymbolLogAt: 0,
-      lastPauseStateAt: 0,
-      pauseReasonLoggedAt: 0,
     },
 
     symbol: {
@@ -818,7 +815,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V23.7 PRO PAPER STABLE';
+  target.version = 'V23.8 PRO PAPER STABLE';
 
   const fresh = createInitialState();
 
@@ -836,12 +833,6 @@ function mergeLoadedState(target, loaded) {
     target.engine = deepClone(fresh.engine);
   } else {
     target.engine = { ...fresh.engine, ...target.engine };
-  }
-
-  if (!target.session || typeof target.session !== 'object') {
-    target.session = deepClone(fresh.session);
-  } else {
-    target.session = { ...fresh.session, ...target.session };
   }
 
   ensureBrokerStateShape();
@@ -862,7 +853,7 @@ async function hydrateState() {
   let source = 'NEW';
 
   console.log('====================================================');
-  console.log('[boot] version: V23.7 PRO PAPER STABLE');
+  console.log('[boot] version: V23.8 PRO PAPER STABLE');
   console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
   console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
   console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
@@ -1000,52 +991,36 @@ function addStateLog(text, signature) {
 }
 
 function pauseLogIfChanged(reason) {
-  const baseKey = `${state.session.date}|${reason}|${state.session.netPnL}|${state.session.tradesToday}`;
+  const key = `${state.session.date}|${reason}|${state.session.netPnL}|${state.session.tradesToday}`;
+  if (state.engine.lastPauseLogKey === key) return;
 
-  if (
-    state.engine.lastPauseLogKey === baseKey &&
-    !canLogAfter(state.engine.pauseReasonLoggedAt, CONFIG.log.pauseStateMinMs)
-  ) {
-    return;
-  }
-
-  state.engine.lastPauseLogKey = baseKey;
-  state.engine.pauseReasonLoggedAt = Date.now();
+  state.engine.lastPauseLogKey = key;
 
   if (reason === 'WIN_TARGET') {
-    addLog('AI pausiert wegen Win Target', {
-      force: true,
-      signature: `pause-win-target-${baseKey}`,
-    });
+    addLog('AI pausiert wegen Win Target', { force: true, signature: `pause-win-target-${key}` });
     return;
   }
 
   if (reason === 'LOSS_LIMIT') {
-    addLog('AI pausiert wegen Loss Limit', {
-      force: true,
-      signature: `pause-loss-limit-${baseKey}`,
-    });
+    addLog('AI pausiert wegen Loss Limit', { force: true, signature: `pause-loss-limit-${key}` });
     return;
   }
 
   if (reason === 'DAY_LIMIT') {
-    addLog('AI pausiert wegen Tageslimit', {
-      force: true,
-      signature: `pause-day-limit-${baseKey}`,
-    });
+    addLog('AI pausiert wegen Tageslimit', { force: true, signature: `pause-day-limit-${key}` });
   }
 }
 
 function setPauseReason(reason) {
-  const changed = !(state.ai.paused && state.ai.pauseReason === reason);
+  if (state.ai.paused && state.ai.pauseReason === reason) {
+    pauseLogIfChanged(reason);
+    return;
+  }
 
   state.ai.paused = true;
   state.ai.pauseReason = reason;
-
-  if (changed) {
-    state.engine.pauseStateLoggedKey = '';
-    pauseLogIfChanged(reason);
-  }
+  state.engine.pauseStateLoggedKey = '';
+  pauseLogIfChanged(reason);
 }
 
 function clearPauseState() {
@@ -1053,17 +1028,12 @@ function clearPauseState() {
   state.ai.pauseReason = '';
   state.engine.lastPauseLogKey = '';
   state.engine.pauseStateLoggedKey = '';
-  state.engine.pauseReasonLoggedAt = 0;
-  state.engine.lastFiredSignature = '';
-  state.engine.fireCandidateSide = null;
-  state.engine.fireCandidateTicks = 0;
 }
 
 function logSymbolChange(symbol) {
   if (!canLogAfter(state.engine.lastSymbolLogAt, CONFIG.log.symbolLogMinMs)) return;
 
   state.engine.lastSymbolLogAt = Date.now();
-
   addLog(`Symbol aktiv ${symbol}`, {
     force: true,
     signature: `symbol-${symbol}-${Date.now()}`,
@@ -1090,7 +1060,6 @@ function maybeLogAiStage(stage, symbol, bias, reasons, detail) {
 
   if (stage === 'HOLD') {
     const holdSignature = `state-hold-${symbol}-${bias}-${reasonText}-${detail}`;
-
     if (holdSignature === state.engine.lastHoldReason) return;
     if (!canLogAfter(state.engine.lastHoldStateAt, CONFIG.log.holdStateMinMs)) return;
 
@@ -1138,14 +1107,11 @@ function resetDayIfNeeded() {
   state.engine.lastReadyStateAt = 0;
   state.engine.lastFireStateAt = 0;
   state.engine.lastSymbolLogAt = 0;
-  state.engine.lastLogSignature = '';
-  state.engine.lastLoggedAt = 0;
-  state.engine.pauseReasonLoggedAt = 0;
 
   state.system.status = 'READY';
   state.system.subtitle = 'System bereit.';
   state.system.detail = state.session.autoMode ? `AI bereit für Entry. • ${state.symbol.active}` : 'Bereit für manuellen Modus.';
-  state.system.liveBadge = state.session.autoMode ? 'PAPER PREP' : 'LIVE';
+  state.system.liveBadge = 'PAPER PREP';
 
   addLog(`Day reset ${today}`, { force: true, signature: `day-reset-${today}` });
   schedulePersist();
@@ -1155,7 +1121,7 @@ function resetDayIfNeeded() {
    Synthetic market feed
    ========================================================= */
 
-function driftMetric(key, target, speed = 0.24, noise = 2.8) {
+function driftMetric(key, target, speed = 0.28, noise = 3.6) {
   const current = state.market[key];
   const delta = (target - current) * speed + (Math.random() * noise - noise / 2);
   state.market[key] = round1(clamp(current + delta, 0, 100));
@@ -1187,41 +1153,41 @@ function generateMarket() {
   let liquidityTarget = 60;
   let sessionTarget = 52;
 
-  if (phase < 0.12) {
+  if (phase < 0.16) {
     trendTarget = 84;
     structureTarget = 86;
-    volumeTarget = 76;
+    volumeTarget = 74;
     volatilityTarget = 34;
-    liquidityTarget = 80;
-    sessionTarget = 66;
-  } else if (phase < 0.28) {
+    liquidityTarget = 78;
+    sessionTarget = 64;
+  } else if (phase < 0.34) {
     trendTarget = 74;
     structureTarget = 78;
-    volumeTarget = 68;
+    volumeTarget = 66;
     volatilityTarget = 44;
-    liquidityTarget = 74;
+    liquidityTarget = 72;
     sessionTarget = 58;
-  } else if (phase < 0.62) {
+  } else if (phase < 0.58) {
     trendTarget = 58;
     structureTarget = 62;
     volumeTarget = 58;
     volatilityTarget = 52;
     liquidityTarget = 62;
     sessionTarget = 52;
-  } else if (phase < 0.84) {
+  } else if (phase < 0.80) {
     trendTarget = 42;
     structureTarget = 46;
     volumeTarget = 46;
-    volatilityTarget = 68;
-    liquidityTarget = 50;
+    volatilityTarget = 70;
+    liquidityTarget = 48;
     sessionTarget = 42;
   } else {
     trendTarget = 30;
     structureTarget = 36;
-    volumeTarget = 58;
-    volatilityTarget = 62;
-    liquidityTarget = 56;
-    sessionTarget = 48;
+    volumeTarget = 62;
+    volatilityTarget = 60;
+    liquidityTarget = 58;
+    sessionTarget = 50;
   }
 
   const p = symbolProfile(state.symbol.active);
@@ -1256,10 +1222,6 @@ function rotateSymbolIfNeeded() {
   state.symbol.index = nextIndex;
   state.symbol.active = list[nextIndex];
   state.symbol.lastRotateAt = now;
-
-  state.engine.lastDecisionKey = '';
-  state.engine.fireCandidateSide = null;
-  state.engine.fireCandidateTicks = 0;
 
   logSymbolChange(state.symbol.active);
   schedulePersist();
@@ -1374,39 +1336,39 @@ function computeAiMetrics() {
   const sessionSupport = m.session;
 
   const buyComposite = round1(
-    trendBuy * 0.27 +
-    structureBuy * 0.25 +
+    trendBuy * 0.26 +
+    structureBuy * 0.24 +
     volumeSupport * 0.15 +
     liquiditySupport * 0.15 +
-    calmness * 0.09 +
-    sessionSupport * 0.09
+    calmness * 0.10 +
+    sessionSupport * 0.10
   );
 
   const sellComposite = round1(
-    trendSell * 0.27 +
-    structureSell * 0.25 +
+    trendSell * 0.26 +
+    structureSell * 0.24 +
     volumeSupport * 0.15 +
     liquiditySupport * 0.15 +
-    calmness * 0.09 +
-    sessionSupport * 0.09
+    calmness * 0.10 +
+    sessionSupport * 0.10
   );
 
   const buyEdge = round1(
-    (m.trend - 50) * 1.00 +
-    (m.structure - 50) * 0.98 +
-    (m.volume - 50) * 0.50 +
-    (m.liquidity - 50) * 0.48 -
-    Math.max(0, m.volatility - 55) * 0.82 +
-    (m.session - 50) * 0.30
+    (m.trend - 50) * 0.95 +
+    (m.structure - 50) * 0.92 +
+    (m.volume - 50) * 0.45 +
+    (m.liquidity - 50) * 0.42 -
+    Math.max(0, m.volatility - 55) * 0.72 +
+    (m.session - 50) * 0.28
   );
 
   const sellEdge = round1(
-    ((100 - m.trend) - 50) * 1.00 +
-    ((100 - m.structure) - 50) * 0.98 +
-    (m.volume - 50) * 0.50 +
-    (m.liquidity - 50) * 0.48 -
-    Math.max(0, m.volatility - 55) * 0.82 +
-    (m.session - 50) * 0.30
+    ((100 - m.trend) - 50) * 0.95 +
+    ((100 - m.structure) - 50) * 0.92 +
+    (m.volume - 50) * 0.45 +
+    (m.liquidity - 50) * 0.42 -
+    Math.max(0, m.volatility - 55) * 0.72 +
+    (m.session - 50) * 0.28
   );
 
   const rawBias = buyComposite >= sellComposite ? 'BUY' : 'SELL';
@@ -1425,26 +1387,26 @@ function computeConfidence(metrics) {
   const spread = Math.abs(metrics.buyComposite - metrics.sellComposite);
   const m = state.market;
 
-  let confidence = dominant * 0.46 + spread * 0.50 + (100 - m.volatility) * 0.10;
+  let confidence = dominant * 0.44 + spread * 0.48 + (100 - m.volatility) * 0.12;
 
-  if (m.volume < 54) confidence -= 10;
-  if (m.liquidity < 58) confidence -= 11;
-  if (m.volatility > 62) confidence -= 14;
-  if (m.session < 48) confidence -= 9;
+  if (m.volume < 52) confidence -= 9;
+  if (m.liquidity < 56) confidence -= 10;
+  if (m.volatility > 62) confidence -= 12;
+  if (m.session < 46) confidence -= 8;
 
-  return Math.round(clamp(confidence / 1.25, 20, 95));
+  return Math.round(clamp(confidence / 1.22, 20, 95));
 }
 
 function computeScore() {
   const m = state.market;
 
   const score =
-    m.trend * 0.19 +
-    m.structure * 0.24 +
+    m.trend * 0.18 +
+    m.structure * 0.22 +
     m.volume * 0.14 +
-    m.liquidity * 0.17 +
-    (100 - m.volatility) * 0.14 +
-    m.session * 0.12;
+    m.liquidity * 0.16 +
+    (100 - m.volatility) * 0.16 +
+    m.session * 0.14;
 
   return Math.round(clamp(score, 0, 99));
 }
@@ -1479,14 +1441,14 @@ function getSetupQuality(metrics, confidence, score) {
   const bias = state.engine.stableBias;
   const edge = bias === 'BUY' ? metrics.buyEdge : metrics.sellEdge;
 
-  const volumeOk = m.volume >= 62;
-  const liquidityOk = m.liquidity >= 58;
-  const volatilityMid = m.volatility <= 60;
-  const sessionSoft = m.session >= 48;
-  const trendUp = m.trend >= 70;
-  const structureStrong = m.structure >= 76;
-  const trendWeak = m.trend <= 40;
-  const structureWeak = m.structure <= 46;
+  const volumeOk = m.volume >= 60;
+  const liquidityOk = m.liquidity >= 56;
+  const volatilityMid = m.volatility <= 62;
+  const sessionSoft = m.session >= 45;
+  const trendUp = m.trend >= 68;
+  const structureStrong = m.structure >= 74;
+  const trendWeak = m.trend <= 42;
+  const structureWeak = m.structure <= 48;
 
   const premiumBuy =
     bias === 'BUY' &&
@@ -1496,9 +1458,9 @@ function getSetupQuality(metrics, confidence, score) {
     liquidityOk &&
     volatilityMid &&
     sessionSoft &&
-    edge >= 76 &&
-    score >= 72 &&
-    confidence >= 52;
+    edge >= 72 &&
+    score >= 66 &&
+    confidence >= 36;
 
   const premiumSell =
     bias === 'SELL' &&
@@ -1508,16 +1470,16 @@ function getSetupQuality(metrics, confidence, score) {
     liquidityOk &&
     volatilityMid &&
     sessionSoft &&
-    edge >= 76 &&
-    score >= 72 &&
-    confidence >= 52;
+    edge >= 72 &&
+    score >= 66 &&
+    confidence >= 36;
 
   const weakMarket =
-    m.volume < 56 ||
-    m.liquidity < 56 ||
-    m.volatility > 64 ||
-    m.session < 46 ||
-    confidence < 38;
+    m.volume < 54 ||
+    m.liquidity < 54 ||
+    m.volatility > 66 ||
+    m.session < 44 ||
+    confidence < 34;
 
   return {
     premiumSetup: premiumBuy || premiumSell,
@@ -1561,9 +1523,9 @@ function evaluateStage(metrics, confidence, score) {
   const passesPremiumFire =
     setup.premiumSetup &&
     blockers.length === 0 &&
-    edge >= 76 &&
-    score >= 72 &&
-    confidence >= 52;
+    edge >= 72 &&
+    score >= 66 &&
+    confidence >= 36;
 
   const passesFire = passesNormalFire || passesPremiumFire;
 
@@ -1578,7 +1540,7 @@ function evaluateStage(metrics, confidence, score) {
     candidateStage = 'READY';
     signal = bias;
     detail =
-      confidence < 48
+      confidence < 42
         ? `Setup fast bereit. • ${state.symbol.active}`
         : bias === 'BUY'
           ? `BUY Setup baut sich auf. • ${state.symbol.active}`
@@ -1600,8 +1562,7 @@ function evaluateStage(metrics, confidence, score) {
     detail = `Markt zu schwach für Entry. • ${state.symbol.active}`;
   }
 
-  if (confidence < 38 && candidateStage !== 'FIRE') {
-    candidateStage = 'HOLD';
+  if (confidence < 34 && candidateStage !== 'FIRE') {
     signal = 'HOLD';
     setupConfirmed = false;
     detail = `Markt zu schwach für Entry. • ${state.symbol.active}`;
@@ -1656,10 +1617,6 @@ function shouldTriggerFire(stage, side, confidence, score, premiumSetup) {
     return false;
   }
 
-  if (Date.now() - state.engine.lastFireAt < CONFIG.session.cooldownMs) {
-    return false;
-  }
-
   if (state.engine.fireCandidateSide === signature) {
     state.engine.fireCandidateTicks += 1;
   } else {
@@ -1684,8 +1641,8 @@ function shouldTriggerFire(stage, side, confidence, score, premiumSetup) {
 function buildAiReasons(metrics, confidence) {
   const tags = regimeTags(state.market);
 
-  if (confidence < 46) tags.push('Low Confidence');
-  if (state.market.volume >= 82 && !tags.includes('Volume OK')) tags.push('Volume OK');
+  if (confidence < 42) tags.push('Low Confidence');
+  if (state.market.volume >= 80 && !tags.includes('Volume OK')) tags.push('Volume OK');
 
   return tags.slice(0, 7);
 }
@@ -1696,25 +1653,27 @@ function mapHero(stage, signal, confidence, detail) {
   if (state.ai.paused) {
     if (state.ai.pauseReason === 'WIN_TARGET') {
       return {
-        status: state.liveControl.liveArmEnabled ? 'ARMED' : 'BLOCKED',
-        subtitle: state.liveControl.liveArmEnabled ? 'REAL ORDERS OFF' : 'LIVE DISABLED',
+        status: 'ARMED',
+        subtitle: 'REAL ORDERS OFF',
         detail: `AI pausiert wegen Win Target • ${state.symbol.active}`,
         liveBadge: 'WIN TARGET',
       };
     }
+
     if (state.ai.pauseReason === 'LOSS_LIMIT') {
       return {
-        status: 'SESSION_LIMIT',
-        subtitle: 'Loss Limit erreicht.',
+        status: 'ARMED',
+        subtitle: 'REAL ORDERS OFF',
         detail: `AI pausiert wegen Loss Limit • ${state.symbol.active}`,
         liveBadge: 'LOSS LIMIT',
       };
     }
+
     return {
-      status: 'SESSION_LIMIT',
-      subtitle: 'Tageslimit erreicht.',
+      status: 'ARMED',
+      subtitle: 'REAL ORDERS OFF',
       detail: `AI pausiert wegen Tageslimit • ${state.symbol.active}`,
-      liveBadge: 'SESSION LIMIT',
+      liveBadge: 'DAY LIMIT',
     };
   }
 
@@ -1742,10 +1701,10 @@ function mapHero(stage, signal, confidence, detail) {
       subtitle: state.liveControl.realOrdersAllowed ? 'REAL ORDERS ON' : 'REAL ORDERS OFF',
       detail:
         detail ||
-        (confidence < 38
+        (confidence < 34
           ? `Markt zu schwach für Entry. • ${state.symbol.active}`
           : `Beobachtung aktiv. • ${state.symbol.active}`),
-      liveBadge: state.session.autoMode ? 'PAPER PREP' : 'LIVE',
+      liveBadge: 'PAPER PREP',
     };
   }
 
@@ -1758,10 +1717,10 @@ function mapHero(stage, signal, confidence, detail) {
         ? `Beobachtung aktiv. • ${state.symbol.active}`
         : stage === 'READY'
           ? `Setup fast bereit. • ${state.symbol.active}`
-          : confidence < 38
+          : confidence < 34
             ? `Markt zu schwach für Entry. • ${state.symbol.active}`
             : `Kein Setup aktuell. • ${state.symbol.active}`),
-    liveBadge: state.session.autoMode ? 'PAPER PREP' : 'LIVE',
+    liveBadge: 'PAPER PREP',
   };
 }
 
@@ -1784,22 +1743,15 @@ function simulateTradeOutcome(side) {
   const conf = state.ai.confidence;
   const edge = side === 'BUY' ? state.ai.buyEdge : state.ai.sellEdge;
   const score = state.ai.score;
-  const volPenalty = Math.max(0, state.market.volatility - 55) * 0.42;
-  const liqPenalty = Math.max(0, 58 - state.market.liquidity) * 0.28;
-  const sessionPenalty = Math.max(0, 50 - state.market.session) * 0.24;
+  const volPenalty = Math.max(0, state.market.volatility - 55) * 0.35;
+  const liqPenalty = Math.max(0, 56 - state.market.liquidity) * 0.25;
+  const sessionPenalty = Math.max(0, 48 - state.market.session) * 0.20;
 
-  const quality =
-    conf * 0.42 +
-    edge * 0.36 +
-    score * 0.22 -
-    volPenalty -
-    liqPenalty -
-    sessionPenalty;
-
-  const winChance = clamp(quality / 100, 0.32, 0.74);
+  const quality = conf * 0.40 + edge * 0.38 + score * 0.22 - volPenalty - liqPenalty - sessionPenalty;
+  const winChance = clamp(quality / 100, 0.28, 0.78);
   const isWin = Math.random() < winChance;
 
-  return isWin ? 6 : -5;
+  return isWin ? 4 : -4;
 }
 
 async function afterTradeResult(pnl) {
@@ -1814,10 +1766,13 @@ async function afterTradeResult(pnl) {
   }
 
   if (state.session.netPnL >= state.session.winTarget) {
+    clearLiveArmOnly();
     setPauseReason('WIN_TARGET');
   } else if (state.session.netPnL <= state.session.lossLimit) {
+    clearLiveArmOnly();
     setPauseReason('LOSS_LIMIT');
   } else if (state.session.tradesToday >= state.session.maxTradesPerDay) {
+    clearLiveArmOnly();
     setPauseReason('DAY_LIMIT');
   }
 
@@ -1860,6 +1815,14 @@ async function maybeSendBrokerPaperOrder(side, symbol) {
     return;
   }
 
+  if (state.ai.paused) {
+    addLog(`Broker order blocked (${symbol} ${side})`, {
+      force: true,
+      signature: `broker-block-paused-${symbol}-${side}-${Date.now()}`,
+    });
+    return;
+  }
+
   const result = await brokerSubmitPaperOrder(side, symbol, 1);
 
   if (result.ok) {
@@ -1880,6 +1843,7 @@ async function maybeSendBrokerPaperOrder(side, symbol) {
 
 function fireOrder(side) {
   if (state.session.processing) return;
+  if (state.ai.paused) return;
 
   const symbolUsed = state.symbol.active;
 
@@ -2048,13 +2012,8 @@ async function processAiTick() {
 
     if (signal === 'PAUSED') {
       const pauseStateKey = `${state.session.date}|${state.ai.pauseReason}|${state.symbol.active}|${state.session.netPnL}|${state.session.tradesToday}`;
-
-      if (
-        state.engine.pauseStateLoggedKey !== pauseStateKey &&
-        canLogAfter(state.engine.lastPauseStateAt, CONFIG.log.pauseStateMinMs)
-      ) {
+      if (state.engine.pauseStateLoggedKey !== pauseStateKey) {
         state.engine.pauseStateLoggedKey = pauseStateKey;
-        state.engine.lastPauseStateAt = Date.now();
         addStateLog('AI Paused', `state-paused-${pauseStateKey}`);
       }
     } else {
@@ -2087,6 +2046,7 @@ async function processAiTick() {
   }
 
   if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
+    clearLiveArmOnly();
     setPauseReason('DAY_LIMIT');
   } else if (state.ai.paused && state.ai.pauseReason) {
     pauseLogIfChanged(state.ai.pauseReason);
@@ -2253,6 +2213,11 @@ function getPublicState() {
       liveStatus: state.liveControl.liveStatus || 'BLOCKED • LIVE DISABLED',
     },
 
+    paper: {
+      brokerMode: BROKER_MODE === 'alpaca-paper' ? 'PAPER' : 'OFF',
+      ready: BROKER_ENABLED && brokerConnected,
+    },
+
     logs: state.logs,
   };
 }
@@ -2360,6 +2325,15 @@ app.post('/api/live/unlock', async (_req, res) => {
 });
 
 app.post('/api/live/arm', async (_req, res) => {
+  if (state.ai.paused) {
+    await forcePersistNow();
+    return res.status(409).json({
+      ok: false,
+      error: 'AI paused',
+      state: getPublicState(),
+    });
+  }
+
   state.liveControl.liveArmEnabled = true;
   refreshLiveControlState();
 
@@ -2392,7 +2366,22 @@ app.post('/api/live/lock', async (_req, res) => {
 app.post('/api/broker/manual-buy', async (_req, res) => {
   refreshLiveControlState();
 
-  if (!state.liveControl.tradingEnabled || state.liveControl.killSwitch || !state.liveControl.liveTradingEnabled || !state.liveControl.liveUnlockArmed || !state.liveControl.liveArmEnabled) {
+  if (state.ai.paused) {
+    addLog(`Broker manual BUY blocked (${state.symbol.active})`, {
+      force: true,
+      signature: `broker-manual-buy-paused-${state.symbol.active}-${Date.now()}`,
+    });
+    await forcePersistNow();
+    return res.status(409).json({ ok: false, error: 'AI paused', state: getPublicState() });
+  }
+
+  if (
+    !state.liveControl.tradingEnabled ||
+    state.liveControl.killSwitch ||
+    !state.liveControl.liveTradingEnabled ||
+    !state.liveControl.liveUnlockArmed ||
+    !state.liveControl.liveArmEnabled
+  ) {
     addLog(`Broker manual BUY blocked (${state.symbol.active})`, {
       force: true,
       signature: `broker-manual-buy-block-${state.symbol.active}-${Date.now()}`,
@@ -2427,7 +2416,22 @@ app.post('/api/broker/manual-buy', async (_req, res) => {
 app.post('/api/broker/manual-sell', async (_req, res) => {
   refreshLiveControlState();
 
-  if (!state.liveControl.tradingEnabled || state.liveControl.killSwitch || !state.liveControl.liveTradingEnabled || !state.liveControl.liveUnlockArmed || !state.liveControl.liveArmEnabled) {
+  if (state.ai.paused) {
+    addLog(`Broker manual SELL blocked (${state.symbol.active})`, {
+      force: true,
+      signature: `broker-manual-sell-paused-${state.symbol.active}-${Date.now()}`,
+    });
+    await forcePersistNow();
+    return res.status(409).json({ ok: false, error: 'AI paused', state: getPublicState() });
+  }
+
+  if (
+    !state.liveControl.tradingEnabled ||
+    state.liveControl.killSwitch ||
+    !state.liveControl.liveTradingEnabled ||
+    !state.liveControl.liveUnlockArmed ||
+    !state.liveControl.liveArmEnabled
+  ) {
     addLog(`Broker manual SELL blocked (${state.symbol.active})`, {
       force: true,
       signature: `broker-manual-sell-block-${state.symbol.active}-${Date.now()}`,
@@ -2486,12 +2490,12 @@ app.post('/api/manual/sell', (_req, res) => {
 });
 
 app.post('/api/manual/win', async (_req, res) => {
-  await afterTradeResult(6);
+  await afterTradeResult(4);
   res.json(getPublicState());
 });
 
 app.post('/api/manual/loss', async (_req, res) => {
-  await afterTradeResult(-5);
+  await afterTradeResult(-4);
   res.json(getPublicState());
 });
 
@@ -2562,6 +2566,8 @@ app.get('/health', (_req, res) => {
     brokerConnected,
     brokerLastError,
     liveStatus: state.liveControl.liveStatus,
+    aiPaused: state.ai.paused,
+    aiPauseReason: state.ai.pauseReason,
   });
 });
 
@@ -2586,6 +2592,6 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log('V23.7 PRO PAPER STABLE listening on :' + PORT);
+    console.log('V23.8 PRO PAPER STABLE listening on :' + PORT);
   });
 })();
