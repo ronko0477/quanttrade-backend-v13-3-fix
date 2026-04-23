@@ -6,40 +6,41 @@
   <title>QuantTrade V23.8 PRO</title>
   <style>
     :root{
-      --bg:#dfe1f4;
-      --nav:#07142c;
-      --panel:#5161ea;
-      --panel-2:#4658e4;
-      --panel-soft:#bfc7ef;
-      --panel-soft-2:#c9d0f2;
-      --text:#f3f5ff;
-      --muted:#d6dbff;
-      --lime:#d7e57d;
-      --green:#9fdb7b;
-      --green-2:#7fd083;
-      --red:#ec7c82;
-      --yellow:#f0cf6a;
-      --blueBtn:#6372ff;
-      --blueBtn2:#4d5df4;
-      --line:rgba(255,255,255,.10);
-      --shadow:0 20px 50px rgba(15,26,60,.28);
-      --inner:inset 0 1px 0 rgba(255,255,255,.14), inset 0 -8px 18px rgba(0,0,0,.08);
-      --radius-xl:34px;
-      --radius-lg:26px;
-      --radius-md:20px;
-      --radius-sm:16px;
-    }
-
+  --bg:#d7dcef;
+  --nav:#061226;
+  --panel:#4c5ce8;
+  --panel-2:#4153de;
+  --panel-soft:#a8b4e5;
+  --panel-soft-2:#b3bee8;
+  --text:#f5f7ff;
+  --muted:#d9dfff;
+  --lime:#d6e97f;
+  --green:#9fe07f;
+  --green-2:#82d86e;
+  --red:#ef7d86;
+  --yellow:#f1cf67;
+  --blueBtn:#6676ff;
+  --blueBtn2:#4e5df2;
+  --line:rgba(255,255,255,.10);
+  --shadow:0 22px 54px rgba(9,18,46,.28);
+  --inner:inset 0 1px 0 rgba(255,255,255,.12), inset 0 -10px 20px rgba(0,0,0,.08);
+  --radius-xl:34px;
+  --radius-lg:26px;
+  --radius-md:20px;
+  --radius-sm:16px;
+}
     *{box-sizing:border-box}
     html,body{
-      margin:0;
-      padding:0;
-      background:linear-gradient(180deg,#dfe1f4 0%, #d7daf0 100%);
-      color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-      -webkit-font-smoothing:antialiased;
-      text-rendering:optimizeLegibility;
-    }
+  margin:0;
+  padding:0;
+  background:
+    radial-gradient(circle at top right, rgba(130,216,110,.08), transparent 18%),
+    linear-gradient(180deg,#d8dcef 0%, #cfd5ea 100%);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
 
     body{
       min-height:100vh;
@@ -88,16 +89,18 @@
       overflow:hidden;
     }
 
-    .brandbar::after{
-      content:"";
-      position:absolute;
-      right:-40px;
-      top:-40px;
-      width:180px;
-      height:180px;
-      background:radial-gradient(circle, rgba(159,219,123,.24), rgba(159,219,123,0) 64%);
-      pointer-events:none;
-    }
+    .brandbar{
+  background:
+    radial-gradient(circle at 85% 20%, rgba(159,224,127,.12), transparent 18%),
+    linear-gradient(180deg,#071325 0%, #0a1730 46%, #0a1328 100%);
+  border-radius:0 0 34px 34px;
+  box-shadow:0 18px 40px rgba(7,17,44,.30);
+  padding:26px 18px 34px;
+  margin-bottom:22px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
 
     .brand{
       display:inline-flex;
@@ -118,14 +121,16 @@
     }
 
     .card{
-      background:linear-gradient(180deg,var(--panel) 0%, var(--panel-2) 100%);
-      border-radius:var(--radius-xl);
-      box-shadow:var(--shadow);
-      padding:28px;
-      margin-bottom:22px;
-      position:relative;
-      overflow:hidden;
-    }
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
+    linear-gradient(180deg,var(--panel) 0%, var(--panel-2) 100%);
+  border-radius:var(--radius-xl);
+  box-shadow:var(--shadow);
+  padding:28px;
+  margin-bottom:22px;
+  position:relative;
+  overflow:hidden;
+}
 
     .card::before{
       content:"";
@@ -137,35 +142,40 @@
     }
 
     .hero{
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
-        linear-gradient(180deg,#142449 0%, #233c69 100%);
-      padding:20px;
-    }
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)),
+    linear-gradient(180deg,#071426 0%, #13284a 52%, #1c3560 100%);
+  padding:20px;
+}
 
-    .hero-shell{
-      background:linear-gradient(180deg,var(--panel-soft-2) 0%, #b9c2e8 100%);
-      border-radius:34px;
-      padding:20px;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.18), 0 14px 34px rgba(9,18,46,.20);
-    }
+  .hero-shell{
+  background:linear-gradient(180deg,#aeb9e4 0%, #a4b0dd 100%);
+  border-radius:34px;
+  padding:20px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.14),
+    0 16px 36px rgba(9,18,46,.24);
+}
 
-    .hero-inner{
-      border-radius:30px;
-      padding:26px 24px 30px;
-      background:rgba(255,255,255,.07);
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
-      text-align:center;
-    }
+  .hero-inner{
+  border-radius:30px;
+  padding:26px 24px 30px;
+  background:rgba(255,255,255,.035);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.06),
+    inset 0 -10px 22px rgba(0,0,0,.04);
+  text-align:center;
+}
 
     .hero-title{
-      font-size:96px;
-      line-height:.95;
-      margin:0 0 12px;
-      font-weight:1000;
-      letter-spacing:.5px;
-      color:var(--lime);
-    }
+  font-size:96px;
+  line-height:.95;
+  margin:0 0 12px;
+  font-weight:1000;
+  letter-spacing:.5px;
+  color:var(--lime);
+  text-shadow:0 4px 18px rgba(0,0,0,.18);
+}
 
     .hero-sub{
       font-size:28px;
@@ -194,12 +204,13 @@
     }
 
     .hero-pnl{
-      font-size:110px;
-      line-height:1;
-      font-weight:1000;
-      margin:14px 0 10px;
-      color:#fff;
-    }
+  font-size:110px;
+  line-height:1;
+  font-weight:1000;
+  margin:14px 0 10px;
+  color:#fff;
+  text-shadow:0 4px 16px rgba(0,0,0,.14);
+}
 
     .hero-label{
       font-size:26px;
@@ -277,7 +288,8 @@
     .badge.good{ background:rgba(159,219,123,.18); }
     .badge.warn{ background:rgba(240,207,106,.18); }
     .badge.danger{ background:rgba(236,124,130,.18); }
-
+    .badge.blue{ background:rgba(108,128,255,.20); }
+}
     .grid-2{
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -285,11 +297,11 @@
     }
 
     .panel{
-      background:linear-gradient(180deg,rgba(74,87,228,.78),rgba(66,78,215,.78));
-      border-radius:26px;
-      padding:18px;
-      box-shadow:var(--inner);
-    }
+  background:linear-gradient(180deg,rgba(77,90,229,.84),rgba(66,79,216,.82));
+  border-radius:26px;
+  padding:18px;
+  box-shadow:var(--inner);
+}
 
     .label{
       font-size:18px;
@@ -367,12 +379,12 @@
     }
 
     .score-box,.status-box{
-      background:rgba(88,100,227,.26);
-      border-radius:20px;
-      padding:18px;
-      box-shadow:var(--inner);
-      min-height:112px;
-    }
+  background:rgba(95,108,232,.28);
+  border-radius:20px;
+  padding:18px;
+  box-shadow:var(--inner);
+  min-height:112px;
+}
 
     .score-box .k,
     .status-box .k{
@@ -391,11 +403,11 @@
     }
 
     .table-card{
-      background:rgba(75,88,220,.28);
-      border-radius:24px;
-      padding:14px 18px;
-      box-shadow:var(--inner);
-    }
+  background:rgba(72,86,219,.30);
+  border-radius:24px;
+  padding:14px 18px;
+  box-shadow:var(--inner);
+}
 
     .table{
       width:100%;
@@ -431,22 +443,25 @@
     }
 
     button.btn{
-      appearance:none;
-      border:none;
-      outline:none;
-      cursor:pointer;
-      width:100%;
-      min-height:76px;
-      border-radius:24px;
-      padding:14px 18px;
-      font-size:22px;
-      font-weight:1000;
-      letter-spacing:.2px;
-      color:#fff;
-      text-transform:uppercase;
-      box-shadow:0 8px 18px rgba(18,28,72,.24), var(--inner);
-      transition:transform .05s ease, filter .15s ease, opacity .15s ease;
-    }
+  appearance:none;
+  border:none;
+  outline:none;
+  cursor:pointer;
+  width:100%;
+  min-height:76px;
+  border-radius:24px;
+  padding:14px 18px;
+  font-size:22px;
+  font-weight:1000;
+  letter-spacing:.2px;
+  color:#fff;
+  text-transform:uppercase;
+  box-shadow:
+    0 10px 20px rgba(18,28,72,.24),
+    inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 -8px 16px rgba(0,0,0,.08);
+  transition:transform .05s ease, filter .15s ease, opacity .15s ease;
+}
 
     button.btn:active{ transform:translateY(1px) scale(.995); }
     button.btn:disabled{
@@ -538,10 +553,6 @@
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="urlbar mono">quanttrade-backend-v13-3-fix-1.onrender.com</div>
-  </div>
-
   <div class="app">
     <div class="brandbar">
       <div class="brand">
@@ -876,40 +887,55 @@
     }
 
     function setHeroStatus(state) {
-      const hero = state.hero || {};
-      const session = state.session || {};
-      const ai = state.ai || {};
+  const hero = state.hero || {};
+  const session = state.session || {};
+  const ai = state.ai || {};
+  const live = state.liveControl || {};
 
-      els.heroTitle.textContent = safeText(hero.title, 'READY');
-      els.heroSubtitle.textContent = safeText(hero.subtitle, '-');
-      els.heroDetail.textContent = safeText(hero.detail, '-');
-      els.heroReasons.textContent = (ai.reasons && ai.reasons.length) ? ai.reasons.join(' • ') : '-';
-      els.heroPnL.textContent = fmtSigned(hero.netPnL ?? 0);
+  els.heroTitle.textContent = safeText(hero.title, 'READY');
+  els.heroSubtitle.textContent = safeText(hero.subtitle, '-');
+  els.heroDetail.textContent = safeText(hero.detail, '-');
+  els.heroReasons.textContent = (ai.reasons && ai.reasons.length) ? ai.reasons.join(' • ') : '-';
+  els.heroPnL.textContent = fmtSigned(hero.netPnL ?? 0);
 
-      els.heroBrokerDay.textContent = fmtSigned(state?.pnl?.brokerDayPnL);
-      els.heroBrokerTotal.textContent = fmtSigned(state?.pnl?.brokerTotalPnL);
+  els.heroBrokerDay.textContent = fmtSigned(state?.pnl?.brokerDayPnL);
+  els.heroBrokerTotal.textContent = fmtSigned(state?.pnl?.brokerTotalPnL);
 
-      let heroText = safeText(hero.liveBadge, 'LIVE');
-      let heroStyle = 'green';
+  let heroText = safeText(hero.liveBadge, 'PAPER PREP');
+  let heroStyle = 'green';
 
-      if (session.dayState === 'WIN TARGET') {
-        heroText = 'WIN TARGET';
-        heroStyle = 'yellow';
-      } else if (session.dayState === 'LOSS LIMIT') {
-        heroText = 'LOSS LIMIT';
-        heroStyle = 'red';
-      } else if (ai.paused) {
-        heroText = 'AI PAUSED';
-        heroStyle = 'red';
-      } else if (String(hero.liveBadge || '').includes('COOLDOWN')) {
-        heroStyle = 'yellow';
-      } else if (String(hero.liveBadge || '').includes('PAPER')) {
-        heroStyle = 'green';
-      }
+  if (session.dayState === 'WIN TARGET') {
+    heroText = 'WIN TARGET';
+    heroStyle = 'yellow';
+  } else if (session.dayState === 'LOSS LIMIT') {
+    heroText = 'LOSS LIMIT';
+    heroStyle = 'red';
+  } else if (ai.paused) {
+    heroText = 'AI PAUSED';
+    heroStyle = 'red';
+  } else if (String(hero.liveBadge || '').includes('COOLDOWN')) {
+    heroStyle = 'yellow';
+  } else if (live.realOrdersAllowed) {
+    heroText = 'LIVE ARMED';
+    heroStyle = 'blue';
+  } else if (live.liveArmEnabled) {
+    heroText = 'PAPER PREP';
+    heroStyle = 'green';
+  } else {
+    heroText = safeText(hero.liveBadge, 'PAPER PREP');
+    heroStyle = 'green';
+  }
 
-      setButtonTheme(els.heroBadgeBtn, heroStyle);
-      els.heroBadgeBtn.textContent = heroText || 'PAPER PREP';
-    }
+  function setButtonTheme(btn, kind) {
+  btn.className = 'btn';
+
+  if (kind === 'green') btn.classList.add('btn-green');
+  else if (kind === 'yellow') btn.classList.add('btn-yellow');
+  else if (kind === 'red') btn.classList.add('btn-red');
+  else if (kind === 'soft') btn.classList.add('btn-soft');
+  else if (kind === 'blue') btn.classList.add('hero-blue');
+  else btn.classList.add('btn-blue');
+}
 
     function setAiSignal(state) {
       const ai = state.ai || {};
