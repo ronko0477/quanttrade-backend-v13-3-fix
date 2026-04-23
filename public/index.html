@@ -3,76 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>QuantTrade V23.9 UI PRO</title>
+  <title>QuantTrade V23.9 UI PRO CLEAN</title>
   <style>
     :root{
-      --bg:#dfe2f3;
-      --bg-2:#d7dbef;
-
-      --nav-1:#071126;
-      --nav-2:#091a39;
-
-      --hero-1:#09142d;
-      --hero-2:#132a55;
-      --hero-shell-1:#bcc5eb;
-      --hero-shell-2:#b3bde5;
-
-      --panel:#5565ef;
-      --panel-2:#4758e7;
-      --panel-soft:#6676ff;
-      --panel-soft-2:#5667fb;
-
+      --bg:#dfe1f4;
+      --nav:#07142c;
+      --nav-2:#091938;
+      --panel:#5666ee;
+      --panel-2:#4859e6;
+      --panel-soft:#bcc5ec;
+      --panel-soft-2:#c8d0f1;
       --text:#f4f6ff;
-      --muted:#dbe1ff;
-      --lime:#d7e57d;
+      --muted:#d6dbff;
+      --lime:#d8e67e;
       --green:#9fdb7b;
-      --green-2:#86d276;
-      --red:#eb7e86;
+      --green-2:#84d47f;
+      --red:#ea7b83;
       --yellow:#efcf6a;
+      --blueBtn:#6676ff;
+      --blueBtn2:#4d5df2;
       --line:rgba(255,255,255,.10);
-
-      --shadow:0 20px 48px rgba(15,26,60,.28);
-      --inner:inset 0 1px 0 rgba(255,255,255,.12), inset 0 -8px 18px rgba(0,0,0,.10);
-
+      --shadow:0 20px 50px rgba(15,26,60,.28);
+      --inner:inset 0 1px 0 rgba(255,255,255,.14), inset 0 -8px 18px rgba(0,0,0,.08);
       --radius-xl:34px;
       --radius-lg:26px;
       --radius-md:20px;
       --radius-sm:16px;
     }
 
-    *{ box-sizing:border-box; }
+    *{box-sizing:border-box}
 
     html,body{
       margin:0;
       padding:0;
-      background:linear-gradient(180deg,var(--bg) 0%, var(--bg-2) 100%);
+      background:linear-gradient(180deg,#dfe1f4 0%, #d7daf0 100%);
       color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
       -webkit-font-smoothing:antialiased;
       text-rendering:optimizeLegibility;
     }
 
-    body{
-      min-height:100vh;
-    }
+    body{ min-height:100vh; }
 
     .app{
       width:min(980px,100%);
-      margin:0 auto;
-      padding:18px 16px 42px;
+      margin:0 auto 56px;
+      padding:22px 16px 40px;
     }
 
     .brandbar{
-      margin:0 0 22px 0;
-      padding:28px 18px 34px;
+      background:
+        linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01)),
+        linear-gradient(180deg,#08142d 0%, #091a42 45%, #08142d 100%);
       border-radius:0 0 34px 34px;
+      box-shadow:var(--shadow);
+      padding:28px 18px 34px;
+      margin-bottom:22px;
       text-align:center;
       position:relative;
       overflow:hidden;
-      box-shadow:var(--shadow);
-      background:
-        radial-gradient(circle at 78% 26%, rgba(159,219,123,.18), rgba(159,219,123,0) 16%),
-        linear-gradient(180deg,var(--nav-1) 0%, var(--nav-2) 100%);
+    }
+
+    .brandbar::before{
+      content:"";
+      position:absolute;
+      left:0;
+      right:0;
+      top:0;
+      height:1px;
+      background:rgba(255,255,255,.18);
+    }
+
+    .brandbar::after{
+      content:"";
+      position:absolute;
+      right:-36px;
+      top:-44px;
+      width:200px;
+      height:200px;
+      background:radial-gradient(circle, rgba(159,219,123,.22), rgba(159,219,123,0) 66%);
+      pointer-events:none;
     }
 
     .brand{
@@ -106,94 +116,94 @@
     .card::before{
       content:"";
       position:absolute;
-      inset:12px;
+      inset:14px;
       border-radius:calc(var(--radius-xl) - 10px);
       border:1px solid rgba(255,255,255,.08);
       pointer-events:none;
     }
 
     .hero{
-      padding:18px;
       background:
-        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02)),
-        linear-gradient(180deg,var(--hero-1) 0%, var(--hero-2) 100%);
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
+        linear-gradient(180deg,#122347 0%, #233c69 100%);
+      padding:20px;
     }
 
     .hero-shell{
-      background:linear-gradient(180deg,var(--hero-shell-1) 0%, var(--hero-shell-2) 100%);
+      background:linear-gradient(180deg,var(--panel-soft-2) 0%, #b8c1e8 100%);
       border-radius:34px;
-      padding:18px;
-      box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,.14),
-        0 14px 34px rgba(9,18,46,.22);
+      padding:20px;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.18), 0 14px 34px rgba(9,18,46,.20);
     }
 
     .hero-inner{
       border-radius:30px;
-      padding:26px 22px 30px;
-      text-align:center;
+      padding:26px 24px 30px;
       background:rgba(255,255,255,.05);
       box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+      text-align:center;
     }
 
     .hero-title{
-      margin:0 0 12px 0;
       font-size:96px;
       line-height:.95;
+      margin:0 0 12px;
       font-weight:1000;
       letter-spacing:.5px;
       color:var(--lime);
+      text-transform:uppercase;
     }
 
     .hero-sub{
-      margin:0;
       font-size:28px;
       font-weight:1000;
+      margin:0;
       color:#fff;
+      text-transform:uppercase;
     }
 
     .hero-detail{
       margin:20px auto 10px;
       max-width:760px;
       font-size:26px;
-      line-height:1.24;
-      font-weight:900;
+      line-height:1.25;
+      font-weight:850;
       color:#fff;
     }
 
     .hero-reasons{
-      margin:0 auto 24px;
+      margin:0 auto 26px;
       max-width:760px;
-      font-size:21px;
+      font-size:22px;
       line-height:1.24;
-      font-weight:850;
+      font-weight:800;
       color:#f2f4ff;
-      opacity:.97;
+      opacity:.96;
     }
 
     .hero-pnl{
-      margin:14px 0 10px;
       font-size:110px;
       line-height:1;
       font-weight:1000;
+      margin:14px 0 10px;
       color:#fff;
     }
 
     .hero-label{
-      margin-bottom:24px;
       font-size:26px;
-      font-weight:900;
+      font-weight:1000;
+      margin-bottom:26px;
     }
 
     .hero-broker-grid{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:18px;
-      margin-bottom:20px;
+      margin-bottom:22px;
     }
 
     .hero-mini{
-      background:rgba(115,126,236,.28);
+      background:rgba(112,122,232,.30);
       border-radius:20px;
       padding:16px 14px;
       box-shadow:var(--inner);
@@ -201,9 +211,9 @@
 
     .hero-mini .k{
       font-size:18px;
-      font-weight:850;
+      font-weight:900;
+      opacity:.96;
       margin-bottom:8px;
-      opacity:.97;
     }
 
     .hero-mini .v{
@@ -218,18 +228,18 @@
 
     .title-row{
       display:flex;
-      align-items:flex-start;
+      align-items:center;
       justify-content:space-between;
       gap:16px;
-      margin-bottom:18px;
+      margin-bottom:20px;
     }
 
     .title{
-      margin:0;
       font-size:26px;
       font-weight:1000;
       letter-spacing:.4px;
       text-transform:uppercase;
+      margin:0;
     }
 
     .badge-row{
@@ -242,33 +252,28 @@
     .badge{
       padding:12px 18px;
       border-radius:999px;
-      background:rgba(170,180,245,.20);
-      border:1px solid rgba(255,255,255,.12);
+      background:rgba(170,180,245,.22);
+      border:1px solid rgba(255,255,255,.13);
       font-size:14px;
-      font-weight:900;
+      font-weight:1000;
       letter-spacing:.2px;
       color:#eef1ff;
       box-shadow:var(--inner);
       text-transform:uppercase;
-      white-space:nowrap;
     }
 
-    .badge.good{ background:rgba(159,219,123,.16); }
-    .badge.warn{ background:rgba(240,207,106,.16); }
-    .badge.danger{ background:rgba(236,124,130,.16); }
+    .badge.good{ background:rgba(159,219,123,.18); }
+    .badge.warn{ background:rgba(240,207,106,.18); }
+    .badge.danger{ background:rgba(236,124,130,.18); }
 
-    .grid-2,
-    .score-grid,
-    .status-grid,
-    .live-grid,
-    .broker-actions{
+    .grid-2{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:18px;
     }
 
     .panel{
-      background:linear-gradient(180deg,rgba(80,93,230,.76),rgba(69,80,215,.76));
+      background:linear-gradient(180deg,rgba(74,87,228,.78),rgba(66,78,215,.78));
       border-radius:26px;
       padding:18px;
       box-shadow:var(--inner);
@@ -276,33 +281,35 @@
 
     .label{
       font-size:18px;
-      font-weight:850;
+      font-weight:900;
       margin-bottom:10px;
       opacity:.98;
+      text-transform:uppercase;
     }
 
     .value-xl{
-      margin:0;
       font-size:72px;
       line-height:1;
       font-weight:1000;
       color:var(--lime);
+      margin:0;
+      text-transform:uppercase;
     }
 
     .value-lg{
-      margin:0;
       font-size:30px;
       line-height:1.1;
       font-weight:1000;
+      margin:0;
       color:var(--lime);
-      word-break:break-word;
+      text-transform:uppercase;
     }
 
     .value-md{
-      margin:0;
       font-size:24px;
       line-height:1.2;
       font-weight:1000;
+      margin:0;
     }
 
     .progress{
@@ -337,8 +344,18 @@
       padding:14px 18px;
       text-align:center;
       font-size:16px;
-      font-weight:900;
+      font-weight:1000;
       box-shadow:var(--inner);
+      text-transform:uppercase;
+    }
+
+    .score-grid,
+    .status-grid,
+    .live-grid,
+    .broker-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
     }
 
     .score-box,.status-box{
@@ -352,7 +369,7 @@
     .score-box .k,
     .status-box .k{
       font-size:16px;
-      font-weight:850;
+      font-weight:900;
       margin-bottom:8px;
     }
 
@@ -363,6 +380,7 @@
       color:var(--lime);
       line-height:1.1;
       word-break:break-word;
+      text-transform:uppercase;
     }
 
     .table-card{
@@ -384,7 +402,7 @@
     .table td{
       padding:14px 8px;
       font-size:17px;
-      font-weight:800;
+      font-weight:900;
       vertical-align:middle;
     }
 
@@ -392,7 +410,7 @@
       text-align:right;
       font-weight:1000;
       color:#fff;
-      word-break:break-word;
+      text-transform:uppercase;
     }
 
     .section-btn-grid{
@@ -424,21 +442,18 @@
       transition:transform .05s ease, filter .15s ease, opacity .15s ease;
     }
 
-    button.btn:active{
-      transform:translateY(1px) scale(.995);
-    }
-
+    button.btn:active{ transform:translateY(1px) scale(.995); }
     button.btn:disabled{
       opacity:.45;
       cursor:not-allowed;
       filter:saturate(.7);
     }
 
-    .btn-blue{ background:linear-gradient(180deg,#6676ff 0%, #4f5df2 100%); }
+    .btn-blue{ background:linear-gradient(180deg,var(--blueBtn) 0%, var(--blueBtn2) 100%); }
     .btn-green{ background:linear-gradient(180deg,#a8dc7b 0%, #89cf79 100%); color:#071420; }
     .btn-red{ background:linear-gradient(180deg,#ef8f95 0%, #e26e77 100%); }
     .btn-yellow{ background:linear-gradient(180deg,#f0cf6a 0%, #e9bf57 100%); color:#111; }
-    .btn-soft{ background:linear-gradient(180deg,#9aa6ff 0%, #8795ff 100%); }
+    .btn-soft{ background:linear-gradient(180deg,#8ea0ff 0%, #7f90ff 100%); }
 
     .hero-green{ background:linear-gradient(180deg,#a9dc80 0%, #90d37a 100%) !important; color:#091121 !important; }
     .hero-yellow{ background:linear-gradient(180deg,#f2dd85 0%, #edd170 100%) !important; color:#111 !important; }
@@ -458,17 +473,11 @@
       font-size:18px;
       line-height:1.35;
       color:#eef2ff;
-      word-break:break-word;
     }
 
-    .log-item:first-child{
-      border-top:none;
-      padding-top:6px;
-    }
+    .log-item:first-child{ border-top:none; padding-top:6px; }
 
-    .footer-gap{
-      height:24px;
-    }
+    .footer-gap{ height:30px; }
 
     .mono{
       font-variant-numeric:tabular-nums;
@@ -476,7 +485,7 @@
     }
 
     @media (max-width: 820px){
-      .app{ padding:14px 14px 34px; }
+      .app{ padding:22px 14px 34px; }
       .brand{ font-size:19px; gap:12px; }
       .dot{ width:22px; height:22px; }
       .card{ padding:22px; border-radius:28px; }
@@ -488,6 +497,9 @@
       .hero-reasons{ font-size:17px; }
       .hero-pnl{ font-size:84px; }
       .hero-label{ font-size:18px; }
+      .grid-2, .score-grid, .status-grid, .live-grid, .section-btn-grid, .broker-actions, .hero-broker-grid{
+        grid-template-columns:1fr 1fr;
+      }
       button.btn{ min-height:68px; font-size:18px; }
       .value-xl{ font-size:56px; }
     }
@@ -495,6 +507,12 @@
     @media (max-width: 560px){
       .hero-title{ font-size:58px; }
       .hero-pnl{ font-size:76px; }
+      .grid-2, .score-grid, .status-grid, .live-grid, .broker-actions{
+        grid-template-columns:1fr 1fr;
+      }
+      .section-btn-grid{
+        grid-template-columns:1fr 1fr;
+      }
       .table td{
         font-size:15px;
         padding:12px 6px;
@@ -502,6 +520,10 @@
       .title{ font-size:22px; }
       .reason-pill{ font-size:14px; padding:12px 14px; }
       .log-item{ font-size:16px; }
+      .badge{
+        font-size:13px;
+        padding:11px 15px;
+      }
     }
   </style>
 </head>
@@ -509,7 +531,7 @@
   <div class="app">
     <div class="brandbar">
       <div class="brand">
-        <span>V23.9 UI PRO</span>
+        <span>V23.9 UI PRO CLEAN</span>
         <span id="brandDot" class="dot"></span>
       </div>
     </div>
@@ -737,6 +759,8 @@
       heroBrokerDay: $('heroBrokerDay'),
       heroBrokerTotal: $('heroBrokerTotal'),
       heroBadgeBtn: $('heroBadgeBtn'),
+      lossBtnHero: $('lossBtnHero'),
+      winBtnHero: $('winBtnHero'),
 
       aiSignal: $('aiSignal'),
       aiConfidence: $('aiConfidence'),
@@ -794,25 +818,7 @@
 
       logDayBadge: $('logDayBadge'),
       logSyncBadge: $('logSyncBadge'),
-      logsWrap: $('logsWrap'),
-
-      btnRefresh: $('btnRefresh'),
-      btnRefresh2: $('btnRefresh2'),
-      btnAutoToggle: $('btnAutoToggle'),
-      btnReset: $('btnReset'),
-      btnManualBuy: $('btnManualBuy'),
-      btnManualSell: $('btnManualSell'),
-      btnBrokerToggle: $('btnBrokerToggle'),
-      btnKillSwitch: $('btnKillSwitch'),
-      btnUnlockLive: $('btnUnlockLive'),
-      btnArmLive: $('btnArmLive'),
-      btnLockLive: $('btnLockLive'),
-      btnBrokerBuy1: $('btnBrokerBuy1'),
-      btnBrokerSell1: $('btnBrokerSell1'),
-      btnBrokerStatus: $('btnBrokerStatus'),
-      btnBrokerAccount: $('btnBrokerAccount'),
-      btnBrokerPositions: $('btnBrokerPositions'),
-      btnBrokerOrders: $('btnBrokerOrders')
+      logsWrap: $('logsWrap')
     };
 
     let currentState = null;
@@ -822,12 +828,6 @@
       const n = Number(v);
       if (!Number.isFinite(n)) return '-';
       return n.toFixed(digits);
-    }
-
-    function fmtNum1(v) {
-      const n = Number(v);
-      if (!Number.isFinite(n)) return '-';
-      return n.toFixed(1);
     }
 
     function fmtSigned(v, digits = 2) {
@@ -862,18 +862,18 @@
     }
 
     function setHeroStatus(state) {
-      const hero = state?.hero || {};
-      const session = state?.session || {};
-      const ai = state?.ai || {};
-      const pnl = state?.pnl || {};
+      const hero = state.hero || {};
+      const session = state.session || {};
+      const ai = state.ai || {};
 
       els.heroTitle.textContent = safeText(hero.title, 'READY');
-      els.heroSubtitle.textContent = safeText(hero.subtitle, 'SYSTEM BEREIT');
+      els.heroSubtitle.textContent = safeText(hero.subtitle, '-');
       els.heroDetail.textContent = safeText(hero.detail, '-');
-      els.heroReasons.textContent = Array.isArray(ai.reasons) && ai.reasons.length ? ai.reasons.join(' • ') : '-';
+      els.heroReasons.textContent = (ai.reasons && ai.reasons.length) ? ai.reasons.join(' • ') : '-';
       els.heroPnL.textContent = fmtSigned(hero.netPnL ?? 0);
-      els.heroBrokerDay.textContent = fmtSigned(pnl.brokerDayPnL);
-      els.heroBrokerTotal.textContent = fmtSigned(pnl.brokerTotalPnL);
+
+      els.heroBrokerDay.textContent = fmtSigned(state?.pnl?.brokerDayPnL);
+      els.heroBrokerTotal.textContent = fmtSigned(state?.pnl?.brokerTotalPnL);
 
       let heroText = safeText(hero.liveBadge, 'PAPER PREP');
       let heroStyle = 'green';
@@ -887,19 +887,18 @@
       } else if (ai.paused) {
         heroText = 'AI PAUSED';
         heroStyle = 'red';
-      } else if (String(heroText).includes('COOLDOWN')) {
+      } else if (String(hero.liveBadge || '').includes('COOLDOWN')) {
         heroStyle = 'yellow';
-      } else if (String(heroText).includes('PAPER')) {
+      } else if (String(hero.liveBadge || '').includes('PAPER')) {
         heroStyle = 'green';
       }
 
       setButtonTheme(els.heroBadgeBtn, heroStyle);
-      els.heroBadgeBtn.textContent = heroText;
+      els.heroBadgeBtn.textContent = heroText || 'PAPER PREP';
     }
 
     function setAiSignal(state) {
-      const ai = state?.ai || {};
-
+      const ai = state.ai || {};
       els.aiSignal.textContent = safeText(ai.signal, '-');
       els.aiConfidence.textContent = `${Number(ai.confidence || 0)}%`;
       setProgress(els.confidenceBar, ai.confidence || 0);
@@ -909,45 +908,36 @@
       els.aiStage.textContent = safeText(ai.stage, '-');
 
       els.reasonGrid.innerHTML = '';
-      const reasons = Array.isArray(ai.reasons) ? ai.reasons : [];
-      reasons.forEach((reason) => {
+      (ai.reasons || []).forEach((reason) => {
         const div = document.createElement('div');
         div.className = 'reason-pill';
         div.textContent = reason;
         els.reasonGrid.appendChild(div);
       });
-
-      if (!reasons.length) {
-        const div = document.createElement('div');
-        div.className = 'reason-pill';
-        div.textContent = 'Keine Gründe';
-        els.reasonGrid.appendChild(div);
-      }
     }
 
     function setAiScore(state) {
-      const ai = state?.ai || {};
-      const market = state?.market || {};
-      const session = state?.session || {};
+      const ai = state.ai || {};
+      const market = state.market || {};
+      const session = state.session || {};
 
       els.aiScoreTop.textContent = safeText(ai.score, 0);
       setProgress(els.scoreBar, ai.score || 0);
 
-      els.mTrend.textContent = fmtNum1(market.trend);
-      els.mVolume.textContent = fmtNum1(market.volume);
-      els.mStructure.textContent = fmtNum1(market.structure);
-      els.mVolatility.textContent = fmtNum1(market.volatility);
-      els.mLiquidity.textContent = fmtNum1(market.liquidity);
-      els.mSession.textContent = fmtNum1(market.session);
-
+      els.mTrend.textContent = fmtNum(market.trend, 1);
+      els.mVolume.textContent = fmtNum(market.volume, 1);
+      els.mStructure.textContent = fmtNum(market.structure, 1);
+      els.mVolatility.textContent = fmtNum(market.volatility, 1);
+      els.mLiquidity.textContent = fmtNum(market.liquidity, 1);
+      els.mSession.textContent = fmtNum(market.session, 1);
       els.tradeLabel.textContent = safeText(session.tradesLabel, '0 / 0');
       els.sessionDate.textContent = safeText(session.date, '-');
       els.summaryBtn.textContent = safeText(ai.summary, 'AI HOLD').toUpperCase();
     }
 
     function setStatus(state) {
-      const session = state?.session || {};
-      const symbol = state?.symbol || {};
+      const session = state.session || {};
+      const symbol = state.symbol || {};
 
       els.queueVal.textContent = safeText(session.queue, '0');
       els.processingVal.textContent = safeText(session.processing, 'OFF');
@@ -967,6 +957,7 @@
         sync,
         sync.includes('OK') ? 'good' : sync.includes('FAIL') ? 'danger' : ''
       );
+
       setBadge(
         els.logDayBadge,
         dayState,
@@ -980,11 +971,10 @@
     }
 
     function setBroker(state) {
-      const broker = state?.broker || {};
-      const pnl = state?.pnl || {};
+      const broker = state.broker || {};
+      const pnl = state.pnl || {};
 
-      const modeText = safeText(broker.mode, 'alpaca-paper').replace(/_/g, '-');
-      setBadge(els.brokerModeBadge, modeText, '');
+      setBadge(els.brokerModeBadge, safeText((broker.mode || 'off').replace('_', '-')), '');
       setBadge(
         els.brokerConnectedBadge,
         broker.connected ? 'CONNECTED' : 'DISCONNECTED',
@@ -1002,8 +992,7 @@
     }
 
     function setLiveControl(state) {
-      const live = state?.liveControl || {};
-
+      const live = state.liveControl || {};
       const enabled = !!live.tradingEnabled;
       const kill = !!live.killSwitch;
       const unlocked = !!live.liveUnlockArmed;
@@ -1026,12 +1015,12 @@
       els.realOrdersAllowed.textContent = liveOn ? 'YES' : 'NO';
       els.liveStatusText.textContent = safeText(live.liveStatus, 'BLOCKED');
 
-      els.btnManualBuy.disabled = !!state?.ai?.paused;
-      els.btnManualSell.disabled = !!state?.ai?.paused;
+      $('btnManualBuy').disabled = !!currentState?.ai?.paused;
+      $('btnManualSell').disabled = !!currentState?.ai?.paused;
     }
 
     function setLogs(state) {
-      const logs = Array.isArray(state?.logs) ? state.logs : [];
+      const logs = Array.isArray(state.logs) ? state.logs : [];
       els.logsWrap.innerHTML = '';
 
       if (!logs.length) {
@@ -1051,9 +1040,7 @@
     }
 
     function render(state) {
-      if (!state || typeof state !== 'object') return;
       currentState = state;
-
       setHeroStatus(state);
       setAiSignal(state);
       setAiScore(state);
@@ -1066,36 +1053,15 @@
       els.brandDot.style.opacity = dotOn ? '1' : '.45';
     }
 
-    async function fetchJson(url, options = {}) {
-      const res = await fetch(url, {
-        cache: 'no-store',
-        ...options
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status} ${url}`);
-      }
-
-      return res.json();
-    }
-
     async function loadState() {
       if (loading) return;
       loading = true;
-
       try {
-        let data = null;
-
-        try {
-          data = await fetchJson('/api/state');
-        } catch (_err1) {
-          data = await fetchJson('/api/status');
-        }
-
+        const res = await fetch('/api/state', { cache: 'no-store' });
+        const data = await res.json();
         render(data);
       } catch (err) {
-        console.error('loadState failed:', err);
-        els.heroDetail.textContent = 'API nicht erreichbar';
+        console.error(err);
       } finally {
         loading = false;
       }
@@ -1103,48 +1069,55 @@
 
     async function postAction(url) {
       try {
-        const data = await fetchJson(url, { method: 'POST' });
+        const res = await fetch(url, { method:'POST' });
+        const data = await res.json().catch(() => null);
+
         if (data && typeof data === 'object' && data.hero) {
           render(data);
-        } else {
-          await loadState();
+          return;
         }
-      } catch (err) {
-        console.error('postAction failed:', url, err);
+
+        if (!res.ok) {
+          console.warn('POST failed:', url, data);
+        }
+
         await loadState();
+      } catch (err) {
+        console.error(err);
       }
     }
 
     async function getAction(url) {
       try {
-        await fetchJson(url);
+        const res = await fetch(url, { cache:'no-store' });
+        const data = await res.json().catch(() => null);
+        console.log(url, data);
         await loadState();
       } catch (err) {
-        console.error('getAction failed:', url, err);
-        await loadState();
+        console.error(err);
       }
     }
 
-    els.btnRefresh.onclick = loadState;
-    els.btnRefresh2.onclick = loadState;
+    $('btnRefresh').onclick = loadState;
+    $('btnRefresh2').onclick = loadState;
 
-    els.btnAutoToggle.onclick = () => postAction('/api/auto/toggle');
-    els.btnReset.onclick = () => postAction('/api/reset');
-    els.btnManualBuy.onclick = () => postAction('/api/manual/buy');
-    els.btnManualSell.onclick = () => postAction('/api/manual/sell');
+    $('btnAutoToggle').onclick = () => postAction('/api/auto/toggle');
+    $('btnReset').onclick = () => postAction('/api/reset');
+    $('btnManualBuy').onclick = () => postAction('/api/manual/buy');
+    $('btnManualSell').onclick = () => postAction('/api/manual/sell');
 
-    els.btnBrokerToggle.onclick = () => postAction('/api/live/broker-toggle');
-    els.btnKillSwitch.onclick = () => postAction('/api/live/kill-switch');
-    els.btnUnlockLive.onclick = () => postAction('/api/live/unlock');
-    els.btnArmLive.onclick = () => postAction('/api/live/arm');
-    els.btnLockLive.onclick = () => postAction('/api/live/lock');
-    els.btnBrokerBuy1.onclick = () => postAction('/api/broker/manual-buy');
-    els.btnBrokerSell1.onclick = () => postAction('/api/broker/manual-sell');
+    $('btnBrokerToggle').onclick = () => postAction('/api/live/broker-toggle');
+    $('btnKillSwitch').onclick = () => postAction('/api/live/kill-switch');
+    $('btnUnlockLive').onclick = () => postAction('/api/live/unlock');
+    $('btnArmLive').onclick = () => postAction('/api/live/arm');
+    $('btnLockLive').onclick = () => postAction('/api/live/lock');
+    $('btnBrokerBuy1').onclick = () => postAction('/api/broker/manual-buy');
+    $('btnBrokerSell1').onclick = () => postAction('/api/broker/manual-sell');
 
-    els.btnBrokerStatus.onclick = () => getAction('/api/broker/status');
-    els.btnBrokerAccount.onclick = () => getAction('/api/broker/account');
-    els.btnBrokerPositions.onclick = () => getAction('/api/broker/positions');
-    els.btnBrokerOrders.onclick = () => getAction('/api/broker/orders');
+    $('btnBrokerStatus').onclick = () => getAction('/api/broker/status');
+    $('btnBrokerAccount').onclick = () => getAction('/api/broker/account');
+    $('btnBrokerPositions').onclick = () => getAction('/api/broker/positions');
+    $('btnBrokerOrders').onclick = () => getAction('/api/broker/orders');
 
     loadState();
     setInterval(loadState, 5000);
