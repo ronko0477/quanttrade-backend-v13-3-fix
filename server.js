@@ -1589,30 +1589,31 @@ function computeConfidence(metrics) {
   const spread = Math.abs(metrics.buyComposite - metrics.sellComposite);
   const m = state.market;
   const learn = getLearningAdjustments();
+  const score = state.ai.score; // ✅ FIX
 
   let baseConfidence =
-  dominant * 0.44 +
-  spread * 0.48 +
-  (100 - m.volatility) * 0.12 +
-  learn.totalBias * 1.15;
+    dominant * 0.44 +
+    spread * 0.48 +
+    (100 - m.volatility) * 0.12 +
+    learn.totalBias * 1.15;
 
-// 🔥 BOOST
-if (score >= 65) baseConfidence += 6;
-if (learn.totalBias > 2) baseConfidence += 4;
-if (state.session.consecutiveWins >= 2) baseConfidence += 3;
+  // 🔥 BOOST (jetzt korrekt)
+  if (score >= 65) baseConfidence += 6;
+  if (learn.totalBias > 2) baseConfidence += 4;
+  if (state.session.consecutiveWins >= 2) baseConfidence += 3;
 
-// penalties
-if (m.volume < 52) baseConfidence -= 9;
-if (m.liquidity < 56) baseConfidence -= 10;
-if (m.volatility > 62) baseConfidence -= 12;
-if (m.session < 46) baseConfidence -= 8;
+  // penalties
+  if (m.volume < 52) baseConfidence -= 9;
+  if (m.liquidity < 56) baseConfidence -= 10;
+  if (m.volatility > 62) baseConfidence -= 12;
+  if (m.session < 46) baseConfidence -= 8;
 
-if (state.session.consecutiveLosses >= 2) {
-  baseConfidence -= 3 * state.session.consecutiveLosses;
+  if (state.session.consecutiveLosses >= 2) {
+    baseConfidence -= 3 * state.session.consecutiveLosses;
+  }
+
+  return Math.round(clamp(baseConfidence / 1.12, 24, 96));
 }
-
-return Math.round(clamp(baseConfidence / 1.12, 24, 96));
-
 function computeScore() {
   const m = state.market;
   const learn = getLearningAdjustments();
