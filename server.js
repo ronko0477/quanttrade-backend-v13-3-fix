@@ -12,15 +12,13 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V24 PRO PAPER LEARN
-   - adaptive paper learning engine
-   - symbol learning
-   - setup learning
-   - session bucket learning
-   - quieter logs kept
+   V24.2 PRO DASHBOARD
+   - V24 paper learning kept
+   - performance dashboard added
+   - /api/performance added
+   - full UI compatible state kept
    - broker / alpaca paper kept
-   - bot pnl and broker pnl separated
-   - safer fire logic for paper profit learning
+   - persistence kept
    ========================================================= */
 
 const CONFIG = {
@@ -91,7 +89,7 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v24.paper.learn.json'),
+    file: path.join(process.cwd(), 'data', 'state.v24.2.pro.dashboard.json'),
     flushDebounceMs: 180,
     dbKey: 'global',
     tableName: 'app_state',
@@ -227,11 +225,144 @@ function makeSetupKey(snapshot) {
   return `${t}|${s}|${v}|${l}|${x}|${se}`;
 }
 
-function avg(values) {
-  if (!Array.isArray(values) || values.length === 0) return 0;
-  const s = values.reduce((a, b) => a + toNum(b, 0), 0);
-  return s / values.length;
+/* =========================================================
+   State factory
+   ========================================================= */
+
+function createInitialState() {
+  return {
+    version: 'V24.2 PRO DASHBOARD',
+
+    system: {
+      status: 'READY',
+      subtitle: 'Paper Learning aktiv.',
+      detail: 'AI scannt Setups für profitables Paper Learning.',
+      liveBadge: 'PAPER LEARN',
+      dot: true,
+    },
+
+    session: {
+      date: nowIsoDate(),
+      tradesToday: 0,
+      maxTradesPerDay: CONFIG.session.maxTradesPerDay,
+      netPnL: 0,
+      winTarget: CONFIG.session.winTarget,
+      lossLimit: CONFIG.session.lossLimit,
+      cooldownUntil: 0,
+      queue: 0,
+      processing: false,
+      autoMode: true,
+      lastOrderSide: null,
+      syncOk: true,
+      consecutiveWins: 0,
+      consecutiveLosses: 0,
+      lastTradeAt: 0,
+    },
+
+    market: {
+      trend: 62.0,
+      volume: 58.0,
+      structure: 64.0,
+      volatility: 54.0,
+      liquidity: 63.0,
+      session: 52.0,
+    },
+
+    learning: {
+      drift: 0,
+      winCount: 0,
+      lossCount: 0,
+      lastOutcome: null,
+      trades: [],
+      symbolStats: {},
+      setupStats: {},
+      timeBucketStats: {},
+      paperScore: 0,
+      lastLearnedSymbol: '',
+      lastLearnedSetup: '',
+      lastLearnedTimeBucket: '',
+    },
+
+    ai: {
+      score: 58,
+      signal: 'HOLD',
+      bias: 'BUY',
+      confidence: 36,
+      buyEdge: 45,
+      sellEdge: 24,
+      stage: 'WATCH',
+      summary: 'AI Hold',
+      reasons: ['Volume Low', 'Liquidity OK', 'Volatility Mid'],
+      setupConfirmed: false,
+      watchMode: true,
+      paused: false,
+      pauseReason: '',
+    },
+
+    engine: {
+      candidateStage: 'WATCH',
+      candidateStageTicks: 0,
+      regimeCandidate: 'BUY',
+      regimeTicks: 0,
+      stableBias: 'BUY',
+      fireCandidateSide: null,
+      fireCandidateTicks: 0,
+      lastFiredSignature: '',
+      lastFireAt: 0,
+      lastDecisionKey: '',
+      lastLoggedAt: 0,
+      lastLogSignature: '',
+      lastHoldReason: '',
+      lastPauseLogKey: '',
+      pauseStateLoggedKey: '',
+      lastHoldStateAt: 0,
+      lastWatchStateAt: 0,
+      lastReadyStateAt: 0,
+      lastFireStateAt: 0,
+      lastSymbolLogAt: 0,
+      currentSetupKey: '',
+      currentTimeBucket: '',
+      currentLearningBias: 0,
+      currentLearningPenalty: 0,
+    },
+
+    symbol: {
+      active: CONFIG.symbols.list[0],
+      index: 0,
+      lastRotateAt: Date.now(),
+      list: [...CONFIG.symbols.list],
+    },
+
+    manual: {
+      buyPost: 'OK',
+      sellPost: 'OK',
+      status: 'OK',
+      conf: 0,
+    },
+
+    liveControl: {
+      tradingEnabled: false,
+      killSwitch: false,
+      liveTradingEnabled: false,
+      liveUnlockArmed: false,
+      liveArmEnabled: false,
+      liveGuard: 'LOCKED',
+      realOrdersAllowed: false,
+      liveStatus: 'BLOCKED • LIVE DISABLED',
+    },
+
+    broker: {
+      account: null,
+      positions: [],
+      orders: [],
+      lastOrder: null,
+    },
+
+    logs: [],
+  };
 }
+
+const state = createInitialState();
 
 /* =========================================================
    Postgres
@@ -273,7 +404,6 @@ async function dbInit(forceRetry = false) {
 
   try {
     createPoolIfNeeded();
-
     await pool.query(`
       CREATE TABLE IF NOT EXISTS ${CONFIG.persist.tableName} (
         id TEXT PRIMARY KEY,
@@ -281,7 +411,6 @@ async function dbInit(forceRetry = false) {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
-
     dbReady = true;
     dbLastError = '';
     console.log('[db] init OK');
@@ -304,7 +433,6 @@ async function ensureDbReady() {
 
 async function dbLoadState() {
   if (!DB_URL_FOUND) return null;
-
   const ok = await ensureDbReady();
   if (!ok) return null;
 
@@ -313,10 +441,8 @@ async function dbLoadState() {
       `SELECT payload FROM ${CONFIG.persist.tableName} WHERE id = $1 LIMIT 1`,
       [CONFIG.persist.dbKey]
     );
-
     dbReady = true;
     dbLastError = '';
-
     if (!res.rows.length) return null;
     return res.rows[0].payload || null;
   } catch (err) {
@@ -329,7 +455,6 @@ async function dbLoadState() {
 
 async function dbSaveState(payload) {
   if (!DB_URL_FOUND) return false;
-
   const ok = await ensureDbReady();
   if (!ok) return false;
 
@@ -343,7 +468,6 @@ async function dbSaveState(payload) {
       `,
       [CONFIG.persist.dbKey, JSON.stringify(payload)]
     );
-
     dbReady = true;
     dbLastError = '';
     return true;
@@ -353,6 +477,304 @@ async function dbSaveState(payload) {
     console.error('[db] save FAIL:', dbLastError);
     return false;
   }
+}
+
+/* =========================================================
+   Persistence
+   ========================================================= */
+
+let persistTimer = null;
+let isHydrated = false;
+
+function getPersistableState() {
+  return {
+    version: state.version,
+    system: state.system,
+    session: state.session,
+    market: state.market,
+    learning: state.learning,
+    ai: state.ai,
+    engine: state.engine,
+    symbol: state.symbol,
+    manual: state.manual,
+    liveControl: state.liveControl,
+    broker: state.broker,
+    logs: state.logs,
+    persistedAt: new Date().toISOString(),
+  };
+}
+
+async function flushStateNow() {
+  const payload = getPersistableState();
+
+  try {
+    if (POSTGRES_HARD_MODE) {
+      if (!DB_URL_FOUND) {
+        state.session.syncOk = false;
+        dbLastError = 'DATABASE_URL missing in postgres mode';
+        return false;
+      }
+      const ok = await dbSaveState(payload);
+      state.session.syncOk = ok;
+      return ok;
+    }
+
+    if (DB_URL_FOUND) {
+      const ok = await dbSaveState(payload);
+      if (ok) {
+        state.session.syncOk = true;
+        return true;
+      }
+    }
+
+    safeWriteJson(CONFIG.persist.file, payload);
+    state.session.syncOk = true;
+    return true;
+  } catch (err) {
+    state.session.syncOk = false;
+    dbLastError = err?.message || 'flush failed';
+    return false;
+  }
+}
+
+function schedulePersist() {
+  if (persistTimer) clearTimeout(persistTimer);
+
+  persistTimer = setTimeout(async () => {
+    persistTimer = null;
+    if (dbSaveRunning) {
+      dbPendingSave = true;
+      return;
+    }
+    dbSaveRunning = true;
+    try {
+      await flushStateNow();
+    } finally {
+      dbSaveRunning = false;
+      if (dbPendingSave) {
+        dbPendingSave = false;
+        schedulePersist();
+      }
+    }
+  }, CONFIG.persist.flushDebounceMs);
+}
+
+async function forcePersistNow() {
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  if (dbSaveRunning) {
+    dbPendingSave = true;
+    return;
+  }
+  dbSaveRunning = true;
+  try {
+    await flushStateNow();
+  } finally {
+    dbSaveRunning = false;
+    if (dbPendingSave) {
+      dbPendingSave = false;
+      schedulePersist();
+    }
+  }
+}
+
+function mergeLoadedState(target, loaded) {
+  const allowedKeys = [
+    'version', 'system', 'session', 'market', 'learning', 'ai', 'engine',
+    'symbol', 'manual', 'liveControl', 'broker', 'logs',
+  ];
+
+  for (const key of allowedKeys) {
+    if (loaded && typeof loaded[key] !== 'undefined') {
+      target[key] = deepClone(loaded[key]);
+    }
+  }
+
+  target.version = 'V24.2 PRO DASHBOARD';
+  const fresh = createInitialState();
+
+  target.symbol = (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0)
+    ? deepClone(fresh.symbol)
+    : { ...fresh.symbol, ...target.symbol };
+
+  target.liveControl = (!target.liveControl || typeof target.liveControl !== 'object')
+    ? deepClone(fresh.liveControl)
+    : { ...fresh.liveControl, ...target.liveControl };
+
+  target.engine = (!target.engine || typeof target.engine !== 'object')
+    ? deepClone(fresh.engine)
+    : { ...fresh.engine, ...target.engine };
+
+  target.learning = (!target.learning || typeof target.learning !== 'object')
+    ? deepClone(fresh.learning)
+    : { ...fresh.learning, ...target.learning };
+
+  if (!Array.isArray(target.learning.trades)) target.learning.trades = [];
+  if (!target.learning.symbolStats || typeof target.learning.symbolStats !== 'object') target.learning.symbolStats = {};
+  if (!target.learning.setupStats || typeof target.learning.setupStats !== 'object') target.learning.setupStats = {};
+  if (!target.learning.timeBucketStats || typeof target.learning.timeBucketStats !== 'object') target.learning.timeBucketStats = {};
+
+  ensureBrokerStateShape();
+  refreshLiveControlState();
+
+  target.session.maxTradesPerDay = CONFIG.session.maxTradesPerDay;
+  target.session.winTarget = CONFIG.session.winTarget;
+  target.session.lossLimit = CONFIG.session.lossLimit;
+
+  if (!Array.isArray(target.logs)) target.logs = [];
+  target.logs = target.logs.slice(0, CONFIG.log.maxEntries);
+
+  if (typeof target.session.syncOk !== 'boolean') target.session.syncOk = true;
+  if (typeof target.session.consecutiveWins !== 'number') target.session.consecutiveWins = 0;
+  if (typeof target.session.consecutiveLosses !== 'number') target.session.consecutiveLosses = 0;
+  if (typeof target.session.lastTradeAt !== 'number') target.session.lastTradeAt = 0;
+}
+
+/* =========================================================
+   Logging
+   ========================================================= */
+
+function addLog(text, opts = {}) {
+  const ts = timeLabel();
+  const signature = opts.signature || text;
+  const now = Date.now();
+
+  const repeatedTooSoon =
+    state.engine.lastLogSignature === signature &&
+    now - state.engine.lastLoggedAt < CONFIG.log.suppressRepeatWithinMs;
+
+  if (repeatedTooSoon && !opts.force) return;
+
+  state.logs.unshift(`${ts} - ${text}`);
+  state.logs = state.logs.slice(0, CONFIG.log.maxEntries);
+  state.engine.lastLogSignature = signature;
+  state.engine.lastLoggedAt = now;
+
+  if (isHydrated) schedulePersist();
+}
+
+function addStateLog(text, signature) {
+  addLog(text, { signature: signature || text });
+}
+
+function pauseLogIfChanged(reason) {
+  const key = `${state.session.date}|${reason}|${state.session.netPnL}|${state.session.tradesToday}`;
+  if (state.engine.lastPauseLogKey === key) return;
+  state.engine.lastPauseLogKey = key;
+
+  if (reason === 'WIN_TARGET') {
+    addLog('AI pausiert wegen Win Target', { force: true, signature: `pause-win-target-${key}` });
+    return;
+  }
+  if (reason === 'LOSS_LIMIT') {
+    addLog('AI pausiert wegen Loss Limit', { force: true, signature: `pause-loss-limit-${key}` });
+    return;
+  }
+  if (reason === 'DAY_LIMIT') {
+    addLog('AI pausiert wegen Tageslimit', { force: true, signature: `pause-day-limit-${key}` });
+  }
+}
+
+function setPauseReason(reason) {
+  if (state.ai.paused && state.ai.pauseReason === reason) {
+    pauseLogIfChanged(reason);
+    return;
+  }
+  state.ai.paused = true;
+  state.ai.pauseReason = reason;
+  state.engine.pauseStateLoggedKey = '';
+  pauseLogIfChanged(reason);
+}
+
+function clearPauseState() {
+  state.ai.paused = false;
+  state.ai.pauseReason = '';
+  state.engine.lastPauseLogKey = '';
+  state.engine.pauseStateLoggedKey = '';
+}
+
+function logSymbolChange(symbol) {
+  if (!canLogAfter(state.engine.lastSymbolLogAt, CONFIG.log.symbolLogMinMs)) return;
+  state.engine.lastSymbolLogAt = Date.now();
+
+  addLog(`Symbol aktiv ${symbol}`, {
+    force: true,
+    signature: `symbol-${symbol}-${Date.now()}`,
+  });
+}
+
+function maybeLogAiStage(stage, symbol, bias, reasons, detail) {
+  const reasonText = reasons.join(' • ');
+  const detailSig = `${stage}|${symbol}|${bias}|${reasonText}|${detail}`;
+
+  if (stage === 'READY') {
+    if (!canLogAfter(state.engine.lastReadyStateAt, CONFIG.log.readyStateMinMs)) return;
+    state.engine.lastReadyStateAt = Date.now();
+    addStateLog(`AI Ready ${bias} (${symbol})`, `state-ready-${detailSig}`);
+    return;
+  }
+
+  if (stage === 'WATCH') {
+    if (!canLogAfter(state.engine.lastWatchStateAt, CONFIG.log.watchStateMinMs)) return;
+    state.engine.lastWatchStateAt = Date.now();
+    addStateLog(`AI Watch ${bias} (${symbol})`, `state-watch-${detailSig}`);
+    return;
+  }
+
+  if (stage === 'HOLD') {
+    const holdSignature = `state-hold-${symbol}-${bias}-${reasonText}-${detail}`;
+    if (holdSignature === state.engine.lastHoldReason) return;
+    if (!canLogAfter(state.engine.lastHoldStateAt, CONFIG.log.holdStateMinMs)) return;
+
+    state.engine.lastHoldReason = holdSignature;
+    state.engine.lastHoldStateAt = Date.now();
+    addStateLog(`AI Hold • ${reasonText} (${symbol})`, holdSignature);
+  }
+}
+
+/* =========================================================
+   Live control helpers
+   ========================================================= */
+
+function refreshLiveControlState() {
+  if (!state.liveControl || typeof state.liveControl !== 'object') {
+    state.liveControl = createInitialState().liveControl;
+  }
+
+  if (state.liveControl.killSwitch) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'BLOCKED • KILL SWITCH';
+    return;
+  }
+
+  if (!state.liveControl.tradingEnabled) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'BLOCKED • TRADING OFF';
+    return;
+  }
+
+  if (!state.liveControl.liveTradingEnabled) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'BLOCKED • LIVE DISABLED';
+    return;
+  }
+
+  if (state.liveControl.liveGuard !== 'UNLOCKED' || !state.liveControl.liveUnlockArmed) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'BLOCKED • LIVE LOCKED';
+    return;
+  }
+
+  if (!state.liveControl.liveArmEnabled) {
+    state.liveControl.realOrdersAllowed = false;
+    state.liveControl.liveStatus = 'ARMED • REAL ORDERS OFF';
+    return;
+  }
+
+  state.liveControl.realOrdersAllowed = true;
+  state.liveControl.liveStatus = 'LIVE • REAL ORDERS ON';
 }
 
 /* =========================================================
@@ -372,14 +794,8 @@ async function alpacaRequest(method, endpoint, body = null) {
     'Content-Type': 'application/json',
   };
 
-  const options = {
-    method,
-    headers,
-  };
-
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
+  const options = { method, headers };
+  if (body) options.body = JSON.stringify(body);
 
   const res = await fetch(url, options);
   const text = await res.text();
@@ -392,11 +808,7 @@ async function alpacaRequest(method, endpoint, body = null) {
   }
 
   if (!res.ok) {
-    const msg =
-      json?.message ||
-      json?.error ||
-      json?.raw ||
-      `HTTP ${res.status}`;
+    const msg = json?.message || json?.error || json?.raw || `HTTP ${res.status}`;
     throw new Error(msg);
   }
 
@@ -405,14 +817,8 @@ async function alpacaRequest(method, endpoint, body = null) {
 
 function ensureBrokerStateShape() {
   if (!state.broker || typeof state.broker !== 'object') {
-    state.broker = {
-      account: null,
-      positions: [],
-      orders: [],
-      lastOrder: null,
-    };
+    state.broker = createInitialState().broker;
   }
-
   if (!Array.isArray(state.broker.positions)) state.broker.positions = [];
   if (!Array.isArray(state.broker.orders)) state.broker.orders = [];
 }
@@ -520,7 +926,6 @@ async function brokerSubmitPaperOrder(side, symbol, qty = 1) {
     });
 
     ensureBrokerStateShape();
-
     state.broker.lastOrder = order;
     brokerLastOrderId = order?.id || null;
     brokerConnected = true;
@@ -539,612 +944,7 @@ async function brokerSubmitPaperOrder(side, symbol, qty = 1) {
 }
 
 /* =========================================================
-   Live control helpers
-   ========================================================= */
-
-function refreshLiveControlState() {
-  if (!state.liveControl || typeof state.liveControl !== 'object') {
-    state.liveControl = {
-      tradingEnabled: false,
-      killSwitch: false,
-      liveTradingEnabled: false,
-      liveUnlockArmed: false,
-      liveArmEnabled: false,
-      liveGuard: 'LOCKED',
-      realOrdersAllowed: false,
-      liveStatus: 'BLOCKED • LIVE DISABLED',
-    };
-  }
-
-  if (state.liveControl.killSwitch) {
-    state.liveControl.realOrdersAllowed = false;
-    state.liveControl.liveStatus = 'BLOCKED • KILL SWITCH';
-    return;
-  }
-
-  if (!state.liveControl.tradingEnabled) {
-    state.liveControl.realOrdersAllowed = false;
-    state.liveControl.liveStatus = 'BLOCKED • TRADING OFF';
-    return;
-  }
-
-  if (!state.liveControl.liveTradingEnabled) {
-    state.liveControl.realOrdersAllowed = false;
-    state.liveControl.liveStatus = 'BLOCKED • LIVE DISABLED';
-    return;
-  }
-
-  if (state.liveControl.liveGuard !== 'UNLOCKED' || !state.liveControl.liveUnlockArmed) {
-    state.liveControl.realOrdersAllowed = false;
-    state.liveControl.liveStatus = 'BLOCKED • LIVE LOCKED';
-    return;
-  }
-
-  if (!state.liveControl.liveArmEnabled) {
-    state.liveControl.realOrdersAllowed = false;
-    state.liveControl.liveStatus = 'ARMED • REAL ORDERS OFF';
-    return;
-  }
-
-  state.liveControl.realOrdersAllowed = true;
-  state.liveControl.liveStatus = 'LIVE • REAL ORDERS ON';
-}
-
-function clearLiveArmOnly() {
-  state.liveControl.liveArmEnabled = false;
-  refreshLiveControlState();
-}
-
-/* =========================================================
-   State factory
-   ========================================================= */
-
-function createInitialState() {
-  return {
-    version: 'V24 PRO PAPER LEARN',
-
-    system: {
-      status: 'READY',
-      subtitle: 'Paper Learning aktiv.',
-      detail: 'AI scannt Setups für profitables Paper Learning.',
-      liveBadge: 'PAPER LEARN',
-      dot: true,
-    },
-
-    session: {
-      date: nowIsoDate(),
-      tradesToday: 0,
-      maxTradesPerDay: CONFIG.session.maxTradesPerDay,
-      netPnL: 0,
-      winTarget: CONFIG.session.winTarget,
-      lossLimit: CONFIG.session.lossLimit,
-      cooldownUntil: 0,
-      queue: 0,
-      processing: false,
-      autoMode: true,
-      lastOrderSide: null,
-      syncOk: true,
-      consecutiveWins: 0,
-      consecutiveLosses: 0,
-      lastTradeAt: 0,
-    },
-
-    market: {
-      trend: 62.0,
-      volume: 58.0,
-      structure: 64.0,
-      volatility: 54.0,
-      liquidity: 63.0,
-      session: 52.0,
-    },
-
-    learning: {
-      drift: 0,
-      winCount: 0,
-      lossCount: 0,
-      lastOutcome: null,
-
-      trades: [],
-      symbolStats: {},
-      setupStats: {},
-      timeBucketStats: {},
-
-      paperScore: 0,
-      lastLearnedSymbol: '',
-      lastLearnedSetup: '',
-      lastLearnedTimeBucket: '',
-    },
-
-    ai: {
-      score: 58,
-      signal: 'HOLD',
-      bias: 'BUY',
-      confidence: 36,
-      buyEdge: 45,
-      sellEdge: 24,
-      stage: 'WATCH',
-      summary: 'AI Hold',
-      reasons: ['Volume Low', 'Liquidity OK', 'Volatility Mid'],
-      setupConfirmed: false,
-      watchMode: true,
-      paused: false,
-      pauseReason: '',
-    },
-
-    engine: {
-      candidateStage: 'WATCH',
-      candidateStageTicks: 0,
-      regimeCandidate: 'BUY',
-      regimeTicks: 0,
-      stableBias: 'BUY',
-
-      fireCandidateSide: null,
-      fireCandidateTicks: 0,
-      lastFiredSignature: '',
-      lastFireAt: 0,
-
-      lastDecisionKey: '',
-      lastLoggedAt: 0,
-      lastLogSignature: '',
-      lastHoldReason: '',
-      lastPauseLogKey: '',
-      pauseStateLoggedKey: '',
-
-      lastHoldStateAt: 0,
-      lastWatchStateAt: 0,
-      lastReadyStateAt: 0,
-      lastFireStateAt: 0,
-      lastSymbolLogAt: 0,
-
-      currentSetupKey: '',
-      currentTimeBucket: '',
-      currentLearningBias: 0,
-      currentLearningPenalty: 0,
-    },
-
-    symbol: {
-      active: CONFIG.symbols.list[0],
-      index: 0,
-      lastRotateAt: Date.now(),
-      list: [...CONFIG.symbols.list],
-    },
-
-    manual: {
-      buyPost: 'OK',
-      sellPost: 'OK',
-      status: 'OK',
-      conf: 0,
-    },
-
-    liveControl: {
-      tradingEnabled: false,
-      killSwitch: false,
-      liveTradingEnabled: false,
-      liveUnlockArmed: false,
-      liveArmEnabled: false,
-      liveGuard: 'LOCKED',
-      realOrdersAllowed: false,
-      liveStatus: 'BLOCKED • LIVE DISABLED',
-    },
-
-    broker: {
-      account: null,
-      positions: [],
-      orders: [],
-      lastOrder: null,
-    },
-
-    logs: [],
-  };
-}
-
-const state = createInitialState();
-
-/* =========================================================
-   Persistence
-   ========================================================= */
-
-let persistTimer = null;
-let isHydrated = false;
-
-function getPersistableState() {
-  return {
-    version: state.version,
-    system: state.system,
-    session: state.session,
-    market: state.market,
-    learning: state.learning,
-    ai: state.ai,
-    engine: state.engine,
-    symbol: state.symbol,
-    manual: state.manual,
-    liveControl: state.liveControl,
-    broker: state.broker,
-    logs: state.logs,
-    persistedAt: new Date().toISOString(),
-  };
-}
-
-async function flushStateNow() {
-  const payload = getPersistableState();
-
-  try {
-    if (POSTGRES_HARD_MODE) {
-      if (!DB_URL_FOUND) {
-        state.session.syncOk = false;
-        dbLastError = 'DATABASE_URL missing in postgres mode';
-        return false;
-      }
-
-      const ok = await dbSaveState(payload);
-      state.session.syncOk = ok;
-      return ok;
-    }
-
-    if (DB_URL_FOUND) {
-      const ok = await dbSaveState(payload);
-      if (ok) {
-        state.session.syncOk = true;
-        return true;
-      }
-    }
-
-    safeWriteJson(CONFIG.persist.file, payload);
-    state.session.syncOk = true;
-    return true;
-  } catch (err) {
-    state.session.syncOk = false;
-    dbLastError = err?.message || 'flush failed';
-    return false;
-  }
-}
-
-function schedulePersist() {
-  if (persistTimer) clearTimeout(persistTimer);
-
-  persistTimer = setTimeout(async () => {
-    persistTimer = null;
-
-    if (dbSaveRunning) {
-      dbPendingSave = true;
-      return;
-    }
-
-    dbSaveRunning = true;
-    try {
-      await flushStateNow();
-    } finally {
-      dbSaveRunning = false;
-      if (dbPendingSave) {
-        dbPendingSave = false;
-        schedulePersist();
-      }
-    }
-  }, CONFIG.persist.flushDebounceMs);
-}
-
-async function forcePersistNow() {
-  if (persistTimer) {
-    clearTimeout(persistTimer);
-    persistTimer = null;
-  }
-
-  if (dbSaveRunning) {
-    dbPendingSave = true;
-    return;
-  }
-
-  dbSaveRunning = true;
-  try {
-    await flushStateNow();
-  } finally {
-    dbSaveRunning = false;
-    if (dbPendingSave) {
-      dbPendingSave = false;
-      schedulePersist();
-    }
-  }
-}
-
-function mergeLoadedState(target, loaded) {
-  const allowedKeys = [
-    'version',
-    'system',
-    'session',
-    'market',
-    'learning',
-    'ai',
-    'engine',
-    'symbol',
-    'manual',
-    'liveControl',
-    'broker',
-    'logs',
-  ];
-
-  for (const key of allowedKeys) {
-    if (loaded && typeof loaded[key] !== 'undefined') {
-      target[key] = deepClone(loaded[key]);
-    }
-  }
-
-  target.version = 'V24 PRO PAPER LEARN';
-
-  const fresh = createInitialState();
-
-  if (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0) {
-    target.symbol = deepClone(fresh.symbol);
-  }
-
-  if (!target.liveControl || typeof target.liveControl !== 'object') {
-    target.liveControl = deepClone(fresh.liveControl);
-  } else {
-    target.liveControl = { ...fresh.liveControl, ...target.liveControl };
-  }
-
-  if (!target.engine || typeof target.engine !== 'object') {
-    target.engine = deepClone(fresh.engine);
-  } else {
-    target.engine = { ...fresh.engine, ...target.engine };
-  }
-
-  if (!target.learning || typeof target.learning !== 'object') {
-    target.learning = deepClone(fresh.learning);
-  } else {
-    target.learning = { ...fresh.learning, ...target.learning };
-    if (!Array.isArray(target.learning.trades)) target.learning.trades = [];
-    if (!target.learning.symbolStats || typeof target.learning.symbolStats !== 'object') {
-      target.learning.symbolStats = {};
-    }
-    if (!target.learning.setupStats || typeof target.learning.setupStats !== 'object') {
-      target.learning.setupStats = {};
-    }
-    if (!target.learning.timeBucketStats || typeof target.learning.timeBucketStats !== 'object') {
-      target.learning.timeBucketStats = {};
-    }
-  }
-
-  ensureBrokerStateShape();
-  refreshLiveControlState();
-
-  target.session.maxTradesPerDay = CONFIG.session.maxTradesPerDay;
-  target.session.winTarget = CONFIG.session.winTarget;
-  target.session.lossLimit = CONFIG.session.lossLimit;
-
-  if (!Array.isArray(target.logs)) target.logs = [];
-  target.logs = target.logs.slice(0, CONFIG.log.maxEntries);
-
-  if (typeof target.session.syncOk !== 'boolean') target.session.syncOk = true;
-  if (typeof target.session.consecutiveWins !== 'number') target.session.consecutiveWins = 0;
-  if (typeof target.session.consecutiveLosses !== 'number') target.session.consecutiveLosses = 0;
-  if (typeof target.session.lastTradeAt !== 'number') target.session.lastTradeAt = 0;
-}
-
-async function hydrateState() {
-  let loaded = null;
-  let source = 'NEW';
-
-  console.log('====================================================');
-  console.log('[boot] version: V24 PRO PAPER LEARN');
-  console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
-  console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
-  console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
-  console.log(`[boot] DATABASE_URL masked: ${maskDbUrl(DATABASE_URL)}`);
-  console.log(`[boot] BROKER_MODE raw: ${BROKER_MODE}`);
-  console.log(`[boot] BROKER ENABLED: ${BROKER_ENABLED ? 'YES' : 'NO'}`);
-  console.log(`[boot] APCA_API_KEY_ID: ${maskSecret(APCA_API_KEY_ID)}`);
-  console.log(`[boot] APCA_API_SECRET_KEY: ${maskSecret(APCA_API_SECRET_KEY)}`);
-  console.log('====================================================');
-
-  if (POSTGRES_HARD_MODE) {
-    if (DB_URL_FOUND) {
-      const initOk = await dbInit(true);
-      console.log(`[boot] DB INIT: ${initOk ? 'OK' : 'FAIL'}`);
-
-      if (initOk) {
-        loaded = await dbLoadState();
-        if (loaded) {
-          source = 'DB';
-          console.log('[boot] DB LOAD: FOUND');
-        } else {
-          console.log(`[boot] DB LOAD: ${dbLastError ? 'ERROR' : 'EMPTY'}`);
-        }
-      }
-    } else {
-      dbLastError = 'DATABASE_URL missing in postgres mode';
-      console.log('[boot] DB INIT: FAIL');
-      console.log('[boot] DB LOAD: ERROR');
-    }
-  } else {
-    if (DB_URL_FOUND) {
-      const initOk = await dbInit(true);
-      console.log(`[boot] DB INIT: ${initOk ? 'OK' : 'FAIL'}`);
-
-      if (initOk) {
-        loaded = await dbLoadState();
-        if (loaded) {
-          source = 'DB';
-          console.log('[boot] DB LOAD: FOUND');
-        } else {
-          console.log(`[boot] DB LOAD: ${dbLastError ? 'ERROR' : 'EMPTY'}`);
-        }
-      }
-    }
-
-    if (!loaded) {
-      const fileLoaded = safeReadJson(CONFIG.persist.file);
-      if (fileLoaded) {
-        loaded = fileLoaded;
-        source = 'FILE';
-        console.log('[boot] FILE LOAD: FOUND');
-      } else {
-        console.log('[boot] FILE LOAD: EMPTY');
-      }
-    }
-  }
-
-  if (loaded) {
-    mergeLoadedState(state, loaded);
-
-    if (source === 'DB') {
-      addLog(`STATE RESTORED FROM DB ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
-        force: true,
-        signature: `state-restored-db-${Date.now()}`,
-      });
-    } else {
-      addLog(`STATE LOADED FROM FILE ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
-        force: true,
-        signature: `state-loaded-file-${Date.now()}`,
-      });
-    }
-  } else {
-    addLog('STATE INIT NEW', {
-      force: true,
-      signature: `state-init-new-${Date.now()}`,
-    });
-  }
-
-  if (BROKER_ENABLED) {
-    await brokerConnect();
-    await brokerRefreshAll();
-  }
-
-  refreshLiveControlState();
-
-  isHydrated = true;
-  await forcePersistNow();
-}
-
-process.on('SIGINT', async () => {
-  try {
-    await forcePersistNow();
-  } finally {
-    process.exit(0);
-  }
-});
-
-process.on('SIGTERM', async () => {
-  try {
-    await forcePersistNow();
-  } finally {
-    process.exit(0);
-  }
-});
-
-process.on('beforeExit', async () => {
-  await forcePersistNow();
-});
-
-/* =========================================================
-   Logging
-   ========================================================= */
-
-function addLog(text, opts = {}) {
-  const ts = timeLabel();
-  const signature = opts.signature || text;
-  const now = Date.now();
-
-  const repeatedTooSoon =
-    state.engine.lastLogSignature === signature &&
-    now - state.engine.lastLoggedAt < CONFIG.log.suppressRepeatWithinMs;
-
-  if (repeatedTooSoon && !opts.force) return;
-
-  state.logs.unshift(`${ts} - ${text}`);
-  state.logs = state.logs.slice(0, CONFIG.log.maxEntries);
-  state.engine.lastLogSignature = signature;
-  state.engine.lastLoggedAt = now;
-
-  if (isHydrated) schedulePersist();
-}
-
-function addStateLog(text, signature) {
-  addLog(text, { signature: signature || text });
-}
-
-function pauseLogIfChanged(reason) {
-  const key = `${state.session.date}|${reason}|${state.session.netPnL}|${state.session.tradesToday}`;
-  if (state.engine.lastPauseLogKey === key) return;
-
-  state.engine.lastPauseLogKey = key;
-
-  if (reason === 'WIN_TARGET') {
-    addLog('AI pausiert wegen Win Target', { force: true, signature: `pause-win-target-${key}` });
-    return;
-  }
-
-  if (reason === 'LOSS_LIMIT') {
-    addLog('AI pausiert wegen Loss Limit', { force: true, signature: `pause-loss-limit-${key}` });
-    return;
-  }
-
-  if (reason === 'DAY_LIMIT') {
-    addLog('AI pausiert wegen Tageslimit', { force: true, signature: `pause-day-limit-${key}` });
-  }
-}
-
-function setPauseReason(reason) {
-  if (state.ai.paused && state.ai.pauseReason === reason) {
-    pauseLogIfChanged(reason);
-    return;
-  }
-
-  state.ai.paused = true;
-  state.ai.pauseReason = reason;
-  state.engine.pauseStateLoggedKey = '';
-  pauseLogIfChanged(reason);
-}
-
-function clearPauseState() {
-  state.ai.paused = false;
-  state.ai.pauseReason = '';
-  state.engine.lastPauseLogKey = '';
-  state.engine.pauseStateLoggedKey = '';
-}
-
-function logSymbolChange(symbol) {
-  const sig = `symbol-${symbol}`;
-  if (!canLogAfter(state.engine.lastSymbolLogAt, CONFIG.log.symbolLogMinMs)) return;
-
-  state.engine.lastSymbolLogAt = Date.now();
-
-  addLog(`Symbol aktiv ${symbol}`, {
-    force: true,
-    signature: `${sig}-${Date.now()}`,
-  });
-}
-
-function maybeLogAiStage(stage, symbol, bias, reasons, detail) {
-  const reasonText = reasons.join(' • ');
-  const detailSig = `${stage}|${symbol}|${bias}|${reasonText}|${detail}`;
-
-  if (stage === 'READY') {
-    if (!canLogAfter(state.engine.lastReadyStateAt, CONFIG.log.readyStateMinMs)) return;
-    state.engine.lastReadyStateAt = Date.now();
-    addStateLog(`AI Ready ${bias} (${symbol})`, `state-ready-${detailSig}`);
-    return;
-  }
-
-  if (stage === 'WATCH') {
-    if (!canLogAfter(state.engine.lastWatchStateAt, CONFIG.log.watchStateMinMs)) return;
-    state.engine.lastWatchStateAt = Date.now();
-    addStateLog(`AI Watch ${bias} (${symbol})`, `state-watch-${detailSig}`);
-    return;
-  }
-
-  if (stage === 'HOLD') {
-    const holdSignature = `state-hold-${symbol}-${bias}-${reasonText}-${detail}`;
-    if (holdSignature === state.engine.lastHoldReason) return;
-    if (!canLogAfter(state.engine.lastHoldStateAt, CONFIG.log.holdStateMinMs)) return;
-
-    state.engine.lastHoldReason = holdSignature;
-    state.engine.lastHoldStateAt = Date.now();
-    addStateLog(`AI Hold • ${reasonText} (${symbol})`, holdSignature);
-  }
-}
-
-/* =========================================================
-   Session reset
+   Session reset / Synthetic market feed / Symbol rotation
    ========================================================= */
 
 function resetDayIfNeeded() {
@@ -1167,41 +967,42 @@ function resetDayIfNeeded() {
   state.learning.lastOutcome = null;
   state.learning.paperScore = 0;
 
-  state.engine.candidateStage = 'WATCH';
-  state.engine.candidateStageTicks = 0;
-  state.engine.regimeCandidate = 'BUY';
-  state.engine.regimeTicks = 0;
-  state.engine.stableBias = 'BUY';
-  state.engine.fireCandidateSide = null;
-  state.engine.fireCandidateTicks = 0;
-  state.engine.lastFiredSignature = '';
-  state.engine.lastFireAt = 0;
-  state.engine.lastDecisionKey = '';
-  state.engine.lastHoldReason = '';
-  state.engine.lastPauseLogKey = '';
-  state.engine.pauseStateLoggedKey = '';
-  state.engine.lastHoldStateAt = 0;
-  state.engine.lastWatchStateAt = 0;
-  state.engine.lastReadyStateAt = 0;
-  state.engine.lastFireStateAt = 0;
-  state.engine.lastSymbolLogAt = 0;
-  state.engine.currentSetupKey = '';
-  state.engine.currentTimeBucket = '';
-  state.engine.currentLearningBias = 0;
-  state.engine.currentLearningPenalty = 0;
+  state.engine = {
+    ...state.engine,
+    candidateStage: 'WATCH',
+    candidateStageTicks: 0,
+    regimeCandidate: 'BUY',
+    regimeTicks: 0,
+    stableBias: 'BUY',
+    fireCandidateSide: null,
+    fireCandidateTicks: 0,
+    lastFiredSignature: '',
+    lastFireAt: 0,
+    lastDecisionKey: '',
+    lastHoldReason: '',
+    lastPauseLogKey: '',
+    pauseStateLoggedKey: '',
+    lastHoldStateAt: 0,
+    lastWatchStateAt: 0,
+    lastReadyStateAt: 0,
+    lastFireStateAt: 0,
+    lastSymbolLogAt: 0,
+    currentSetupKey: '',
+    currentTimeBucket: '',
+    currentLearningBias: 0,
+    currentLearningPenalty: 0,
+  };
 
   state.system.status = 'READY';
   state.system.subtitle = 'Paper Learning aktiv.';
-  state.system.detail = state.session.autoMode ? `AI scannt Setups. • ${state.symbol.active}` : 'Bereit für manuellen Modus.';
+  state.system.detail = state.session.autoMode
+    ? `AI scannt Setups. • ${state.symbol.active}`
+    : 'Bereit für manuellen Modus.';
   state.system.liveBadge = state.session.autoMode ? 'PAPER LEARN' : 'LIVE';
 
   addLog(`Day reset ${today}`, { force: true, signature: `day-reset-${today}` });
   schedulePersist();
 }
-
-/* =========================================================
-   Synthetic market feed
-   ========================================================= */
 
 function driftMetric(key, target, speed = 0.24, noise = 3.2) {
   const current = state.market[key];
@@ -1288,10 +1089,6 @@ function generateMarket() {
   driftMetric('session', sessionTarget);
 }
 
-/* =========================================================
-   Symbol rotation
-   ========================================================= */
-
 function rotateSymbolIfNeeded() {
   const now = Date.now();
   if (state.session.processing) return;
@@ -1310,7 +1107,7 @@ function rotateSymbolIfNeeded() {
 }
 
 /* =========================================================
-   Regime tags
+   Regime / Learning
    ========================================================= */
 
 function regimeTags(m) {
@@ -1338,10 +1135,6 @@ function regimeTags(m) {
 
   return tags;
 }
-
-/* =========================================================
-   Learning thresholds / adaptive logic
-   ========================================================= */
 
 function ensureLearningBucket(container, key) {
   if (!container[key] || typeof container[key] !== 'object') {
@@ -1473,9 +1266,7 @@ function learnFromOutcome(outcome, tradeMeta = null) {
     const setupBucket = ensureLearningBucket(state.learning.setupStats, tradeMeta.setupKey);
     const timeBucket = ensureLearningBucket(state.learning.timeBucketStats, tradeMeta.timeBucket);
 
-    const buckets = [symbolBucket, setupBucket, timeBucket];
-
-    for (const b of buckets) {
+    for (const b of [symbolBucket, setupBucket, timeBucket]) {
       b.trades += 1;
       b.pnlSum = round2(toNum(b.pnlSum, 0) + toNum(tradeMeta.pnl, 0));
       b.lastOutcome = outcome;
@@ -1589,7 +1380,7 @@ function computeConfidence(metrics) {
   const spread = Math.abs(metrics.buyComposite - metrics.sellComposite);
   const m = state.market;
   const learn = getLearningAdjustments();
-  const score = state.ai.score; // ✅ FIX
+  const score = state.ai.score;
 
   let baseConfidence =
     dominant * 0.44 +
@@ -1597,12 +1388,10 @@ function computeConfidence(metrics) {
     (100 - m.volatility) * 0.12 +
     learn.totalBias * 1.15;
 
-  // 🔥 BOOST (jetzt korrekt)
   if (score >= 65) baseConfidence += 6;
   if (learn.totalBias > 2) baseConfidence += 4;
   if (state.session.consecutiveWins >= 2) baseConfidence += 3;
 
-  // penalties
   if (m.volume < 52) baseConfidence -= 9;
   if (m.liquidity < 56) baseConfidence -= 10;
   if (m.volatility > 62) baseConfidence -= 12;
@@ -1614,6 +1403,7 @@ function computeConfidence(metrics) {
 
   return Math.round(clamp(baseConfidence / 1.05, 22, 95));
 }
+
 function computeScore() {
   const m = state.market;
   const learn = getLearningAdjustments();
@@ -1629,10 +1419,6 @@ function computeScore() {
 
   return Math.round(clamp(score, 0, 99));
 }
-
-/* =========================================================
-   Stable bias / stabilizer
-   ========================================================= */
 
 function updateStableBias(metrics) {
   const candidate = metrics.rawBias;
@@ -1652,7 +1438,7 @@ function updateStableBias(metrics) {
 }
 
 /* =========================================================
-   Setup quality / stage evaluation
+   Stage evaluation
    ========================================================= */
 
 function getSetupQuality(metrics, confidence, score) {
@@ -1679,9 +1465,9 @@ function getSetupQuality(metrics, confidence, score) {
     liquidityOk &&
     volatilityMid &&
     sessionSoft &&
-    edge >= 74 &&
-    score >= 69 &&
-    confidence >= 40 &&
+    edge >= 70 &&
+    score >= 64 &&
+    confidence >= 36 &&
     positiveLearn;
 
   const premiumSell =
@@ -1692,9 +1478,9 @@ function getSetupQuality(metrics, confidence, score) {
     liquidityOk &&
     volatilityMid &&
     sessionSoft &&
-    edge >= 74 &&
-    score >= 69 &&
-    confidence >= 40 &&
+    edge >= 70 &&
+    score >= 64 &&
+    confidence >= 36 &&
     learn.totalBias <= -1.5;
 
   const weakMarket =
@@ -1754,13 +1540,13 @@ function evaluateStage(metrics, confidence, score) {
     confidence >= 36;
 
   const adaptiveFire =
-  score >= th.fireScoreMin - 8 &&
-  confidence >= th.confidenceMinFire - 10 &&
-  edge >= (bias === 'BUY' ? th.buyEdgeMinFire - 8 : th.sellEdgeMinFire - 8) &&
-  blockers.length === 0 &&
-  learn.totalBias > -2;
+    score >= th.fireScoreMin - 8 &&
+    confidence >= th.confidenceMinFire - 10 &&
+    edge >= (bias === 'BUY' ? th.buyEdgeMinFire - 8 : th.sellEdgeMinFire - 8) &&
+    blockers.length === 0 &&
+    learn.totalBias > -2;
 
-const passesFire = passesNormalFire || passesPremiumFire || adaptiveFire;
+  const passesFire = passesNormalFire || passesPremiumFire || adaptiveFire;
 
   if (passesFire) {
     candidateStage = 'FIRE';
@@ -1833,10 +1619,6 @@ function stabilizeStage(candidateStage) {
   return state.ai.stage;
 }
 
-/* =========================================================
-   Controlled fire latch
-   ========================================================= */
-
 function shouldTriggerFire(stage, side, confidence, score, premiumSetup) {
   if (stage !== 'FIRE') {
     state.engine.fireCandidateSide = null;
@@ -1868,10 +1650,10 @@ function shouldTriggerFire(stage, side, confidence, score, premiumSetup) {
 }
 
 /* =========================================================
-   AI text mapping
+   AI text / Hero
    ========================================================= */
 
-function buildAiReasons(metrics, confidence) {
+function buildAiReasons(_metrics, confidence) {
   const tags = regimeTags(state.market);
   const learnBias = state.engine.currentLearningBias;
 
@@ -1896,6 +1678,7 @@ function mapHero(stage, signal, confidence, detail) {
         liveBadge: 'WIN TARGET',
       };
     }
+
     if (state.ai.pauseReason === 'LOSS_LIMIT') {
       return {
         status: 'SESSION_LIMIT',
@@ -1904,6 +1687,7 @@ function mapHero(stage, signal, confidence, detail) {
         liveBadge: 'LOSS LIMIT',
       };
     }
+
     return {
       status: 'SESSION_LIMIT',
       subtitle: 'Tageslimit erreicht.',
@@ -1996,12 +1780,11 @@ function simulateTradeOutcome(side) {
 
   let winChance = quality / 100;
 
-// 🔥 smarter bias
-if (state.engine.currentLearningBias > 2) winChance += 0.05;
-if (state.session.consecutiveWins >= 2) winChance += 0.04;
-if (state.session.consecutiveLosses >= 2) winChance -= 0.03;
+  if (state.engine.currentLearningBias > 2) winChance += 0.05;
+  if (state.session.consecutiveWins >= 2) winChance += 0.04;
+  if (state.session.consecutiveLosses >= 2) winChance -= 0.03;
 
-winChance = clamp(winChance, 0.28, 0.84);
+  winChance = clamp(winChance, 0.28, 0.84);
 
   const isWin = Math.random() < winChance;
   const positive = round2(3 + Math.random() * 2.5);
@@ -2197,6 +1980,103 @@ function getBrokerPnlSnapshot() {
 }
 
 /* =========================================================
+   V24.2 Performance Dashboard
+   ========================================================= */
+
+function getPerformanceDashboard() {
+  const trades = Array.isArray(state.learning?.trades) ? state.learning.trades : [];
+
+  const totalTrades = trades.length;
+  const wins = trades.filter((t) => Number(t.pnl) > 0);
+  const losses = trades.filter((t) => Number(t.pnl) < 0);
+
+  const grossWin = round2(wins.reduce((s, t) => s + Number(t.pnl || 0), 0));
+  const grossLossAbs = round2(Math.abs(losses.reduce((s, t) => s + Number(t.pnl || 0), 0)));
+
+  const winrate = totalTrades > 0 ? round2((wins.length / totalTrades) * 100) : 0;
+  const avgWin = wins.length ? round2(grossWin / wins.length) : 0;
+  const avgLoss = losses.length ? round2(losses.reduce((s, t) => s + Number(t.pnl || 0), 0) / losses.length) : 0;
+  const profitFactor = grossLossAbs > 0 ? round2(grossWin / grossLossAbs) : grossWin > 0 ? 99 : 0;
+
+  let equity = 0;
+  let peak = 0;
+  let maxDrawdown = 0;
+
+  [...trades].reverse().forEach((t) => {
+    equity = round2(equity + Number(t.pnl || 0));
+    peak = Math.max(peak, equity);
+    maxDrawdown = Math.min(maxDrawdown, round2(equity - peak));
+  });
+
+  function bucketStats(keyName) {
+    const map = {};
+
+    trades.forEach((t) => {
+      const key = t[keyName] || 'UNKNOWN';
+
+      if (!map[key]) {
+        map[key] = { key, trades: 0, wins: 0, losses: 0, pnl: 0 };
+      }
+
+      map[key].trades += 1;
+      map[key].pnl = round2(map[key].pnl + Number(t.pnl || 0));
+
+      if (Number(t.pnl) > 0) map[key].wins += 1;
+      if (Number(t.pnl) < 0) map[key].losses += 1;
+    });
+
+    return Object.values(map)
+      .map((x) => ({
+        ...x,
+        winrate: x.trades ? round2((x.wins / x.trades) * 100) : 0,
+      }))
+      .sort((a, b) => b.pnl - a.pnl);
+  }
+
+  const symbols = bucketStats('symbol');
+  const setups = bucketStats('setupKey');
+  const times = bucketStats('timeBucket');
+
+  return {
+    totalTrades,
+    wins: wins.length,
+    losses: losses.length,
+    winrate,
+    grossWin,
+    grossLossAbs,
+    avgWin,
+    avgLoss,
+    profitFactor,
+    maxDrawdown,
+    netPnL: round2(state.session.netPnL || 0),
+
+    bestSymbol: symbols[0] || null,
+    worstSymbol: symbols[symbols.length - 1] || null,
+
+    bestSetup: setups[0] || null,
+    worstSetup: setups[setups.length - 1] || null,
+
+    bestTimeBucket: times[0] || null,
+    worstTimeBucket: times[times.length - 1] || null,
+
+    symbols,
+    setups: setups.slice(0, 12),
+    timeBuckets: times,
+
+    learning: {
+      drift: state.learning?.drift || 0,
+      paperScore: state.learning?.paperScore || 0,
+      currentSetupKey: state.engine?.currentSetupKey || '',
+      currentTimeBucket: state.engine?.currentTimeBucket || '',
+      currentLearningBias: state.engine?.currentLearningBias || 0,
+      currentLearningPenalty: state.engine?.currentLearningPenalty || 0,
+      consecutiveWins: state.session?.consecutiveWins || 0,
+      consecutiveLosses: state.session?.consecutiveLosses || 0,
+    },
+  };
+}
+
+/* =========================================================
    Main AI loop
    ========================================================= */
 
@@ -2209,7 +2089,7 @@ async function processAiTick() {
   const metrics = computeAiMetrics();
   const stableBias = updateStableBias(metrics);
   const confidence = computeConfidence(metrics);
-  const score = computeScore(metrics);
+  const score = computeScore();
   const reasons = buildAiReasons(metrics, confidence);
 
   state.ai.score = score;
@@ -2341,6 +2221,7 @@ function getPublicState() {
   const tags = state.ai.reasons.map(normalizeTag);
   const brokerPnl = getBrokerPnlSnapshot();
   const botPnl = round2(state.session.netPnL || 0);
+  const performance = getPerformanceDashboard();
 
   let syncLabel = 'SYNC FAIL';
   if (state.session.syncOk) {
@@ -2498,6 +2379,8 @@ function getPublicState() {
       consecutiveWins: state.session.consecutiveWins,
       consecutiveLosses: state.session.consecutiveLosses,
     },
+
+    performance,
 
     logs: state.logs,
   };
@@ -2807,6 +2690,14 @@ app.get('/api/status', (_req, res) => {
   res.json(getPublicState());
 });
 
+app.get('/api/performance', (_req, res) => {
+  res.json({
+    ok: true,
+    version: state.version,
+    performance: getPerformanceDashboard(),
+  });
+});
+
 app.get('/health', (_req, res) => {
   refreshLiveControlState();
 
@@ -2829,7 +2720,127 @@ app.get('/health', (_req, res) => {
     learningBias: state.engine.currentLearningBias,
     learningSetup: state.engine.currentSetupKey,
     learningTimeBucket: state.engine.currentTimeBucket,
+    performance: getPerformanceDashboard(),
   });
+});
+
+/* =========================================================
+   Hydration
+   ========================================================= */
+
+async function hydrateState() {
+  let loaded = null;
+  let source = 'NEW';
+
+  console.log('====================================================');
+  console.log('[boot] version: V24.2 PRO DASHBOARD');
+  console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
+  console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
+  console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
+  console.log(`[boot] DATABASE_URL masked: ${maskDbUrl(DATABASE_URL)}`);
+  console.log(`[boot] BROKER_MODE raw: ${BROKER_MODE}`);
+  console.log(`[boot] BROKER ENABLED: ${BROKER_ENABLED ? 'YES' : 'NO'}`);
+  console.log(`[boot] APCA_API_KEY_ID: ${maskSecret(APCA_API_KEY_ID)}`);
+  console.log(`[boot] APCA_API_SECRET_KEY: ${maskSecret(APCA_API_SECRET_KEY)}`);
+  console.log('====================================================');
+
+  if (POSTGRES_HARD_MODE) {
+    if (DB_URL_FOUND) {
+      const initOk = await dbInit(true);
+      console.log(`[boot] DB INIT: ${initOk ? 'OK' : 'FAIL'}`);
+
+      if (initOk) {
+        loaded = await dbLoadState();
+        if (loaded) {
+          source = 'DB';
+          console.log('[boot] DB LOAD: FOUND');
+        } else {
+          console.log(`[boot] DB LOAD: ${dbLastError ? 'ERROR' : 'EMPTY'}`);
+        }
+      }
+    } else {
+      dbLastError = 'DATABASE_URL missing in postgres mode';
+      console.log('[boot] DB INIT: FAIL');
+      console.log('[boot] DB LOAD: ERROR');
+    }
+  } else {
+    if (DB_URL_FOUND) {
+      const initOk = await dbInit(true);
+      console.log(`[boot] DB INIT: ${initOk ? 'OK' : 'FAIL'}`);
+
+      if (initOk) {
+        loaded = await dbLoadState();
+        if (loaded) {
+          source = 'DB';
+          console.log('[boot] DB LOAD: FOUND');
+        } else {
+          console.log(`[boot] DB LOAD: ${dbLastError ? 'ERROR' : 'EMPTY'}`);
+        }
+      }
+    }
+
+    if (!loaded) {
+      const fileLoaded = safeReadJson(CONFIG.persist.file);
+      if (fileLoaded) {
+        loaded = fileLoaded;
+        source = 'FILE';
+        console.log('[boot] FILE LOAD: FOUND');
+      } else {
+        console.log('[boot] FILE LOAD: EMPTY');
+      }
+    }
+  }
+
+  if (loaded) {
+    mergeLoadedState(state, loaded);
+
+    if (source === 'DB') {
+      addLog(`STATE RESTORED FROM DB ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
+        force: true,
+        signature: `state-restored-db-${Date.now()}`,
+      });
+    } else {
+      addLog(`STATE LOADED FROM FILE ${state.session.date} PnL ${state.session.netPnL} Trades ${state.session.tradesToday}`, {
+        force: true,
+        signature: `state-loaded-file-${Date.now()}`,
+      });
+    }
+  } else {
+    addLog('STATE INIT NEW', {
+      force: true,
+      signature: `state-init-new-${Date.now()}`,
+    });
+  }
+
+  if (BROKER_ENABLED) {
+    await brokerConnect();
+    await brokerRefreshAll();
+  }
+
+  refreshLiveControlState();
+
+  isHydrated = true;
+  await forcePersistNow();
+}
+
+process.on('SIGINT', async () => {
+  try {
+    await forcePersistNow();
+  } finally {
+    process.exit(0);
+  }
+});
+
+process.on('SIGTERM', async () => {
+  try {
+    await forcePersistNow();
+  } finally {
+    process.exit(0);
+  }
+});
+
+process.on('beforeExit', async () => {
+  await forcePersistNow();
 });
 
 /* =========================================================
@@ -2853,6 +2864,6 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log('V24 PRO PAPER LEARN listening on :' + PORT);
+    console.log('V24.2 PRO DASHBOARD listening on :' + PORT);
   });
 })();
