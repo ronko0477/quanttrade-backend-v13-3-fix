@@ -1754,9 +1754,9 @@ function evaluateStage(metrics, confidence, score) {
     confidence >= 36;
 
   const adaptiveFire =
-  score >= th.fireScoreMin - 6 &&
-  confidence >= th.confidenceMinFire - 6 &&
-  edge >= (bias === 'BUY' ? th.buyEdgeMinFire - 6 : th.sellEdgeMinFire - 6) &&
+  score >= th.fireScoreMin - 8 &&
+  confidence >= th.confidenceMinFire - 10 &&
+  edge >= (bias === 'BUY' ? th.buyEdgeMinFire - 8 : th.sellEdgeMinFire - 8) &&
   blockers.length === 0 &&
   learn.totalBias > -2;
 
