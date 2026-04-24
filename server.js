@@ -1612,7 +1612,7 @@ function computeConfidence(metrics) {
     baseConfidence -= 3 * state.session.consecutiveLosses;
   }
 
-  return Math.round(clamp(baseConfidence / 1.12, 24, 96));
+  return Math.round(clamp(baseConfidence / 1.05, 22, 95));
 }
 function computeScore() {
   const m = state.market;
@@ -1749,12 +1749,12 @@ function evaluateStage(metrics, confidence, score) {
   const passesPremiumFire =
     setup.premiumSetup &&
     blockers.length === 0 &&
-    edge >= 74 &&
-    score >= 69 &&
-    confidence >= 40;
+    edge >= 70 &&
+    score >= 64 &&
+    confidence >= 36;
 
   const adaptiveFire =
-  score >= th.fireScoreMin - 4 &&
+  score >= th.fireScoreMin - 6 &&
   confidence >= th.confidenceMinFire - 6 &&
   edge >= (bias === 'BUY' ? th.buyEdgeMinFire - 6 : th.sellEdgeMinFire - 6) &&
   blockers.length === 0 &&
