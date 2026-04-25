@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>QuantTrade V23.9 UI PRO CLEAN</title>
+  <title>QuantTrade V24.2 UI PRO DASHBOARD</title>
   <style>
     :root{
       --bg:#dfe1f4;
@@ -303,6 +303,7 @@
       margin:0;
       color:var(--lime);
       text-transform:uppercase;
+      word-break:break-word;
     }
 
     .value-md{
@@ -531,7 +532,7 @@
   <div class="app">
     <div class="brandbar">
       <div class="brand">
-        <span>V23.9 UI PRO CLEAN</span>
+        <span>V24.2 UI PRO DASHBOARD</span>
         <span id="brandDot" class="dot"></span>
       </div>
     </div>
@@ -567,6 +568,45 @@
       </div>
     </section>
 
+    <section class="card">
+      <div class="title-row">
+        <h2 class="title">PERFORMANCE DASHBOARD</h2>
+        <div class="badge-row">
+          <div id="perfBadge" class="badge">LEARNING</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:18px;">
+        <div class="panel">
+          <div class="label">Trades</div>
+          <div id="perfTrades" class="value-lg mono">0</div>
+        </div>
+        <div class="panel">
+          <div class="label">Winrate</div>
+          <div id="perfWinrate" class="value-lg mono">0%</div>
+        </div>
+        <div class="panel">
+          <div class="label">Profit Factor</div>
+          <div id="perfPF" class="value-lg mono">0</div>
+        </div>
+        <div class="panel">
+          <div class="label">Max Drawdown</div>
+          <div id="perfDD" class="value-lg mono">0.00</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <table class="table">
+          <tr><td>Avg Win</td><td id="perfAvgWin" class="mono">0.00</td></tr>
+          <tr><td>Avg Loss</td><td id="perfAvgLoss" class="mono">0.00</td></tr>
+          <tr><td>Best Symbol</td><td id="perfBestSymbol" class="mono">-</td></tr>
+          <tr><td>Worst Symbol</td><td id="perfWorstSymbol" class="mono">-</td></tr>
+          <tr><td>Learning Bias</td><td id="perfLearningBias" class="mono">0</td></tr>
+          <tr><td>Setup Key</td><td id="perfSetupKey" class="mono">-</td></tr>
+          <tr><td>Time Bucket</td><td id="perfTimeBucket" class="mono">-</td></tr>
+        </table>
+      </div>
+    </section>
     <section class="card">
       <div class="title-row">
         <h2 class="title">AI SIGNAL</h2>
@@ -661,8 +701,7 @@
         <button id="btnRefresh" class="btn btn-soft">REFRESH NOW</button>
       </div>
     </section>
-
-    <section class="card">
+        <section class="card">
       <div class="title-row">
         <h2 class="title">BROKER / ALPACA</h2>
         <div class="badge-row">
@@ -761,6 +800,19 @@
       heroBadgeBtn: $('heroBadgeBtn'),
       lossBtnHero: $('lossBtnHero'),
       winBtnHero: $('winBtnHero'),
+
+      perfBadge: $('perfBadge'),
+      perfTrades: $('perfTrades'),
+      perfWinrate: $('perfWinrate'),
+      perfPF: $('perfPF'),
+      perfDD: $('perfDD'),
+      perfAvgWin: $('perfAvgWin'),
+      perfAvgLoss: $('perfAvgLoss'),
+      perfBestSymbol: $('perfBestSymbol'),
+      perfWorstSymbol: $('perfWorstSymbol'),
+      perfLearningBias: $('perfLearningBias'),
+      perfSetupKey: $('perfSetupKey'),
+      perfTimeBucket: $('perfTimeBucket'),
 
       aiSignal: $('aiSignal'),
       aiConfidence: $('aiConfidence'),
@@ -895,6 +947,43 @@
 
       setButtonTheme(els.heroBadgeBtn, heroStyle);
       els.heroBadgeBtn.textContent = heroText || 'PAPER PREP';
+
+      els.lossBtnHero.textContent = `LOSS LIMIT ${state?.limits?.lossLimit ?? -24}`;
+      els.winBtnHero.textContent = `WIN TARGET +${state?.limits?.winTarget ?? 24}`;
+    }
+
+    function setPerformance(state) {
+      const p = state.performance || {};
+      const l = p.learning || state.learningInfo || {};
+
+      els.perfTrades.textContent = safeText(p.totalTrades, '0');
+      els.perfWinrate.textContent = `${fmtNum(p.winrate, 1)}%`;
+      els.perfPF.textContent = fmtNum(p.profitFactor, 2);
+      els.perfDD.textContent = fmtSigned(p.maxDrawdown);
+      els.perfAvgWin.textContent = fmtSigned(p.avgWin);
+      els.perfAvgLoss.textContent = fmtSigned(p.avgLoss);
+
+      els.perfBestSymbol.textContent = p.bestSymbol
+        ? `${p.bestSymbol.key} ${fmtSigned(p.bestSymbol.pnl)}`
+        : '-';
+
+      els.perfWorstSymbol.textContent = p.worstSymbol
+        ? `${p.worstSymbol.key} ${fmtSigned(p.worstSymbol.pnl)}`
+        : '-';
+
+      els.perfLearningBias.textContent = fmtSigned(l.currentLearningBias);
+      els.perfSetupKey.textContent = safeText(l.currentSetupKey, '-');
+      els.perfTimeBucket.textContent = safeText(l.currentTimeBucket, '-');
+
+      if (!p.totalTrades) {
+        setBadge(els.perfBadge, 'NO TRADES', 'warn');
+      } else if (Number(p.profitFactor) >= 1.2 && Number(p.winrate) >= 50) {
+        setBadge(els.perfBadge, 'POSITIVE', 'good');
+      } else if (Number(p.profitFactor) < 1) {
+        setBadge(els.perfBadge, 'DEFENSIVE', 'danger');
+      } else {
+        setBadge(els.perfBadge, 'LEARNING', '');
+      }
     }
 
     function setAiSignal(state) {
@@ -1042,6 +1131,7 @@
     function render(state) {
       currentState = state;
       setHeroStatus(state);
+      setPerformance(state);
       setAiSignal(state);
       setAiScore(state);
       setStatus(state);
