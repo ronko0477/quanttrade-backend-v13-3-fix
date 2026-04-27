@@ -215,6 +215,32 @@ function getTimeBucket() {
   return 'LATE';
 }
 
+function isUsMarketOpenBerlinTime() {
+  const now = new Date();
+
+  const berlinTime = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Berlin',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(now);
+
+  const get = (type) => berlinTime.find((p) => p.type === type)?.value;
+
+  const weekday = get('weekday');
+  const hour = Number(get('hour'));
+  const minute = Number(get('minute'));
+
+  if (weekday === 'Sat' || weekday === 'Sun') return false;
+
+  const minutesNow = hour * 60 + minute;
+  const marketOpen = 15 * 60 + 30;
+  const marketClose = 22 * 60;
+
+  return minutesNow >= marketOpen && minutesNow <= marketClose;
+}
+
 function makeSetupKey(snapshot) {
   const t = snapshot.trend >= 68 ? 'TU' : snapshot.trend <= 42 ? 'TW' : 'TM';
   const s = snapshot.structure >= 74 ? 'SS' : snapshot.structure <= 48 ? 'SW' : 'SM';
@@ -1750,11 +1776,17 @@ function mapHero(stage, signal, confidence, detail) {
 function canFire() {
   if (!state.session.autoMode) return false;
   if (state.ai.paused) return false;
+  if (state.ai.pauseReason === 'WIN_TARGET') return false;
   if (state.session.processing) return false;
   if (Date.now() < state.session.cooldownUntil) return false;
   if (state.session.tradesToday >= state.session.maxTradesPerDay) return false;
   if (state.session.netPnL >= state.session.winTarget) return false;
   if (state.session.netPnL <= state.session.lossLimit) return false;
+
+  if (!isUsMarketOpenBerlinTime()) {
+    return false;
+  }
+
   return true;
 }
 
@@ -2194,9 +2226,15 @@ async function processAiTick() {
     evaluated.premiumSetup
   );
 
-  if (triggerFire && canFire()) {
-    fireOrder(stableBias);
-  }
+  if (triggerFire && !isUsMarketOpenBerlinTime()) {
+  addLog(`Market closed - FIRE blocked (${state.symbol.active})`, {
+    signature: `market-closed-fire-block-${state.symbol.active}-${state.session.date}`,
+  });
+}
+
+if (triggerFire && canFire()) {
+  fireOrder(stableBias);
+}
 
   if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
     setPauseReason('DAY_LIMIT');
