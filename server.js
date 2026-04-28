@@ -12,12 +12,14 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V24.2 PRO DASHBOARD
-   - V24 paper learning kept
-   - performance dashboard added
-   - /api/performance added
-   - full UI compatible state kept
-   - broker / alpaca paper kept
+   V24.3 REAL SYNC
+   - V24.2 dashboard kept
+   - Smart Market Guard kept
+   - REAL broker sync added
+   - fake PnL disabled when real orders are active
+   - paper simulation only when real broker execution is not armed
+   - broker blocked orders do NOT count as wins/losses
+   - performance dashboard kept
    - persistence kept
    ========================================================= */
 
@@ -89,7 +91,7 @@ const CONFIG = {
   },
 
   persist: {
-    file: path.join(process.cwd(), 'data', 'state.v24.2.pro.dashboard.json'),
+    file: path.join(process.cwd(), 'data', 'state.v24.3.real.sync.json'),
     flushDebounceMs: 180,
     dbKey: 'global',
     tableName: 'app_state',
@@ -97,6 +99,8 @@ const CONFIG = {
 
   broker: {
     baseUrlPaper: 'https://paper-api.alpaca.markets',
+    fillPollAttempts: 12,
+    fillPollMs: 2500,
   },
 };
 
@@ -207,6 +211,10 @@ function canLogAfter(lastAt, minMs) {
   return Date.now() - toNum(lastAt, 0) >= minMs;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function getTimeBucket() {
   const hour = new Date().getHours();
   if (hour < 10) return 'OPEN';
@@ -257,13 +265,13 @@ function makeSetupKey(snapshot) {
 
 function createInitialState() {
   return {
-    version: 'V24.2 PRO DASHBOARD',
+    version: 'V24.3 REAL SYNC',
 
     system: {
       status: 'READY',
-      subtitle: 'Paper Learning aktiv.',
-      detail: 'AI scannt Setups für profitables Paper Learning.',
-      liveBadge: 'PAPER LEARN',
+      subtitle: 'Real Sync / Paper Learning aktiv.',
+      detail: 'AI scannt Setups. Real Trades werden erst bei Broker-Fill gezählt.',
+      liveBadge: 'REAL SYNC',
       dot: true,
     },
 
@@ -283,6 +291,8 @@ function createInitialState() {
       consecutiveWins: 0,
       consecutiveLosses: 0,
       lastTradeAt: 0,
+      realModeTradesToday: 0,
+      paperModeTradesToday: 0,
     },
 
     market: {
@@ -382,6 +392,8 @@ function createInitialState() {
       positions: [],
       orders: [],
       lastOrder: null,
+      lastFill: null,
+      pendingRealOrders: [],
     },
 
     logs: [],
@@ -568,10 +580,12 @@ function schedulePersist() {
 
   persistTimer = setTimeout(async () => {
     persistTimer = null;
+
     if (dbSaveRunning) {
       dbPendingSave = true;
       return;
     }
+
     dbSaveRunning = true;
     try {
       await flushStateNow();
@@ -590,10 +604,12 @@ async function forcePersistNow() {
     clearTimeout(persistTimer);
     persistTimer = null;
   }
+
   if (dbSaveRunning) {
     dbPendingSave = true;
     return;
   }
+
   dbSaveRunning = true;
   try {
     await flushStateNow();
@@ -618,7 +634,8 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V24.2 PRO DASHBOARD';
+  target.version = 'V24.3 REAL SYNC';
+
   const fresh = createInitialState();
 
   target.symbol = (!target.symbol || !Array.isArray(target.symbol.list) || target.symbol.list.length === 0)
@@ -641,6 +658,15 @@ function mergeLoadedState(target, loaded) {
   if (!target.learning.symbolStats || typeof target.learning.symbolStats !== 'object') target.learning.symbolStats = {};
   if (!target.learning.setupStats || typeof target.learning.setupStats !== 'object') target.learning.setupStats = {};
   if (!target.learning.timeBucketStats || typeof target.learning.timeBucketStats !== 'object') target.learning.timeBucketStats = {};
+
+  if (!target.session || typeof target.session !== 'object') {
+    target.session = deepClone(fresh.session);
+  } else {
+    target.session = { ...fresh.session, ...target.session };
+  }
+
+  if (typeof target.session.realModeTradesToday !== 'number') target.session.realModeTradesToday = 0;
+  if (typeof target.session.paperModeTradesToday !== 'number') target.session.paperModeTradesToday = 0;
 
   ensureBrokerStateShape();
   refreshLiveControlState();
@@ -694,10 +720,12 @@ function pauseLogIfChanged(reason) {
     addLog('AI pausiert wegen Win Target', { force: true, signature: `pause-win-target-${key}` });
     return;
   }
+
   if (reason === 'LOSS_LIMIT') {
     addLog('AI pausiert wegen Loss Limit', { force: true, signature: `pause-loss-limit-${key}` });
     return;
   }
+
   if (reason === 'DAY_LIMIT') {
     addLog('AI pausiert wegen Tageslimit', { force: true, signature: `pause-day-limit-${key}` });
   }
@@ -708,6 +736,7 @@ function setPauseReason(reason) {
     pauseLogIfChanged(reason);
     return;
   }
+
   state.ai.paused = true;
   state.ai.pauseReason = reason;
   state.engine.pauseStateLoggedKey = '';
@@ -723,6 +752,7 @@ function clearPauseState() {
 
 function logSymbolChange(symbol) {
   if (!canLogAfter(state.engine.lastSymbolLogAt, CONFIG.log.symbolLogMinMs)) return;
+
   state.engine.lastSymbolLogAt = Date.now();
 
   addLog(`Symbol aktiv ${symbol}`, {
@@ -803,6 +833,19 @@ function refreshLiveControlState() {
   state.liveControl.liveStatus = 'LIVE • REAL ORDERS ON';
 }
 
+function isRealTradingActive() {
+  refreshLiveControlState();
+
+  return (
+    BROKER_ENABLED &&
+    !!state.liveControl.realOrdersAllowed
+  );
+}
+
+function shouldSimulateTrade() {
+  return !isRealTradingActive();
+}
+
 /* =========================================================
    Broker / Alpaca Paper
    ========================================================= */
@@ -845,8 +888,11 @@ function ensureBrokerStateShape() {
   if (!state.broker || typeof state.broker !== 'object') {
     state.broker = createInitialState().broker;
   }
+
   if (!Array.isArray(state.broker.positions)) state.broker.positions = [];
   if (!Array.isArray(state.broker.orders)) state.broker.orders = [];
+  if (!Array.isArray(state.broker.pendingRealOrders)) state.broker.pendingRealOrders = [];
+  if (typeof state.broker.lastFill === 'undefined') state.broker.lastFill = null;
 }
 
 async function brokerConnect() {
@@ -916,7 +962,7 @@ async function brokerRefreshOrders() {
   if (!BROKER_ENABLED) return [];
 
   try {
-    const orders = await alpacaRequest('GET', '/v2/orders?status=all&limit=20&direction=desc');
+    const orders = await alpacaRequest('GET', '/v2/orders?status=all&limit=50&direction=desc');
     ensureBrokerStateShape();
     state.broker.orders = Array.isArray(orders) ? orders : [];
     brokerConnected = true;
@@ -952,6 +998,7 @@ async function brokerSubmitPaperOrder(side, symbol, qty = 1) {
     });
 
     ensureBrokerStateShape();
+
     state.broker.lastOrder = order;
     brokerLastOrderId = order?.id || null;
     brokerConnected = true;
@@ -967,6 +1014,196 @@ async function brokerSubmitPaperOrder(side, symbol, qty = 1) {
     brokerLastCheckAt = Date.now();
     return { ok: false, error: brokerLastError };
   }
+}
+
+async function brokerGetOrder(orderId) {
+  if (!BROKER_ENABLED || !orderId) return null;
+
+  try {
+    const order = await alpacaRequest('GET', `/v2/orders/${orderId}`);
+    brokerConnected = true;
+    brokerLastError = '';
+    brokerLastCheckAt = Date.now();
+    return order;
+  } catch (err) {
+    brokerLastError = err?.message || 'order read failed';
+    brokerLastCheckAt = Date.now();
+    return null;
+  }
+}
+
+function getLastFilledOrderForSymbol(symbol, side) {
+  const orders = Array.isArray(state.broker?.orders) ? state.broker.orders : [];
+
+  return orders.find((o) =>
+    String(o.symbol || '').toUpperCase() === String(symbol || '').toUpperCase() &&
+    String(o.side || '').toUpperCase() === String(side || '').toUpperCase() &&
+    String(o.status || '').toLowerCase() === 'filled'
+  ) || null;
+}
+
+function calcRealTradePnLFromAccount(beforeAccount, afterAccount) {
+  if (!beforeAccount || !afterAccount) return 0;
+
+  const beforeEquity = toNum(beforeAccount.equity, NaN);
+  const afterEquity = toNum(afterAccount.equity, NaN);
+
+  if (!Number.isFinite(beforeEquity) || !Number.isFinite(afterEquity)) return 0;
+
+  return round2(afterEquity - beforeEquity);
+}
+
+async function recordRealFill(order, symbol, side, tradeMetaBase, accountBefore) {
+  await brokerRefreshAll();
+
+  const accountAfter = state.broker?.account || null;
+  const filledQty = toNum(order?.filled_qty, 0);
+  const avgFillPrice = toNum(order?.filled_avg_price, 0);
+  const pnl = calcRealTradePnLFromAccount(accountBefore, accountAfter);
+
+  const outcome =
+    pnl > 0 ? 'WIN' :
+    pnl < 0 ? 'LOSS' :
+    'REAL_FILL';
+
+  const tradeMeta = {
+    symbol,
+    side,
+    pnl,
+    score: tradeMetaBase.score,
+    confidence: tradeMetaBase.confidence,
+    setupKey: tradeMetaBase.setupKey,
+    timeBucket: tradeMetaBase.timeBucket,
+    real: true,
+    brokerOrderId: order?.id || null,
+    filledQty,
+    avgFillPrice,
+  };
+
+  state.broker.lastFill = {
+    ts: Date.now(),
+    symbol,
+    side,
+    brokerOrderId: tradeMeta.brokerOrderId,
+    filledQty,
+    avgFillPrice,
+    pnl,
+    outcome,
+  };
+
+  if (outcome === 'WIN' || outcome === 'LOSS') {
+    await afterTradeResult(pnl, tradeMeta);
+  } else {
+    state.session.lastTradeAt = Date.now();
+
+    state.learning.trades.unshift({
+      ts: Date.now(),
+      symbol,
+      side,
+      pnl: 0,
+      score: tradeMeta.score,
+      confidence: tradeMeta.confidence,
+      setupKey: tradeMeta.setupKey,
+      timeBucket: tradeMeta.timeBucket,
+      outcome: 'REAL_FILL',
+      real: true,
+      brokerOrderId: tradeMeta.brokerOrderId,
+      filledQty,
+      avgFillPrice,
+    });
+
+    state.learning.trades = state.learning.trades.slice(0, CONFIG.ai.tradeMemoryLimit);
+
+    addLog(`REAL fill recorded PnL 0.00 (${symbol} ${side})`, {
+      force: true,
+      signature: `real-fill-zero-${symbol}-${side}-${tradeMeta.brokerOrderId || Date.now()}`,
+    });
+  }
+
+  state.session.tradesToday += 1;
+  state.session.realModeTradesToday += 1;
+
+  addLog(`REAL trade synced (${symbol} ${side}) PnL ${fmtSignedLog(pnl)}`, {
+    force: true,
+    signature: `real-trade-synced-${symbol}-${side}-${tradeMeta.brokerOrderId || Date.now()}`,
+  });
+
+  await forcePersistNow();
+}
+
+function fmtSignedLog(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return '-';
+  return n > 0 ? `+${round2(n)}` : `${round2(n)}`;
+}
+
+async function waitForBrokerFill(orderId, symbol, side, tradeMetaBase, accountBefore) {
+  if (!BROKER_ENABLED || !orderId) {
+    addLog(`REAL fill check failed (${symbol} ${side})`, {
+      force: true,
+      signature: `real-fill-missing-${symbol}-${side}-${Date.now()}`,
+    });
+    return false;
+  }
+
+  let filledOrder = null;
+  let lastStatus = 'unknown';
+
+  for (let i = 0; i < CONFIG.broker.fillPollAttempts; i += 1) {
+    const order = await brokerGetOrder(orderId);
+
+    if (order) {
+      lastStatus = String(order.status || 'unknown').toLowerCase();
+
+      if (lastStatus === 'filled') {
+        filledOrder = order;
+        break;
+      }
+
+      if (
+        lastStatus === 'rejected' ||
+        lastStatus === 'canceled' ||
+        lastStatus === 'expired' ||
+        lastStatus === 'stopped'
+      ) {
+        addLog(`REAL order ${lastStatus} (${symbol} ${side})`, {
+          force: true,
+          signature: `real-order-${lastStatus}-${symbol}-${side}-${orderId}`,
+        });
+        await brokerRefreshAll();
+        await forcePersistNow();
+        return false;
+      }
+    }
+
+    await sleep(CONFIG.broker.fillPollMs);
+  }
+
+  await brokerRefreshAll();
+
+  if (!filledOrder) {
+    filledOrder = getLastFilledOrderForSymbol(symbol, side);
+  }
+
+  if (!filledOrder) {
+    addLog(`REAL order not filled yet (${symbol} ${side}) status ${lastStatus}`, {
+      force: true,
+      signature: `real-not-filled-${symbol}-${side}-${orderId}`,
+    });
+    await forcePersistNow();
+    return false;
+  }
+
+  const filledQty = toNum(filledOrder.filled_qty, 0);
+  const avgFillPrice = toNum(filledOrder.filled_avg_price, 0);
+
+  addLog(`REAL filled (${symbol} ${side}) qty ${filledQty} @ ${round2(avgFillPrice)}`, {
+    force: true,
+    signature: `real-filled-${symbol}-${side}-${filledOrder.id || orderId}`,
+  });
+
+  await recordRealFill(filledOrder, symbol, side, tradeMetaBase, accountBefore);
+  return true;
 }
 
 /* =========================================================
@@ -987,6 +1224,8 @@ function resetDayIfNeeded() {
   state.session.consecutiveWins = 0;
   state.session.consecutiveLosses = 0;
   state.session.lastTradeAt = 0;
+  state.session.realModeTradesToday = 0;
+  state.session.paperModeTradesToday = 0;
 
   clearPauseState();
 
@@ -1020,11 +1259,11 @@ function resetDayIfNeeded() {
   };
 
   state.system.status = 'READY';
-  state.system.subtitle = 'Paper Learning aktiv.';
+  state.system.subtitle = 'Real Sync / Paper Learning aktiv.';
   state.system.detail = state.session.autoMode
     ? `AI scannt Setups. • ${state.symbol.active}`
     : 'Bereit für manuellen Modus.';
-  state.system.liveBadge = state.session.autoMode ? 'PAPER LEARN' : 'LIVE';
+  state.system.liveBadge = isRealTradingActive() ? 'REAL SYNC' : 'PAPER LEARN';
 
   addLog(`Day reset ${today}`, { force: true, signature: `day-reset-${today}` });
   schedulePersist();
@@ -1323,6 +1562,10 @@ function learnFromOutcome(outcome, tradeMeta = null) {
       setupKey: tradeMeta.setupKey,
       timeBucket: tradeMeta.timeBucket,
       outcome,
+      real: !!tradeMeta.real,
+      brokerOrderId: tradeMeta.brokerOrderId || null,
+      filledQty: tradeMeta.filledQty || null,
+      avgFillPrice: tradeMeta.avgFillPrice || null,
     });
 
     state.learning.trades = state.learning.trades.slice(0, CONFIG.ai.tradeMemoryLimit);
@@ -1749,13 +1992,13 @@ function mapHero(stage, signal, confidence, detail) {
         (confidence < 36
           ? `Markt zu schwach für Entry. • ${state.symbol.active}`
           : `Beobachtung aktiv. • ${state.symbol.active}`),
-      liveBadge: state.session.autoMode ? 'PAPER LEARN' : 'LIVE',
+      liveBadge: isRealTradingActive() ? 'REAL SYNC' : 'PAPER LEARN',
     };
   }
 
   return {
     status: 'READY',
-    subtitle: state.session.autoMode ? 'Paper Learning aktiv' : 'System bereit.',
+    subtitle: state.session.autoMode ? 'Real Sync / Paper Learning aktiv.' : 'System bereit.',
     detail:
       detail ||
       (stage === 'WATCH'
@@ -1765,12 +2008,12 @@ function mapHero(stage, signal, confidence, detail) {
           : confidence < 36
             ? `Markt zu schwach für Entry. • ${state.symbol.active}`
             : `Kein Setup aktuell. • ${state.symbol.active}`),
-    liveBadge: state.session.autoMode ? 'PAPER LEARN' : 'LIVE',
+    liveBadge: isRealTradingActive() ? 'REAL SYNC' : 'PAPER LEARN',
   };
 }
 
 /* =========================================================
-   Trade / order simulation + broker blocking
+   Trade / order simulation + real sync
    ========================================================= */
 
 function canFire() {
@@ -1863,7 +2106,7 @@ async function maybeSendBrokerPaperOrder(side, symbol) {
       force: true,
       signature: `broker-block-disabled-${symbol}-${side}-${Date.now()}`,
     });
-    return;
+    return { ok: false, blocked: true, error: 'broker disabled' };
   }
 
   if (BROKER_MODE !== 'alpaca-paper') {
@@ -1871,7 +2114,7 @@ async function maybeSendBrokerPaperOrder(side, symbol) {
       force: true,
       signature: `broker-block-mode-${symbol}-${side}-${Date.now()}`,
     });
-    return;
+    return { ok: false, blocked: true, error: 'broker mode not alpaca-paper' };
   }
 
   if (!live.tradingEnabled || live.killSwitch || !live.liveTradingEnabled || !live.liveUnlockArmed) {
@@ -1879,7 +2122,7 @@ async function maybeSendBrokerPaperOrder(side, symbol) {
       force: true,
       signature: `broker-block-guard-${symbol}-${side}-${Date.now()}`,
     });
-    return;
+    return { ok: false, blocked: true, error: 'live guard blocked' };
   }
 
   if (!live.liveArmEnabled) {
@@ -1887,7 +2130,7 @@ async function maybeSendBrokerPaperOrder(side, symbol) {
       force: true,
       signature: `broker-block-arm-${symbol}-${side}-${Date.now()}`,
     });
-    return;
+    return { ok: false, blocked: true, error: 'live arm disabled' };
   }
 
   const result = await brokerSubmitPaperOrder(side, symbol, 1);
@@ -1900,17 +2143,31 @@ async function maybeSendBrokerPaperOrder(side, symbol) {
     });
     state.broker.lastOrder = result.order || null;
     if (state.broker.lastOrder) state.broker.lastOrder.summary = txt;
-  } else {
-    addLog(`Broker order failed (${symbol} ${side})`, {
-      force: true,
-      signature: `broker-failed-${symbol}-${side}-${Date.now()}`,
-    });
+    return { ok: true, order: result.order };
   }
+
+  addLog(`Broker order failed (${symbol} ${side})`, {
+    force: true,
+    signature: `broker-failed-${symbol}-${side}-${Date.now()}`,
+  });
+
+  return { ok: false, error: result.error || 'broker order failed' };
+}
+
+function applyCooldownAfterOrder() {
+  let cooldown = CONFIG.session.cooldownMs;
+
+  if (state.session.consecutiveLosses >= 1) {
+    cooldown += CONFIG.session.lossCooldownExtraMs * state.session.consecutiveLosses;
+  }
+
+  state.session.cooldownUntil = Date.now() + cooldown;
 }
 
 function fireOrder(side) {
   if (state.session.processing) return;
 
+  const isReal = isRealTradingActive();
   const symbolUsed = state.symbol.active;
   const tradeSetupKey = state.engine.currentSetupKey || makeSetupKey(state.market);
   const tradeTimeBucket = state.engine.currentTimeBucket || getTimeBucket();
@@ -1922,9 +2179,9 @@ function fireOrder(side) {
   state.session.lastOrderSide = side;
   state.engine.lastFireAt = Date.now();
 
-  addLog(`AI FIRE ${side} (${symbolUsed})`, {
+  addLog(`AI FIRE ${side} (${symbolUsed}) ${isReal ? '[REAL]' : '[PAPER]'}`, {
     force: true,
-    signature: `ai-fire-${symbolUsed}-${side}-${Date.now()}`,
+    signature: `ai-fire-${symbolUsed}-${side}-${isReal ? 'real' : 'paper'}-${Date.now()}`,
   });
   addLog(`Order wird verarbeitet (${symbolUsed} ${side})`, {
     force: true,
@@ -1938,39 +2195,79 @@ function fireOrder(side) {
   forcePersistNow();
 
   setTimeout(async () => {
-    await maybeSendBrokerPaperOrder(side, symbolUsed);
-
-    addLog(`Order ausgeführt (${symbolUsed} ${side})`, {
-      force: true,
-      signature: `order-filled-${symbolUsed}-${side}-${Date.now()}`,
-    });
-
-    state.session.processing = false;
-    state.session.queue = 0;
-    state.session.tradesToday += 1;
-
-    let cooldown = CONFIG.session.cooldownMs;
-    if (state.session.consecutiveLosses >= 1) {
-      cooldown += CONFIG.session.lossCooldownExtraMs * state.session.consecutiveLosses;
-    }
-    state.session.cooldownUntil = Date.now() + cooldown;
-
-    const pnl = simulateTradeOutcome(side);
-
-    const tradeMeta = {
+    const tradeMetaBase = {
       symbol: symbolUsed,
       side,
-      pnl: round2(pnl),
       score: tradeScore,
       confidence: tradeConfidence,
       setupKey: tradeSetupKey,
       timeBucket: tradeTimeBucket,
     };
 
-    await afterTradeResult(round2(pnl), tradeMeta);
+    try {
+      if (shouldSimulateTrade()) {
+        addLog(`Paper simulation active (${symbolUsed} ${side})`, {
+          force: true,
+          signature: `paper-sim-active-${symbolUsed}-${side}-${Date.now()}`,
+        });
 
-    if (BROKER_ENABLED) {
-      await brokerRefreshAll();
+        state.session.tradesToday += 1;
+        state.session.paperModeTradesToday += 1;
+
+        const pnl = simulateTradeOutcome(side);
+
+        const tradeMeta = {
+          ...tradeMetaBase,
+          pnl: round2(pnl),
+          real: false,
+        };
+
+        await afterTradeResult(round2(pnl), tradeMeta);
+
+        addLog(`Order ausgeführt PAPER (${symbolUsed} ${side})`, {
+          force: true,
+          signature: `order-filled-paper-${symbolUsed}-${side}-${Date.now()}`,
+        });
+      } else {
+        const accountBefore = state.broker?.account ? deepClone(state.broker.account) : null;
+        const brokerResult = await maybeSendBrokerPaperOrder(side, symbolUsed);
+
+        if (!brokerResult.ok || !brokerResult.order?.id) {
+          addLog(`REAL order not counted (${symbolUsed} ${side})`, {
+            force: true,
+            signature: `real-not-counted-${symbolUsed}-${side}-${Date.now()}`,
+          });
+          return;
+        }
+
+        addLog(`REAL order sent - waiting for fill (${symbolUsed} ${side})`, {
+          force: true,
+          signature: `real-wait-fill-${symbolUsed}-${side}-${brokerResult.order.id}`,
+        });
+
+        await waitForBrokerFill(
+          brokerResult.order.id,
+          symbolUsed,
+          side,
+          tradeMetaBase,
+          accountBefore
+        );
+      }
+    } catch (err) {
+      addLog(`Order flow error (${symbolUsed} ${side}) ${err?.message || 'unknown'}`, {
+        force: true,
+        signature: `order-flow-error-${symbolUsed}-${side}-${Date.now()}`,
+      });
+    } finally {
+      state.session.processing = false;
+      state.session.queue = 0;
+      applyCooldownAfterOrder();
+
+      if (BROKER_ENABLED) {
+        await brokerRefreshAll();
+      }
+
+      await forcePersistNow();
     }
   }, 900);
 }
@@ -2012,13 +2309,15 @@ function getBrokerPnlSnapshot() {
 }
 
 /* =========================================================
-   V24.2 Performance Dashboard
+   V24.3 Performance Dashboard
    ========================================================= */
 
 function getPerformanceDashboard() {
   const trades = Array.isArray(state.learning?.trades) ? state.learning.trades : [];
 
   const totalTrades = trades.length;
+  const realTrades = trades.filter((t) => !!t.real).length;
+  const paperTrades = trades.filter((t) => !t.real).length;
   const wins = trades.filter((t) => Number(t.pnl) > 0);
   const losses = trades.filter((t) => Number(t.pnl) < 0);
 
@@ -2071,6 +2370,8 @@ function getPerformanceDashboard() {
 
   return {
     totalTrades,
+    realTrades,
+    paperTrades,
     wins: wins.length,
     losses: losses.length,
     winrate,
@@ -2227,14 +2528,14 @@ async function processAiTick() {
   );
 
   if (triggerFire && !isUsMarketOpenBerlinTime()) {
-  addLog(`Market closed - FIRE blocked (${state.symbol.active})`, {
-    signature: `market-closed-fire-block-${state.symbol.active}-${state.session.date}`,
-  });
-}
+    addLog(`Market closed - FIRE blocked (${state.symbol.active})`, {
+      signature: `market-closed-fire-block-${state.symbol.active}-${state.session.date}`,
+    });
+  }
 
-if (triggerFire && canFire()) {
-  fireOrder(stableBias);
-}
+  if (triggerFire && canFire()) {
+    fireOrder(stableBias);
+  }
 
   if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
     setPauseReason('DAY_LIMIT');
@@ -2323,6 +2624,8 @@ function getPublicState() {
       cooldownActive: Date.now() < state.session.cooldownUntil,
       cooldownLeftSec: Math.max(0, Math.ceil((state.session.cooldownUntil - Date.now()) / 1000)),
       dayState,
+      realModeTradesToday: state.session.realModeTradesToday || 0,
+      paperModeTradesToday: state.session.paperModeTradesToday || 0,
     },
 
     symbol: {
@@ -2390,6 +2693,7 @@ function getPublicState() {
       totalPnl: brokerPnl.totalPnl,
       positionsCount: Array.isArray(state.broker?.positions) ? state.broker.positions.length : 0,
       lastOrder: state.broker?.lastOrder?.summary || '-',
+      lastFill: state.broker?.lastFill || null,
     },
 
     liveControl: {
@@ -2661,7 +2965,12 @@ app.post('/api/manual/win', async (_req, res) => {
     confidence: state.ai.confidence,
     setupKey: makeSetupKey(state.market),
     timeBucket: getTimeBucket(),
+    real: false,
   };
+
+  state.session.tradesToday += 1;
+  state.session.paperModeTradesToday += 1;
+
   await afterTradeResult(4, tradeMeta);
   res.json(getPublicState());
 });
@@ -2675,7 +2984,12 @@ app.post('/api/manual/loss', async (_req, res) => {
     confidence: state.ai.confidence,
     setupKey: makeSetupKey(state.market),
     timeBucket: getTimeBucket(),
+    real: false,
   };
+
+  state.session.tradesToday += 1;
+  state.session.paperModeTradesToday += 1;
+
   await afterTradeResult(-4, tradeMeta);
   res.json(getPublicState());
 });
@@ -2693,6 +3007,7 @@ app.get('/api/broker/status', (_req, res) => {
     lastError: brokerLastError,
     lastCheckAt: brokerLastCheckAt,
     lastOrder: state.broker?.lastOrder || null,
+    lastFill: state.broker?.lastFill || null,
     account: state.broker?.account || null,
   });
 });
@@ -2755,6 +3070,7 @@ app.get('/health', (_req, res) => {
     brokerConnected,
     brokerLastError,
     liveStatus: state.liveControl.liveStatus,
+    realTradingActive: isRealTradingActive(),
     learningBias: state.engine.currentLearningBias,
     learningSetup: state.engine.currentSetupKey,
     learningTimeBucket: state.engine.currentTimeBucket,
@@ -2771,7 +3087,7 @@ async function hydrateState() {
   let source = 'NEW';
 
   console.log('====================================================');
-  console.log('[boot] version: V24.2 PRO DASHBOARD');
+  console.log('[boot] version: V24.3 REAL SYNC');
   console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
   console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
   console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
@@ -2881,6 +3197,14 @@ process.on('beforeExit', async () => {
   await forcePersistNow();
 });
 
+process.on('uncaughtException', (err) => {
+  console.error('[fatal] uncaughtException:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('[fatal] unhandledRejection:', err);
+});
+
 /* =========================================================
    Static frontend
    ========================================================= */
@@ -2902,6 +3226,6 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log('V24.2 PRO DASHBOARD listening on :' + PORT);
+    console.log('V24.3 REAL SYNC listening on :' + PORT);
   });
 })();
