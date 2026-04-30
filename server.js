@@ -97,10 +97,33 @@ const CONFIG = {
     tableName: 'app_state',
   },
 
-  broker: {
+    broker: {
     baseUrlPaper: 'https://paper-api.alpaca.markets',
     fillPollAttempts: 12,
     fillPollMs: 2500,
+  },
+
+  safeMode: {
+    enabled: true,
+
+    // Kein Real-Trade direkt nach US Open
+    minMinutesAfterOpen: 35,
+
+    // Real Trade Mindestqualität
+    minConfidence: 64,
+    minScore: 72,
+    minLiquidity: 58,
+    minSession: 52,
+    maxVolatility: 62,
+
+    // Verlustschutz
+    maxRealLossPerTrade: -18,
+    hardDailyLossLimit: -24,
+
+    // Verhalten
+    blockVolatilityHigh: true,
+    blockLowConfidence: true,
+    blockSessionSoft: true,
   },
 };
 
@@ -247,6 +270,92 @@ function isUsMarketOpenBerlinTime() {
   const marketClose = 22 * 60;
 
   return minutesNow >= marketOpen && minutesNow <= marketClose;
+}
+
+/* =========================================================
+   SAFE MODE ENGINE
+   ========================================================= */
+
+function getMinutesSinceUsOpenBerlin() {
+  const now = new Date();
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Berlin',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(now);
+
+  const get = (type) => parts.find((p) => p.type === type)?.value;
+
+  const weekday = get('weekday');
+  const hour = Number(get('hour'));
+  const minute = Number(get('minute'));
+
+  if (weekday === 'Sat' || weekday === 'Sun') return -1;
+
+  const minutesNow = hour * 60 + minute;
+  const marketOpen = 15 * 60 + 30;
+
+  return minutesNow - marketOpen;
+}
+
+function getSafeModeDecision() {
+  if (!CONFIG.safeMode?.enabled) {
+    return { allowed: true, reasons: [] };
+  }
+
+  const reasons = [];
+  const minutesSinceOpen = getMinutesSinceUsOpenBerlin();
+
+  // Open Schutz
+  if (
+    minutesSinceOpen >= 0 &&
+    minutesSinceOpen < CONFIG.safeMode.minMinutesAfterOpen
+  ) {
+    reasons.push(`OPEN GUARD ${minutesSinceOpen}m`);
+  }
+
+  // Volatility Schutz
+  if (
+    CONFIG.safeMode.blockVolatilityHigh &&
+    state.market.volatility > CONFIG.safeMode.maxVolatility
+  ) {
+    reasons.push(`VOL ${state.market.volatility}`);
+  }
+
+  // Liquidity Schutz
+  if (state.market.liquidity < CONFIG.safeMode.minLiquidity) {
+    reasons.push(`LIQ ${state.market.liquidity}`);
+  }
+
+  // Session Schutz
+  if (
+    CONFIG.safeMode.blockSessionSoft &&
+    state.market.session < CONFIG.safeMode.minSession
+  ) {
+    reasons.push(`SESSION ${state.market.session}`);
+  }
+
+  // Confidence Schutz
+  if (
+    CONFIG.safeMode.blockLowConfidence &&
+    state.ai.confidence < CONFIG.safeMode.minConfidence
+  ) {
+    reasons.push(`CONF ${state.ai.confidence}`);
+  }
+
+  // Score Schutz
+  if (state.ai.score < CONFIG.safeMode.minScore) {
+    reasons.push(`SCORE ${state.ai.score}`);
+  }
+
+  return {
+    allowed: reasons.length === 0,
+    reasons,
+    minutesSinceOpen,
+  };
 }
 
 function makeSetupKey(snapshot) {
@@ -2024,9 +2133,18 @@ function canFire() {
   if (Date.now() < state.session.cooldownUntil) return false;
   if (state.session.tradesToday >= state.session.maxTradesPerDay) return false;
   if (state.session.netPnL >= state.session.winTarget) return false;
-  if (state.session.netPnL <= state.session.lossLimit) return false;
+  if (state.session.netPnL <= CONFIG.safeMode.hardDailyLossLimit) return false;
 
   if (!isUsMarketOpenBerlinTime()) {
+    return false;
+  }
+
+  const safe = getSafeModeDecision();
+
+  if (!safe.allowed) {
+    addLog(`SAFE MODE BLOCKED (${state.symbol.active}) • ${safe.reasons.join(' • ')}`, {
+      signature: `safe-mode-block-${state.symbol.active}-${state.session.date}-${safe.reasons.join('|')}`,
+    });
     return false;
   }
 
@@ -2071,6 +2189,16 @@ function simulateTradeOutcome(side) {
 async function afterTradeResult(pnl, tradeMeta) {
   state.session.netPnL = round2(state.session.netPnL + pnl);
   state.session.lastTradeAt = Date.now();
+
+  if (tradeMeta?.real && pnl <= CONFIG.safeMode.maxRealLossPerTrade) {
+    addLog(`SAFE MODE HARD STOP REAL LOSS (${tradeMeta.symbol}) PnL ${fmtSignedLog(pnl)}`, {
+      force: true,
+      signature: `safe-hard-stop-${tradeMeta.symbol}-${Date.now()}`,
+    });
+
+    state.ai.paused = true;
+    state.ai.pauseReason = 'LOSS_LIMIT';
+  }
 
   if (pnl > 0) {
     state.session.consecutiveWins += 1;
