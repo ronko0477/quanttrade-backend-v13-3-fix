@@ -943,18 +943,7 @@ function refreshLiveControlState() {
   if (!state.liveControl || typeof state.liveControl !== 'object') {
     state.liveControl = createInitialState().liveControl;
   }
-
-   const marketClosedReason = getMarketClosedReasonBerlin();
-
-if (marketClosedReason) {
-  return {
-    status: 'MARKET CLOSED',
-    subtitle: marketClosedReason,
-    detail: `Keine Trades außerhalb US-Marktzeit. • ${state.symbol.active}`,
-    liveBadge: marketClosedReason,
-  };
-}
-
+  
   if (state.liveControl.killSwitch) {
     state.liveControl.realOrdersAllowed = false;
     state.liveControl.liveStatus = 'BLOCKED • KILL SWITCH';
@@ -2093,6 +2082,17 @@ function buildAiReasons(_metrics, confidence) {
 
 function mapHero(stage, signal, confidence, detail) {
   refreshLiveControlState();
+
+    const marketClosedReason = getMarketClosedReasonBerlin();
+
+if (marketClosedReason) {
+  return {
+    status: 'MARKET CLOSED',
+    subtitle: marketClosedReason,
+    detail: `Keine Trades außerhalb US-Marktzeit. • ${state.symbol.active}`,
+    liveBadge: marketClosedReason,
+  };
+}
 
   if (state.ai.paused) {
     if (state.ai.pauseReason === 'WIN_TARGET') {
