@@ -272,6 +272,42 @@ function isUsMarketOpenBerlinTime() {
   return minutesNow >= marketOpen && minutesNow <= marketClose;
 }
 
+function getMarketClosedReasonBerlin() {
+  const now = new Date();
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Berlin',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(now);
+
+  const get = (type) => parts.find((p) => p.type === type)?.value;
+
+  const weekday = get('weekday');
+  const hour = Number(get('hour'));
+  const minute = Number(get('minute'));
+
+  if (weekday === 'Sat' || weekday === 'Sun') {
+    return 'WEEKEND CLOSED';
+  }
+
+  const minutesNow = hour * 60 + minute;
+  const marketOpen = 15 * 60 + 30;
+  const marketClose = 22 * 60;
+
+  if (minutesNow < marketOpen) {
+    return 'PRE MARKET CLOSED';
+  }
+
+  if (minutesNow > marketClose) {
+    return 'AFTER HOURS CLOSED';
+  }
+
+  return '';
+}
+
 /* =========================================================
    SAFE MODE ENGINE
    ========================================================= */
@@ -907,6 +943,17 @@ function refreshLiveControlState() {
   if (!state.liveControl || typeof state.liveControl !== 'object') {
     state.liveControl = createInitialState().liveControl;
   }
+
+   const marketClosedReason = getMarketClosedReasonBerlin();
+
+if (marketClosedReason) {
+  return {
+    status: 'MARKET CLOSED',
+    subtitle: marketClosedReason,
+    detail: `Keine Trades außerhalb US-Marktzeit. • ${state.symbol.active}`,
+    liveBadge: marketClosedReason,
+  };
+}
 
   if (state.liveControl.killSwitch) {
     state.liveControl.realOrdersAllowed = false;
