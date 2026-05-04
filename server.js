@@ -3378,8 +3378,7 @@ app.get('/health', (_req, res) => {
     performance: getPerformanceDashboard(),
     stability: getStabilityStatus(),
     realTradingAllowedNow: isRealTradingAllowedNow(),
-    realTradingBlockReason: getRealTradingBlockReason(),
-}
+    realTradingBlockReason: getRealTradingBlockReason()
   });
 });
 
