@@ -3376,6 +3376,10 @@ app.get('/health', (_req, res) => {
     learningSetup: state.engine.currentSetupKey,
     learningTimeBucket: state.engine.currentTimeBucket,
     performance: getPerformanceDashboard(),
+    stability: getStabilityStatus(),
+    realTradingAllowedNow: isRealTradingAllowedNow(),
+    realTradingBlockReason: getRealTradingBlockReason(),
+}
   });
 });
 
