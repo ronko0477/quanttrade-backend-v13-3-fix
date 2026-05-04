@@ -3533,3 +3533,72 @@ app.get('*', (_req, res) => {
     console.log('V24.3 REAL SYNC listening on :' + PORT);
   });
 })();
+
+/* =========================================================
+   V25.1 WATCHDOG
+   - detects stale AI loop
+   - reconnects broker/db
+   - lets Render restart on hard failure
+   ========================================================= */
+
+const WATCHDOG = {
+  checkEveryMs: 30000,
+  staleTickMs: 90000,
+  maxTickErrors: 5,
+  maxBrokerDownMs: 180000,
+  lastCheckAt: 0,
+  brokerDownSince: 0,
+};
+
+async function v251WatchdogCheck() {
+  try {
+    WATCHDOG.lastCheckAt = Date.now();
+
+    const stability = typeof getStabilityStatus === 'function'
+      ? getStabilityStatus()
+      : null;
+
+    const lastTickAt = Number(stability?.lastSuccessfulTickAt || stability?.lastTickAt || 0);
+    const tickErrors = Number(stability?.tickErrors || 0);
+
+    if (lastTickAt > 0 && Date.now() - lastTickAt > WATCHDOG.staleTickMs) {
+      console.error('[watchdog] stale AI tick detected. restarting process.');
+      await forcePersistNow();
+      process.exit(1);
+    }
+
+    if (tickErrors >= WATCHDOG.maxTickErrors) {
+      console.error('[watchdog] too many tick errors. restarting process.');
+      await forcePersistNow();
+      process.exit(1);
+    }
+
+    if (BROKER_ENABLED && !brokerConnected) {
+      if (!WATCHDOG.brokerDownSince) WATCHDOG.brokerDownSince = Date.now();
+
+      console.warn('[watchdog] broker disconnected. reconnecting...');
+      await brokerConnect();
+      await brokerRefreshAll();
+
+      if (!brokerConnected && Date.now() - WATCHDOG.brokerDownSince > WATCHDOG.maxBrokerDownMs) {
+        console.error('[watchdog] broker down too long. restarting process.');
+        await forcePersistNow();
+        process.exit(1);
+      }
+    } else {
+      WATCHDOG.brokerDownSince = 0;
+    }
+
+    if (DB_URL_FOUND && !dbReady) {
+      console.warn('[watchdog] db not ready. reconnecting...');
+      await dbInit(true);
+    }
+
+  } catch (err) {
+    console.error('[watchdog] check failed:', err?.message || err);
+  }
+}
+
+setInterval(v251WatchdogCheck, WATCHDOG.checkEveryMs);
+
+console.log('[watchdog] V25.1 Watchdog active');
