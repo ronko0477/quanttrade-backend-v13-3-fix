@@ -152,6 +152,72 @@ const BROKER_ENABLED =
   !!APCA_API_SECRET_KEY;
 
 /* =========================================================
+   V25 STABILITY / SAFE START
+   ========================================================= */
+
+const STABILITY = {
+  version: 'V25 STABILITY',
+  bootAt: Date.now(),
+  lastTickAt: 0,
+  lastSuccessfulTickAt: 0,
+  tickErrors: 0,
+  lastTickError: '',
+  brokerReconnects: 0,
+  dbRecoveries: 0,
+  safeStartUntil: Date.now() + 5 * 60 * 1000,
+  safeStartReason: 'BOOT SAFE START 5 MIN',
+};
+
+function isSafeStartActive() {
+  return Date.now() < STABILITY.safeStartUntil;
+}
+
+function safeStartLeftSec() {
+  return Math.max(0, Math.ceil((STABILITY.safeStartUntil - Date.now()) / 1000));
+}
+
+function extendSafeStart(ms, reason) {
+  STABILITY.safeStartUntil = Math.max(STABILITY.safeStartUntil, Date.now() + ms);
+  STABILITY.safeStartReason = reason || 'SAFE START EXTENDED';
+}
+
+function clearSafeStart(reason = 'SAFE START CLEARED') {
+  STABILITY.safeStartUntil = 0;
+  STABILITY.safeStartReason = reason;
+}
+
+function stabilityMarkTickStart() {
+  STABILITY.lastTickAt = Date.now();
+}
+
+function stabilityMarkTickOk() {
+  STABILITY.lastSuccessfulTickAt = Date.now();
+  STABILITY.lastTickError = '';
+}
+
+function stabilityMarkTickError(err) {
+  STABILITY.tickErrors += 1;
+  STABILITY.lastTickError = err?.message || String(err || 'unknown tick error');
+}
+
+function getStabilityStatus() {
+  return {
+    version: STABILITY.version,
+    bootAt: STABILITY.bootAt,
+    uptimeSec: Math.round(process.uptime()),
+    lastTickAt: STABILITY.lastTickAt,
+    lastSuccessfulTickAt: STABILITY.lastSuccessfulTickAt,
+    tickErrors: STABILITY.tickErrors,
+    lastTickError: STABILITY.lastTickError,
+    brokerReconnects: STABILITY.brokerReconnects,
+    dbRecoveries: STABILITY.dbRecoveries,
+    safeStartActive: isSafeStartActive(),
+    safeStartLeftSec: safeStartLeftSec(),
+    safeStartReason: STABILITY.safeStartReason,
+  };
+}
+
+/* =========================================================
    Helpers
    ========================================================= */
 
@@ -987,8 +1053,43 @@ function isRealTradingActive() {
   );
 }
 
+function isRealTradingAllowedNow() {
+  if (!isRealTradingActive()) return false;
+  if (isSafeStartActive()) return false;
+  if (!isUsMarketOpenBerlinTime()) return false;
+  if (state.ai.paused) return false;
+  if (state.session.processing) return false;
+  if (state.session.netPnL >= state.session.winTarget) return false;
+  if (state.session.netPnL <= state.session.lossLimit) return false;
+  return true;
+}
+
+function getRealTradingBlockReason() {
+  if (!isRealTradingActive()) return 'REAL NOT ARMED';
+  if (isSafeStartActive()) return `SAFE START ${safeStartLeftSec()}s`;
+  if (!isUsMarketOpenBerlinTime()) return 'MARKET CLOSED';
+  if (state.ai.paused) return `AI PAUSED ${state.ai.pauseReason || ''}`.trim();
+  if (state.session.processing) return 'PROCESSING';
+  if (state.session.netPnL >= state.session.winTarget) return 'WIN TARGET';
+  if (state.session.netPnL <= state.session.lossLimit) return 'LOSS LIMIT';
+  return '';
+}
+
 function shouldSimulateTrade() {
   return !isRealTradingActive();
+}
+
+function shouldBlockFireForStability() {
+  const reason = getRealTradingBlockReason();
+
+  if (isRealTradingActive() && reason) {
+    addLog(`REAL blocked by stability guard: ${reason} (${state.symbol.active})`, {
+      signature: `real-stability-block-${reason}-${state.symbol.active}-${state.session.date}`,
+    });
+    return true;
+  }
+
+  return false;
 }
 
 /* =========================================================
@@ -2589,140 +2690,162 @@ function getPerformanceDashboard() {
    ========================================================= */
 
 async function processAiTick() {
-  resetDayIfNeeded();
-  refreshLiveControlState();
-  rotateSymbolIfNeeded();
-  generateMarket();
+  stabilityMarkTickStart();
 
-  const metrics = computeAiMetrics();
-  const stableBias = updateStableBias(metrics);
-  const confidence = computeConfidence(metrics);
-  const score = computeScore();
-  const reasons = buildAiReasons(metrics, confidence);
+  try {
+    resetDayIfNeeded();
+    refreshLiveControlState();
+    rotateSymbolIfNeeded();
+    generateMarket();
 
-  state.ai.score = score;
-  state.ai.confidence = confidence;
-  state.ai.buyEdge = Math.max(0, Math.round(metrics.buyEdge));
-  state.ai.sellEdge = Math.max(0, Math.round(metrics.sellEdge));
-  state.ai.bias = state.ai.paused ? 'PAUSED' : stableBias;
+    const metrics = computeAiMetrics();
+    const stableBias = updateStableBias(metrics);
+    const confidence = computeConfidence(metrics);
+    const score = computeScore();
+    const reasons = buildAiReasons(metrics, confidence);
 
-  const evaluated = evaluateStage(metrics, confidence, score);
-  let stage = stabilizeStage(evaluated.candidateStage);
+    state.ai.score = score;
+    state.ai.confidence = confidence;
+    state.ai.buyEdge = Math.max(0, Math.round(metrics.buyEdge));
+    state.ai.sellEdge = Math.max(0, Math.round(metrics.sellEdge));
+    state.ai.bias = state.ai.paused ? 'PAUSED' : stableBias;
 
-  if (state.ai.paused) {
-    stage = 'PAUSED';
-  }
+    const evaluated = evaluateStage(metrics, confidence, score);
+    let stage = stabilizeStage(evaluated.candidateStage);
 
-  let signal = 'HOLD';
-  let setupConfirmed = false;
+    if (state.ai.paused) {
+      stage = 'PAUSED';
+    }
 
-  if (stage === 'PAUSED') {
-    signal = 'PAUSED';
-  } else if (stage === 'FIRE') {
-    signal = stableBias;
-    setupConfirmed = true;
-  } else if (stage === 'READY') {
-    signal = stableBias;
-  } else if (stage === 'WATCH') {
-    signal = 'HOLD';
-  } else {
-    signal = 'HOLD';
-  }
+    let signal = 'HOLD';
+    let setupConfirmed = false;
 
-  if (signal === 'HOLD') {
-    setupConfirmed = false;
-  }
-
-  state.ai.stage = stage;
-  state.ai.signal = signal;
-  state.ai.setupConfirmed = setupConfirmed;
-  state.ai.reasons = reasons;
-  state.ai.summary =
-    signal === 'PAUSED'
-      ? 'AI Paused'
-      : stage === 'FIRE'
-        ? `AI ${signal}`
-        : stage === 'READY'
-          ? 'AI Ready'
-          : stage === 'WATCH'
-            ? 'AI Watch'
-            : 'AI Hold';
-  state.ai.watchMode = stage === 'WATCH';
-
-  const hero = mapHero(stage, signal, confidence, evaluated.detail);
-  state.system.status = hero.status;
-  state.system.subtitle = hero.subtitle;
-  state.system.detail = hero.detail;
-  state.system.liveBadge = hero.liveBadge;
-
-  state.manual.conf = state.ai.confidence;
-
-  const decisionKey = [
-    state.symbol.active,
-    stage,
-    signal,
-    state.ai.bias,
-    evaluated.detail,
-    reasons.join('|'),
-    state.engine.currentSetupKey,
-    state.engine.currentTimeBucket,
-  ].join('|');
-
-  if (decisionKey !== state.engine.lastDecisionKey) {
-    state.engine.lastDecisionKey = decisionKey;
-
-    if (signal === 'PAUSED') {
-      const pauseStateKey = `${state.session.date}|${state.ai.pauseReason}|${state.symbol.active}|${state.session.netPnL}|${state.session.tradesToday}`;
-      if (state.engine.pauseStateLoggedKey !== pauseStateKey) {
-        state.engine.pauseStateLoggedKey = pauseStateKey;
-        addStateLog('AI Paused', `state-paused-${pauseStateKey}`);
-      }
+    if (stage === 'PAUSED') {
+      signal = 'PAUSED';
+    } else if (stage === 'FIRE') {
+      signal = stableBias;
+      setupConfirmed = true;
+    } else if (stage === 'READY') {
+      signal = stableBias;
+    } else if (stage === 'WATCH') {
+      signal = 'HOLD';
     } else {
-      state.engine.pauseStateLoggedKey = '';
+      signal = 'HOLD';
+    }
 
-      if (stage === 'FIRE') {
-        if (canLogAfter(state.engine.lastFireStateAt, CONFIG.log.fireStateMinMs)) {
-          state.engine.lastFireStateAt = Date.now();
-          addStateLog(
-            `AI Setup FIRE ${stableBias} (${state.symbol.active})`,
-            `state-fire-ready-${state.symbol.active}-${stableBias}-${evaluated.premiumSetup ? 'premium' : 'normal'}-${state.engine.currentSetupKey}`
-          );
+    if (signal === 'HOLD') {
+      setupConfirmed = false;
+    }
+
+    state.ai.stage = stage;
+    state.ai.signal = signal;
+    state.ai.setupConfirmed = setupConfirmed;
+    state.ai.reasons = reasons;
+    state.ai.summary =
+      signal === 'PAUSED'
+        ? 'AI Paused'
+        : stage === 'FIRE'
+          ? `AI ${signal}`
+          : stage === 'READY'
+            ? 'AI Ready'
+            : stage === 'WATCH'
+              ? 'AI Watch'
+              : 'AI Hold';
+    state.ai.watchMode = stage === 'WATCH';
+
+    const hero = mapHero(stage, signal, confidence, evaluated.detail);
+    state.system.status = hero.status;
+    state.system.subtitle = hero.subtitle;
+    state.system.detail = hero.detail;
+    state.system.liveBadge = hero.liveBadge;
+
+    state.manual.conf = state.ai.confidence;
+
+    const decisionKey = [
+      state.symbol.active,
+      stage,
+      signal,
+      state.ai.bias,
+      evaluated.detail,
+      reasons.join('|'),
+      state.engine.currentSetupKey,
+      state.engine.currentTimeBucket,
+    ].join('|');
+
+    if (decisionKey !== state.engine.lastDecisionKey) {
+      state.engine.lastDecisionKey = decisionKey;
+
+      if (signal === 'PAUSED') {
+        const pauseStateKey = `${state.session.date}|${state.ai.pauseReason}|${state.symbol.active}|${state.session.netPnL}|${state.session.tradesToday}`;
+        if (state.engine.pauseStateLoggedKey !== pauseStateKey) {
+          state.engine.pauseStateLoggedKey = pauseStateKey;
+          addStateLog('AI Paused', `state-paused-${pauseStateKey}`);
         }
       } else {
-        maybeLogAiStage(stage, state.symbol.active, state.ai.bias, reasons, evaluated.detail);
+        state.engine.pauseStateLoggedKey = '';
+
+        if (stage === 'FIRE') {
+          if (canLogAfter(state.engine.lastFireStateAt, CONFIG.log.fireStateMinMs)) {
+            state.engine.lastFireStateAt = Date.now();
+            addStateLog(
+              `AI Setup FIRE ${stableBias} (${state.symbol.active})`,
+              `state-fire-ready-${state.symbol.active}-${stableBias}-${evaluated.premiumSetup ? 'premium' : 'normal'}-${state.engine.currentSetupKey}`
+            );
+          }
+        } else {
+          maybeLogAiStage(stage, state.symbol.active, state.ai.bias, reasons, evaluated.detail);
+        }
       }
     }
-  }
 
-  const triggerFire = shouldTriggerFire(
-    stage,
-    stableBias,
-    confidence,
-    score,
-    evaluated.premiumSetup
-  );
+    const triggerFire = shouldTriggerFire(
+      stage,
+      stableBias,
+      confidence,
+      score,
+      evaluated.premiumSetup
+    );
 
-  if (triggerFire && !isUsMarketOpenBerlinTime()) {
-    addLog(`Market closed - FIRE blocked (${state.symbol.active})`, {
-      signature: `market-closed-fire-block-${state.symbol.active}-${state.session.date}`,
+    if (triggerFire && !isUsMarketOpenBerlinTime()) {
+      addLog(`Market closed - FIRE blocked (${state.symbol.active})`, {
+        signature: `market-closed-fire-block-${state.symbol.active}-${state.session.date}`,
+      });
+    }
+
+    if (triggerFire && shouldBlockFireForStability()) {
+      // blocked by V25 stability guard
+    } else if (triggerFire && canFire()) {
+      fireOrder(stableBias);
+    }
+
+    if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
+      setPauseReason('DAY_LIMIT');
+    } else if (state.ai.paused && state.ai.pauseReason) {
+      pauseLogIfChanged(state.ai.pauseReason);
+    }
+
+    if (BROKER_ENABLED && Date.now() - brokerLastCheckAt > 15000) {
+      await brokerRefreshAll();
+    }
+
+    stabilityMarkTickOk();
+    schedulePersist();
+  } catch (err) {
+    stabilityMarkTickError(err);
+
+    addLog(`V25 tick error: ${err?.message || 'unknown'}`, {
+      force: true,
+      signature: `v25-tick-error-${Date.now()}`,
     });
-  }
 
-  if (triggerFire && canFire()) {
-    fireOrder(stableBias);
-  }
+    extendSafeStart(2 * 60 * 1000, 'TICK ERROR SAFE START');
 
-  if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
-    setPauseReason('DAY_LIMIT');
-  } else if (state.ai.paused && state.ai.pauseReason) {
-    pauseLogIfChanged(state.ai.pauseReason);
+    try {
+      await forcePersistNow();
+    } catch {
+      // ignore secondary persist error
+    }
   }
-
-  if (BROKER_ENABLED && Date.now() - brokerLastCheckAt > 15000) {
-    await brokerRefreshAll();
-  }
-
-  schedulePersist();
 }
 
 /* =========================================================
@@ -2881,6 +3004,9 @@ function getPublicState() {
       liveGuard: state.liveControl.liveGuard || 'LOCKED',
       realOrdersAllowed: !!state.liveControl.realOrdersAllowed,
       liveStatus: state.liveControl.liveStatus || 'BLOCKED • LIVE DISABLED',
+      stability: getStabilityStatus(),
+      realTradingAllowedNow: isRealTradingAllowedNow(),
+      realTradingBlockReason: getRealTradingBlockReason(),
     },
 
     learningInfo: {
