@@ -2978,7 +2978,9 @@ function getPublicState() {
   const brokerPnl = getBrokerPnlSnapshot();
   const botPnl = round2(state.session.netPnL || 0);
   const performance = getPerformanceDashboard();
-
+  const risk = getRiskSnapshot(); 
+  const riskBlockReason = getRiskBlockReason();
+   
   let syncLabel = 'SYNC FAIL';
   if (state.session.syncOk) {
     if (POSTGRES_HARD_MODE) {
@@ -3144,7 +3146,17 @@ function getPublicState() {
 
     performance,
 
-    logs: state.logs,
+risk: {
+  ...risk,
+  allowedNow: !riskBlockReason,
+  blockReason: riskBlockReason || '',
+  maxRealTradesPerDay: CONFIG.session.maxRealTradesPerDay,
+  maxConsecutiveLosses: CONFIG.session.maxConsecutiveLosses,
+  maxLossPerTrade: CONFIG.session.maxLossPerTrade,
+  maxBrokerDayLoss: CONFIG.session.maxBrokerDayLoss,
+},
+
+logs: state.logs,
   };
 }
 
@@ -3495,6 +3507,9 @@ app.get('/health', (_req, res) => {
     learningSetup: state.engine.currentSetupKey,
     learningTimeBucket: state.engine.currentTimeBucket,
     performance: getPerformanceDashboard(),
+    risk: getRiskSnapshot(),
+    riskAllowedNow: isRiskAllowedNow(),
+    riskBlockReason: getRiskBlockReason(), 
     stability: getStabilityStatus(),
     realTradingAllowedNow: isRealTradingAllowedNow(),
     realTradingBlockReason: getRealTradingBlockReason()
