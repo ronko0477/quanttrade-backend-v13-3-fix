@@ -2919,15 +2919,15 @@ async function processAiTick() {
     }
 
     if (triggerFire && shouldBlockFireForStability()) {
-  // blocked by V25 stability guard
-} else if (triggerFire && !canFire()) {
-  const reason = getRiskBlockReason();
-  if (reason) {
-    logRiskBlocked(state.symbol.active, stableBias, reason);
-  }
-} else if (triggerFire && canFire()) {
-  fireOrder(stableBias);
-}
+      // blocked by V25 stability guard
+    } else if (triggerFire && !canFire()) {
+      const reason = getRiskBlockReason();
+      if (reason) {
+      logRiskBlocked(state.symbol.active, stableBias, reason);
+      }
+    } else if (triggerFire && canFire()) {
+    fireOrder(stableBias);
+    }
 
     if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
       setPauseReason('DAY_LIMIT');
