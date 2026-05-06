@@ -27,19 +27,31 @@ const CONFIG = {
   tickMs: 1000,
 
   session: {
-    maxTradesPerDay: 24,
-    winTarget: 24,
-    lossLimit: -24,
-    cooldownMs: 14000,
-    lossCooldownExtraMs: 12000,
-  },
+  maxTradesPerDay: 24,
+
+  // V25.2 safer daily targets
+  winTarget: 18,
+  lossLimit: -12,
+
+  cooldownMs: 18000,
+  lossCooldownExtraMs: 18000,
+
+  // V25.2 risk engine
+  maxRealTradesPerDay: 6,
+  maxConsecutiveLosses: 2,
+  maxLossPerTrade: -7,
+  maxBrokerDayLoss: -120,
+  minProfitFactorToContinue: 1.15,
+  minWinrateToContinue: 58,
+  minTradesForPerfGuard: 8,
+},
 
   ai: {
     enableLearning: true,
 
     watchScoreMin: 58,
     readyScoreMin: 67,
-    fireScoreMin: 76,
+    fireScoreMin: 80,
 
     buyEdgeMinWatch: 22,
     buyEdgeMinReady: 38,
@@ -51,15 +63,15 @@ const CONFIG = {
 
     confidenceMinWatch: 38,
     confidenceMinReady: 50,
-    confidenceMinFire: 64,
+    confidenceMinFire: 68,
 
     stateConfirmTicks: 2,
     regimeConfirmTicks: 2,
     fireConfirmTicks: 2,
 
-    maxVolatilityForFire: 62,
-    minLiquidityForFire: 58,
-    minSessionForFire: 48,
+    maxVolatilityForFire: 58,
+    minLiquidityForFire: 62,
+    minSessionForFire: 52,
 
     thresholdAdjustStep: 1,
     maxThresholdDrift: 10,
