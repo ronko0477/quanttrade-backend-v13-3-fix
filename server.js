@@ -2468,13 +2468,21 @@ async function afterTradeResult(pnl, tradeMeta) {
     learnFromOutcome('LOSS', tradeMeta);
   }
 
-  if (state.session.netPnL >= state.session.winTarget) {
+  const hardStopReason = shouldHardStopAfterTrade(pnl);
+
+if (hardStopReason) {
+  if (hardStopReason.includes('WIN TARGET')) {
     setPauseReason('WIN_TARGET');
-  } else if (state.session.netPnL <= state.session.lossLimit) {
-    setPauseReason('LOSS_LIMIT');
-  } else if (state.session.tradesToday >= state.session.maxTradesPerDay) {
-    setPauseReason('DAY_LIMIT');
+  } else {
+    setPauseReason('RISK_STOP');
+    addLog(`Risk stop active • ${hardStopReason}`, {
+      force: true,
+      signature: `risk-stop-${hardStopReason}-${Date.now()}`,
+    });
   }
+} else if (state.session.tradesToday >= state.session.maxTradesPerDay) {
+  setPauseReason('DAY_LIMIT');
+}
 
   await forcePersistNow();
 }
