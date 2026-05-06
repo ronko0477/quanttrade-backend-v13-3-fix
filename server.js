@@ -1065,6 +1065,98 @@ function isRealTradingActive() {
   );
 }
 
+/* =========================================================
+   V25.2 Risk Engine
+   ========================================================= */
+
+function getRiskSnapshot() {
+  const perf = getPerformanceDashboard();
+  const brokerPnl = getBrokerPnlSnapshot();
+
+  return {
+    botNetPnL: round2(state.session.netPnL || 0),
+    brokerDayPnL: brokerPnl.dayPnl,
+    tradesToday: state.session.tradesToday || 0,
+    realTradesToday: state.session.realModeTradesToday || 0,
+    consecutiveLosses: state.session.consecutiveLosses || 0,
+    winrate: perf.winrate || 0,
+    profitFactor: perf.profitFactor || 0,
+    avgWin: perf.avgWin || 0,
+    avgLoss: perf.avgLoss || 0,
+    maxDrawdown: perf.maxDrawdown || 0,
+  };
+}
+
+function getRiskBlockReason() {
+  const r = getRiskSnapshot();
+
+  if (state.ai.paused) return `AI PAUSED ${state.ai.pauseReason || ''}`.trim();
+  if (state.liveControl.killSwitch) return 'KILL SWITCH';
+  if (!isUsMarketOpenBerlinTime()) return 'MARKET CLOSED';
+
+  if (r.botNetPnL >= CONFIG.session.winTarget) return 'WIN TARGET';
+  if (r.botNetPnL <= CONFIG.session.lossLimit) return 'LOSS LIMIT';
+
+  if (r.realTradesToday >= CONFIG.session.maxRealTradesPerDay) {
+    return `REAL DAILY LIMIT ${r.realTradesToday}/${CONFIG.session.maxRealTradesPerDay}`;
+  }
+
+  if (r.consecutiveLosses >= CONFIG.session.maxConsecutiveLosses) {
+    return `LOSS STREAK ${r.consecutiveLosses}`;
+  }
+
+  if (
+    typeof r.brokerDayPnL === 'number' &&
+    r.brokerDayPnL <= CONFIG.session.maxBrokerDayLoss
+  ) {
+    return `BROKER DAY LOSS ${round2(r.brokerDayPnL)}`;
+  }
+
+  if (r.tradesToday >= CONFIG.session.minTradesForPerfGuard) {
+    if (r.profitFactor > 0 && r.profitFactor < CONFIG.session.minProfitFactorToContinue) {
+      return `LOW PROFIT FACTOR ${r.profitFactor}`;
+    }
+
+    if (r.winrate > 0 && r.winrate < CONFIG.session.minWinrateToContinue) {
+      return `LOW WINRATE ${r.winrate}%`;
+    }
+  }
+
+  return '';
+}
+
+function isRiskAllowedNow() {
+  return getRiskBlockReason() === '';
+}
+
+function shouldHardStopAfterTrade(pnl) {
+  const r = getRiskSnapshot();
+
+  if (pnl <= CONFIG.session.maxLossPerTrade) return `TRADE LOSS ${round2(pnl)}`;
+  if (r.botNetPnL <= CONFIG.session.lossLimit) return 'LOSS LIMIT';
+  if (r.botNetPnL >= CONFIG.session.winTarget) return 'WIN TARGET';
+
+  if (r.consecutiveLosses >= CONFIG.session.maxConsecutiveLosses) {
+    return `LOSS STREAK ${r.consecutiveLosses}`;
+  }
+
+  if (
+    typeof r.brokerDayPnL === 'number' &&
+    r.brokerDayPnL <= CONFIG.session.maxBrokerDayLoss
+  ) {
+    return `BROKER DAY LOSS ${round2(r.brokerDayPnL)}`;
+  }
+
+  return '';
+}
+
+function logRiskBlocked(symbol, side, reason) {
+  addLog(`RISK BLOCKED (${symbol} ${side}) • ${reason}`, {
+    force: true,
+    signature: `risk-blocked-${symbol}-${side}-${reason}-${Date.now()}`,
+  });
+}
+
 function isRealTradingAllowedNow() {
   if (!isRealTradingActive()) return false;
   if (isSafeStartActive()) return false;
@@ -2294,7 +2386,9 @@ function canFire() {
   if (state.session.tradesToday >= state.session.maxTradesPerDay) return false;
   if (state.session.netPnL >= state.session.winTarget) return false;
   if (state.session.netPnL <= CONFIG.safeMode.hardDailyLossLimit) return false;
-
+  
+  if (!isRiskAllowedNow()) return false;
+   
   if (!isUsMarketOpenBerlinTime()) {
     return false;
   }
@@ -2825,10 +2919,15 @@ async function processAiTick() {
     }
 
     if (triggerFire && shouldBlockFireForStability()) {
-      // blocked by V25 stability guard
-    } else if (triggerFire && canFire()) {
-      fireOrder(stableBias);
-    }
+  // blocked by V25 stability guard
+} else if (triggerFire && !canFire()) {
+  const reason = getRiskBlockReason();
+  if (reason) {
+    logRiskBlocked(state.symbol.active, stableBias, reason);
+  }
+} else if (triggerFire && canFire()) {
+  fireOrder(stableBias);
+}
 
     if (!state.ai.paused && state.session.tradesToday >= state.session.maxTradesPerDay) {
       setPauseReason('DAY_LIMIT');
