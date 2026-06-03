@@ -2505,17 +2505,30 @@ async function afterTradeResult(pnl, tradeMeta, options = {}) {
     state.ai.pauseReason = 'LOSS_LIMIT';
   }
 
+  const minLossForStreak = CONFIG.session.minLossForStreak ?? -2.00;
+
   if (pnl > 0) {
     state.session.consecutiveWins += 1;
     state.session.consecutiveLosses = 0;
 
     addLog(`WIN PnL +${round2(pnl)}`, { signature: `win-${Date.now()}` });
     learnFromOutcome('WIN', tradeMeta);
-  } else {
+
+  } else if (pnl <= minLossForStreak) {
     state.session.consecutiveLosses += 1;
     state.session.consecutiveWins = 0;
 
     addLog(`LOSS PnL ${round2(pnl)}`, { signature: `loss-${Date.now()}` });
+    learnFromOutcome('LOSS', tradeMeta);
+
+  } else {
+    state.session.consecutiveWins = 0;
+
+    addLog(`MICRO LOSS ignored for streak PnL ${round2(pnl)}`, {
+      force: true,
+      signature: `micro-loss-${Date.now()}`
+    });
+
     learnFromOutcome('LOSS', tradeMeta);
   }
 
