@@ -32,8 +32,10 @@ const CONFIG = {
     cooldownMs: 15000,
     lossCooldownExtraMs: 18000,
 
+    // V24.5 RISK FIX
+    minLossForStreak: -2.00,
     maxRealTradesPerDay: 6,
-    maxConsecutiveLosses: 2,
+    maxConsecutiveLosses: 4,
     maxLossPerTrade: -7,
     maxBrokerDayLoss: -120,
     minProfitFactorToContinue: 1.15,
