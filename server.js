@@ -12,7 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 /* =========================================================
-   V24.4 FULL PRO
+   V24.5 FULL PRO risk fix
    - V24.3 REAL SYNC kept
    - Entry Soft Unlock added
    - Confidence / Score / Edge thresholds loosened
