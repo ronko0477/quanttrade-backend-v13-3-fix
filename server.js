@@ -394,12 +394,12 @@ function makeSetupKey(snapshot) {
 
 function createInitialState() {
   return {
-    version: 'V24.4 FULL PRO',
+    version: 'V24.5 FULL PRO',
 
     system: {
       status: 'READY',
       subtitle: 'Real Sync / Paper Learning aktiv.',
-      detail: 'AI scannt Setups. V24.4 Entry Soft Unlock aktiv.',
+      detail: 'AI scannt Setups. V24.5 Entry Soft Unlock aktiv.',
       liveBadge: 'REAL SYNC',
       dot: true,
     },
@@ -815,7 +815,7 @@ function mergeLoadedState(target, loaded) {
     }
   }
 
-  target.version = 'V24.4 FULL PRO';
+  target.version = 'V24.5 FULL PRO';
 
   target.system = (!target.system || typeof target.system !== 'object')
     ? deepClone(fresh.system)
@@ -2047,7 +2047,7 @@ function updateStableBias(metrics) {
 }
 
 /* =========================================================
-   Stage evaluation - V24.4 Entry Soft Unlock
+   Stage evaluation - V24.5 Entry Soft Unlock
    ========================================================= */
 
 function getSetupQuality(metrics, confidence, score) {
@@ -3550,7 +3550,7 @@ async function hydrateState() {
   let source = 'NEW';
 
   console.log('====================================================');
-  console.log('[boot] version: V24.4 FULL PRO');
+  console.log('[boot] version: V24.5 FULL PRO');
   console.log(`[boot] PERSIST_MODE raw: ${RAW_PERSIST_MODE}`);
   console.log(`[boot] PERSIST_MODE effective: ${EFFECTIVE_PERSIST_MODE}`);
   console.log(`[boot] DATABASE_URL found: ${DB_URL_FOUND ? 'YES' : 'NO'}`);
@@ -3692,7 +3692,7 @@ app.get('*', (_req, res) => {
   setInterval(processAiTick, CONFIG.tickMs);
 
   app.listen(PORT, () => {
-    console.log('V24.4 FULL PRO listening on :' + PORT);
+    console.log('V24.5 FULL PRO listening on :' + PORT);
   });
 })();
 
