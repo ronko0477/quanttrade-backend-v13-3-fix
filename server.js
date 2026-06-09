@@ -1809,7 +1809,7 @@ function getAdaptiveThresholds() {
 
   const learn = getLearningAdjustments();
 
-  const entryEase = learn.totalBias > 0 ? Math.min(5, learn.totalBias * 0.45) : 0;
+  const entryEase = learn.totalBias > 0? Math.min(3, learn.totalBias * 0.35): 0;
   const entryTighten = learn.totalBias < 0 ? Math.min(7, Math.abs(learn.totalBias) * 0.60) : 0;
 
   return {
