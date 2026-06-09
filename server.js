@@ -2191,6 +2191,16 @@ function evaluateStage(metrics, confidence, score) {
     blockers.length === 0 &&
     learn.totalBias > -4;
 
+   // V24.6 META SAFETY FILTER
+  const metaSafetyBlock =
+    state.symbol.active === 'META' &&
+    confidence < 34 &&
+    learn.totalBias < -6;
+
+  if (metaSafetyBlock) {
+    blockers.push('META Safety Filter');
+  }
+   
   const passesFire =
     passesNormalFire ||
     passesPremiumFire ||
@@ -2782,7 +2792,24 @@ function getPerformanceDashboard() {
   const symbols = bucketStats('symbol');
   const setups = bucketStats('setupKey');
   const times = bucketStats('timeBucket');
+  
+   // V24.6 WATCH SETUP MONITOR
+  const watchSetupKey = 'TM|SM|VO|LO|VM|SF';
+  const watchSetupTrades = trades.filter((t) => t.setupKey === watchSetupKey);
+  const watchSetupWins = watchSetupTrades.filter((t) => Number(t.pnl) > 0);
+  const watchSetupLosses = watchSetupTrades.filter((t) => Number(t.pnl) < 0);
 
+  const watchSetup = {
+    key: watchSetupKey,
+    trades: watchSetupTrades.length,
+    wins: watchSetupWins.length,
+    losses: watchSetupLosses.length,
+    pnl: round2(watchSetupTrades.reduce((s, t) => s + Number(t.pnl || 0), 0)),
+    winrate: watchSetupTrades.length
+      ? round2((watchSetupWins.length / watchSetupTrades.length) * 100)
+      : 0,
+  };
+   
   return {
     totalTrades,
     realTrades,
@@ -2810,6 +2837,7 @@ function getPerformanceDashboard() {
     symbols,
     setups: setups.slice(0, 12),
     timeBuckets: times,
+    watchSetup,
 
     learning: {
       drift: state.learning?.drift || 0,
