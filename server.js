@@ -1028,10 +1028,10 @@ function getBrokerPnlSnapshot() {
   buyingPower: round2(buyingPower),
   dayPnl: round2(equity - lastEquity),
   totalPnl: round2(equity - 100000),
-  realizedPnl,
   unrealizedPnl,
-  realizedBotPnL: round2(state.session.netPnL || 0),
-  combinedPnL: round2((state.session.netPnL || 0) + unrealizedPnl),
+  unrealizedDayPnl,
+  realizedPnl,
+  combinedPnl: round2(realizedPnl + unrealizedPnl),
   source: 'alpaca',
 };
 }
