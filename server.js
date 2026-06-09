@@ -1796,7 +1796,7 @@ function getLearningAdjustments() {
     timeBias,
     consecutiveLossPenalty,
     consecutiveWinBoost,
-    totalBias: clamp(totalBias, -14, 14),
+    totalBias: clamp(totalBias, -8, 8),
   };
 }
 
