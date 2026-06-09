@@ -2191,15 +2191,26 @@ function evaluateStage(metrics, confidence, score) {
     blockers.length === 0 &&
     learn.totalBias > -4;
 
-   // V24.6 META SAFETY FILTER
-  const metaSafetyBlock =
-    state.symbol.active === 'META' &&
-    confidence < 34 &&
-    learn.totalBias < -6;
+   // V24.6 LEARNING FILTER
+const badSetup =
+  state.engine.currentSetupKey === 'TM|SM|VO|LO|VM|SF';
 
-  if (metaSafetyBlock) {
-    blockers.push('META Safety Filter');
-  }
+const metaSafetyBlock =
+  state.symbol.active === 'META' &&
+  confidence < 34 &&
+  learn.totalBias < -6;
+
+if (badSetup || metaSafetyBlock) {
+  return {
+    candidateStage: 'WATCH',
+    setupConfirmed: false,
+    signal: 'HOLD',
+    detail: badSetup ? 'Bad Setup Filter Block' : 'META Safety Filter Block',
+    blockers: [badSetup ? 'BAD SETUP FILTER' : 'META SAFETY FILTER'],
+    premiumSetup: false,
+    entrySoftUnlock: false,
+  };
+}
    
   const passesFire =
     passesNormalFire ||
