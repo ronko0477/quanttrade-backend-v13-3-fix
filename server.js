@@ -1011,15 +1011,29 @@ function getBrokerPnlSnapshot() {
   const buyingPower = toNum(acc.buying_power, 0);
   const lastEquity = toNum(acc.last_equity, equity);
 
+  const unrealizedPnl =
+  portfolioValue > 0
+    ? round2(portfolioValue - equity + cash)
+    : 0;
+
+  const realizedPnl =
+  round2((equity - 100000) - unrealizedPnl);
+
+  const unrealizedDayPnl = round2(equity - lastEquity);
+   
   return {
-    equity: round2(equity),
-    cash: round2(cash),
-    portfolioValue: round2(portfolioValue),
-    buyingPower: round2(buyingPower),
-    dayPnl: round2(equity - lastEquity),
-    totalPnl: round2(equity - 100000),
-    source: 'alpaca',
-  };
+  equity: round2(equity),
+  cash: round2(cash),
+  portfolioValue: round2(portfolioValue),
+  buyingPower: round2(buyingPower),
+  dayPnl: round2(equity - lastEquity),
+  totalPnl: round2(equity - 100000),
+  realizedPnl,
+  unrealizedPnl,
+  realizedBotPnL: round2(state.session.netPnL || 0),
+  combinedPnL: round2((state.session.netPnL || 0) + unrealizedPnl),
+  source: 'alpaca',
+};
 }
 
 function getRiskSnapshot() {
@@ -3150,6 +3164,10 @@ function getPublicState() {
       brokerPortfolioValue: brokerPnl.portfolioValue,
       brokerBuyingPower: brokerPnl.buyingPower,
       source: brokerPnl.source,
+      realizedBotPnL: brokerPnl.realizedBotPnL,
+      unrealizedPnL: brokerPnl.unrealizedPnL,
+      unrealizedDayPnL: brokerPnl.unrealizedDayPnL,
+      combinedPnL: brokerPnl.combinedPnL,
     },
 
     persist: {
@@ -3574,6 +3592,12 @@ app.get('/health', (_req, res) => {
     risk: getRiskSnapshot(),
     riskAllowedNow: isRiskAllowedNow(),
     riskBlockReason: getRiskBlockReason(),
+    pnlSplit: {
+      realizedBotPnL: round2(state.session.netPnL || 0),
+      unrealizedPnL: getBrokerPnlSnapshot().unrealizedPnL,
+      unrealizedDayPnL: getBrokerPnlSnapshot().unrealizedDayPnL,
+      combinedPnL: getBrokerPnlSnapshot().combinedPnL,
+    },
     stability: getStabilityStatus(),
     realTradingAllowedNow: isRealTradingAllowedNow(),
     realTradingBlockReason: getRealTradingBlockReason(),
