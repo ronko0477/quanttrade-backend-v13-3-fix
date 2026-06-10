@@ -3566,7 +3566,9 @@ app.get('/api/performance', (_req, res) => {
 app.get('/health', (_req, res) => {
   refreshLiveControlState();
 
-  res.json({
+const brokerPnl = getBrokerPnlSnapshot();
+ 
+   res.json({
     ok: true,
     version: state.version,
     uptime: process.uptime(),
@@ -3593,10 +3595,11 @@ app.get('/health', (_req, res) => {
     riskAllowedNow: isRiskAllowedNow(),
     riskBlockReason: getRiskBlockReason(),
     pnlSplit: {
-      realizedBotPnL: round2(state.session.netPnL || 0),
-      unrealizedPnL: getBrokerPnlSnapshot().unrealizedPnL,
-      unrealizedDayPnL: getBrokerPnlSnapshot().unrealizedDayPnL,
-      combinedPnL: getBrokerPnlSnapshot().combinedPnL,
+    realizedBotPnL: round2(state.session.netPnL || 0),
+    realizedPnl: brokerPnl.realizedPnl,
+    unrealizedPnl: brokerPnl.unrealizedPnl,
+    unrealizedDayPnl: brokerPnl.unrealizedDayPnl,
+    combinedPnL: brokerPnl.combinedPnL,
     },
     stability: getStabilityStatus(),
     realTradingAllowedNow: isRealTradingAllowedNow(),
