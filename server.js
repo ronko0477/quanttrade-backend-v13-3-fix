@@ -1011,15 +1011,19 @@ function getBrokerPnlSnapshot() {
   const buyingPower = toNum(acc.buying_power, 0);
   const lastEquity = toNum(acc.last_equity, equity);
 
-  const unrealizedPnl =
-  portfolioValue > 0
-    ? round2(portfolioValue - equity + cash)
-    : 0;
+  const unrealizedPnl = round2(
+  Array.isArray(state.broker?.positions)
+    ? state.broker.positions.reduce((s, p) => s + toNum(p.unrealized_pl, 0), 0)
+    : 0
+);
 
-  const realizedPnl =
-  round2((equity - 100000) - unrealizedPnl);
+const unrealizedDayPnl = round2(
+  Array.isArray(state.broker?.positions)
+    ? state.broker.positions.reduce((s, p) => s + toNum(p.unrealized_intraday_pl, 0), 0)
+    : 0
+);
 
-  const unrealizedDayPnl = round2(equity - lastEquity);
+const realizedPnl = round2((equity - 100000) - unrealizedPnl);
    
   return {
   equity: round2(equity),
