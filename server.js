@@ -865,6 +865,22 @@ function mergeLoadedState(target, loaded) {
   target.session.maxTradesPerDay = CONFIG.session.maxTradesPerDay;
   target.session.winTarget = CONFIG.session.winTarget;
   target.session.lossLimit = CONFIG.session.lossLimit;
+  
+  // V24.6 PnL restore fix
+if (
+  (!Number.isFinite(Number(target.session.netPnL)) ||
+    Number(target.session.netPnL) === 0) &&
+  Array.isArray(target.learning?.trades) &&
+  target.learning.trades.length > 0
+) {
+  target.session.netPnL = round2(
+    target.learning.trades.reduce(
+      (sum, t) => sum + Number(t.pnl || 0),
+      0
+    )
+  );
+}
+  
   if (typeof target.session.realModeTradesToday !== 'number') target.session.realModeTradesToday = 0;
   if (typeof target.session.paperModeTradesToday !== 'number') target.session.paperModeTradesToday = 0;
   if (typeof target.session.consecutiveWins !== 'number') target.session.consecutiveWins = 0;
