@@ -34,7 +34,7 @@ const CONFIG = {
 
     // V24.6 RISK FIX
     minLossForStreak: -2.00,
-    maxRealTradesPerDay: 6,
+    maxRealTradesPerDay: 10,
     maxConsecutiveLosses: 4,
     maxLossPerTrade: -7,
     maxBrokerDayLoss: -120,
